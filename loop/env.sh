@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Shell settings for loop/loop.sh.  Values on the command line override these.
 
-: "${LOOP_MODEL:=gpt-5.4}"
+: "${LOOP_MODEL:=gpt-5.6}"
 : "${LOOP_MAX_TURNS:=10}"
 : "${LOOP_DELAY_SECONDS:=30}"
 # 0 means run without a cycle limit.
