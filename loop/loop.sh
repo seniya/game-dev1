@@ -42,7 +42,7 @@ while :; do
       exec \
       --ephemeral \
       --model "$LOOP_MODEL" \
-      "This is autonomous loop cycle $cycle. Read and follow loop/PROMPT.md before doing any work. Work only from the files in this repository; do not resume or rely on any earlier conversation. End this session after at most $LOOP_MAX_TURNS turns."
+      "This is autonomous loop cycle $cycle. Read and follow loop/PROMPT.md before doing any work. Work only from the files in this repository; do not resume or rely on any earlier conversation. If the acceptance criterion and docs/feedback/INBOX.md contain no substantive instruction, make no repository changes and report that the cycle is waiting for user direction. End this session after at most $LOOP_MAX_TURNS turns."
     codex_status=$?
     printf '=== cycle %s finished %s (codex exit %s) ===\n' "$cycle" "$(date -Is)" "$codex_status"
   } >>"$log_file" 2>&1
