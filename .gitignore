@@ -6,6 +6,7 @@ logs/*
 loop/STOP
 
 # Build artifacts
+node_modules/
 build/
 dist/
 out/

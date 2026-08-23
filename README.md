@@ -27,6 +27,22 @@ LOOP_MAX_CYCLES=0
 
 `LOOP_MAX_CYCLES=0`은 무한 반복입니다. 최대 턴 수는 매 세션에 전달되는 작업 한도입니다.
 
+## 게임 개발
+
+개발 서버를 실행하려면 먼저 의존성을 설치합니다.
+
+```bash
+npm install
+npm run dev
+```
+
+프로덕션 빌드는 다음 명령으로 확인합니다.
+
+```bash
+npm run test
+npm run build
+```
+
 ## 시작과 중지
 
 수동으로 실행하려면:
