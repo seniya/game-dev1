@@ -19,7 +19,7 @@
 `loop/env.sh`에서 기본값을 조정할 수 있습니다.
 
 ```bash
-LOOP_MODEL=gpt-5.4
+LOOP_MODEL=gpt-5.5
 LOOP_MAX_TURNS=10
 LOOP_DELAY_SECONDS=30
 LOOP_MAX_CYCLES=0
