@@ -1,0 +1,17 @@
+# Runtime output
+logs/*
+!logs/.gitkeep
+
+# Loop control (local stop switch)
+loop/STOP
+
+# Build artifacts
+build/
+dist/
+out/
+.build/
+coverage/
+
+# Local/editor files
+.DS_Store
+*.log

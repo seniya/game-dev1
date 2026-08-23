@@ -1,0 +1,14 @@
+[Unit]
+Description=game-dev1 autonomous Codex loop
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/malrang/workspace/game-dev1
+Environment="PATH=/home/malrang/.local/share/fnm/node-versions/v24.16.0/installation/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+ExecStart=/home/malrang/workspace/game-dev1/loop/loop.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
