@@ -35,12 +35,13 @@ while :; do
 
   {
     printf '\n=== cycle %s started %s ===\n' "$cycle" "$started_at"
-    "$LOOP_CODEX_BIN" exec \
-      --ephemeral \
-      --model "$LOOP_MODEL" \
+    "$LOOP_CODEX_BIN" \
       --sandbox workspace-write \
       --ask-for-approval never \
       --cd "$repo_dir" \
+      exec \
+      --ephemeral \
+      --model "$LOOP_MODEL" \
       "This is autonomous loop cycle $cycle. Read and follow loop/PROMPT.md before doing any work. Work only from the files in this repository; do not resume or rely on any earlier conversation. End this session after at most $LOOP_MAX_TURNS turns."
     codex_status=$?
     printf '=== cycle %s finished %s (codex exit %s) ===\n' "$cycle" "$(date -Is)" "$codex_status"
