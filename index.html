@@ -12,8 +12,12 @@
 
     <!-- DOM 오버레이 UI. 캔버스 위에 얹히는 디버그/HUD 텍스트가 들어간다. -->
     <div id="overlay" class="overlay">
-      <span id="fps" class="overlay__fps">-- fps</span>
+      <span id="fps" class="overlay__chip overlay__chip--fps">-- fps</span>
+      <span id="info" class="overlay__chip">타일 (--, --)</span>
     </div>
+
+    <!-- 조작 안내. Phase 9의 UI 폴리싱 때 정식 HUD로 대체한다. -->
+    <div class="hint">드래그: 이동 · 휠: 확대/축소</div>
 
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -1,8 +1,9 @@
 /**
- * Canvas 2D 렌더러.
+ * 캔버스 표면 관리자.
  *
- * Phase 0에서는 화면을 배경색으로 지우는 것까지만 담당한다. 아이소메트릭 타일
- * 그리기와 깊이 정렬은 Phase 1에서 이 클래스 위에 얹는다.
+ * 캔버스 버퍼 크기·DPR·화면 클리어만 책임지고, 실제 게임 화면 내용은
+ * `WorldRenderer`가 그린다. 표면 관리와 그리기를 나눠 둬야 Phase 9의 이펙트나
+ * 미니맵처럼 그리는 주체가 늘어날 때 이 클래스를 건드리지 않는다.
  *
  * 해상도 처리 규칙: CSS 픽셀 크기(뷰포트)와 캔버스 내부 버퍼 크기를 분리하고,
  * 버퍼는 devicePixelRatio를 곱해 잡은 뒤 컨텍스트를 스케일한다. 이후 모든 그리기
@@ -35,6 +36,11 @@ export class CanvasRenderer {
     this.canvas = canvas;
     this.ctx = ctx;
     this.resize();
+  }
+
+  /** 그리기 컨텍스트. CSS 픽셀 좌표계로 설정돼 있다. */
+  get context(): CanvasRenderingContext2D {
+    return this.ctx;
   }
 
   /** 현재 표시 영역 크기(CSS 픽셀). */
@@ -71,18 +77,16 @@ export class CanvasRenderer {
   }
 
   /**
-   * 한 프레임을 그린다.
+   * 프레임 시작 처리: 크기를 맞추고 화면을 배경색으로 지운다.
    *
-   * @param _alpha 마지막 시뮬레이션 스텝 이후 보간 계수(0~1). Phase 1부터 사용한다.
+   * @returns 이번 프레임의 표시 영역 크기(CSS 픽셀).
    */
-  render(_alpha: number): void {
+  beginFrame(): { width: number; height: number } {
     this.resize();
-    this.clear();
-  }
 
-  /** 화면 전체를 배경색으로 채운다. */
-  private clear(): void {
     this.ctx.fillStyle = this.background;
     this.ctx.fillRect(0, 0, this.cssWidth, this.cssHeight);
+
+    return this.size;
   }
 }
