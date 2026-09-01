@@ -16,6 +16,8 @@ import { DebugOverlay } from './ui/DebugOverlay';
 import { InventoryBar } from './ui/InventoryBar';
 import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
+import { RequestList } from './ui/RequestList';
+import { Toasts } from './ui/Toasts';
 
 /** 맵 크기(타일). */
 const MAP_WIDTH = 32;
@@ -65,6 +67,8 @@ function bootstrap(): void {
   const game = new Game(terrain, resources);
   const bar = new InventoryBar(requireElement('bar'), game.inventory.slotCount);
   const panel = new BuildPanel(requireElement('panel'));
+  const toasts = new Toasts(requireElement('toasts'));
+  const requestList = new RequestList(requireElement('requests'));
 
   const camera = new Camera();
   camera.setViewport(surface.size.width, surface.size.height);
@@ -118,6 +122,9 @@ function bootstrap(): void {
     }
   });
   keyboard.bind('Escape', () => game.selectBlueprint(null));
+  keyboard.bind('KeyR', () => {
+    if (!game.fulfillRequest()) toasts.show('낼 수 있는 요청이 없습니다', 'bad');
+  });
   keyboard.attach();
 
   /**
@@ -138,6 +145,8 @@ function bootstrap(): void {
         if (intent && game.movePlayer(intent.dx, intent.dy)) followPlayer = true;
 
         game.update(stepMs);
+        toasts.update(stepMs);
+        for (const notice of game.drainNotices()) toasts.show(notice.message, notice.tone);
 
         // 드래그로 시야를 옮기는 동안에는 추적을 멈춘다.
         if (pointer.dragging) followPlayer = false;
@@ -170,6 +179,13 @@ function bootstrap(): void {
             target: hovered ? game.describeTile(hovered) : null,
           },
           game.inventory,
+        );
+
+        requestList.update(
+          game.requests.requests.map((request) => ({
+            request,
+            payable: game.canFulfill(request),
+          })),
         );
 
         panel.update(

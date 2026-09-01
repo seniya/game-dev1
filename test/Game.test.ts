@@ -809,3 +809,152 @@ describe('Game 건축', () => {
     expect(game.buildMode).toBe(false);
   });
 });
+
+describe('Game 주민과 요청', () => {
+  /**
+   * 집을 지어 주민이 이주할 수 있는 게임을 만든다.
+   *
+   * @param size 맵 크기.
+   */
+  function villageGame(size = 14) {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    const game = new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
+    game.storage.add(ItemType.WOOD, 99);
+    game.storage.add(ItemType.STONE, 99);
+
+    return game;
+  }
+
+  /**
+   * 시작 건물과 겹치지 않는 빈 자리를 찾는다.
+   *
+   * @param game 대상 게임.
+   * @param size 맵 크기.
+   */
+  function emptySpot(game: Game, size = 14) {
+    for (let y = size - 4; y >= 1; y -= 1) {
+      for (let x = size - 4; x >= 1; x -= 1) {
+        let free = true;
+        for (let dy = 0; dy < 3 && free; dy += 1) {
+          for (let dx = 0; dx < 3; dx += 1) {
+            if (game.isOccupied({ x: x + dx, y: y + dy })) {
+              free = false;
+              break;
+            }
+          }
+        }
+        if (free) return { x, y };
+      }
+    }
+    throw new Error('빈 자리가 없다');
+  }
+
+  it('시작 시점에는 주민이 없다', () => {
+    const game = villageGame();
+
+    expect(game.population.count).toBe(0);
+    expect(game.requests.requests).toHaveLength(0);
+  });
+
+  it('집을 지어 완공되면 주민이 이주하고 알림이 쌓인다', () => {
+    const game = villageGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt(emptySpot(game));
+
+    advance(game, 12_000);
+
+    expect(game.population.count).toBe(1);
+    const notices = game.drainNotices();
+    expect(notices.some((notice) => notice.message === '새 주민이 이주했습니다')).toBe(true);
+  });
+
+  it('알림을 꺼내면 목록이 비워진다', () => {
+    const game = villageGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt(emptySpot(game));
+    advance(game, 12_000);
+
+    expect(game.drainNotices().length).toBeGreaterThan(0);
+    expect(game.drainNotices()).toHaveLength(0);
+  });
+
+  it('주민을 오브젝트로 내보낸다', () => {
+    const game = villageGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt(emptySpot(game));
+    advance(game, 12_000);
+
+    expect(game.entities().filter((entity) => entity.kind === 'npc')).toHaveLength(1);
+  });
+
+  it('주민이 생기면 요청이 나온다', () => {
+    const game = villageGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt(emptySpot(game));
+
+    advance(game, 40_000);
+
+    expect(game.requests.requests.length).toBeGreaterThan(0);
+  });
+
+  it('낼 수 있는 요청이 없으면 납품이 실패한다', () => {
+    const game = villageGame();
+
+    expect(game.fulfillRequest()).toBeNull();
+  });
+
+  it('납품 요청을 내면 자재가 줄고 경험치가 오른다', () => {
+    const game = villageGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt(emptySpot(game));
+    advance(game, 40_000);
+
+    const delivery = game.requests.requests.find((request) => request.kind === 'deliver');
+    if (!delivery || delivery.kind !== 'deliver') {
+      // 시드에 따라 시설 요청만 열릴 수 있다. 그때는 이 검증을 건너뛴다.
+      expect(game.requests.requests.length).toBeGreaterThan(0);
+      return;
+    }
+
+    game.storage.add(delivery.item, delivery.amount + 5);
+    const before = game.totalHeld(delivery.item);
+    const experienceBefore = game.experience;
+
+    const completion = game.fulfillRequest();
+
+    expect(completion).not.toBeNull();
+    expect(game.totalHeld(delivery.item)).toBe(before - delivery.amount);
+    expect(game.experience).toBeGreaterThan(experienceBefore);
+    expect(game.completedRequestCount).toBe(1);
+  });
+
+  it('자재가 부족한 요청은 낼 수 없다고 판정한다', () => {
+    const game = villageGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt(emptySpot(game));
+    advance(game, 40_000);
+
+    const delivery = game.requests.requests.find((request) => request.kind === 'deliver');
+    if (!delivery || delivery.kind !== 'deliver') return;
+
+    // 보유량을 0으로 만든다.
+    game.storage.remove(delivery.item, game.storage.count(delivery.item));
+    game.inventory.remove(delivery.item, game.inventory.count(delivery.item));
+
+    expect(game.canFulfill(delivery)).toBe(false);
+  });
+
+  it('시설 요청은 납품 대상이 아니다', () => {
+    const game = villageGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt(emptySpot(game));
+    advance(game, 40_000);
+
+    for (const request of game.requests.requests) {
+      if (request.kind === 'facility') expect(game.canFulfill(request)).toBe(false);
+    }
+  });
+});

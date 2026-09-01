@@ -42,10 +42,22 @@ export class DebugOverlay {
   private readonly stashElement: HTMLElement;
   private readonly counter = new FpsCounter();
 
-  /** 화면 텍스트 갱신 간격(ms). */
-  private readonly refreshIntervalMs = 250;
-  /** 마지막 갱신 이후 누적 시간(ms). */
-  private sinceRefreshMs = 0;
+  /**
+   * FPS 갱신 간격(ms). 매 프레임 바꾸면 숫자가 읽히지 않는다.
+   */
+  private readonly fpsIntervalMs = 250;
+  /** 마지막 FPS 갱신 이후 누적 시간(ms). */
+  private sinceFpsMs = 0;
+
+  /**
+   * 커서 정보 갱신 간격(ms).
+   *
+   * 커서를 옮겼을 때 표시가 늦게 따라오면 조작이 굼떠 보이므로 FPS보다 자주 갱신한다.
+   * 그래도 매 프레임은 아니다 — 초당 열 번이면 사람 눈에는 즉각적이다.
+   */
+  private readonly infoIntervalMs = 100;
+  /** 마지막 커서 정보 갱신 이후 누적 시간(ms). */
+  private sinceInfoMs = 0;
 
   /**
    * @param fpsElement FPS 숫자를 표시할 엘리먼트.
@@ -68,11 +80,15 @@ export class DebugOverlay {
   update(frameTimeMs: number, info: DebugInfo, inventory: Inventory): void {
     this.counter.sample(frameTimeMs);
 
-    this.sinceRefreshMs += frameTimeMs;
-    if (this.sinceRefreshMs < this.refreshIntervalMs) return;
+    this.sinceFpsMs += frameTimeMs;
+    if (this.sinceFpsMs >= this.fpsIntervalMs) {
+      this.sinceFpsMs = 0;
+      this.fpsElement.textContent = `${Math.round(this.counter.fps)} fps`;
+    }
 
-    this.sinceRefreshMs = 0;
-    this.fpsElement.textContent = `${Math.round(this.counter.fps)} fps`;
+    this.sinceInfoMs += frameTimeMs;
+    if (this.sinceInfoMs < this.infoIntervalMs) return;
+    this.sinceInfoMs = 0;
 
     const tile = info.hovered
       ? `(${info.hovered.x}, ${info.hovered.y}) ${info.target ?? blockInfo(info.hoveredSurface).label}` +

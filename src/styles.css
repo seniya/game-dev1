@@ -167,3 +167,74 @@ body {
   color: #8b949e;
   font-size: 11px;
 }
+
+/* 상단 미완료 요청 목록. */
+.requests {
+  position: fixed;
+  top: 34px;
+  left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.request {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #c9d1d9;
+}
+
+/* 지금 낼 수 있는 요청은 강조해 다음 행동을 알린다. */
+.request--payable {
+  border-color: rgba(126, 231, 135, 0.6);
+  color: #7ee787;
+}
+
+.request__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.request__hint {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(126, 231, 135, 0.22);
+  font-size: 10px;
+}
+
+/* 짧은 알림. 화면 오른쪽 아래에 쌓인다. */
+.toasts {
+  position: fixed;
+  right: 12px;
+  bottom: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.toast {
+  padding: 5px 10px;
+  border-left: 3px solid #8b949e;
+  border-radius: 4px;
+  background: rgba(12, 16, 20, 0.9);
+  color: #e6e8eb;
+}
+
+.toast--good {
+  border-left-color: #7ee787;
+}
+
+.toast--bad {
+  border-left-color: #ff7b72;
+}

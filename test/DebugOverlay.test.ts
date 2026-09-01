@@ -43,11 +43,21 @@ describe('DebugOverlay', () => {
   it('갱신 간격에 못 미치면 텍스트를 건드리지 않는다', () => {
     const { fps, info, overlay, stash } = setup();
 
-    // 60fps로 5프레임 = 약 83ms. 250ms 미만이므로 아직 갱신되지 않는다.
-    for (let i = 0; i < 5; i += 1) overlay.update(1000 / 60, baseInfo, stash);
+    // 60fps로 4프레임 = 약 67ms. 커서 정보 간격(100ms)에도 못 미친다.
+    for (let i = 0; i < 4; i += 1) overlay.update(1000 / 60, baseInfo, stash);
 
     expect(fps.textContent).toBeNull();
     expect(info.textContent).toBeNull();
+  });
+
+  it('커서 정보는 FPS보다 자주 갱신된다 — 호버 표시가 굼떠 보이지 않도록', () => {
+    const { fps, info, overlay, stash } = setup();
+
+    // 120ms 경과: 커서 정보 간격(100ms)은 넘고 FPS 간격(250ms)은 아직이다.
+    for (let i = 0; i < 8; i += 1) overlay.update(1000 / 60, baseInfo, stash);
+
+    expect(info.textContent).not.toBeNull();
+    expect(fps.textContent).toBeNull();
   });
 
   it('갱신 간격을 넘기면 FPS와 지형 정보를 쓴다', () => {

@@ -11,9 +11,12 @@ import { canInteract, type TilePos } from '../core/movement';
 import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
 import { Terrain } from '../core/Terrain';
 import { canDigBlock, tierSpeedMultiplier } from '../core/tools';
+import { requestMessage, type VillageRequest } from '../core/requests';
 import type { Entity, GhostPreview } from '../render/WorldRenderer';
 import { Buildings, type Building, type PlacementFailure } from './Buildings';
 import { Player } from './Player';
+import { Population, type Migration } from './Population';
+import { RequestBoard, type RequestCompletion } from './Requests';
 import { ResourceField } from './ResourceField';
 
 /** 행동이 거절된 이유. UI 안내 문구로 옮긴다. */
@@ -76,12 +79,27 @@ export class Game {
   readonly buildings: Buildings;
   /** 시작 시점에 놓인 창고 건물. */
   readonly startingStorage: Building;
+  /** 마을 주민. */
+  readonly population: Population;
+  /** 주민 요청 게시판. */
+  readonly requests: RequestBoard;
+
+  /**
+   * 이번 프레임에 UI로 알릴 사건들.
+   *
+   * 게임 규칙과 알림 표시를 분리하기 위해, `Game`은 사건을 쌓아 두고 UI가
+   * 꺼내 가게 한다. 이렇게 두면 규칙을 단위 테스트로 검증할 때 DOM이 필요 없다.
+   */
+  private readonly pendingNotices: Array<{ message: string; tone: 'neutral' | 'good' | 'bad' }> = [];
 
   /** 건축 모드에서 고른 블루프린트. 건축 모드가 아니면 null. */
   private selectedBlueprint: Blueprint | null = null;
 
   /** 마을 레벨. Phase 8에서 마을 상태가 이 값을 관리한다. */
   private level = 1;
+
+  /** 요청 완료로 누적된 마을 경험치. Phase 8의 레벨 산정에 쓴다. */
+  private villageExperience = 0;
 
   /** 쌓기에 쓸 아이템의 우선순위. 흙을 먼저 쓰고 없으면 돌을 쓴다. */
   private readonly placePriority: readonly ItemType[] = [ItemType.DIRT, ItemType.STONE];
@@ -105,6 +123,9 @@ export class Game {
     // 시작 창고를 마을 중심에 즉시 완공 상태로 세운다. 저장할 곳이 없으면
     // 첫 채집부터 인벤토리가 막혀 루프가 시작되지 않는다.
     this.startingStorage = placeStartingStorage(this.buildings, this.resources, terrain, start);
+
+    this.population = new Population(terrain, this.buildings);
+    this.requests = new RequestBoard(this.buildings, this.population);
   }
 
   /**
@@ -119,11 +140,100 @@ export class Game {
     for (const building of this.buildings.update(stepMs)) {
       this.onBuildingCompleted(building);
     }
+
+    for (const migration of this.population.update(stepMs)) {
+      this.onMigration(migration);
+    }
+
+    const board = this.requests.update(stepMs);
+    for (const request of board.created) {
+      this.pendingNotices.push({ message: requestMessage(request), tone: 'neutral' });
+    }
+    for (const completion of board.completed) {
+      this.onRequestCompleted(completion);
+    }
+  }
+
+  /**
+   * 쌓인 알림을 꺼내 간다. 꺼내면 목록은 비워진다.
+   *
+   * @returns 이번에 표시할 알림 목록.
+   */
+  drainNotices(): Array<{ message: string; tone: 'neutral' | 'good' | 'bad' }> {
+    return this.pendingNotices.splice(0, this.pendingNotices.length);
+  }
+
+  /** 지금까지 완료한 요청 수. 마을 레벨 산정에 쓴다. */
+  get completedRequestCount(): number {
+    return this.requests.completedCount;
+  }
+
+  /**
+   * 지금 낼 수 있는 납품 요청을 낸다. 단축키 하나로 처리하기 위한 것이다.
+   *
+   * @returns 완료한 요청. 낼 수 있는 요청이 없으면 null.
+   */
+  fulfillRequest(): RequestCompletion | null {
+    const payable = this.requests.findPayableDelivery((item, amount) => this.totalHeld(item) >= amount);
+    if (!payable) return null;
+
+    const completion = this.requests.fulfillDelivery(
+      payable.id,
+      (item, amount) => this.totalHeld(item) >= amount,
+      (item, amount) => {
+        this.consume(item, amount);
+      },
+    );
+
+    if (completion) this.onRequestCompleted(completion);
+
+    return completion;
+  }
+
+  /**
+   * 요청을 낼 수 있는지 확인한다. UI 강조에 쓴다.
+   *
+   * @param request 대상 요청.
+   * @returns 낼 수 있으면 true.
+   */
+  canFulfill(request: VillageRequest): boolean {
+    if (request.kind !== 'deliver') return false;
+
+    return this.totalHeld(request.item) >= request.amount;
+  }
+
+  /**
+   * 주민이 이주했을 때의 처리.
+   *
+   * @param migration 이주 결과.
+   */
+  private onMigration(migration: Migration): void {
+    // 기획서 5.4: 대사 없이 알림만 표시한다.
+    this.pendingNotices.push({ message: '새 주민이 이주했습니다', tone: 'good' });
+    void migration;
+  }
+
+  /**
+   * 요청이 완료됐을 때의 처리.
+   *
+   * @param completion 완료 결과.
+   */
+  private onRequestCompleted(completion: RequestCompletion): void {
+    this.villageExperience += completion.reward;
+    this.pendingNotices.push({
+      message: `요청 완료 (+${completion.reward})`,
+      tone: 'good',
+    });
   }
 
   /** 현재 마을 레벨. */
   get villageLevel(): number {
     return this.level;
+  }
+
+  /** 요청 완료로 누적된 마을 경험치. */
+  get experience(): number {
+    return this.villageExperience;
   }
 
   /**
@@ -537,6 +647,17 @@ export class Game {
         depth: blueprint.depth,
         style: blueprint.style,
         progress: this.buildings.progressOf(building),
+      });
+    }
+
+    for (const npc of this.population.all) {
+      const npcPose = npc.pose(this.terrain);
+      this.entityBuffer.push({
+        kind: 'npc',
+        x: npcPose.x,
+        y: npcPose.y,
+        z: npcPose.z,
+        hue: npc.hue,
       });
     }
 
