@@ -1,0 +1,20 @@
+{
+  "name": "townbuilder",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "2.5D 아이소메트릭 마을 건설 게임 (가제: 타운빌더)",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2",
+    "vitest": "^4.1.11"
+  }
+}

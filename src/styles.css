@@ -1,0 +1,41 @@
+/* 전역 리셋: 캔버스가 뷰포트를 꽉 채우고 스크롤바가 생기지 않도록 한다. */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #0b0d10;
+  color: #e6e8eb;
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* 캔버스는 CSS 픽셀 기준으로 화면을 채우고, 내부 해상도는 DPR에 맞춰 렌더러가 올린다. */
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 오버레이는 클릭을 통과시켜 캔버스 입력(팬/줌/피킹)을 가리지 않는다. */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  padding: 8px 10px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.overlay__fps {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #7ee787;
+}
