@@ -18,6 +18,7 @@ import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
 import { RequestList } from './ui/RequestList';
 import { Toasts } from './ui/Toasts';
+import { VillageHud } from './ui/VillageHud';
 
 /** 맵 크기(타일). */
 const MAP_WIDTH = 32;
@@ -69,6 +70,7 @@ function bootstrap(): void {
   const panel = new BuildPanel(requireElement('panel'));
   const toasts = new Toasts(requireElement('toasts'));
   const requestList = new RequestList(requireElement('requests'));
+  const villageHud = new VillageHud(requireElement('village'));
 
   const camera = new Camera();
   camera.setViewport(surface.size.width, surface.size.height);
@@ -180,6 +182,16 @@ function bootstrap(): void {
           },
           game.inventory,
         );
+
+        villageHud.update({
+          level: game.villageLevel,
+          goalLevel: game.goalLevel,
+          score: game.villageScore,
+          nextScore: game.nextLevelScore,
+          progress: game.levelProgress,
+          residents: game.population.count,
+          buildings: game.buildings.completedCount,
+        });
 
         requestList.update(
           game.requests.requests.map((request) => ({

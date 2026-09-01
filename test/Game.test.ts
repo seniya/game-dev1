@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BlockType } from '../src/core/blocks';
 import { Terrain } from '../src/core/Terrain';
 import { ToolTier } from '../src/core/tools';
+import { MAX_VILLAGE_LEVEL } from '../src/core/village';
 import { BlueprintId } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
 import { NodeKind, nodeDefinition } from '../src/core/resourceNodes';
@@ -956,5 +957,194 @@ describe('Game 주민과 요청', () => {
     for (const request of game.requests.requests) {
       if (request.kind === 'facility') expect(game.canFulfill(request)).toBe(false);
     }
+  });
+});
+
+describe('Game 마을 레벨', () => {
+  /**
+   * 넓은 평지에 자재를 넉넉히 넣은 게임을 만든다.
+   *
+   * @param size 맵 크기.
+   */
+  function levelGame(size = 40) {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    const game = new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
+    game.storage.add(ItemType.WOOD, 99);
+    game.storage.add(ItemType.STONE, 99);
+    game.storage.add(ItemType.IRON_ORE, 20);
+
+    return game;
+  }
+
+  it('시작 레벨은 1이고 점수는 창고 하나만 반영한다', () => {
+    const game = levelGame();
+
+    expect(game.villageLevel).toBe(1);
+    // 시작 창고 1채 = 건물 2점.
+    expect(game.villageScore).toBe(2);
+  });
+
+  it('1차 목표 레벨을 알려준다', () => {
+    expect(levelGame().goalLevel).toBe(MAX_VILLAGE_LEVEL);
+  });
+
+  it('건물을 지으면 점수가 오른다', () => {
+    const game = levelGame();
+    const before = game.villageScore;
+
+    game.selectBlueprint(BlueprintId.WELL);
+    game.buildAt({ x: 20, y: 20 });
+    advance(game, 6000);
+
+    expect(game.villageScore).toBeGreaterThan(before);
+  });
+
+  it('점수가 임계값을 넘으면 레벨이 오르고 알림이 쌓인다', () => {
+    const game = levelGame();
+
+    // 집을 여러 채 지어 주민과 건물 점수를 함께 올린다.
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    for (const spot of [
+      { x: 20, y: 20 },
+      { x: 24, y: 20 },
+      { x: 28, y: 20 },
+    ]) {
+      game.buildAt(spot);
+      advance(game, 6000);
+    }
+    advance(game, 20_000);
+
+    expect(game.villageLevel).toBeGreaterThan(1);
+    const notices = game.drainNotices();
+    expect(notices.some((notice) => notice.message.includes('마을 레벨 2 달성'))).toBe(true);
+    expect(notices.some((notice) => notice.message.startsWith('해금:'))).toBe(true);
+  });
+
+  it('레벨업으로 도구 등급이 오른다', () => {
+    const game = levelGame();
+    game.player.selectTool(2); // 도끼
+    expect(game.player.tool.tier).toBe(ToolTier.BASIC);
+
+    game.setVillageLevel(2);
+
+    expect(game.player.tool.tier).toBe(ToolTier.MID);
+  });
+
+  it('레벨이 오르면 새 블루프린트가 목록에 들어온다', () => {
+    const game = levelGame();
+    const before = game.availableBlueprints.length;
+
+    game.setVillageLevel(3);
+
+    expect(game.availableBlueprints.length).toBeGreaterThan(before);
+    expect(game.availableBlueprints.some((blueprint) => blueprint.id === BlueprintId.MANOR)).toBe(true);
+  });
+
+  it('레벨은 내려가지 않는다 — 점수가 줄어드는 경로가 없다', () => {
+    const game = levelGame();
+    game.setVillageLevel(3);
+
+    advance(game, 5000);
+
+    expect(game.villageLevel).toBe(3);
+  });
+
+  it('최대 레벨을 넘지 않는다', () => {
+    const game = levelGame();
+    game.setVillageLevel(99);
+
+    expect(game.villageLevel).toBe(MAX_VILLAGE_LEVEL);
+    expect(game.nextLevelScore).toBeNull();
+    expect(game.levelProgress).toBe(1);
+  });
+});
+
+describe('Game 구역 잠금', () => {
+  /**
+   * 잠긴 산악 구역에 노드를 심은 게임을 만든다.
+   *
+   * @param size 맵 크기.
+   */
+  function zoneGame(size = 40) {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    const field = new ResourceField(terrain, { densityScale: 0 });
+
+    return { game: new Game(terrain, field), field, terrain };
+  }
+
+  it('잠긴 구역에서는 채집이 거절된다', () => {
+    const { game, field } = zoneGame();
+
+    // 산악(중심에서 13칸 이상)으로 플레이어를 옮긴다.
+    const far = { x: 34, y: 20 };
+    while (game.player.position.x < far.x) {
+      game.movePlayer(1, 0);
+      advance(game, MOVE_DURATION_MS);
+    }
+    while (game.player.position.y < far.y) {
+      game.movePlayer(0, 1);
+      advance(game, MOVE_DURATION_MS);
+    }
+
+    const target = { x: game.player.position.x + 1, y: game.player.position.y };
+    field.addNode(target.x, target.y, NodeKind.TREE);
+    game.player.selectTool(2);
+
+    expect(game.actAt(target)).toEqual({ ok: false, reason: 'zoneLocked' });
+  });
+
+  it('구역이 열리면 채집할 수 있다', () => {
+    const { game, field } = zoneGame();
+
+    const far = { x: 34, y: 20 };
+    while (game.player.position.x < far.x) {
+      game.movePlayer(1, 0);
+      advance(game, MOVE_DURATION_MS);
+    }
+    while (game.player.position.y < far.y) {
+      game.movePlayer(0, 1);
+      advance(game, MOVE_DURATION_MS);
+    }
+
+    const target = { x: game.player.position.x + 1, y: game.player.position.y };
+    field.addNode(target.x, target.y, NodeKind.TREE);
+    game.player.selectTool(2);
+
+    game.setVillageLevel(2);
+    expect(game.actAt(target).ok).toBe(true);
+  });
+
+  it('잠긴 구역이라도 지형은 팔 수 있다 — 이동을 막지 않는다', () => {
+    const { game } = zoneGame();
+
+    const far = { x: 34, y: 20 };
+    while (game.player.position.x < far.x) {
+      game.movePlayer(1, 0);
+      advance(game, MOVE_DURATION_MS);
+    }
+    while (game.player.position.y < far.y) {
+      game.movePlayer(0, 1);
+      advance(game, MOVE_DURATION_MS);
+    }
+
+    const target = { x: game.player.position.x + 1, y: game.player.position.y };
+
+    expect(game.actAt(target).ok).toBe(true);
+  });
+
+  it('잠긴 노드는 안내 문구에 표시된다', () => {
+    const { game, field } = zoneGame();
+    field.addNode(34, 20, NodeKind.TREE);
+
+    expect(game.describeTile({ x: 34, y: 20 })).toContain('잠김');
+
+    game.setVillageLevel(2);
+    expect(game.describeTile({ x: 34, y: 20 })).not.toContain('잠김');
   });
 });

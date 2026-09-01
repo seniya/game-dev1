@@ -168,10 +168,43 @@ body {
   font-size: 11px;
 }
 
-/* 상단 미완료 요청 목록. */
-.requests {
+/* 상단 마을 레벨 표시. */
+.village {
   position: fixed;
   top: 34px;
+  left: 10px;
+  min-width: 240px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #e6e8eb;
+  pointer-events: none;
+  user-select: none;
+}
+
+.village__track {
+  height: 5px;
+  margin: 4px 0 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+
+.village__fill {
+  height: 100%;
+  width: 0%;
+  background: #f0c04a;
+}
+
+.village__goal {
+  color: #8b949e;
+  font-size: 11px;
+}
+
+/* 상단 미완료 요청 목록. 마을 표시 아래에 놓는다. */
+.requests {
+  position: fixed;
+  top: 96px;
   left: 10px;
   display: flex;
   flex-wrap: wrap;

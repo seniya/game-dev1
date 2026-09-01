@@ -12,6 +12,18 @@ import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
 import { Terrain } from '../core/Terrain';
 import { canDigBlock, tierSpeedMultiplier } from '../core/tools';
 import { requestMessage, type VillageRequest } from '../core/requests';
+import {
+  describeUnlock,
+  isZoneUnlocked,
+  levelForScore,
+  levelProgress,
+  nextThreshold,
+  toolTierAtLevel,
+  unlocksAtLevel,
+  villageScore,
+  MAX_VILLAGE_LEVEL,
+} from '../core/village';
+import { zoneAt } from '../core/zones';
 import type { Entity, GhostPreview } from '../render/WorldRenderer';
 import { Buildings, type Building, type PlacementFailure } from './Buildings';
 import { Player } from './Player';
@@ -33,6 +45,8 @@ export type ActionFailure =
   | 'noMaterial'
   /** 인벤토리에 자리가 없다. */
   | 'inventoryFull'
+  /** 아직 열리지 않은 채집 구역이다. */
+  | 'zoneLocked'
   /** 그 자리에는 놓을 수 없다(높이 상한, 노드가 막고 있음 등). */
   | 'blocked'
   /** 건축 모드가 아니거나 블루프린트를 고르지 않았다. */
@@ -152,6 +166,60 @@ export class Game {
     for (const completion of board.completed) {
       this.onRequestCompleted(completion);
     }
+
+    this.syncVillageLevel();
+  }
+
+  /** 마을 점수. 건물·주민·요청 보상을 합산한 누적치다(기획서 6절). */
+  get villageScore(): number {
+    return villageScore({
+      buildings: this.buildings.completedCount,
+      residents: this.population.count,
+      requestExperience: this.villageExperience,
+    });
+  }
+
+  /** 다음 레벨까지의 진행도(0~1). 최대 레벨이면 1이다. */
+  get levelProgress(): number {
+    return levelProgress(this.villageScore, this.level);
+  }
+
+  /** 다음 레벨에 필요한 점수. 최대 레벨이면 null. */
+  get nextLevelScore(): number | null {
+    return nextThreshold(this.level);
+  }
+
+  /** MVP의 1차 목표 레벨. 상단에 상시 노출한다(기획서 6절). */
+  get goalLevel(): number {
+    return MAX_VILLAGE_LEVEL;
+  }
+
+  /**
+   * 점수에 맞춰 레벨을 올리고 해금을 적용한다.
+   *
+   * 레벨은 점수에서 파생되는 값이므로 따로 저장하지 않고 매 스텝 확인한다.
+   * 점수가 줄어드는 경로는 없으므로 레벨이 내려가는 일도 없다.
+   */
+  private syncVillageLevel(): void {
+    const target = levelForScore(this.villageScore);
+    while (this.level < target) {
+      this.level += 1;
+      this.applyUnlocks(this.level);
+    }
+  }
+
+  /**
+   * 그 레벨의 해금을 적용하고 알림을 쌓는다.
+   *
+   * @param level 도달한 레벨.
+   */
+  private applyUnlocks(level: number): void {
+    this.pendingNotices.push({ message: `마을 레벨 ${level} 달성`, tone: 'good' });
+
+    for (const unlock of unlocksAtLevel(level)) {
+      if (unlock.kind === 'tool') this.player.upgradeTool(unlock.tool, unlock.tier);
+      this.pendingNotices.push({ message: `해금: ${describeUnlock(unlock)}`, tone: 'good' });
+    }
   }
 
   /**
@@ -237,17 +305,29 @@ export class Game {
   }
 
   /**
-   * 마을 레벨을 설정한다. Phase 8의 마을 상태가 호출한다.
+   * 마을 레벨을 직접 설정한다.
+   *
+   * 정상 진행에서는 점수에서 파생되지만(`syncVillageLevel`), 테스트에서 상위
+   * 콘텐츠를 바로 확인하려면 필요하다. 올릴 때는 해금도 함께 적용한다.
    *
    * @param level 새 레벨. 1 이상의 정수.
    */
   setVillageLevel(level: number): void {
     if (!Number.isInteger(level) || level < 1) return;
-    this.level = level;
 
-    // 해금이 풀리면서 고른 블루프린트가 사라질 일은 없지만, 레벨이 내려가는
-    // 경우(테스트 등)에는 선택을 정리한다.
-    if (this.selectedBlueprint && this.selectedBlueprint.unlockLevel > level) {
+    const target = Math.min(MAX_VILLAGE_LEVEL, level);
+    while (this.level < target) {
+      this.level += 1;
+      this.player.upgradeTool(this.player.tool.kind, toolTierAtLevel(this.player.tool.kind, this.level));
+      for (const unlock of unlocksAtLevel(this.level)) {
+        if (unlock.kind === 'tool') this.player.upgradeTool(unlock.tool, unlock.tier);
+      }
+    }
+
+    this.level = target;
+
+    // 레벨이 내려가는 경우(테스트 등)에는 고른 블루프린트가 잠길 수 있다.
+    if (this.selectedBlueprint && this.selectedBlueprint.unlockLevel > target) {
       this.selectedBlueprint = null;
     }
   }
@@ -425,6 +505,12 @@ export class Game {
     if (!this.player.idle) return { ok: false, reason: 'busy' };
     if (!canInteract(this.terrain, this.player.position, target)) {
       return { ok: false, reason: 'notAdjacent' };
+    }
+
+    // 아직 열리지 않은 구역에서는 채집만 막는다. 이동을 막으면 벽이 필요하고
+    // 그 벽이 지형 변형(파기·쌓기)과 충돌한다 — 구역 잠금은 규칙이지 지형이 아니다.
+    if (!isZoneUnlocked(zoneAt(this.terrain, target.x, target.y), this.level)) {
+      return { ok: false, reason: 'zoneLocked' };
     }
 
     // 부서질 타격이라면 드롭이 전부 들어갈 자리가 있는지 먼저 본다. 자리가 없을 때
@@ -687,7 +773,10 @@ export class Game {
     if (node && node.durability > 0) {
       const definition = nodeDefinition(node.kind);
       const ratio = Math.round((1 - this.resources.damageRatio(node)) * 100);
-      return `${definition.label} ${ratio}%`;
+      const locked = isZoneUnlocked(zoneAt(this.terrain, target.x, target.y), this.level)
+        ? ''
+        : ' (잠김)';
+      return `${definition.label} ${ratio}%${locked}`;
     }
 
     return null;
