@@ -1,6 +1,6 @@
 import { FpsCounter } from '../core/FpsCounter';
 import { BlockType, blockInfo } from '../core/blocks';
-import type { ItemStash } from '../core/ItemStash';
+import type { Inventory } from '../core/Inventory';
 import { ITEM_ORDER, itemLabel } from '../core/items';
 import { toolLabel, type Tool } from '../core/tools';
 import { zoneLabel, type Zone } from '../core/zones';
@@ -65,7 +65,7 @@ export class DebugOverlay {
    * @param info 이번 프레임의 디버그 정보.
    * @param stash 보유 블록 저장소.
    */
-  update(frameTimeMs: number, info: DebugInfo, stash: ItemStash): void {
+  update(frameTimeMs: number, info: DebugInfo, inventory: Inventory): void {
     this.counter.sample(frameTimeMs);
 
     this.sinceRefreshMs += frameTimeMs;
@@ -82,20 +82,20 @@ export class DebugOverlay {
       `타일 ${tile} · 플레이어 (${info.playerTile.x}, ${info.playerTile.y})` +
       ` · 줌 ${info.zoom.toFixed(2)}x`;
 
-    this.stashElement.textContent = `${toolLabel(info.tool)} · ${formatStash(stash)}`;
+    this.stashElement.textContent = `${toolLabel(info.tool)} · ${formatStash(inventory)}`;
   }
 }
 
 /**
  * 보유 아이템을 한 줄 텍스트로 만든다.
  *
- * @param stash 보유 아이템 저장소.
+ * @param inventory 플레이어 인벤토리.
  * @returns "목재 3 · 돌 1" 형태의 문자열. 비어 있으면 안내 문구.
  */
-function formatStash(stash: ItemStash): string {
+function formatStash(inventory: Inventory): string {
   const parts: string[] = [];
   for (const type of ITEM_ORDER) {
-    const count = stash.count(type);
+    const count = inventory.count(type);
     if (count > 0) parts.push(`${itemLabel(type)} ${count}`);
   }
 

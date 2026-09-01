@@ -1,10 +1,10 @@
-import { ItemStash } from '../core/ItemStash';
+import { Inventory } from '../core/Inventory';
 import { BlockType } from '../core/blocks';
 import { ItemType, blockToItem, itemToBlock } from '../core/items';
-import { canInteract, type TilePos } from '../core/movement';
+import { canInteract, isAdjacent, type TilePos } from '../core/movement';
 import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
 import { Terrain } from '../core/Terrain';
-import { canDigBlock } from '../core/tools';
+import { canDigBlock, tierSpeedMultiplier } from '../core/tools';
 import type { Entity } from '../render/WorldRenderer';
 import { Player } from './Player';
 import { ResourceField } from './ResourceField';
@@ -21,6 +21,8 @@ export type ActionFailure =
   | 'wrongTool'
   /** 놓을 블록을 갖고 있지 않다. */
   | 'noMaterial'
+  /** 인벤토리에 자리가 없다. */
+  | 'inventoryFull'
   /** 그 자리에는 놓을 수 없다(높이 상한, 노드가 막고 있음 등). */
   | 'blocked';
 
@@ -53,8 +55,12 @@ export class Game {
   readonly player: Player;
   /** 자원 노드. */
   readonly resources: ResourceField;
-  /** 얻은 아이템 임시 저장소. Phase 5에서 인벤토리로 대체한다. */
-  readonly stash = new ItemStash();
+  /** 플레이어 인벤토리. */
+  readonly inventory = new Inventory();
+  /** 마을 공용 창고. 슬롯과 스택 상한이 인벤토리보다 넉넉하다. */
+  readonly storage = new Inventory({ slotCount: 24, stackLimit: 99 });
+  /** 창고가 놓인 칸. 이 칸에 인접해야 입출고할 수 있다. */
+  readonly storageTile: TilePos;
 
   /** 쌓기에 쓸 아이템의 우선순위. 흙을 먼저 쓰고 없으면 돌을 쓴다. */
   private readonly placePriority: readonly ItemType[] = [ItemType.DIRT, ItemType.STONE];
@@ -72,6 +78,9 @@ export class Game {
 
     const start = findStartTile(terrain, this.resources);
     this.player = new Player(start.x, start.y);
+
+    // 창고는 시작 칸 바로 옆에 둔다. 마을의 중심이 되는 지점이다.
+    this.storageTile = findStorageTile(terrain, this.resources, start);
   }
 
   /**
@@ -122,6 +131,16 @@ export class Game {
       return { ok: false, reason: 'notAdjacent' };
     }
 
+    // 부서질 타격이라면 드롭이 전부 들어갈 자리가 있는지 먼저 본다. 자리가 없을 때
+    // 노드를 부수면 자원이 사라져 버리므로, 타격 자체를 거절하는 편이 낫다.
+    const node = this.resources.nodeAt(target.x, target.y);
+    if (node && this.willBreak(target)) {
+      const definition = nodeDefinition(node.kind);
+      if (this.inventory.freeSpaceFor(definition.drop) < definition.dropAmount) {
+        return { ok: false, reason: 'inventoryFull' };
+      }
+    }
+
     const result = this.resources.harvest(target.x, target.y, this.player.tool);
     if (!result.ok) {
       if (result.reason === 'wrongTool') return { ok: false, reason: 'wrongTool' };
@@ -132,7 +151,7 @@ export class Game {
 
     if (!result.drop) return { ok: true, node: result.kind, destroyed: false };
 
-    this.stash.add(result.drop.item, result.drop.amount);
+    this.inventory.add(result.drop.item, result.drop.amount);
 
     return { ok: true, node: result.kind, destroyed: true, gained: result.drop };
   }
@@ -151,9 +170,17 @@ export class Game {
       return { ok: false, reason: 'notAdjacent' };
     }
 
+    if (this.isOccupied(target)) return { ok: false, reason: 'blocked' };
+
     const surface = this.terrain.surfaceBlock(target.x, target.y);
     if (surface === BlockType.EMPTY) return { ok: false, reason: 'empty' };
     if (!canDigBlock(this.player.tool, surface)) return { ok: false, reason: 'wrongTool' };
+
+    // 파낸 블록이 들어갈 자리가 없으면 파지 않는다 — 파고 나서 잃는 것보다 낫다.
+    const expected = blockToItem(surface);
+    if (expected !== null && this.inventory.freeSpaceFor(expected) < 1) {
+      return { ok: false, reason: 'inventoryFull' };
+    }
 
     const removed = this.terrain.dig(target.x, target.y);
     if (removed === null) return { ok: false, reason: 'empty' };
@@ -161,7 +188,7 @@ export class Game {
     this.player.trySwing();
 
     const item = blockToItem(removed);
-    if (item !== null) this.stash.add(item);
+    if (item !== null) this.inventory.add(item);
 
     return {
       ok: true,
@@ -182,10 +209,11 @@ export class Game {
       return { ok: false, reason: 'notAdjacent' };
     }
 
-    // 살아 있는 노드가 있는 칸에는 쌓을 수 없다 — 나무가 흙에 묻히면 안 된다.
+    // 살아 있는 노드나 건물이 있는 칸에는 쌓을 수 없다.
     if (this.resources.isBlocked(target.x, target.y)) return { ok: false, reason: 'blocked' };
+    if (this.isOccupied(target)) return { ok: false, reason: 'blocked' };
 
-    const item = this.placePriority.find((candidate) => this.stash.count(candidate) > 0);
+    const item = this.placePriority.find((candidate) => this.inventory.count(candidate) > 0);
     if (item === undefined) return { ok: false, reason: 'noMaterial' };
 
     const block = itemToBlock(item);
@@ -193,10 +221,88 @@ export class Game {
 
     if (!this.terrain.place(target.x, target.y, block)) return { ok: false, reason: 'blocked' };
 
-    this.stash.take(item);
+    this.inventory.remove(item);
     this.player.trySwing();
 
     return { ok: true, block };
+  }
+
+  /**
+   * 그 칸이 건물로 점유돼 있는지 확인한다.
+   *
+   * 점유된 칸은 파거나 쌓을 수 없다 — 건물 아래 지형이 바뀌면 건물이 공중에
+   * 뜨거나 묻힌다. Phase 6에서 건물이 늘어나면 이 함수가 그 목록까지 본다.
+   *
+   * @param target 대상 칸.
+   * @returns 점유돼 있으면 true.
+   */
+  isOccupied(target: TilePos): boolean {
+    return target.x === this.storageTile.x && target.y === this.storageTile.y;
+  }
+
+  /** 지금 창고에 손이 닿는지 여부. 창고 칸에 인접해야 한다. */
+  get nearStorage(): boolean {
+    return isAdjacent(this.player.position, this.storageTile);
+  }
+
+  /**
+   * 인벤토리의 아이템을 창고로 모두 옮긴다.
+   *
+   * 지형 재료(흙)는 남긴다 — 평탄화 작업 중에 흙까지 예치되면 곧바로 다시
+   * 꺼내야 해서 번거롭다.
+   *
+   * @returns 종류별로 옮긴 개수. 창고에 닿지 않으면 빈 Map.
+   */
+  depositAll(): Map<ItemType, number> {
+    if (!this.nearStorage) return new Map();
+
+    return this.inventory.moveAllTo(this.storage, [ItemType.DIRT]);
+  }
+
+  /**
+   * 창고에서 아이템을 꺼내 인벤토리로 옮긴다.
+   *
+   * @param item 아이템 종류.
+   * @param amount 꺼낼 개수.
+   * @returns 실제로 옮긴 개수. 창고에 닿지 않으면 0.
+   */
+  withdraw(item: ItemType, amount: number): number {
+    if (!this.nearStorage) return 0;
+
+    return this.storage.moveTo(this.inventory, item, amount);
+  }
+
+  /**
+   * 인벤토리와 창고를 합친 보유 수를 센다.
+   *
+   * 기획서 5.3이 "필요 자재가 인벤토리/창고에 있으면" 건축이 가능하다고 하므로
+   * Phase 6의 자재 판정이 이 값을 쓴다.
+   *
+   * @param item 아이템 종류.
+   * @returns 합계 개수.
+   */
+  totalHeld(item: ItemType): number {
+    return this.inventory.count(item) + this.storage.count(item);
+  }
+
+  /**
+   * 인벤토리를 먼저 쓰고 부족하면 창고에서 채워 자재를 소모한다.
+   *
+   * @param item 아이템 종류.
+   * @param amount 소모할 개수.
+   * @returns 소모했으면 true. 합계가 부족하면 아무것도 소모하지 않고 false.
+   */
+  consume(item: ItemType, amount: number): boolean {
+    if (!Number.isInteger(amount) || amount < 1) return false;
+    if (this.totalHeld(item) < amount) return false;
+
+    const fromInventory = Math.min(this.inventory.count(item), amount);
+    if (fromInventory > 0) this.inventory.remove(item, fromInventory);
+
+    const rest = amount - fromInventory;
+    if (rest > 0) this.storage.remove(item, rest);
+
+    return true;
   }
 
   /**
@@ -204,6 +310,19 @@ export class Game {
    *
    * @returns 이번 프레임의 오브젝트 목록(내부 버퍼).
    */
+  /**
+   * 이번 타격으로 노드가 부서질지 미리 본다.
+   *
+   * @param target 대상 칸.
+   * @returns 부서질 타격이면 true.
+   */
+  private willBreak(target: TilePos): boolean {
+    const node = this.resources.nodeAt(target.x, target.y);
+    if (!node || node.durability <= 0) return false;
+
+    return node.durability - tierSpeedMultiplier(this.player.tool.tier) <= 0;
+  }
+
   entities(): readonly Entity[] {
     this.entityBuffer.length = 0;
 
@@ -221,6 +340,18 @@ export class Game {
       }
     }
 
+    // 창고는 건물 형태로 그린다. Phase 6에서 블루프린트로 추가 건설할 수 있게 된다.
+    this.entityBuffer.push({
+      kind: 'building',
+      x: this.storageTile.x,
+      y: this.storageTile.y,
+      z: Math.max(0, this.terrain.columnHeight(this.storageTile.x, this.storageTile.y) - 1),
+      width: 1,
+      depth: 1,
+      style: 'warehouse',
+      progress: 1,
+    });
+
     const pose = this.player.pose(this.terrain);
     this.entityBuffer.push({ kind: 'player', x: pose.x, y: pose.y, z: pose.z, swing: pose.swing });
 
@@ -234,6 +365,8 @@ export class Game {
    * @returns 설명 문자열. 아무것도 없으면 null.
    */
   describeTile(target: TilePos): string | null {
+    if (target.x === this.storageTile.x && target.y === this.storageTile.y) return '창고';
+
     const node = this.resources.nodeAt(target.x, target.y);
     if (node && node.durability > 0) {
       const definition = nodeDefinition(node.kind);
@@ -277,4 +410,32 @@ function findStartTile(terrain: Terrain, resources: ResourceField): TilePos {
   }
 
   return center;
+}
+
+/**
+ * 창고를 놓을 칸을 고른다. 시작 칸에 인접하고, 설 수 있고 비어 있는 칸이다.
+ *
+ * @param terrain 지형.
+ * @param resources 자원 노드.
+ * @param start 플레이어 시작 칸.
+ * @returns 창고 칸.
+ */
+function findStorageTile(terrain: Terrain, resources: ResourceField, start: TilePos): TilePos {
+  for (const direction of [
+    { dx: 1, dy: 0 },
+    { dx: 0, dy: 1 },
+    { dx: -1, dy: 0 },
+    { dx: 0, dy: -1 },
+  ]) {
+    const candidate = { x: start.x + direction.dx, y: start.y + direction.dy };
+    if (
+      terrain.contains(candidate.x, candidate.y) &&
+      terrain.columnHeight(candidate.x, candidate.y) >= 1 &&
+      !resources.isBlocked(candidate.x, candidate.y)
+    ) {
+      return candidate;
+    }
+  }
+
+  return start;
 }

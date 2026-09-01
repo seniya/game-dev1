@@ -59,3 +59,58 @@ body {
   pointer-events: none;
   user-select: none;
 }
+
+/* 하단 인벤토리 바. 캔버스 입력을 가리지 않도록 클릭을 통과시킨다. */
+.bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 12px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.bar__slots {
+  display: flex;
+  gap: 4px;
+}
+
+/* 빈 슬롯은 테두리만, 채워진 슬롯은 아이템 색으로 칠한다. */
+.bar__slot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 34px;
+  height: 34px;
+  padding: 2px 4px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #f0f3f6;
+  font-size: 11px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.bar__slot--filled {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.bar__tool,
+.bar__storage {
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #c9d1d9;
+  white-space: nowrap;
+}
+
+/* 창고에 손이 닿으면 강조해 예치가 가능함을 알린다. */
+.bar__storage--near {
+  color: #7ee787;
+  border: 1px solid rgba(126, 231, 135, 0.5);
+}

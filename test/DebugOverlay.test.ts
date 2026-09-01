@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ItemStash } from '../src/core/ItemStash';
+import { Inventory } from '../src/core/Inventory';
 import { BlockType } from '../src/core/blocks';
 import { ItemType } from '../src/core/items';
 import { ToolKind, ToolTier } from '../src/core/tools';
@@ -22,7 +22,7 @@ function setup() {
     stashText as unknown as HTMLElement,
   );
 
-  return { fps, info, stashText, overlay, stash: new ItemStash() };
+  return { fps, info, stashText, overlay, stash: new Inventory() };
 }
 
 /** 테스트에서 반복 쓰는 기본 디버그 정보. */

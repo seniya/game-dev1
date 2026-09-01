@@ -54,6 +54,9 @@ export class KeyboardControls {
   /** 상호작용 키를 누른 순간의 콜백. */
   private onAction: (() => void) | null = null;
 
+  /** 키 코드별 단발 콜백. `bind`로 등록한다. */
+  private readonly bindings = new Map<string, () => void>();
+
   /** 이벤트 대상. 보통 window다. */
   private readonly target: EventTarget;
 
@@ -80,6 +83,19 @@ export class KeyboardControls {
    */
   setActionHandler(handler: () => void): void {
     this.onAction = handler;
+  }
+
+  /**
+   * 특정 키를 누른 순간 한 번 불릴 콜백을 등록한다.
+   *
+   * 이동·도구·상호작용처럼 게임 루프가 상태를 읽어야 하는 키와 달리, 한 번
+   * 눌러 한 번 일어나는 동작(창고 예치, 건축 모드 전환 등)에 쓴다.
+   *
+   * @param code 키 코드(`KeyboardEvent.code`).
+   * @param handler 콜백.
+   */
+  bind(code: string, handler: () => void): void {
+    this.bindings.set(code, handler);
   }
 
   /** 이벤트 리스너를 붙인다. */
@@ -133,7 +149,7 @@ export class KeyboardControls {
     const code = keyEvent.code;
 
     // 스페이스로 페이지가 스크롤되거나 방향키로 화면이 밀리는 것을 막는다.
-    if (code in KEY_MOVES || code in KEY_SLOTS || code === ACTION_KEY) {
+    if (code in KEY_MOVES || code in KEY_SLOTS || code === ACTION_KEY || this.bindings.has(code)) {
       keyEvent.preventDefault?.();
     }
 
@@ -147,6 +163,8 @@ export class KeyboardControls {
     if (slot !== undefined) this.onSelectSlot?.(slot);
 
     if (code === ACTION_KEY) this.onAction?.();
+
+    this.bindings.get(code)?.();
   };
 
   /**

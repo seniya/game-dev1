@@ -364,7 +364,9 @@ export class WorldRenderer {
 
     switch (entity.kind) {
       case 'player':
-        this.drawPawn(screen, zoom, '#e8d5a3', '#3b4252', entity.swing, 1);
+        // 몸통은 파란 계열로 둔다. 건물 벽(베이지)과 지면(초록) 어느 쪽과도
+        // 섞이지 않아야 플레이어가 항상 눈에 띈다.
+        this.drawPawn(screen, zoom, '#4a86c8', '#20303f', entity.swing, 1);
         break;
       case 'npc':
         this.drawPawn(screen, zoom, `hsl(${entity.hue}, 45%, 72%)`, '#2f3542', 0, 0.85);

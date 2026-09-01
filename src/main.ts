@@ -12,6 +12,7 @@ import { GameLoop } from './sim/GameLoop';
 import { GameState } from './sim/GameState';
 import { Game } from './sim/Game';
 import { DebugOverlay } from './ui/DebugOverlay';
+import { InventoryBar } from './ui/InventoryBar';
 import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
 
@@ -61,6 +62,7 @@ function bootstrap(): void {
   const terrain = generateTerrain(MAP_WIDTH, MAP_HEIGHT, { seed: TERRAIN_SEED });
   const resources = new ResourceField(terrain, { seed: TERRAIN_SEED });
   const game = new Game(terrain, resources);
+  const bar = new InventoryBar(requireElement('bar'), game.inventory.slotCount);
 
   const camera = new Camera();
   camera.setViewport(surface.size.width, surface.size.height);
@@ -89,6 +91,7 @@ function bootstrap(): void {
     const target = pointer.hovered;
     if (target) game.actAt(target);
   });
+  keyboard.bind('KeyE', () => game.depositAll());
   keyboard.attach();
 
   /**
@@ -140,8 +143,17 @@ function bootstrap(): void {
             zone: hovered ? zoneAt(terrain, hovered.x, hovered.y) : zoneAt(terrain, 0, 0),
             target: hovered ? game.describeTile(hovered) : null,
           },
-          game.stash,
+          game.inventory,
         );
+
+        bar.update({
+          inventory: game.inventory,
+          storage: game.storage,
+          nearStorage: game.nearStorage,
+          tool: game.player.tool,
+          toolSlot: game.player.selectedSlot,
+          toolCount: game.player.slotCount,
+        });
       },
     },
     { stepMs: DEFAULT_STEP_MS },
