@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { BlockStash } from '../src/core/BlockStash';
+import { ItemStash } from '../src/core/ItemStash';
 import { BlockType } from '../src/core/blocks';
+import { ItemType } from '../src/core/items';
 import { ToolKind, ToolTier } from '../src/core/tools';
+import { Zone } from '../src/core/zones';
 import { DebugOverlay } from '../src/ui/DebugOverlay';
 
 /** textContent만 갖는 최소 엘리먼트 대역. */
@@ -20,7 +22,7 @@ function setup() {
     stashText as unknown as HTMLElement,
   );
 
-  return { fps, info, stashText, overlay, stash: new BlockStash() };
+  return { fps, info, stashText, overlay, stash: new ItemStash() };
 }
 
 /** 테스트에서 반복 쓰는 기본 디버그 정보. */
@@ -33,6 +35,8 @@ const baseInfo = {
   zoom: 1,
   playerTile: { x: 5, y: 6 },
   tool: { kind: ToolKind.SHOVEL, tier: ToolTier.BASIC },
+  zone: Zone.MEADOW,
+  target: null,
 };
 
 describe('DebugOverlay', () => {
@@ -53,7 +57,7 @@ describe('DebugOverlay', () => {
 
     expect(fps.textContent).toBe('60 fps');
     expect(info.textContent).toBe(
-      '타일 (3, 7) 흙 높이 2 · 플레이어 (5, 6) · 윗면 512 측면 40 · 줌 1.00x',
+      '타일 (3, 7) 흙 높이 2 · 초원 · 플레이어 (5, 6) · 줌 1.00x',
     );
   });
 
@@ -77,6 +81,23 @@ describe('DebugOverlay', () => {
     expect(info.textContent).toContain('철광석');
   });
 
+  it('칸에 자원 노드가 있으면 블록 대신 그 설명을 보여준다', () => {
+    const { info, overlay, stash } = setup();
+
+    overlay.update(300, { ...baseInfo, target: '나무 67%' }, stash);
+
+    expect(info.textContent).toContain('나무 67%');
+    expect(info.textContent).not.toContain('흙');
+  });
+
+  it('구역 이름을 표시한다', () => {
+    const { info, overlay, stash } = setup();
+
+    overlay.update(300, { ...baseInfo, zone: Zone.MOUNTAIN }, stash);
+
+    expect(info.textContent).toContain('산악');
+  });
+
   it('보유 블록이 없으면 없다고 표시한다', () => {
     const { stashText, overlay, stash } = setup();
 
@@ -95,12 +116,12 @@ describe('DebugOverlay', () => {
 
   it('보유 블록을 종류별로 표시한다', () => {
     const { stashText, overlay, stash } = setup();
-    stash.add(BlockType.DIRT, 3);
-    stash.add(BlockType.STONE, 1);
+    stash.add(ItemType.WOOD, 3);
+    stash.add(ItemType.STONE, 1);
 
     overlay.update(300, baseInfo, stash);
 
-    expect(stashText.textContent).toBe('초급 삽 · 보유 흙 3 · 돌 1');
+    expect(stashText.textContent).toBe('초급 삽 · 보유 목재 3 · 돌 1');
   });
 
   it('확대율을 소수 둘째 자리까지 표시한다', () => {

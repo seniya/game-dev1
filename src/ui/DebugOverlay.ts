@@ -1,7 +1,9 @@
 import { FpsCounter } from '../core/FpsCounter';
 import { BlockType, blockInfo } from '../core/blocks';
-import type { BlockStash } from '../core/BlockStash';
+import type { ItemStash } from '../core/ItemStash';
+import { ITEM_ORDER, itemLabel } from '../core/items';
 import { toolLabel, type Tool } from '../core/tools';
+import { zoneLabel, type Zone } from '../core/zones';
 
 /** 오버레이에 표시할 프레임별 정보. */
 export interface DebugInfo {
@@ -21,6 +23,10 @@ export interface DebugInfo {
   playerTile: { x: number; y: number };
   /** 선택된 도구. */
   tool: Tool;
+  /** 커서가 올라간 칸의 구역. */
+  zone: Zone;
+  /** 커서가 올라간 칸에 있는 것에 대한 설명. 없으면 null. */
+  target: string | null;
 }
 
 /**
@@ -59,7 +65,7 @@ export class DebugOverlay {
    * @param info 이번 프레임의 디버그 정보.
    * @param stash 보유 블록 저장소.
    */
-  update(frameTimeMs: number, info: DebugInfo, stash: BlockStash): void {
+  update(frameTimeMs: number, info: DebugInfo, stash: ItemStash): void {
     this.counter.sample(frameTimeMs);
 
     this.sinceRefreshMs += frameTimeMs;
@@ -69,27 +75,28 @@ export class DebugOverlay {
     this.fpsElement.textContent = `${Math.round(this.counter.fps)} fps`;
 
     const tile = info.hovered
-      ? `(${info.hovered.x}, ${info.hovered.y}) ${blockInfo(info.hoveredSurface).label} 높이 ${info.hoveredHeight}`
+      ? `(${info.hovered.x}, ${info.hovered.y}) ${info.target ?? blockInfo(info.hoveredSurface).label}` +
+        ` 높이 ${info.hoveredHeight} · ${zoneLabel(info.zone)}`
       : '(--, --)';
     this.infoElement.textContent =
       `타일 ${tile} · 플레이어 (${info.playerTile.x}, ${info.playerTile.y})` +
-      ` · 윗면 ${info.drawnColumns} 측면 ${info.drawnWalls} · 줌 ${info.zoom.toFixed(2)}x`;
+      ` · 줌 ${info.zoom.toFixed(2)}x`;
 
     this.stashElement.textContent = `${toolLabel(info.tool)} · ${formatStash(stash)}`;
   }
 }
 
 /**
- * 보유 블록을 한 줄 텍스트로 만든다.
+ * 보유 아이템을 한 줄 텍스트로 만든다.
  *
- * @param stash 보유 블록 저장소.
- * @returns "흙 3 · 돌 1" 형태의 문자열. 비어 있으면 안내 문구.
+ * @param stash 보유 아이템 저장소.
+ * @returns "목재 3 · 돌 1" 형태의 문자열. 비어 있으면 안내 문구.
  */
-function formatStash(stash: BlockStash): string {
+function formatStash(stash: ItemStash): string {
   const parts: string[] = [];
-  for (const type of [BlockType.DIRT, BlockType.STONE, BlockType.IRON_ORE]) {
+  for (const type of ITEM_ORDER) {
     const count = stash.count(type);
-    if (count > 0) parts.push(`${blockInfo(type).label} ${count}`);
+    if (count > 0) parts.push(`${itemLabel(type)} ${count}`);
   }
 
   return parts.length > 0 ? `보유 ${parts.join(' · ')}` : '보유 없음';

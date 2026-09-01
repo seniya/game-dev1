@@ -3,6 +3,8 @@ import { DEFAULT_STEP_MS } from './core/fixedTimestep';
 import { pickSurfaceTile } from './core/picking';
 import { generateTerrain } from './core/terrainGen';
 import { BlockType } from './core/blocks';
+import { zoneAt } from './core/zones';
+import { ResourceField } from './sim/ResourceField';
 import { CanvasRenderer } from './render/CanvasRenderer';
 import { Camera } from './render/Camera';
 import { WorldRenderer } from './render/WorldRenderer';
@@ -57,7 +59,8 @@ function bootstrap(): void {
   const state = new GameState();
 
   const terrain = generateTerrain(MAP_WIDTH, MAP_HEIGHT, { seed: TERRAIN_SEED });
-  const game = new Game(terrain);
+  const resources = new ResourceField(terrain, { seed: TERRAIN_SEED });
+  const game = new Game(terrain, resources);
 
   const camera = new Camera();
   camera.setViewport(surface.size.width, surface.size.height);
@@ -74,13 +77,18 @@ function bootstrap(): void {
     pickSurfaceTile(terrain, worldX, worldY),
   );
   pointer.setTileClickHandler((tile, button) => {
-    if (button === 'primary') game.digAt(tile);
+    if (button === 'primary') game.actAt(tile);
     else game.placeAt(tile);
   });
   pointer.attach();
 
   const keyboard = new KeyboardControls();
   keyboard.setSlotHandler((index) => game.player.selectTool(index));
+  // Space는 커서가 올라간 칸에 주 행동을 한다 — 마우스 없이도 채집이 되게.
+  keyboard.setActionHandler(() => {
+    const target = pointer.hovered;
+    if (target) game.actAt(target);
+  });
   keyboard.attach();
 
   /**
@@ -129,6 +137,8 @@ function bootstrap(): void {
             zoom: camera.zoom,
             playerTile: game.player.position,
             tool: game.player.tool,
+            zone: hovered ? zoneAt(terrain, hovered.x, hovered.y) : zoneAt(terrain, 0, 0),
+            target: hovered ? game.describeTile(hovered) : null,
           },
           game.stash,
         );
