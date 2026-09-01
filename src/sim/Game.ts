@@ -52,7 +52,11 @@ export type ActionFailure =
   /** 건축 모드가 아니거나 블루프린트를 고르지 않았다. */
   | 'noBlueprint'
   /** 그 자리에 건물을 세울 수 없다. 구체적 이유는 placement에 담긴다. */
-  | 'badPlacement';
+  | 'badPlacement'
+  /** 그 자리에 철거할 건물이 없다. */
+  | 'noBuilding'
+  /** 마지막 창고는 철거할 수 없다. */
+  | 'lastStorage';
 
 /** 행동 결과. 성공이면 무엇이 일어났는지 함께 알린다. */
 export type ActionResult =
@@ -173,7 +177,8 @@ export class Game {
   /** 마을 점수. 건물·주민·요청 보상을 합산한 누적치다(기획서 6절). */
   get villageScore(): number {
     return villageScore({
-      buildings: this.buildings.completedCount,
+      houses: this.buildings.sumCompleted((blueprint) => (blueprint.housing > 0 ? 1 : 0)),
+      facilityTypes: this.buildings.completedTypes((blueprint) => blueprint.housing === 0).size,
       residents: this.population.count,
       requestExperience: this.villageExperience,
     });
@@ -438,6 +443,50 @@ export class Game {
     if (!building) return { ok: false, reason: 'blocked' };
 
     return { ok: true, building };
+  }
+
+  /**
+   * 대상 칸의 건물을 철거한다.
+   *
+   * 자재는 **절반만** 돌려준다(내림). 전액 환불이면 배치를 고민할 이유가 없고,
+   * 환불이 없으면 잘못 놓은 건물이 영구히 부지를 잡아 마을이 막힌다 —
+   * 자동 플레이로 실제로 막히는 것을 확인해서 넣은 기능이다.
+   *
+   * 창고가 하나뿐일 때는 철거하지 않는다. 저장할 곳이 사라지면 첫 채집부터
+   * 인벤토리가 막혀 게임이 진행되지 않는다.
+   *
+   * @param target 대상 칸.
+   * @returns 행동 결과. 성공하면 돌려준 자재를 gained에 담지 않고 refunded로 알린다.
+   */
+  demolishAt(target: TilePos): ActionResult & { refunded?: Array<{ item: ItemType; amount: number }> } {
+    const building = this.buildings.buildingAt(target.x, target.y);
+    if (!building) return { ok: false, reason: 'noBuilding' };
+
+    const blueprint = blueprintById(building.blueprintId);
+
+    if (blueprint.storageSlots > 0) {
+      const storages = this.buildings.completedTypes((candidate) => candidate.storageSlots > 0);
+      let storageCount = 0;
+      for (const other of this.buildings.all) {
+        if (blueprintById(other.blueprintId).storageSlots > 0) storageCount += 1;
+      }
+      if (storages.size > 0 && storageCount <= 1) return { ok: false, reason: 'lastStorage' };
+    }
+
+    this.buildings.remove(building.id);
+
+    // 절반 환불. 인벤토리를 먼저 채우고 남으면 창고로 보낸다.
+    const refunded: Array<{ item: ItemType; amount: number }> = [];
+    for (const requirement of blueprint.materials) {
+      const amount = Math.floor(requirement.amount / 2);
+      if (amount < 1) continue;
+
+      const leftover = this.inventory.add(requirement.item, amount);
+      if (leftover > 0) this.storage.add(requirement.item, leftover);
+      refunded.push({ item: requirement.item, amount });
+    }
+
+    return { ok: true, refunded };
   }
 
   /**

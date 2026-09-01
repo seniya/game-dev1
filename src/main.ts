@@ -16,6 +16,7 @@ import { DebugOverlay } from './ui/DebugOverlay';
 import { InventoryBar } from './ui/InventoryBar';
 import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
+import { describeFailure } from './ui/messages';
 import { RequestList } from './ui/RequestList';
 import { Toasts } from './ui/Toasts';
 import { VillageHud } from './ui/VillageHud';
@@ -86,15 +87,28 @@ function bootstrap(): void {
   const pointer = new PointerControls(canvas, camera, (worldX, worldY) =>
     pickSurfaceTile(terrain, worldX, worldY),
   );
+  /**
+   * 행동 결과를 보고 실패 사유를 토스트로 알린다.
+   *
+   * 규칙(`Game`)은 사유를 값으로만 돌려주고, 문구와 표시는 UI가 맡는다.
+   *
+   * @param result 행동 결과.
+   */
+  function report(result: ReturnType<typeof game.actAt>): void {
+    if (result.ok) return;
+
+    const message = describeFailure(result.reason, result.placement);
+    if (message) toasts.show(message, 'bad');
+  }
+
   pointer.setTileClickHandler((tile, button) => {
     if (button !== 'primary') {
-      game.placeAt(tile);
+      report(game.placeAt(tile));
       return;
     }
 
     // 건축 모드에서는 좌클릭이 배치 확정이다.
-    if (game.buildMode) game.buildAt(tile);
-    else game.actAt(tile);
+    report(game.buildMode ? game.buildAt(tile) : game.actAt(tile));
   });
   pointer.attach();
 
@@ -112,18 +126,36 @@ function bootstrap(): void {
   // Space는 커서가 올라간 칸에 주 행동을 한다 — 마우스 없이도 채집이 되게.
   keyboard.setActionHandler(() => {
     const target = pointer.hovered;
-    if (target) game.actAt(target);
+    if (target) report(game.buildMode ? game.buildAt(target) : game.actAt(target));
   });
-  keyboard.bind('KeyE', () => game.depositAll());
-  keyboard.bind('KeyB', () => {
-    // B는 건축 모드 토글. 켤 때는 첫 번째 블루프린트를 고른다.
-    if (game.buildMode) game.selectBlueprint(null);
-    else {
-      const first = game.availableBlueprints[0];
-      if (first) game.selectBlueprint(first.id);
+  keyboard.bind('KeyE', () => {
+    const moved = game.depositAll();
+    if (moved.size === 0) {
+      toasts.show(game.nearStorage ? '예치할 자원이 없습니다' : '창고 옆으로 가세요', 'bad');
     }
   });
+  /** 건축 모드를 켜고 끈다. 켤 때는 첫 번째 블루프린트를 고른다. */
+  function toggleBuildMode(): void {
+    if (game.buildMode) {
+      game.selectBlueprint(null);
+      return;
+    }
+
+    const first = game.availableBlueprints[0];
+    if (first) game.selectBlueprint(first.id);
+  }
+
+  keyboard.bind('KeyB', toggleBuildMode);
+  bar.setModeHandler(toggleBuildMode);
   keyboard.bind('Escape', () => game.selectBlueprint(null));
+  keyboard.bind('KeyX', () => {
+    const target = pointer.hovered;
+    if (!target) return;
+
+    const result = game.demolishAt(target);
+    if (result.ok) toasts.show('철거 — 자재 절반을 돌려받았습니다', 'neutral');
+    else report(result);
+  });
   keyboard.bind('KeyR', () => {
     if (!game.fulfillRequest()) toasts.show('낼 수 있는 요청이 없습니다', 'bad');
   });
@@ -164,7 +196,8 @@ function bootstrap(): void {
         camera.setViewport(size.width, size.height);
 
         const hovered = pointer.hovered;
-        const stats = world.render(hovered, game.entities(), game.ghost(hovered));
+        // 건축 먼지처럼 시간에 따라 움직이는 연출을 위해 시뮬레이션 시각을 넘긴다.
+        const stats = world.render(hovered, game.entities(), game.ghost(hovered), state.elapsedMs);
 
         overlay.update(
           frameTimeMs,
@@ -216,6 +249,7 @@ function bootstrap(): void {
           tool: game.player.tool,
           toolSlot: game.player.selectedSlot,
           toolCount: game.player.slotCount,
+          buildMode: game.buildMode,
         });
       },
     },

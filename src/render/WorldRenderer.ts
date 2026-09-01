@@ -60,6 +60,9 @@ const HOVER_STROKE = '#ffe98a';
 /** 이 확대율보다 작아지면 타일 외곽선을 생략한다 — 선이 뭉쳐 지저분해진다. */
 const OUTLINE_MIN_ZOOM = 0.6;
 
+/** 건축 중 먼지 알갱이 수. 많이 넣어도 도형으로는 더 그럴듯해지지 않는다. */
+const DUST_COUNT = 7;
+
 /**
  * 아이소메트릭 지형 렌더러.
  *
@@ -82,6 +85,9 @@ export class WorldRenderer {
 
   /** 오브젝트 정렬용 내부 버퍼. 프레임마다 새 배열을 만들지 않으려고 재사용한다. */
   private readonly entityBuffer: Entity[] = [];
+
+  /** 이번 프레임의 시각(ms). 건축 먼지처럼 시간에 따라 움직이는 연출에 쓴다. */
+  private timeMs = 0;
 
   /**
    * @param ctx CSS 픽셀 좌표계로 설정된 2D 컨텍스트.
@@ -106,7 +112,9 @@ export class WorldRenderer {
     hovered: TileRef | null,
     entities: readonly Entity[] = [],
     ghost: GhostPreview | null = null,
+    timeMs = 0,
   ): RenderStats {
+    this.timeMs = timeMs;
     const range = this.camera.visibleTileRange();
     const zoom = this.camera.zoom;
     const halfWidth = (TILE_WIDTH / 2) * zoom;
@@ -573,7 +581,45 @@ export class WorldRenderer {
     this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
     this.ctx.stroke();
 
-    if (!done) this.drawBuildProgress(baseX, baseY - bodyHeight - footHalfH, footHalfW, entity.progress);
+    if (!done) {
+      this.drawDust(baseX, baseY, footHalfW, footHalfH);
+      this.drawBuildProgress(baseX, baseY - bodyHeight - footHalfH, footHalfW, entity.progress);
+    }
+  }
+
+  /**
+   * 건축 중 먼지를 그린다(기획서 5.3의 "먼지 이펙트").
+   *
+   * 파티클 상태를 따로 들고 있지 않고 시각과 위치로 값을 계산한다 — 건물마다
+   * 파티클 배열을 관리하면 완공·철거 때 정리할 상태가 늘어난다. 사인 곡선 몇 개로
+   * 충분히 "무언가 일어나는 중"으로 읽힌다.
+   *
+   * @param baseX 점유 영역 중심의 화면 x.
+   * @param baseY 점유 영역 중심의 화면 y.
+   * @param halfWidth 밑면 반폭(px).
+   * @param halfHeight 밑면 반높이(px).
+   */
+  private drawDust(baseX: number, baseY: number, halfWidth: number, halfHeight: number): void {
+    const seconds = this.timeMs / 1000;
+
+    // 색에는 알파를 넣지 않는다. globalAlpha와 곱해지면 너무 옅어져 보이지 않는다.
+    this.ctx.fillStyle = '#efe3c6';
+    for (let i = 0; i < DUST_COUNT; i += 1) {
+      // 알갱이마다 위상을 달리해 한 덩어리로 뭉치지 않게 한다.
+      const phase = (seconds * 1.6 + i * 0.37) % 1;
+      const angle = i * ((Math.PI * 2) / DUST_COUNT) + seconds * 0.6;
+
+      const spread = 0.35 + phase * 0.55;
+      const x = baseX + Math.cos(angle) * halfWidth * spread;
+      const y = baseY + Math.sin(angle) * halfHeight * spread - phase * halfHeight * 1.2;
+      const radius = Math.max(1.5, halfHeight * 0.26 * (1 - phase * 0.6));
+
+      this.ctx.globalAlpha = 0.8 * (1 - phase);
+      this.ctx.beginPath();
+      this.ctx.arc(x, y, radius, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+    this.ctx.globalAlpha = 1;
   }
 
   /**

@@ -271,3 +271,26 @@ body {
 .toast--bad {
   border-left-color: #ff7b72;
 }
+
+/* 모드 전환 버튼. 바에서 유일하게 클릭을 받는 요소다. */
+.bar__mode {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #c9d1d9;
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.bar__mode:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* 건축 모드일 때 눈에 띄게 바꾼다. */
+.bar__mode--build {
+  border-color: rgba(240, 192, 74, 0.7);
+  background: rgba(240, 192, 74, 0.2);
+  color: #f0c04a;
+}

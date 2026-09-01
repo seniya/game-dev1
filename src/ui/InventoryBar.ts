@@ -16,6 +16,8 @@ export interface BarState {
   toolSlot: number;
   /** 보유 도구 수. */
   toolCount: number;
+  /** 지금 건축 모드인지. */
+  buildMode: boolean;
 }
 
 /**
@@ -32,6 +34,7 @@ export class InventoryBar {
   private readonly slotElements: HTMLElement[] = [];
   private readonly toolElement: HTMLElement;
   private readonly storageElement: HTMLElement;
+  private readonly modeElement: HTMLElement;
 
   /** 마지막으로 그린 인벤토리 변경 번호. */
   private lastInventoryRevision = -1;
@@ -41,6 +44,11 @@ export class InventoryBar {
   private lastNearStorage: boolean | null = null;
   /** 마지막으로 그린 도구 설명. */
   private lastToolText = '';
+  /** 마지막으로 그린 모드. */
+  private lastBuildMode: boolean | null = null;
+
+  /** 모드 전환 버튼을 눌렀을 때의 콜백. */
+  private onToggleMode: (() => void) | null = null;
 
   /**
    * @param root 하단 바 컨테이너.
@@ -64,9 +72,25 @@ export class InventoryBar {
     this.storageElement = document.createElement('div');
     this.storageElement.className = 'bar__storage';
 
+    // 모드 전환만 클릭을 받는다. 나머지 바는 캔버스 조작을 가리지 않도록
+    // 클릭을 통과시킨다.
+    this.modeElement = document.createElement('button');
+    this.modeElement.className = 'bar__mode';
+    this.modeElement.addEventListener('click', () => this.onToggleMode?.());
+
+    this.root.appendChild(this.modeElement);
     this.root.appendChild(this.toolElement);
     this.root.appendChild(slotRow);
     this.root.appendChild(this.storageElement);
+  }
+
+  /**
+   * 모드 전환 버튼 콜백을 등록한다.
+   *
+   * @param handler 콜백.
+   */
+  setModeHandler(handler: () => void): void {
+    this.onToggleMode = handler;
   }
 
   /**
@@ -75,6 +99,12 @@ export class InventoryBar {
    * @param state 표시할 상태.
    */
   update(state: BarState): void {
+    if (state.buildMode !== this.lastBuildMode) {
+      this.lastBuildMode = state.buildMode;
+      this.modeElement.textContent = state.buildMode ? '건축 (B)' : '채집 (B)';
+      this.modeElement.classList.toggle('bar__mode--build', state.buildMode);
+    }
+
     if (state.inventory.revision !== this.lastInventoryRevision) {
       this.lastInventoryRevision = state.inventory.revision;
       this.renderSlots(state.inventory);

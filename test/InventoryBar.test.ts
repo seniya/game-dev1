@@ -12,6 +12,28 @@ class FakeElement {
   readonly style: Record<string, string> = {};
   readonly children: FakeElement[] = [];
   private readonly classes = new Set<string>();
+  private readonly listeners = new Map<string, Array<() => void>>();
+
+  /**
+   * 리스너를 등록한다.
+   *
+   * @param type 이벤트 타입.
+   * @param handler 리스너.
+   */
+  addEventListener(type: string, handler: () => void): void {
+    const list = this.listeners.get(type) ?? [];
+    list.push(handler);
+    this.listeners.set(type, list);
+  }
+
+  /**
+   * 등록된 리스너를 직접 호출한다.
+   *
+   * @param type 이벤트 타입.
+   */
+  emit(type: string): void {
+    for (const handler of this.listeners.get(type) ?? []) handler();
+  }
 
   /**
    * 자식을 붙인다.
@@ -75,15 +97,17 @@ function setup(slotCount = 4) {
       tool: { kind: ToolKind.SHOVEL, tier: ToolTier.BASIC },
       toolSlot: 0,
       toolCount: 3,
+      buildMode: false,
       ...overrides,
     });
   };
 
-  const toolElement = root.children[0]!;
-  const slotRow = root.children[1]!;
-  const storageElement = root.children[2]!;
+  const modeElement = root.children[0]!;
+  const toolElement = root.children[1]!;
+  const slotRow = root.children[2]!;
+  const storageElement = root.children[3]!;
 
-  return { root, bar, inventory, storage, update, toolElement, slotRow, storageElement };
+  return { root, bar, inventory, storage, update, modeElement, toolElement, slotRow, storageElement };
 }
 
 describe('InventoryBar', () => {
@@ -152,6 +176,17 @@ describe('InventoryBar', () => {
     expect(storageElement.textContent).toBe('창고: 목재 12');
   });
 
+  it('모드 버튼이 현재 모드를 보여준다', () => {
+    const { modeElement, update } = setup();
+
+    update();
+    expect(modeElement.textContent).toBe('채집 (B)');
+
+    update({ buildMode: true });
+    expect(modeElement.textContent).toBe('건축 (B)');
+    expect(modeElement.classList.contains('bar__mode--build')).toBe(true);
+  });
+
   it('창고에 손이 닿으면 예치 안내를 덧붙이고 강조한다', () => {
     const { update, storageElement } = setup();
 
@@ -168,5 +203,29 @@ describe('InventoryBar', () => {
     update({ nearStorage: false });
 
     expect(storageElement.classList.contains('bar__storage--near')).toBe(false);
+  });
+});
+
+describe('InventoryBar 모드 버튼', () => {
+  beforeEach(() => {
+    installFakeDocument();
+  });
+
+  it('버튼을 누르면 등록한 콜백이 불린다', () => {
+    const { bar, modeElement } = setup();
+    let calls = 0;
+    bar.setModeHandler(() => {
+      calls += 1;
+    });
+
+    modeElement.emit('click');
+
+    expect(calls).toBe(1);
+  });
+
+  it('콜백을 등록하지 않아도 클릭이 터지지 않는다', () => {
+    const { modeElement } = setup();
+
+    expect(() => modeElement.emit('click')).not.toThrow();
   });
 });

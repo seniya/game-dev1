@@ -17,24 +17,41 @@ import { Zone } from '../src/core/zones';
 
 describe('villageScore', () => {
   it('아무것도 없으면 0이다', () => {
-    expect(villageScore({ buildings: 0, residents: 0, requestExperience: 0 })).toBe(0);
+    expect(villageScore({ houses: 0, facilityTypes: 0, residents: 0, requestExperience: 0 })).toBe(0);
   });
 
-  it('건물·주민·요청 보상을 합산한다 — 기획서 6절', () => {
-    const score = villageScore({ buildings: 2, residents: 3, requestExperience: 5 });
+  it('집·시설 종류·주민·요청 보상을 합산한다 — 기획서 6절', () => {
+    const score = villageScore({
+      houses: 2,
+      facilityTypes: 1,
+      residents: 3,
+      requestExperience: 5,
+    });
 
-    expect(score).toBe(2 * 2 + 3 * 3 + 5);
+    expect(score).toBe(2 * 2 + 1 * 3 + 3 * 3 + 5);
   });
 
-  it('주민이 건물보다 무겁다 — 마을이 사는 곳이 되는 것이 목표다', () => {
-    const byBuilding = villageScore({ buildings: 1, residents: 0, requestExperience: 0 });
-    const byResident = villageScore({ buildings: 0, residents: 1, requestExperience: 0 });
+  it('주민이 집보다 무겁다 — 마을이 사는 곳이 되는 것이 목표다', () => {
+    const byHouse = villageScore({ houses: 1, facilityTypes: 0, residents: 0, requestExperience: 0 });
+    const byResident = villageScore({ houses: 0, facilityTypes: 0, residents: 1, requestExperience: 0 });
 
-    expect(byResident).toBeGreaterThan(byBuilding);
+    expect(byResident).toBeGreaterThan(byHouse);
+  });
+
+  it('시설은 종류로 세므로 같은 시설을 여러 채 지어도 점수가 오르지 않는다', () => {
+    // 호출부가 종류 수를 넘기므로, 같은 종류를 여러 채 지어도 이 값은 그대로다.
+    const one = villageScore({ houses: 0, facilityTypes: 1, residents: 0, requestExperience: 0 });
+    const stillOne = villageScore({ houses: 0, facilityTypes: 1, residents: 0, requestExperience: 0 });
+
+    expect(stillOne).toBe(one);
+    // 반면 종류가 늘면 점수는 오른다.
+    expect(villageScore({ houses: 0, facilityTypes: 2, residents: 0, requestExperience: 0 })).toBeGreaterThan(one);
   });
 
   it('음수와 소수는 안전하게 처리한다', () => {
-    expect(villageScore({ buildings: -5, residents: 1.7, requestExperience: -2 })).toBe(3);
+    expect(
+      villageScore({ houses: -5, facilityTypes: -1, residents: 1.7, requestExperience: -2 }),
+    ).toBe(3);
   });
 });
 

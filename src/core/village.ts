@@ -9,12 +9,21 @@ export const MAX_VILLAGE_LEVEL = 5;
  * 마을 레벨 산정에 들어가는 값들.
  *
  * 기획서 6절은 "건물 수, 주민 수, 요청 완료 수를 합산한 누적치"를 쓴다.
- * 요청은 개수가 아니라 **완료 보상 합계**를 쓴다 — 시설 요청이 납품 요청보다
+ * 다만 건물을 그대로 세면 **가장 싼 시설을 반복해 짓는 것이 최적 전략**이 된다.
+ * 실제로 자동 플레이 봇을 돌려 보니 값싼 작업대·우물을 열아홉 채까지 늘리는 쪽으로
+ * 수렴했다 — 마을이 사는 곳이 되는 것이 목표라는 기획 의도와 어긋난다.
+ *
+ * 그래서 **집은 채수대로, 시설은 종류당 한 번만** 센다. 시설은 마을에 있으면
+ * 되는 것이지 여러 채 있다고 마을이 더 발전한 것은 아니다.
+ *
+ * 요청도 개수가 아니라 **완료 보상 합계**를 쓴다 — 시설 요청이 납품 요청보다
  * 큰일이므로 같은 1건으로 세면 서열이 사라진다.
  */
 export interface VillageStats {
-  /** 완공된 건물 수. */
-  buildings: number;
+  /** 완공된 집의 수. 여러 채 지을수록 점수가 오른다. */
+  houses: number;
+  /** 완공된 시설의 **종류** 수. 같은 시설을 여러 채 지어도 한 번만 센다. */
+  facilityTypes: number;
   /** 주민 수. */
   residents: number;
   /** 요청 완료로 누적된 경험치. */
@@ -23,7 +32,8 @@ export interface VillageStats {
 
 /** 항목별 가중치. 주민이 가장 무겁다 — 마을이 사는 곳이 되는 것이 목표이기 때문이다. */
 const WEIGHT = {
-  building: 2,
+  house: 2,
+  facilityType: 3,
   resident: 3,
 } as const;
 
@@ -69,11 +79,17 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
  * @returns 점수.
  */
 export function villageScore(stats: VillageStats): number {
-  const buildings = Math.max(0, Math.floor(stats.buildings));
+  const houses = Math.max(0, Math.floor(stats.houses));
+  const facilities = Math.max(0, Math.floor(stats.facilityTypes));
   const residents = Math.max(0, Math.floor(stats.residents));
   const experience = Math.max(0, Math.floor(stats.requestExperience));
 
-  return buildings * WEIGHT.building + residents * WEIGHT.resident + experience;
+  return (
+    houses * WEIGHT.house +
+    facilities * WEIGHT.facilityType +
+    residents * WEIGHT.resident +
+    experience
+  );
 }
 
 /**

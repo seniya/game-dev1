@@ -25,10 +25,13 @@ class RecordingContext {
   readonly paths: RecordedPath[] = [];
   /** 점이 4개 미만인 경로(도구 선 등). 도형과 섞이지 않게 따로 담는다. */
   readonly strokes: Array<{ points: Array<{ x: number; y: number }>; strokeStyle: string }> = [];
+  /** 점이 하나인 경로(원·타원). 먼지·그림자·머리 등이 여기 담긴다. */
+  readonly dots: Array<{ x: number; y: number; fillStyle: string; alpha: number }> = [];
 
   fillStyle = '';
   strokeStyle = '';
   lineWidth = 1;
+  globalAlpha = 1;
 
   private points: Array<{ x: number; y: number }> = [];
   private committedIndex: number | null = null;
@@ -97,7 +100,10 @@ class RecordingContext {
       return;
     }
     if (this.points.length < 4) {
-      if (this.points.length >= 2) {
+      if (this.points.length === 1) {
+        const point = this.points[0]!;
+        this.dots.push({ x: point.x, y: point.y, fillStyle: this.fillStyle, alpha: this.globalAlpha });
+      } else if (this.points.length >= 2) {
         this.strokes.push({ points: [...this.points], strokeStyle: this.strokeStyle });
       }
       return;
@@ -595,5 +601,77 @@ describe('WorldRenderer 건축 미리보기', () => {
 
     const ghosts = ctx.paths.filter((path) => path.fillStyle === 'rgba(230, 110, 110, 0.45)');
     expect(ghosts).toHaveLength(1);
+  });
+});
+
+
+describe('WorldRenderer 건축 먼지', () => {
+  /** 건축 중인 우물 하나. */
+  const site = {
+    kind: 'building' as const,
+    x: 2,
+    y: 2,
+    z: 0,
+    width: 1,
+    depth: 1,
+    style: 'well' as const,
+    progress: 0.3,
+  };
+
+  it('건축 중인 건물에는 먼지를 그린다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [{ ...site, progress: 1 }], null, 1000);
+    const whenDone = ctx.dots.length;
+
+    ctx.dots.length = 0;
+    renderer.render(null, [site], null, 1000);
+
+    expect(ctx.dots.length).toBeGreaterThan(whenDone);
+  });
+
+  it('먼지는 반투명하게 그려진다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [site], null, 1000);
+
+    expect(ctx.dots.some((dot) => dot.alpha > 0 && dot.alpha < 1)).toBe(true);
+  });
+
+  it('시간이 흐르면 먼지 위치가 바뀐다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [site], null, 0);
+    const first = JSON.stringify(ctx.dots.map((dot) => [dot.x, dot.y]));
+
+    ctx.dots.length = 0;
+    renderer.render(null, [site], null, 700);
+
+    expect(JSON.stringify(ctx.dots.map((dot) => [dot.x, dot.y]))).not.toBe(first);
+  });
+
+  it('같은 시각이면 같은 위치에 그린다 — 파티클 상태를 들지 않는다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [site], null, 1234);
+    const first = JSON.stringify(ctx.dots.map((dot) => [dot.x, dot.y]));
+
+    ctx.dots.length = 0;
+    renderer.render(null, [site], null, 1234);
+
+    expect(JSON.stringify(ctx.dots.map((dot) => [dot.x, dot.y]))).toBe(first);
+  });
+
+  it('완공된 건물에는 먼지를 그리지 않는다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+    const done = { ...site, progress: 1 };
+
+    renderer.render(null, [done], null, 0);
+    const before = JSON.stringify(ctx.dots.map((dot) => [dot.x, dot.y]));
+
+    ctx.dots.length = 0;
+    renderer.render(null, [done], null, 5000);
+
+    expect(JSON.stringify(ctx.dots.map((dot) => [dot.x, dot.y]))).toBe(before);
   });
 });

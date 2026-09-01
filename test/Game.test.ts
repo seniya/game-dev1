@@ -979,12 +979,42 @@ describe('Game 마을 레벨', () => {
     return game;
   }
 
-  it('시작 레벨은 1이고 점수는 창고 하나만 반영한다', () => {
+  it('시작 레벨은 1이고 점수는 창고 한 종류만 반영한다', () => {
     const game = levelGame();
 
     expect(game.villageLevel).toBe(1);
-    // 시작 창고 1채 = 건물 2점.
-    expect(game.villageScore).toBe(2);
+    // 시작 창고는 집이 아닌 시설이므로 종류 1개 = 3점.
+    expect(game.villageScore).toBe(3);
+  });
+
+  it('같은 시설을 여러 채 지어도 점수가 오르지 않는다 — 부지 낭비를 막는 규칙', () => {
+    const game = levelGame();
+    game.selectBlueprint(BlueprintId.WORKBENCH);
+
+    game.buildAt({ x: 20, y: 20 });
+    advance(game, 6000);
+    const afterFirst = game.villageScore;
+
+    game.selectBlueprint(BlueprintId.WORKBENCH);
+    game.buildAt({ x: 24, y: 20 });
+    advance(game, 6000);
+
+    expect(game.villageScore).toBe(afterFirst);
+  });
+
+  it('집은 채수대로 점수가 오른다', () => {
+    const game = levelGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+
+    game.buildAt({ x: 20, y: 24 });
+    advance(game, 6000);
+    const afterFirst = game.villageScore;
+
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt({ x: 24, y: 24 });
+    advance(game, 6000);
+
+    expect(game.villageScore).toBeGreaterThan(afterFirst);
   });
 
   it('1차 목표 레벨을 알려준다', () => {
@@ -1146,5 +1176,117 @@ describe('Game 구역 잠금', () => {
 
     game.setVillageLevel(2);
     expect(game.describeTile({ x: 34, y: 20 })).not.toContain('잠김');
+  });
+});
+
+describe('Game 철거', () => {
+  /**
+   * 넓은 평지에 자재를 넉넉히 넣은 게임을 만든다.
+   *
+   * @param size 맵 크기.
+   */
+  function demolishGame(size = 24) {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    const game = new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
+    game.storage.add(ItemType.WOOD, 99);
+    game.storage.add(ItemType.STONE, 99);
+
+    return game;
+  }
+
+  it('건물이 없는 칸은 철거할 수 없다', () => {
+    const game = demolishGame();
+
+    expect(game.demolishAt({ x: 20, y: 20 })).toEqual({ ok: false, reason: 'noBuilding' });
+  });
+
+  it('건물을 철거하면 자리가 비고 자재 절반이 돌아온다', () => {
+    const game = demolishGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    game.buildAt({ x: 18, y: 18 });
+    advance(game, 6000);
+
+    const stoneBefore = game.totalHeld(ItemType.STONE);
+    const result = game.demolishAt({ x: 18, y: 18 });
+
+    expect(result.ok).toBe(true);
+    expect(game.isOccupied({ x: 18, y: 18 })).toBe(false);
+    // 우물은 돌 10이므로 5가 돌아온다.
+    expect(game.totalHeld(ItemType.STONE)).toBe(stoneBefore + 5);
+  });
+
+  it('점유 영역 어느 칸을 찍어도 철거된다', () => {
+    const game = demolishGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt({ x: 18, y: 18 });
+    advance(game, 6000);
+
+    // 2×2의 반대쪽 칸을 찍는다.
+    expect(game.demolishAt({ x: 19, y: 19 }).ok).toBe(true);
+    expect(game.isOccupied({ x: 18, y: 18 })).toBe(false);
+  });
+
+  it('철거한 자리에 다시 지을 수 있다', () => {
+    const game = demolishGame();
+    game.selectBlueprint(BlueprintId.WORKBENCH);
+    game.buildAt({ x: 18, y: 18 });
+    advance(game, 6000);
+    game.demolishAt({ x: 18, y: 18 });
+
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    expect(game.buildAt({ x: 18, y: 18 }).ok).toBe(true);
+  });
+
+  it('건축 중인 건물도 철거할 수 있다', () => {
+    const game = demolishGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    game.buildAt({ x: 18, y: 18 });
+
+    expect(game.demolishAt({ x: 18, y: 18 }).ok).toBe(true);
+    expect(game.buildings.count).toBe(1); // 시작 창고만 남는다
+  });
+
+  it('마지막 창고는 철거할 수 없다 — 저장할 곳이 사라지면 진행이 막힌다', () => {
+    const game = demolishGame();
+    const storageTile = { x: game.startingStorage.x, y: game.startingStorage.y };
+
+    expect(game.demolishAt(storageTile)).toEqual({ ok: false, reason: 'lastStorage' });
+  });
+
+  it('창고가 둘이면 하나는 철거할 수 있다', () => {
+    const game = demolishGame();
+    game.setVillageLevel(2);
+    game.selectBlueprint(BlueprintId.WAREHOUSE);
+    game.buildAt({ x: 18, y: 18 });
+    advance(game, 6000);
+
+    expect(game.demolishAt({ x: 18, y: 18 }).ok).toBe(true);
+  });
+
+  it('철거하면 마을 점수가 줄어든다 — 점수는 현재 상태에서 파생된다', () => {
+    const game = demolishGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    game.buildAt({ x: 18, y: 18 });
+    advance(game, 6000);
+    const before = game.villageScore;
+
+    game.demolishAt({ x: 18, y: 18 });
+
+    expect(game.villageScore).toBeLessThan(before);
+  });
+
+  it('환불 자재는 인벤토리를 먼저 채운다', () => {
+    const game = demolishGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    game.buildAt({ x: 18, y: 18 });
+    advance(game, 6000);
+
+    const inventoryBefore = game.inventory.count(ItemType.STONE);
+    game.demolishAt({ x: 18, y: 18 });
+
+    expect(game.inventory.count(ItemType.STONE)).toBeGreaterThan(inventoryBefore);
   });
 });

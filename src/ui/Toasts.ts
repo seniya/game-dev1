@@ -13,6 +13,13 @@ const TOAST_LIFETIME_MS = 3200;
 const MAX_TOASTS = 4;
 
 /**
+ * 같은 문구를 다시 띄우지 않는 시간(ms).
+ *
+ * 거절 사유는 연타하면 매번 나오므로 그대로 두면 화면이 같은 줄로 덮인다.
+ */
+const REPEAT_SUPPRESS_MS = 1500;
+
+/**
  * 짧은 알림 표시기.
  *
  * 기획서 7절이 "모든 안내는 짧은 토스트 알림과 아이콘으로 처리"를 요구하고
@@ -24,6 +31,10 @@ const MAX_TOASTS = 4;
 export class Toasts {
   private readonly root: HTMLElement;
   private readonly items: Toast[] = [];
+
+  /** 최근에 띄운 문구와 그 뒤로 흐른 시간(ms). 연속 중복을 막는 데 쓴다. */
+  private lastMessage = '';
+  private sinceLastMs = Number.POSITIVE_INFINITY;
 
   /**
    * @param root 알림을 담을 컨테이너.
@@ -44,6 +55,11 @@ export class Toasts {
    * @param tone 강조 색. 기본은 중립.
    */
   show(message: string, tone: 'neutral' | 'good' | 'bad' = 'neutral'): void {
+    if (message === this.lastMessage && this.sinceLastMs < REPEAT_SUPPRESS_MS) return;
+
+    this.lastMessage = message;
+    this.sinceLastMs = 0;
+
     const element = document.createElement('div');
     element.className = `toast toast--${tone}`;
     element.textContent = message;
@@ -63,6 +79,8 @@ export class Toasts {
    * @param stepMs 스텝 길이(ms).
    */
   update(stepMs: number): void {
+    this.sinceLastMs += stepMs;
+
     for (let i = this.items.length - 1; i >= 0; i -= 1) {
       const toast = this.items[i]!;
       toast.remainingMs -= stepMs;

@@ -127,6 +127,29 @@ export class Buildings {
   }
 
   /**
+   * 완공된 건물의 블루프린트 종류를 모은다.
+   *
+   * 마을 점수에서 시설을 종류당 한 번만 세기 위한 것이다.
+   *
+   * @param filter 셀 대상을 가르는 함수. 생략하면 모든 완공 건물.
+   * @returns 종류 집합.
+   */
+  completedTypes(filter?: (blueprint: Blueprint) => boolean): Set<BlueprintId> {
+    const types = new Set<BlueprintId>();
+
+    for (const building of this.buildings.values()) {
+      if (building.buildRemainingMs > 0) continue;
+
+      const blueprint = blueprintById(building.blueprintId);
+      if (filter && !filter(blueprint)) continue;
+
+      types.add(building.blueprintId);
+    }
+
+    return types;
+  }
+
+  /**
    * 완공 건물의 특정 속성을 모두 더한다. 주민 수용 인원, 창고 슬롯 등에 쓴다.
    *
    * @param pick 블루프린트에서 값을 꺼내는 함수.
@@ -209,6 +232,29 @@ export class Buildings {
         this.occupancy.set(this.key(x + dx, y + dy), building.id);
       }
     }
+
+    return building;
+  }
+
+  /**
+   * 건물을 철거한다. 점유도 함께 해제한다.
+   *
+   * 자재 환불은 호출부(`Game`)가 처리한다 — 이 클래스는 자재를 모른다.
+   *
+   * @param id 건물 번호.
+   * @returns 철거한 건물. 없는 번호면 null.
+   */
+  remove(id: number): Building | null {
+    const building = this.buildings.get(id);
+    if (!building) return null;
+
+    const blueprint = blueprintById(building.blueprintId);
+    for (let dy = 0; dy < blueprint.depth; dy += 1) {
+      for (let dx = 0; dx < blueprint.width; dx += 1) {
+        this.occupancy.delete(this.key(building.x + dx, building.y + dy));
+      }
+    }
+    this.buildings.delete(id);
 
     return building;
   }
