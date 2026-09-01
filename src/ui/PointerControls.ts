@@ -2,6 +2,15 @@ import { worldToTile } from '../core/coordinates';
 import type { Camera } from '../render/Camera';
 import type { TileRef } from '../render/WorldRenderer';
 
+/** 클릭에 쓰인 버튼 종류. */
+export type PointerButtonKind = 'primary' | 'secondary';
+
+/**
+ * 월드 좌표가 가리키는 타일을 찾는 함수.
+ * 지형 높이를 아는 피커를 외부에서 주입해 입력 처리와 지형을 분리한다.
+ */
+export type TilePicker = (worldX: number, worldY: number) => TileRef | null;
+
 /** 휠 한 칸당 확대율 배수. 1보다 크며, 클수록 줌이 빠르다. */
 const WHEEL_ZOOM_STEP = 1.12;
 
@@ -25,24 +34,31 @@ export class PointerControls {
   /** 커서가 올라간 타일. 캔버스 밖이면 null. */
   private hoveredTile: TileRef | null = null;
 
-  /** 드래그 중인 포인터 id. 드래그가 아니면 null. */
-  private dragPointerId: number | null = null;
+  /** 버튼을 누르고 있는 포인터 id. 누른 상태가 아니면 null. */
+  private pressPointerId: number | null = null;
+  /** 누른 버튼 종류. 팬은 주 버튼에서만 일어난다. */
+  private pressButton: PointerButtonKind | null = null;
   /** 직전 포인터 위치(캔버스 기준 CSS px). */
   private lastX = 0;
   private lastY = 0;
   /** 이번 드래그에서 누적 이동한 거리(px). 클릭/드래그 구분에 쓴다. */
   private dragDistance = 0;
 
-  /** 타일 클릭 콜백. Phase 3 이후 채집·건축이 여기에 붙는다. */
-  private onTileClick: ((tile: TileRef) => void) | null = null;
+  /** 타일 클릭 콜백. 파기/쌓기가 여기에 붙는다. */
+  private onTileClick: ((tile: TileRef, button: PointerButtonKind) => void) | null = null;
+
+  /** 월드 좌표 → 타일 변환. 기본값은 평지(z = 0) 기준 변환이다. */
+  private readonly pick: TilePicker;
 
   /**
    * @param canvas 입력을 받을 캔버스.
    * @param camera 조작할 카메라.
+   * @param pick 월드 좌표가 가리키는 타일을 찾는 함수. 생략하면 z = 0 평면 기준으로 본다.
    */
-  constructor(canvas: HTMLCanvasElement, camera: Camera) {
+  constructor(canvas: HTMLCanvasElement, camera: Camera, pick?: TilePicker) {
     this.canvas = canvas;
     this.camera = camera;
+    this.pick = pick ?? ((worldX, worldY) => worldToTile(worldX, worldY, 0));
   }
 
   /** 커서가 올라간 타일. 캔버스 밖이면 null. */
@@ -50,17 +66,17 @@ export class PointerControls {
     return this.hoveredTile;
   }
 
-  /** 지금 드래그(팬) 중인지 여부. */
+  /** 지금 드래그(팬) 중인지 여부. 주 버튼으로 누른 경우만 해당한다. */
   get dragging(): boolean {
-    return this.dragPointerId !== null;
+    return this.pressPointerId !== null && this.pressButton === 'primary';
   }
 
   /**
    * 타일 클릭 콜백을 등록한다. 드래그로 판정된 조작은 클릭으로 보지 않는다.
    *
-   * @param handler 클릭된 타일을 받는 콜백.
+   * @param handler 클릭된 타일과 버튼 종류를 받는 콜백.
    */
-  setTileClickHandler(handler: (tile: TileRef) => void): void {
+  setTileClickHandler(handler: (tile: TileRef, button: PointerButtonKind) => void): void {
     this.onTileClick = handler;
   }
 
@@ -109,7 +125,7 @@ export class PointerControls {
    */
   private updateHover(x: number, y: number): void {
     const world = this.camera.screenToWorld(x, y);
-    this.hoveredTile = worldToTile(world.x, world.y, 0);
+    this.hoveredTile = this.pick(world.x, world.y);
   }
 
   /**
@@ -118,11 +134,13 @@ export class PointerControls {
    * @param event 포인터 다운 이벤트.
    */
   private handlePointerDown = (event: PointerEvent): void => {
-    // 주 버튼(마우스 왼쪽/터치)만 팬으로 받는다.
-    if (event.button !== 0) return;
+    // 주 버튼(왼쪽/터치)은 팬과 클릭, 보조 버튼(오른쪽)은 클릭만 받는다.
+    const button = toButtonKind(event.button);
+    if (button === null) return;
 
     const point = this.toCanvasPoint(event);
-    this.dragPointerId = event.pointerId;
+    this.pressPointerId = event.pointerId;
+    this.pressButton = button;
     this.lastX = point.x;
     this.lastY = point.y;
     this.dragDistance = 0;
@@ -143,7 +161,7 @@ export class PointerControls {
   private handlePointerMove = (event: PointerEvent): void => {
     const point = this.toCanvasPoint(event);
 
-    if (this.dragPointerId === event.pointerId) {
+    if (this.pressPointerId === event.pointerId && this.pressButton === 'primary') {
       const deltaX = point.x - this.lastX;
       const deltaY = point.y - this.lastY;
       this.camera.panByScreen(deltaX, deltaY);
@@ -161,27 +179,28 @@ export class PointerControls {
    * @param event 포인터 업/캔슬 이벤트.
    */
   private handlePointerUp = (event: PointerEvent): void => {
-    if (this.dragPointerId !== event.pointerId) return;
+    if (this.pressPointerId !== event.pointerId) return;
 
-    this.dragPointerId = null;
+    const button = this.pressButton;
+    this.pressPointerId = null;
+    this.pressButton = null;
     if (this.canvas.hasPointerCapture(event.pointerId)) {
       this.canvas.releasePointerCapture(event.pointerId);
     }
     this.canvas.style.cursor = '';
 
-    if (
-      event.type === 'pointerup' &&
-      this.dragDistance <= CLICK_SLOP_PX &&
-      this.hoveredTile &&
-      this.onTileClick
-    ) {
-      this.onTileClick(this.hoveredTile);
+    // 주 버튼은 팬과 클릭을 겸하므로 움직인 거리로 둘을 가른다. 보조 버튼은
+    // 팬을 하지 않으니 얼마나 움직였든 놓은 자리의 클릭으로 본다.
+    const wasClick = button === 'primary' ? this.dragDistance <= CLICK_SLOP_PX : true;
+
+    if (event.type === 'pointerup' && button !== null && wasClick && this.hoveredTile && this.onTileClick) {
+      this.onTileClick(this.hoveredTile, button);
     }
   };
 
   /** 커서가 캔버스를 떠나면 하이라이트를 끈다. */
   private handlePointerLeave = (): void => {
-    if (this.dragging) return;
+    if (this.pressPointerId !== null) return;
     this.hoveredTile = null;
   };
 
@@ -199,6 +218,18 @@ export class PointerControls {
     this.camera.zoomAt(point.x, point.y, factor);
     this.updateHover(point.x, point.y);
   };
+}
+
+/**
+ * 마우스 버튼 번호를 클릭 종류로 바꾼다.
+ *
+ * @param button PointerEvent.button 값.
+ * @returns 주/보조 버튼이면 해당 종류, 그 밖(가운데 버튼 등)이면 null.
+ */
+function toButtonKind(button: number): PointerButtonKind | null {
+  if (button === 0) return 'primary';
+  if (button === 2) return 'secondary';
+  return null;
 }
 
 /**

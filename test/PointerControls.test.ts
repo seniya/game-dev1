@@ -364,3 +364,121 @@ describe('PointerControls 터치 탭', () => {
     expect(clicked).toEqual([{ x: 0, y: 0 }]);
   });
 });
+
+describe('PointerControls 보조 버튼', () => {
+  it('오른쪽 버튼 클릭은 secondary로 전달된다', () => {
+    const { canvas, controls } = setup();
+    const events: Array<{ tile: { x: number; y: number }; button: string }> = [];
+    controls.setTileClickHandler((tile, button) => events.push({ tile, button }));
+
+    canvas.emit('pointerdown', { pointerId: 1, button: 2, clientX: CENTER.x, clientY: CENTER.y });
+    canvas.emit('pointerup', { pointerId: 1, clientX: CENTER.x, clientY: CENTER.y });
+
+    expect(events).toEqual([{ tile: { x: 0, y: 0 }, button: 'secondary' }]);
+  });
+
+  it('왼쪽 버튼 클릭은 primary로 전달된다', () => {
+    const { canvas, controls } = setup();
+    const buttons: string[] = [];
+    controls.setTileClickHandler((_tile, button) => buttons.push(button));
+
+    canvas.emit('pointerdown', { pointerId: 1, button: 0, clientX: CENTER.x, clientY: CENTER.y });
+    canvas.emit('pointerup', { pointerId: 1, clientX: CENTER.x, clientY: CENTER.y });
+
+    expect(buttons).toEqual(['primary']);
+  });
+
+  it('오른쪽 버튼으로는 팬하지 않는다', () => {
+    const { canvas, camera, controls } = setup();
+    const before = camera.center;
+
+    canvas.emit('pointerdown', { pointerId: 1, button: 2, clientX: 400, clientY: 300 });
+    expect(controls.dragging).toBe(false);
+    canvas.emit('pointermove', { pointerId: 1, clientX: 500, clientY: 400 });
+
+    expect(camera.center).toEqual(before);
+  });
+
+  it('오른쪽 버튼은 끌었어도 놓은 자리의 클릭으로 본다 — 팬을 하지 않으므로', () => {
+    const { canvas, controls } = setup();
+    const clicked: Array<{ x: number; y: number }> = [];
+    controls.setTileClickHandler((tile) => clicked.push(tile));
+
+    canvas.emit('pointerdown', { pointerId: 1, button: 2, clientX: CENTER.x, clientY: CENTER.y });
+    canvas.emit('pointermove', { pointerId: 1, clientX: CENTER.x + 32, clientY: CENTER.y + 16 });
+    canvas.emit('pointerup', { pointerId: 1, clientX: CENTER.x + 32, clientY: CENTER.y + 16 });
+
+    expect(clicked).toEqual([{ x: 1, y: 0 }]);
+  });
+
+  it('가운데 버튼은 아무 반응도 하지 않는다', () => {
+    const { canvas, controls } = setup();
+    let clicks = 0;
+    controls.setTileClickHandler(() => {
+      clicks += 1;
+    });
+
+    canvas.emit('pointerdown', { pointerId: 1, button: 1, clientX: CENTER.x, clientY: CENTER.y });
+    canvas.emit('pointerup', { pointerId: 1, clientX: CENTER.x, clientY: CENTER.y });
+
+    expect(clicks).toBe(0);
+    expect(controls.dragging).toBe(false);
+  });
+});
+
+describe('PointerControls 피커 주입', () => {
+  it('주입한 피커의 결과를 그대로 호버 타일로 쓴다', () => {
+    const canvas = new FakeCanvas();
+    const camera = new Camera();
+    camera.setViewport(VIEWPORT.width, VIEWPORT.height);
+
+    const calls: Array<{ x: number; y: number }> = [];
+    const controls = new PointerControls(
+      canvas as unknown as HTMLCanvasElement,
+      camera,
+      (worldX, worldY) => {
+        calls.push({ x: worldX, y: worldY });
+        return { x: 12, y: 34 };
+      },
+    );
+    controls.attach();
+
+    canvas.emit('pointermove', { pointerId: 1, clientX: CENTER.x, clientY: CENTER.y });
+
+    expect(controls.hovered).toEqual({ x: 12, y: 34 });
+    // 화면 중앙이므로 카메라가 보는 월드 원점이 넘어간다.
+    expect(calls).toEqual([{ x: 0, y: 0 }]);
+  });
+
+  it('피커가 null을 주면 호버가 없다 — 하늘이나 뚫린 자리를 가리킨 경우', () => {
+    const canvas = new FakeCanvas();
+    const camera = new Camera();
+    camera.setViewport(VIEWPORT.width, VIEWPORT.height);
+
+    const controls = new PointerControls(canvas as unknown as HTMLCanvasElement, camera, () => null);
+    controls.attach();
+
+    canvas.emit('pointermove', { pointerId: 1, clientX: CENTER.x, clientY: CENTER.y });
+
+    expect(controls.hovered).toBeNull();
+  });
+
+  it('호버가 없으면 클릭도 전달되지 않는다', () => {
+    const canvas = new FakeCanvas();
+    const camera = new Camera();
+    camera.setViewport(VIEWPORT.width, VIEWPORT.height);
+
+    const controls = new PointerControls(canvas as unknown as HTMLCanvasElement, camera, () => null);
+    controls.attach();
+
+    let clicks = 0;
+    controls.setTileClickHandler(() => {
+      clicks += 1;
+    });
+
+    canvas.emit('pointerdown', { pointerId: 1, button: 0, clientX: CENTER.x, clientY: CENTER.y });
+    canvas.emit('pointerup', { pointerId: 1, clientX: CENTER.x, clientY: CENTER.y });
+
+    expect(clicks).toBe(0);
+  });
+});
