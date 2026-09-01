@@ -114,3 +114,56 @@ body {
   color: #7ee787;
   border: 1px solid rgba(126, 231, 135, 0.5);
 }
+
+/* 건축 모드 블루프린트 목록. 오른쪽 위에 붙인다. */
+.panel {
+  position: fixed;
+  top: 40px;
+  right: 12px;
+  min-width: 220px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  background: rgba(12, 16, 20, 0.88);
+  color: #e6e8eb;
+  pointer-events: none;
+  user-select: none;
+}
+
+.panel__title {
+  margin-bottom: 6px;
+  color: #f0c04a;
+}
+
+.panel__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 3px 4px;
+  border-radius: 4px;
+}
+
+/* 고른 블루프린트를 강조한다. */
+.panel__row--selected {
+  background: rgba(240, 192, 74, 0.18);
+}
+
+.panel__name {
+  flex: 1 0 100%;
+}
+
+.panel__material {
+  color: #8b949e;
+  font-size: 11px;
+}
+
+/* 기획서 7절: 부족분은 빨간색으로 표시한다. */
+.panel__material--short {
+  color: #ff7b72;
+}
+
+.panel__hint {
+  margin-top: 6px;
+  color: #8b949e;
+  font-size: 11px;
+}

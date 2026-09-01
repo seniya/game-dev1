@@ -239,6 +239,21 @@ export class Inventory {
     return moved;
   }
 
+  /**
+   * 슬롯을 늘린다. 창고를 추가로 지으면 저장 공간이 늘어나는 데 쓴다.
+   *
+   * @param extraSlots 늘릴 슬롯 수. 1 이상의 정수.
+   * @returns 실제로 늘렸으면 true.
+   */
+  expand(extraSlots: number): boolean {
+    if (!Number.isInteger(extraSlots) || extraSlots < 1) return false;
+
+    for (let i = 0; i < extraSlots; i += 1) this.slots.push(null);
+    this.changeCount += 1;
+
+    return true;
+  }
+
   /** 담긴 아이템 종류 목록. 슬롯 순서를 따르며 중복은 제거한다. */
   get heldTypes(): ItemType[] {
     const seen: ItemType[] = [];

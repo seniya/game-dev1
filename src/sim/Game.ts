@@ -1,11 +1,18 @@
 import { Inventory } from '../core/Inventory';
 import { BlockType } from '../core/blocks';
+import {
+  BlueprintId,
+  blueprintById,
+  unlockedBlueprints,
+  type Blueprint,
+} from '../core/blueprints';
 import { ItemType, blockToItem, itemToBlock } from '../core/items';
-import { canInteract, isAdjacent, type TilePos } from '../core/movement';
+import { canInteract, type TilePos } from '../core/movement';
 import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
 import { Terrain } from '../core/Terrain';
 import { canDigBlock, tierSpeedMultiplier } from '../core/tools';
-import type { Entity } from '../render/WorldRenderer';
+import type { Entity, GhostPreview } from '../render/WorldRenderer';
+import { Buildings, type Building, type PlacementFailure } from './Buildings';
 import { Player } from './Player';
 import { ResourceField } from './ResourceField';
 
@@ -24,7 +31,11 @@ export type ActionFailure =
   /** 인벤토리에 자리가 없다. */
   | 'inventoryFull'
   /** 그 자리에는 놓을 수 없다(높이 상한, 노드가 막고 있음 등). */
-  | 'blocked';
+  | 'blocked'
+  /** 건축 모드가 아니거나 블루프린트를 고르지 않았다. */
+  | 'noBlueprint'
+  /** 그 자리에 건물을 세울 수 없다. 구체적 이유는 placement에 담긴다. */
+  | 'badPlacement';
 
 /** 행동 결과. 성공이면 무엇이 일어났는지 함께 알린다. */
 export type ActionResult =
@@ -38,8 +49,10 @@ export type ActionResult =
       node?: NodeKind;
       /** 노드를 부쉈는지. 채집이었을 때만 의미가 있다. */
       destroyed?: boolean;
+      /** 착공한 건물. 건축이었을 때만 있다. */
+      building?: Building;
     }
-  | { ok: false; reason: ActionFailure };
+  | { ok: false; reason: ActionFailure; placement?: PlacementFailure };
 
 /**
  * 게임 진행 상태를 한데 모은 오케스트레이터.
@@ -59,8 +72,16 @@ export class Game {
   readonly inventory = new Inventory();
   /** 마을 공용 창고. 슬롯과 스택 상한이 인벤토리보다 넉넉하다. */
   readonly storage = new Inventory({ slotCount: 24, stackLimit: 99 });
-  /** 창고가 놓인 칸. 이 칸에 인접해야 입출고할 수 있다. */
-  readonly storageTile: TilePos;
+  /** 마을 건물. */
+  readonly buildings: Buildings;
+  /** 시작 시점에 놓인 창고 건물. */
+  readonly startingStorage: Building;
+
+  /** 건축 모드에서 고른 블루프린트. 건축 모드가 아니면 null. */
+  private selectedBlueprint: Blueprint | null = null;
+
+  /** 마을 레벨. Phase 8에서 마을 상태가 이 값을 관리한다. */
+  private level = 1;
 
   /** 쌓기에 쓸 아이템의 우선순위. 흙을 먼저 쓰고 없으면 돌을 쓴다. */
   private readonly placePriority: readonly ItemType[] = [ItemType.DIRT, ItemType.STONE];
@@ -79,8 +100,11 @@ export class Game {
     const start = findStartTile(terrain, this.resources);
     this.player = new Player(start.x, start.y);
 
-    // 창고는 시작 칸 바로 옆에 둔다. 마을의 중심이 되는 지점이다.
-    this.storageTile = findStorageTile(terrain, this.resources, start);
+    this.buildings = new Buildings(terrain);
+
+    // 시작 창고를 마을 중심에 즉시 완공 상태로 세운다. 저장할 곳이 없으면
+    // 첫 채집부터 인벤토리가 막혀 루프가 시작되지 않는다.
+    this.startingStorage = placeStartingStorage(this.buildings, this.resources, terrain, start);
   }
 
   /**
@@ -91,6 +115,168 @@ export class Game {
   update(stepMs: number): void {
     this.player.update(stepMs);
     this.resources.update(stepMs);
+
+    for (const building of this.buildings.update(stepMs)) {
+      this.onBuildingCompleted(building);
+    }
+  }
+
+  /** 현재 마을 레벨. */
+  get villageLevel(): number {
+    return this.level;
+  }
+
+  /**
+   * 마을 레벨을 설정한다. Phase 8의 마을 상태가 호출한다.
+   *
+   * @param level 새 레벨. 1 이상의 정수.
+   */
+  setVillageLevel(level: number): void {
+    if (!Number.isInteger(level) || level < 1) return;
+    this.level = level;
+
+    // 해금이 풀리면서 고른 블루프린트가 사라질 일은 없지만, 레벨이 내려가는
+    // 경우(테스트 등)에는 선택을 정리한다.
+    if (this.selectedBlueprint && this.selectedBlueprint.unlockLevel > level) {
+      this.selectedBlueprint = null;
+    }
+  }
+
+  /** 지금 지을 수 있는 블루프린트 목록. */
+  get availableBlueprints(): Blueprint[] {
+    return unlockedBlueprints(this.level);
+  }
+
+  /** 건축 모드인지 여부. 블루프린트를 고르면 건축 모드다. */
+  get buildMode(): boolean {
+    return this.selectedBlueprint !== null;
+  }
+
+  /** 고른 블루프린트. 건축 모드가 아니면 null. */
+  get blueprint(): Blueprint | null {
+    return this.selectedBlueprint;
+  }
+
+  /**
+   * 블루프린트를 고른다. 같은 것을 다시 고르면 건축 모드를 끈다 —
+   * 버튼 하나로 켜고 끌 수 있게 하려는 것이다.
+   *
+   * @param id 블루프린트 식별자. null이면 건축 모드를 끈다.
+   * @returns 건축 모드가 켜졌으면 true.
+   */
+  selectBlueprint(id: BlueprintId | null): boolean {
+    if (id === null) {
+      this.selectedBlueprint = null;
+      return false;
+    }
+
+    const blueprint = blueprintById(id);
+    if (blueprint.unlockLevel > this.level) return false;
+
+    this.selectedBlueprint = this.selectedBlueprint?.id === id ? null : blueprint;
+
+    return this.selectedBlueprint !== null;
+  }
+
+  /**
+   * 자재가 충분한지 확인한다. 인벤토리와 창고를 합쳐 센다(기획서 5.3).
+   *
+   * @param blueprint 블루프린트.
+   * @returns 부족한 자재 목록. 비어 있으면 충분하다.
+   */
+  missingMaterials(blueprint: Blueprint): Array<{ item: ItemType; short: number }> {
+    const missing: Array<{ item: ItemType; short: number }> = [];
+
+    for (const requirement of blueprint.materials) {
+      const short = requirement.amount - this.totalHeld(requirement.item);
+      if (short > 0) missing.push({ item: requirement.item, short });
+    }
+
+    return missing;
+  }
+
+  /**
+   * 지금 커서 위치에 보일 건축 미리보기를 만든다.
+   *
+   * @param hovered 커서가 올라간 칸. 없으면 null.
+   * @returns 미리보기. 건축 모드가 아니거나 커서가 없으면 null.
+   */
+  ghost(hovered: TilePos | null): GhostPreview | null {
+    if (!this.selectedBlueprint || !hovered) return null;
+
+    const origin = this.placementOrigin(this.selectedBlueprint, hovered);
+    const check = this.buildings.canPlace(
+      this.selectedBlueprint,
+      origin.x,
+      origin.y,
+      this.resources,
+    );
+
+    return {
+      x: origin.x,
+      y: origin.y,
+      width: this.selectedBlueprint.width,
+      depth: this.selectedBlueprint.depth,
+      valid: check.ok && this.missingMaterials(this.selectedBlueprint).length === 0,
+    };
+  }
+
+  /**
+   * 고른 블루프린트를 커서 위치에 착공한다.
+   *
+   * 확정 즉시 자재를 소모하고, 짧은 건축 시간이 지나면 완공된다(기획서 5.3).
+   *
+   * @param hovered 커서가 올라간 칸.
+   * @returns 행동 결과.
+   */
+  buildAt(hovered: TilePos): ActionResult {
+    const blueprint = this.selectedBlueprint;
+    if (!blueprint) return { ok: false, reason: 'noBlueprint' };
+
+    const origin = this.placementOrigin(blueprint, hovered);
+    const check = this.buildings.canPlace(blueprint, origin.x, origin.y, this.resources);
+    if (!check.ok) return { ok: false, reason: 'badPlacement', placement: check.reason };
+
+    if (this.missingMaterials(blueprint).length > 0) return { ok: false, reason: 'noMaterial' };
+
+    // 자재를 먼저 소모한다. 배치는 이미 판정을 통과했으므로 실패하지 않는다.
+    for (const requirement of blueprint.materials) {
+      this.consume(requirement.item, requirement.amount);
+    }
+
+    const building = this.buildings.place(blueprint, origin.x, origin.y, this.resources);
+    if (!building) return { ok: false, reason: 'blocked' };
+
+    return { ok: true, building };
+  }
+
+  /**
+   * 커서 칸을 기준으로 점유 영역의 좌상단을 구한다.
+   *
+   * 커서를 영역의 **중앙**으로 삼는다. 좌상단을 기준으로 하면 큰 건물이 커서에서
+   * 멀리 떨어져 보여 배치 감각이 어긋난다.
+   *
+   * @param blueprint 블루프린트.
+   * @param hovered 커서가 올라간 칸.
+   * @returns 점유 영역 좌상단.
+   */
+  private placementOrigin(blueprint: Blueprint, hovered: TilePos): TilePos {
+    return {
+      x: hovered.x - Math.floor((blueprint.width - 1) / 2),
+      y: hovered.y - Math.floor((blueprint.depth - 1) / 2),
+    };
+  }
+
+  /**
+   * 건물이 완공됐을 때의 처리.
+   *
+   * @param building 완공된 건물.
+   */
+  private onBuildingCompleted(building: Building): void {
+    const blueprint = blueprintById(building.blueprintId);
+
+    // 창고를 지으면 저장 공간이 늘어난다.
+    if (blueprint.storageSlots > 0) this.storage.expand(blueprint.storageSlots);
   }
 
   /**
@@ -237,12 +423,12 @@ export class Game {
    * @returns 점유돼 있으면 true.
    */
   isOccupied(target: TilePos): boolean {
-    return target.x === this.storageTile.x && target.y === this.storageTile.y;
+    return this.buildings.isOccupied(target.x, target.y);
   }
 
-  /** 지금 창고에 손이 닿는지 여부. 창고 칸에 인접해야 한다. */
+  /** 지금 창고에 손이 닿는지 여부. 완공된 창고에 인접해야 한다. */
   get nearStorage(): boolean {
-    return isAdjacent(this.player.position, this.storageTile);
+    return this.buildings.adjacentCompleted(this.player.position, BlueprintId.WAREHOUSE) !== undefined;
   }
 
   /**
@@ -340,17 +526,19 @@ export class Game {
       }
     }
 
-    // 창고는 건물 형태로 그린다. Phase 6에서 블루프린트로 추가 건설할 수 있게 된다.
-    this.entityBuffer.push({
-      kind: 'building',
-      x: this.storageTile.x,
-      y: this.storageTile.y,
-      z: Math.max(0, this.terrain.columnHeight(this.storageTile.x, this.storageTile.y) - 1),
-      width: 1,
-      depth: 1,
-      style: 'warehouse',
-      progress: 1,
-    });
+    for (const building of this.buildings.all) {
+      const blueprint = blueprintById(building.blueprintId);
+      this.entityBuffer.push({
+        kind: 'building',
+        x: building.x,
+        y: building.y,
+        z: Math.max(0, this.terrain.columnHeight(building.x, building.y) - 1),
+        width: blueprint.width,
+        depth: blueprint.depth,
+        style: blueprint.style,
+        progress: this.buildings.progressOf(building),
+      });
+    }
 
     const pose = this.player.pose(this.terrain);
     this.entityBuffer.push({ kind: 'player', x: pose.x, y: pose.y, z: pose.z, swing: pose.swing });
@@ -365,7 +553,14 @@ export class Game {
    * @returns 설명 문자열. 아무것도 없으면 null.
    */
   describeTile(target: TilePos): string | null {
-    if (target.x === this.storageTile.x && target.y === this.storageTile.y) return '창고';
+    const building = this.buildings.buildingAt(target.x, target.y);
+    if (building) {
+      const label = blueprintById(building.blueprintId).label;
+      if (building.buildRemainingMs > 0) {
+        return `${label} 건축 중 ${Math.round(this.buildings.progressOf(building) * 100)}%`;
+      }
+      return label;
+    }
 
     const node = this.resources.nodeAt(target.x, target.y);
     if (node && node.durability > 0) {
@@ -413,29 +608,68 @@ function findStartTile(terrain: Terrain, resources: ResourceField): TilePos {
 }
 
 /**
- * 창고를 놓을 칸을 고른다. 시작 칸에 인접하고, 설 수 있고 비어 있는 칸이다.
+ * 시작 창고를 세운다.
  *
- * @param terrain 지형.
+ * 창고 블루프린트는 2×2라 평탄한 자리가 필요하다. 시작 칸 주변을 넓혀 가며
+ * 배치 가능한 곳을 찾고, 끝내 없으면 지형을 평탄화해서라도 세운다 — 창고가
+ * 없으면 첫 채집부터 인벤토리가 막혀 게임이 시작되지 않는다.
+ *
+ * @param buildings 건물 모음.
  * @param resources 자원 노드.
+ * @param terrain 지형.
  * @param start 플레이어 시작 칸.
- * @returns 창고 칸.
+ * @returns 세워진 창고 건물.
  */
-function findStorageTile(terrain: Terrain, resources: ResourceField, start: TilePos): TilePos {
-  for (const direction of [
-    { dx: 1, dy: 0 },
-    { dx: 0, dy: 1 },
-    { dx: -1, dy: 0 },
-    { dx: 0, dy: -1 },
-  ]) {
-    const candidate = { x: start.x + direction.dx, y: start.y + direction.dy };
-    if (
-      terrain.contains(candidate.x, candidate.y) &&
-      terrain.columnHeight(candidate.x, candidate.y) >= 1 &&
-      !resources.isBlocked(candidate.x, candidate.y)
-    ) {
-      return candidate;
+function placeStartingStorage(
+  buildings: Buildings,
+  resources: ResourceField,
+  terrain: Terrain,
+  start: TilePos,
+): Building {
+  const blueprint = blueprintById(BlueprintId.WAREHOUSE);
+  const maxRadius = Math.max(terrain.width, terrain.height);
+
+  for (let radius = 1; radius <= maxRadius; radius += 1) {
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        // 플레이어가 선 칸을 건물이 덮으면 안 된다.
+        const origin = { x: start.x + dx, y: start.y + dy };
+        if (coversTile(blueprint.width, blueprint.depth, origin, start)) continue;
+
+        const placed = buildings.place(blueprint, origin.x, origin.y, resources, true);
+        if (placed) return placed;
+      }
     }
   }
 
-  return start;
+  // 평탄한 자리가 없으면 시작 칸 옆을 강제로 평탄화한다.
+  const origin = { x: start.x + 1, y: start.y };
+  const height = Math.max(1, terrain.columnHeight(start.x, start.y));
+  for (let dy = 0; dy < blueprint.depth; dy += 1) {
+    for (let dx = 0; dx < blueprint.width; dx += 1) {
+      const x = origin.x + dx;
+      const y = origin.y + dy;
+      if (terrain.contains(x, y)) terrain.fillColumn(x, y, height, BlockType.DIRT);
+    }
+  }
+
+  const forced = buildings.place(blueprint, origin.x, origin.y, resources, true);
+  if (!forced) throw new Error('시작 창고를 세울 자리를 찾지 못했다.');
+
+  return forced;
+}
+
+/**
+ * 점유 영역이 특정 칸을 덮는지 확인한다.
+ *
+ * @param width 영역 가로 칸수.
+ * @param depth 영역 세로 칸수.
+ * @param origin 영역 좌상단.
+ * @param tile 확인할 칸.
+ * @returns 덮으면 true.
+ */
+function coversTile(width: number, depth: number, origin: TilePos, tile: TilePos): boolean {
+  return (
+    tile.x >= origin.x && tile.x < origin.x + width && tile.y >= origin.y && tile.y < origin.y + depth
+  );
 }

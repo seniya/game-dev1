@@ -1,0 +1,166 @@
+import { ItemType } from './items';
+import type { BuildingStyle } from '../render/WorldRenderer';
+
+/** 블루프린트 식별자. */
+export const BlueprintId = {
+  /** 작은 집. 주민 1명이 산다. */
+  COTTAGE: 'cottage',
+  /** 큰 집. 주민 2명이 산다. */
+  MANOR: 'manor',
+  /** 창고. 마을 저장 공간을 늘린다. */
+  WAREHOUSE: 'warehouse',
+  /** 우물. 주민 요청 대상이 되는 시설이다. */
+  WELL: 'well',
+  /** 작업대. 시설 요청 대상이다. */
+  WORKBENCH: 'workbench',
+} as const;
+
+/** 블루프린트 식별자 값. */
+export type BlueprintId = (typeof BlueprintId)[keyof typeof BlueprintId];
+
+/** 필요 자재 한 항목. */
+export interface MaterialRequirement {
+  /** 아이템 종류. */
+  readonly item: ItemType;
+  /** 필요 개수. */
+  readonly amount: number;
+}
+
+/** 블루프린트 하나. */
+export interface Blueprint {
+  /** 식별자. */
+  readonly id: BlueprintId;
+  /** 표시 이름. */
+  readonly label: string;
+  /** 렌더링 외형. */
+  readonly style: BuildingStyle;
+  /** 바닥 면적 가로 칸수. */
+  readonly width: number;
+  /** 바닥 면적 세로 칸수. */
+  readonly depth: number;
+  /** 필요 자재 목록. */
+  readonly materials: readonly MaterialRequirement[];
+  /** 이 블루프린트가 해금되는 마을 레벨. */
+  readonly unlockLevel: number;
+  /** 완공 시 늘어나는 주민 수용 인원. 집이 아니면 0. */
+  readonly housing: number;
+  /** 완공 시 늘어나는 창고 슬롯 수. 창고가 아니면 0. */
+  readonly storageSlots: number;
+}
+
+/**
+ * MVP 블루프린트 5종 (기획서 8절: 집 2종, 창고, 우물, 작업대).
+ *
+ * 데이터를 JSON 파일이 아니라 코드 상수로 둔 근거는 `docs/adr/0006-건축-시스템.md`에 있다.
+ * 자재 수치는 Phase 9 밸런싱 대상이며, 지금은 "집이 가장 비싸고 작업대가 가장 싸다"는
+ * 서열과 목재 위주라는 성격만 맞춰 뒀다.
+ */
+export const BLUEPRINTS: readonly Blueprint[] = [
+  {
+    id: BlueprintId.COTTAGE,
+    label: '작은 집',
+    style: 'house',
+    width: 2,
+    depth: 2,
+    materials: [
+      { item: ItemType.WOOD, amount: 12 },
+      { item: ItemType.STONE, amount: 4 },
+    ],
+    unlockLevel: 1,
+    housing: 1,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.WELL,
+    label: '우물',
+    style: 'well',
+    width: 1,
+    depth: 1,
+    materials: [{ item: ItemType.STONE, amount: 10 }],
+    unlockLevel: 1,
+    housing: 0,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.WORKBENCH,
+    label: '작업대',
+    style: 'workbench',
+    width: 1,
+    depth: 1,
+    materials: [
+      { item: ItemType.WOOD, amount: 6 },
+      { item: ItemType.STONE, amount: 2 },
+    ],
+    unlockLevel: 1,
+    housing: 0,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.WAREHOUSE,
+    label: '창고',
+    style: 'warehouse',
+    width: 2,
+    depth: 2,
+    materials: [
+      { item: ItemType.WOOD, amount: 10 },
+      { item: ItemType.STONE, amount: 6 },
+    ],
+    unlockLevel: 2,
+    housing: 0,
+    storageSlots: 8,
+  },
+  {
+    id: BlueprintId.MANOR,
+    label: '큰 집',
+    style: 'bigHouse',
+    width: 3,
+    depth: 2,
+    materials: [
+      { item: ItemType.WOOD, amount: 20 },
+      { item: ItemType.STONE, amount: 10 },
+      { item: ItemType.IRON_ORE, amount: 3 },
+    ],
+    unlockLevel: 3,
+    housing: 2,
+    storageSlots: 0,
+  },
+];
+
+/**
+ * 식별자로 블루프린트를 찾는다.
+ *
+ * @param id 블루프린트 식별자.
+ * @returns 블루프린트.
+ * @throws 없는 식별자면 예외를 던진다.
+ */
+export function blueprintById(id: BlueprintId): Blueprint {
+  const found = BLUEPRINTS.find((blueprint) => blueprint.id === id);
+  if (!found) throw new RangeError(`없는 블루프린트다: ${id}`);
+
+  return found;
+}
+
+/**
+ * 특정 마을 레벨에서 지을 수 있는 블루프린트만 고른다.
+ *
+ * @param level 마을 레벨.
+ * @returns 해금된 블루프린트 목록. 정의 순서를 유지한다.
+ */
+export function unlockedBlueprints(level: number): Blueprint[] {
+  return BLUEPRINTS.filter((blueprint) => blueprint.unlockLevel <= level);
+}
+
+/**
+ * 건축에 걸리는 시간을 구한다.
+ *
+ * 기획서 5.3은 "3~5초 정도의 짧은 건축 중 연출"을 명시한다. 바닥 면적이 클수록
+ * 조금 더 걸리게 해 큰 건물이 더 큰일처럼 느껴지게 했다.
+ *
+ * @param blueprint 블루프린트.
+ * @returns 건축 시간(ms).
+ */
+export function buildDurationMs(blueprint: Blueprint): number {
+  const area = blueprint.width * blueprint.depth;
+
+  return Math.min(5000, 3000 + area * 250);
+}

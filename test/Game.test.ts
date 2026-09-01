@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BlockType } from '../src/core/blocks';
 import { Terrain } from '../src/core/Terrain';
 import { ToolTier } from '../src/core/tools';
+import { BlueprintId } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
 import { NodeKind, nodeDefinition } from '../src/core/resourceNodes';
 import { Game } from '../src/sim/Game';
@@ -407,23 +408,35 @@ describe('Game 채집', () => {
 });
 
 describe('Game 창고', () => {
-  it('창고를 시작 칸 옆에 두고 건물로 그린다', () => {
+  it('시작 창고를 완공 상태로 세우고 플레이어가 인접해 있다', () => {
     const game = makeGame(7, 2);
+    const storage = game.startingStorage;
 
-    expect(game.isOccupied(game.storageTile)).toBe(true);
+    expect(game.buildings.completedCount).toBe(1);
+    expect(game.isOccupied({ x: storage.x, y: storage.y })).toBe(true);
     expect(game.nearStorage).toBe(true);
-    expect(game.describeTile(game.storageTile)).toBe('창고');
+    expect(game.describeTile({ x: storage.x, y: storage.y })).toBe('창고');
   });
 
-  it('창고 칸은 파거나 쌓을 수 없다 — 건물 아래 지형이 바뀌면 안 된다', () => {
+  it('건물 칸은 파거나 쌓을 수 없다 — 건물 아래 지형이 바뀌면 안 된다', () => {
     const game = makeGame(7, 3);
 
-    expect(game.digAt(game.storageTile)).toEqual({ ok: false, reason: 'blocked' });
+    // 창고 점유 칸 중 플레이어에 인접한 칸을 고른다(인접 판정이 먼저 걸린다).
+    const { x, y } = game.player.position;
+    const storageTile = [
+      { x: x + 1, y },
+      { x: x - 1, y },
+      { x, y: y + 1 },
+      { x, y: y - 1 },
+    ].find((tile) => game.isOccupied(tile))!;
+    expect(storageTile).toBeDefined();
+
+    expect(game.digAt(storageTile)).toEqual({ ok: false, reason: 'blocked' });
 
     const other = freeNeighbor(game);
     game.digAt(other);
     advance(game, SWING_DURATION_MS);
-    expect(game.placeAt(game.storageTile)).toEqual({ ok: false, reason: 'blocked' });
+    expect(game.placeAt(storageTile)).toEqual({ ok: false, reason: 'blocked' });
   });
 
   it('인접해 있으면 자원을 예치하고, 흙은 남긴다', () => {
@@ -563,5 +576,236 @@ describe('Game 인벤토리 용량', () => {
     }
 
     expect(game.actAt(target).ok).toBe(true);
+  });
+});
+
+describe('Game 건축', () => {
+  /**
+   * 평지에서 자재를 충분히 넣은 게임을 만든다.
+   *
+   * @param size 맵 크기.
+   */
+  function buildReadyGame(size = 12) {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    const game = new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
+    game.storage.add(ItemType.WOOD, 60);
+    game.storage.add(ItemType.STONE, 60);
+    game.storage.add(ItemType.IRON_ORE, 20);
+
+    return game;
+  }
+
+  /**
+   * 시작 건물과 플레이어에서 멀리 떨어진 빈 칸을 고른다.
+   *
+   * @param game 대상 게임.
+   * @param size 맵 크기.
+   */
+  function emptySpot(game: Game, size = 12) {
+    for (let y = size - 3; y >= 1; y -= 1) {
+      for (let x = size - 3; x >= 1; x -= 1) {
+        if (!game.isOccupied({ x, y }) && !game.isOccupied({ x: x + 1, y: y + 1 })) {
+          return { x, y };
+        }
+      }
+    }
+    throw new Error('빈 자리가 없다');
+  }
+
+  it('레벨 1에서는 초기 블루프린트만 고를 수 있다', () => {
+    const game = buildReadyGame();
+
+    expect(game.availableBlueprints.every((blueprint) => blueprint.unlockLevel === 1)).toBe(true);
+    expect(game.selectBlueprint(BlueprintId.MANOR)).toBe(false);
+    expect(game.buildMode).toBe(false);
+  });
+
+  it('레벨이 오르면 상위 블루프린트를 고를 수 있다', () => {
+    const game = buildReadyGame();
+    game.setVillageLevel(3);
+
+    expect(game.selectBlueprint(BlueprintId.MANOR)).toBe(true);
+    expect(game.blueprint?.id).toBe(BlueprintId.MANOR);
+  });
+
+  it('같은 블루프린트를 다시 고르면 건축 모드가 꺼진다', () => {
+    const game = buildReadyGame();
+
+    expect(game.selectBlueprint(BlueprintId.WELL)).toBe(true);
+    expect(game.selectBlueprint(BlueprintId.WELL)).toBe(false);
+    expect(game.buildMode).toBe(false);
+  });
+
+  it('건축 모드가 아니면 미리보기가 없다', () => {
+    const game = buildReadyGame();
+
+    expect(game.ghost({ x: 5, y: 5 })).toBeNull();
+  });
+
+  it('미리보기는 커서를 중앙으로 삼는다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+
+    const ghost = game.ghost({ x: 6, y: 6 })!;
+
+    // 2×2는 커서가 좌상단에서 오른쪽-아래로 반 칸이므로 좌상단이 커서와 같다.
+    expect(ghost).toMatchObject({ width: 2, depth: 2 });
+    expect(ghost.x).toBeLessThanOrEqual(6);
+    expect(ghost.y).toBeLessThanOrEqual(6);
+  });
+
+  it('3×2 건물은 커서가 가로 중앙에 온다', () => {
+    const game = buildReadyGame();
+    game.setVillageLevel(3);
+    game.selectBlueprint(BlueprintId.MANOR);
+
+    const ghost = game.ghost({ x: 6, y: 6 })!;
+
+    expect(ghost.width).toBe(3);
+    expect(ghost.x).toBe(5);
+  });
+
+  it('놓을 수 없는 자리는 미리보기가 무효로 표시된다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.WELL);
+
+    const storageTile = { x: game.startingStorage.x, y: game.startingStorage.y };
+    expect(game.ghost(storageTile)!.valid).toBe(false);
+  });
+
+  it('자재가 부족하면 미리보기가 무효다 — 자리는 멀쩡해도', () => {
+    const terrain = new Terrain(12, 12);
+    for (let y = 0; y < 12; y += 1) {
+      for (let x = 0; x < 12; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    const game = new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
+    game.selectBlueprint(BlueprintId.WELL);
+
+    const spot = emptySpot(game);
+    expect(game.ghost(spot)!.valid).toBe(false);
+    expect(game.buildAt(spot)).toEqual({ ok: false, reason: 'noMaterial' });
+  });
+
+  it('부족한 자재를 종류와 개수로 알려준다 — 기획서 7절의 부족분 표시', () => {
+    const game = buildReadyGame();
+    const well = game.availableBlueprints.find((b) => b.id === BlueprintId.WELL)!;
+
+    expect(game.missingMaterials(well)).toEqual([]);
+
+    game.storage.remove(ItemType.STONE, 60);
+    expect(game.missingMaterials(well)).toEqual([{ item: ItemType.STONE, short: 10 }]);
+  });
+
+  it('착공하면 자재를 소모하고 건축 중 상태가 된다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    const spot = emptySpot(game);
+    const stoneBefore = game.totalHeld(ItemType.STONE);
+
+    const result = game.buildAt(spot);
+
+    expect(result.ok).toBe(true);
+    expect(game.totalHeld(ItemType.STONE)).toBe(stoneBefore - 10);
+    expect(game.buildings.count).toBe(2);
+    expect(game.buildings.completedCount).toBe(1);
+  });
+
+  it('건축 시간이 지나면 완공된다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    const spot = emptySpot(game);
+    game.buildAt(spot);
+
+    advance(game, 6000);
+
+    expect(game.buildings.completedCount).toBe(2);
+    expect(game.buildings.hasCompleted(BlueprintId.WELL)).toBe(true);
+  });
+
+  it('건축 중에는 진행도를 안내 문구로 보여준다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    const spot = emptySpot(game);
+    game.buildAt(spot);
+
+    advance(game, 1500);
+    expect(game.describeTile(spot)).toMatch(/우물 건축 중 \d+%/);
+
+    advance(game, 6000);
+    expect(game.describeTile(spot)).toBe('우물');
+  });
+
+  it('블루프린트를 고르지 않으면 착공할 수 없다', () => {
+    const game = buildReadyGame();
+
+    expect(game.buildAt({ x: 5, y: 5 })).toEqual({ ok: false, reason: 'noBlueprint' });
+  });
+
+  it('놓을 수 없는 자리는 이유를 함께 돌려주고 자재를 소모하지 않는다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    const before = game.totalHeld(ItemType.STONE);
+
+    const storageTile = { x: game.startingStorage.x, y: game.startingStorage.y };
+    const result = game.buildAt(storageTile);
+
+    expect(result).toEqual({ ok: false, reason: 'badPlacement', placement: 'overlaps' });
+    expect(game.totalHeld(ItemType.STONE)).toBe(before);
+  });
+
+  it('평탄하지 않은 자리는 거절한다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.COTTAGE);
+    const spot = emptySpot(game);
+    game.terrain.place(spot.x, spot.y, BlockType.DIRT);
+
+    const result = game.buildAt(spot);
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.placement).toBe('notFlat');
+  });
+
+  it('창고를 지으면 저장 슬롯이 늘어난다', () => {
+    const game = buildReadyGame();
+    game.setVillageLevel(2);
+    game.selectBlueprint(BlueprintId.WAREHOUSE);
+    const before = game.storage.slotCount;
+    const spot = emptySpot(game);
+
+    game.buildAt(spot);
+    advance(game, 6000);
+
+    expect(game.storage.slotCount).toBeGreaterThan(before);
+  });
+
+  it('건물을 오브젝트로 내보내고 진행도를 함께 담는다', () => {
+    const game = buildReadyGame();
+    game.selectBlueprint(BlueprintId.WELL);
+    const spot = emptySpot(game);
+    game.buildAt(spot);
+
+    const building = game
+      .entities()
+      .filter((entity) => entity.kind === 'building')
+      .find((entity) => entity.kind === 'building' && entity.x === spot.x && entity.y === spot.y);
+
+    expect(building).toBeDefined();
+    if (building?.kind === 'building') {
+      expect(building.progress).toBeLessThan(1);
+      expect(building.style).toBe('well');
+    }
+  });
+
+  it('레벨이 내려가면 해금이 풀린 선택을 정리한다', () => {
+    const game = buildReadyGame();
+    game.setVillageLevel(3);
+    game.selectBlueprint(BlueprintId.MANOR);
+
+    game.setVillageLevel(1);
+
+    expect(game.buildMode).toBe(false);
   });
 });

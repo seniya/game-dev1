@@ -11,6 +11,7 @@ import { WorldRenderer } from './render/WorldRenderer';
 import { GameLoop } from './sim/GameLoop';
 import { GameState } from './sim/GameState';
 import { Game } from './sim/Game';
+import { BuildPanel } from './ui/BuildPanel';
 import { DebugOverlay } from './ui/DebugOverlay';
 import { InventoryBar } from './ui/InventoryBar';
 import { KeyboardControls } from './ui/KeyboardControls';
@@ -63,6 +64,7 @@ function bootstrap(): void {
   const resources = new ResourceField(terrain, { seed: TERRAIN_SEED });
   const game = new Game(terrain, resources);
   const bar = new InventoryBar(requireElement('bar'), game.inventory.slotCount);
+  const panel = new BuildPanel(requireElement('panel'));
 
   const camera = new Camera();
   camera.setViewport(surface.size.width, surface.size.height);
@@ -79,19 +81,43 @@ function bootstrap(): void {
     pickSurfaceTile(terrain, worldX, worldY),
   );
   pointer.setTileClickHandler((tile, button) => {
-    if (button === 'primary') game.actAt(tile);
-    else game.placeAt(tile);
+    if (button !== 'primary') {
+      game.placeAt(tile);
+      return;
+    }
+
+    // 건축 모드에서는 좌클릭이 배치 확정이다.
+    if (game.buildMode) game.buildAt(tile);
+    else game.actAt(tile);
   });
   pointer.attach();
 
   const keyboard = new KeyboardControls();
-  keyboard.setSlotHandler((index) => game.player.selectTool(index));
+  keyboard.setSlotHandler((index) => {
+    // 건축 모드에서는 숫자 키가 블루프린트 선택이다.
+    if (game.buildMode) {
+      const blueprint = game.availableBlueprints[index];
+      if (blueprint) game.selectBlueprint(blueprint.id);
+      return;
+    }
+
+    game.player.selectTool(index);
+  });
   // Space는 커서가 올라간 칸에 주 행동을 한다 — 마우스 없이도 채집이 되게.
   keyboard.setActionHandler(() => {
     const target = pointer.hovered;
     if (target) game.actAt(target);
   });
   keyboard.bind('KeyE', () => game.depositAll());
+  keyboard.bind('KeyB', () => {
+    // B는 건축 모드 토글. 켤 때는 첫 번째 블루프린트를 고른다.
+    if (game.buildMode) game.selectBlueprint(null);
+    else {
+      const first = game.availableBlueprints[0];
+      if (first) game.selectBlueprint(first.id);
+    }
+  });
+  keyboard.bind('Escape', () => game.selectBlueprint(null));
   keyboard.attach();
 
   /**
@@ -127,7 +153,7 @@ function bootstrap(): void {
         camera.setViewport(size.width, size.height);
 
         const hovered = pointer.hovered;
-        const stats = world.render(hovered, game.entities());
+        const stats = world.render(hovered, game.entities(), game.ghost(hovered));
 
         overlay.update(
           frameTimeMs,
@@ -144,6 +170,15 @@ function bootstrap(): void {
             target: hovered ? game.describeTile(hovered) : null,
           },
           game.inventory,
+        );
+
+        panel.update(
+          game.availableBlueprints.map((blueprint) => ({
+            blueprint,
+            missing: game.missingMaterials(blueprint),
+            selected: game.blueprint?.id === blueprint.id,
+          })),
+          game.buildMode,
         );
 
         bar.update({
