@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BlockStash } from '../src/core/BlockStash';
 import { BlockType } from '../src/core/blocks';
+import { ToolKind, ToolTier } from '../src/core/tools';
 import { DebugOverlay } from '../src/ui/DebugOverlay';
 
 /** textContent만 갖는 최소 엘리먼트 대역. */
@@ -30,6 +31,8 @@ const baseInfo = {
   drawnColumns: 512,
   drawnWalls: 40,
   zoom: 1,
+  playerTile: { x: 5, y: 6 },
+  tool: { kind: ToolKind.SHOVEL, tier: ToolTier.BASIC },
 };
 
 describe('DebugOverlay', () => {
@@ -49,7 +52,9 @@ describe('DebugOverlay', () => {
     for (let i = 0; i < 20; i += 1) overlay.update(1000 / 60, baseInfo, stash);
 
     expect(fps.textContent).toBe('60 fps');
-    expect(info.textContent).toBe('타일 (3, 7) 흙 높이 2 · 윗면 512 측면 40 · 줌 1.00x');
+    expect(info.textContent).toBe(
+      '타일 (3, 7) 흙 높이 2 · 플레이어 (5, 6) · 윗면 512 측면 40 · 줌 1.00x',
+    );
   });
 
   it('커서가 지형 밖이면 좌표를 비워 표시한다', () => {
@@ -77,7 +82,15 @@ describe('DebugOverlay', () => {
 
     overlay.update(300, baseInfo, stash);
 
-    expect(stashText.textContent).toBe('보유 없음');
+    expect(stashText.textContent).toBe('초급 삽 · 보유 없음');
+  });
+
+  it('선택된 도구를 함께 표시한다', () => {
+    const { stashText, overlay, stash } = setup();
+
+    overlay.update(300, { ...baseInfo, tool: { kind: ToolKind.PICKAXE, tier: ToolTier.MID } }, stash);
+
+    expect(stashText.textContent).toContain('중급 곡괭이');
   });
 
   it('보유 블록을 종류별로 표시한다', () => {
@@ -87,7 +100,7 @@ describe('DebugOverlay', () => {
 
     overlay.update(300, baseInfo, stash);
 
-    expect(stashText.textContent).toBe('보유 흙 3 · 돌 1');
+    expect(stashText.textContent).toBe('초급 삽 · 보유 흙 3 · 돌 1');
   });
 
   it('확대율을 소수 둘째 자리까지 표시한다', () => {

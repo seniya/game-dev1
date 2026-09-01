@@ -250,3 +250,56 @@ describe('Camera.setZoom', () => {
     expect(camera.zoom).toBe(1);
   });
 });
+
+describe('Camera.moveToward', () => {
+  it('목표를 향해 일부만 다가간다', () => {
+    const camera = makeCamera();
+    camera.lookAt(0, 0);
+
+    camera.moveToward(100, 200, 0.25);
+
+    expect(camera.center.x).toBeCloseTo(25, 6);
+    expect(camera.center.y).toBeCloseTo(50, 6);
+  });
+
+  it('반복하면 목표에 수렴한다', () => {
+    const camera = makeCamera();
+    camera.lookAt(0, 0);
+
+    for (let i = 0; i < 200; i += 1) camera.moveToward(100, -50, 0.12);
+
+    expect(camera.center.x).toBeCloseTo(100, 3);
+    expect(camera.center.y).toBeCloseTo(-50, 3);
+  });
+
+  it('비율 1이면 즉시 도달하고, 0이면 움직이지 않는다', () => {
+    const camera = makeCamera();
+
+    camera.moveToward(10, 10, 1);
+    expect(camera.center).toEqual({ x: 10, y: 10 });
+
+    camera.moveToward(999, 999, 0);
+    expect(camera.center).toEqual({ x: 10, y: 10 });
+  });
+
+  it('비율이 범위를 벗어나면 잘라 쓴다', () => {
+    const camera = makeCamera();
+    camera.lookAt(0, 0);
+
+    camera.moveToward(100, 0, 5);
+    expect(camera.center.x).toBeCloseTo(100, 6);
+
+    camera.moveToward(0, 0, -1);
+    expect(camera.center.x).toBeCloseTo(100, 6);
+  });
+
+  it('유한하지 않은 목표는 무시한다', () => {
+    const camera = makeCamera();
+    camera.lookAt(5, 5);
+
+    camera.moveToward(Number.NaN, 0, 0.5);
+    camera.moveToward(0, Number.POSITIVE_INFINITY, 0.5);
+
+    expect(camera.center).toEqual({ x: 5, y: 5 });
+  });
+});

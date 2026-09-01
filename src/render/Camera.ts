@@ -93,6 +93,24 @@ export class Camera {
   }
 
   /**
+   * 지정한 월드 좌표를 향해 카메라를 일부만 옮긴다.
+   *
+   * 매 스텝 조금씩 당기면 플레이어를 딱딱하게 물고 가지 않고 부드럽게 따라간다.
+   * 고정 timestep 안에서 호출되므로 프레임률이 흔들려도 추적 속도가 같다.
+   *
+   * @param worldX 목표 월드 x.
+   * @param worldY 목표 월드 y.
+   * @param factor 한 번에 좁힐 거리 비율(0~1). 1이면 즉시 도달한다.
+   */
+  moveToward(worldX: number, worldY: number, factor: number): void {
+    if (!Number.isFinite(worldX) || !Number.isFinite(worldY)) return;
+
+    const ratio = Math.max(0, Math.min(1, factor));
+    this.centerX += (worldX - this.centerX) * ratio;
+    this.centerY += (worldY - this.centerY) * ratio;
+  }
+
+  /**
    * 월드 좌표를 화면 좌표로 변환한다.
    *
    * @param worldX 월드 x.

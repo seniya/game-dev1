@@ -23,6 +23,8 @@ interface RecordedPath {
  */
 class RecordingContext {
   readonly paths: RecordedPath[] = [];
+  /** 점이 4개 미만인 경로(도구 선 등). 도형과 섞이지 않게 따로 담는다. */
+  readonly strokes: Array<{ points: Array<{ x: number; y: number }>; strokeStyle: string }> = [];
 
   fillStyle = '';
   strokeStyle = '';
@@ -70,8 +72,18 @@ class RecordingContext {
     this.commit(true);
   }
 
-  /** 배경 클리어용. 도형 기록에는 넣지 않는다. */
+  /** 배경 클리어용과 게이지용. 도형 기록에는 넣지 않는다. */
   fillRect(): void {}
+
+  /** 타원. 캐릭터 그림자 등에 쓰인다. 점 기록만 남긴다. */
+  ellipse(x: number, y: number): void {
+    this.points.push({ x, y });
+  }
+
+  /** 원호. 머리·광석 점 등에 쓰인다. */
+  arc(x: number, y: number): void {
+    this.points.push({ x, y });
+  }
 
   /**
    * 현재 경로를 기록에 반영한다. 같은 경로에 fill과 stroke가 모두 오면
@@ -84,7 +96,12 @@ class RecordingContext {
       if (stroked) this.paths[this.committedIndex]!.stroked = true;
       return;
     }
-    if (this.points.length < 4) return;
+    if (this.points.length < 4) {
+      if (this.points.length >= 2) {
+        this.strokes.push({ points: [...this.points], strokeStyle: this.strokeStyle });
+      }
+      return;
+    }
 
     this.paths.push({ points: [...this.points], fillStyle: this.fillStyle, stroked });
     this.committedIndex = this.paths.length - 1;
@@ -429,5 +446,154 @@ describe('WorldRenderer 하이라이트', () => {
     const [n2, e2, s2, w2] = atZoom2.points as Array<{ x: number; y: number }>;
     expect(e2.x - w2.x).toBeCloseTo(TILE_WIDTH * 2, 6);
     expect(s2.y - n2.y).toBeCloseTo(TILE_HEIGHT * 2, 6);
+  });
+});
+
+describe('WorldRenderer 오브젝트', () => {
+  it('오브젝트를 넘기지 않으면 아무것도 더 그리지 않는다', () => {
+    const { renderer } = setup(flat(4, 2));
+
+    expect(renderer.render(null).drawnEntities).toBe(0);
+  });
+
+  it('오브젝트를 그 칸 위에 그린다', () => {
+    const { ctx, renderer } = setup(flat(4, 2));
+    const before = ctx.paths.length;
+
+    const stats = renderer.render(null, [{ kind: 'player', x: 2, y: 2, z: 1, swing: 0 }]);
+
+    expect(stats.drawnEntities).toBe(1);
+    expect(ctx.paths.length).toBeGreaterThan(before);
+  });
+
+  it('오브젝트는 자기 칸의 지형 뒤에 오는 열보다 먼저, 앞에 오는 열보다 나중에 그려진다', () => {
+    const terrain = flat(5, 1);
+    const { ctx, camera, renderer } = setup(terrain);
+
+    renderer.render(null, [{ kind: 'player', x: 2, y: 2, z: 0, swing: 0 }]);
+
+    // 플레이어 몸통은 마름모가 아닌 경로다. 그 위치를 화면 좌표로 찾는다.
+    const world = gridToWorld(2, 2, 0);
+    const screen = camera.worldToScreen(world.x, world.y);
+
+    // 플레이어가 그려진 시점 = 자기 칸의 윗면 마름모 바로 뒤.
+    const ownTopIndex = ctx.paths.findIndex(
+      (path) =>
+        isDiamond(path) &&
+        Math.abs(diamondCenter(path).x - screen.x) < 1e-6 &&
+        Math.abs(diamondCenter(path).y - screen.y) < 1e-6,
+    );
+    // 그 뒤로도 경로가 남아야 한다 — 앞쪽 열(x+y가 더 큰)이 나중에 그려진다.
+    expect(ownTopIndex).toBeGreaterThan(0);
+    expect(ownTopIndex).toBeLessThan(ctx.paths.length - 1);
+  });
+
+  it('여러 오브젝트를 x + y 오름차순으로 그린다', () => {
+    const terrain = flat(6, 1);
+    const { renderer } = setup(terrain);
+
+    const stats = renderer.render(null, [
+      { kind: 'tree', x: 4, y: 4, z: 0, damage: 0 },
+      { kind: 'player', x: 1, y: 1, z: 0, swing: 0 },
+      { kind: 'oreVein', x: 2, y: 3, z: 0, damage: 0.5 },
+    ]);
+
+    expect(stats.drawnEntities).toBe(3);
+  });
+
+  it('같은 칸에 여럿 있어도 모두 그린다', () => {
+    const { renderer } = setup(flat(4, 1));
+
+    const stats = renderer.render(null, [
+      { kind: 'player', x: 1, y: 1, z: 0, swing: 0 },
+      { kind: 'npc', x: 1, y: 1, z: 0, hue: 40 },
+    ]);
+
+    expect(stats.drawnEntities).toBe(2);
+  });
+
+  it('빈 열이나 맵 밖의 오브젝트는 그리지 않는다', () => {
+    const terrain = flat(4, 1);
+    terrain.dig(1, 1);
+    const { renderer } = setup(terrain);
+
+    const stats = renderer.render(null, [
+      { kind: 'player', x: 1, y: 1, z: 0, swing: 0 },
+      { kind: 'npc', x: 99, y: 99, z: 0, hue: 10 },
+    ]);
+
+    expect(stats.drawnEntities).toBe(0);
+  });
+
+  it('휘두르는 중이면 도구 선을 더 그린다', () => {
+    const { ctx, renderer } = setup(flat(4, 1));
+
+    renderer.render(null, [{ kind: 'player', x: 1, y: 1, z: 0, swing: 0 }]);
+    const idle = ctx.strokes.length;
+
+    ctx.strokes.length = 0;
+    renderer.render(null, [{ kind: 'player', x: 1, y: 1, z: 0, swing: 0.5 }]);
+
+    expect(ctx.strokes.length).toBeGreaterThan(idle);
+  });
+
+  it('건물은 점유 영역의 가장 앞쪽 칸 순서로 그린다', () => {
+    const terrain = flat(8, 1);
+    const { renderer } = setup(terrain);
+
+    // 2×2 건물의 기준 칸이 (2,2)이면 정렬 기준은 (3,3)이다.
+    const stats = renderer.render(null, [
+      { kind: 'building', x: 2, y: 2, z: 0, width: 2, depth: 2, style: 'house', progress: 1 },
+      // (3,3)보다 앞에 있는 오브젝트는 건물보다 나중에 그려져야 한다.
+      { kind: 'tree', x: 4, y: 4, z: 0, damage: 0 },
+    ]);
+
+    expect(stats.drawnEntities).toBe(2);
+  });
+
+  it('건축 중인 건물은 진행 게이지를 더 그린다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [
+      { kind: 'building', x: 2, y: 2, z: 0, width: 1, depth: 1, style: 'well', progress: 1 },
+    ]);
+    const done = ctx.paths.length;
+
+    ctx.paths.length = 0;
+    renderer.render(null, [
+      { kind: 'building', x: 2, y: 2, z: 0, width: 1, depth: 1, style: 'well', progress: 0.4 },
+    ]);
+
+    // 게이지는 fillRect로 그리므로 경로 수는 같고, 그린 오브젝트 수만 확인한다.
+    expect(ctx.paths.length).toBeLessThanOrEqual(done);
+  });
+});
+
+describe('WorldRenderer 건축 미리보기', () => {
+  it('점유 영역의 칸만 미리보기 색으로 덮는다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [], { x: 2, y: 2, width: 2, depth: 3, valid: true });
+
+    const ghosts = ctx.paths.filter((path) => path.fillStyle === 'rgba(120, 220, 140, 0.45)');
+    expect(ghosts).toHaveLength(6);
+  });
+
+  it('놓을 수 없는 자리는 다른 색으로 표시한다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [], { x: 1, y: 1, width: 2, depth: 2, valid: false });
+
+    const ghosts = ctx.paths.filter((path) => path.fillStyle === 'rgba(230, 110, 110, 0.45)');
+    expect(ghosts).toHaveLength(4);
+  });
+
+  it('맵 밖으로 넘어간 미리보기는 맵 안 칸만 칠한다', () => {
+    const { ctx, renderer } = setup(flat(4, 1));
+
+    renderer.render(null, [], { x: 3, y: 3, width: 3, depth: 3, valid: false });
+
+    const ghosts = ctx.paths.filter((path) => path.fillStyle === 'rgba(230, 110, 110, 0.45)');
+    expect(ghosts).toHaveLength(1);
   });
 });

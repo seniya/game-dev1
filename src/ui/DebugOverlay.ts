@@ -1,6 +1,7 @@
 import { FpsCounter } from '../core/FpsCounter';
 import { BlockType, blockInfo } from '../core/blocks';
 import type { BlockStash } from '../core/BlockStash';
+import { toolLabel, type Tool } from '../core/tools';
 
 /** 오버레이에 표시할 프레임별 정보. */
 export interface DebugInfo {
@@ -16,6 +17,10 @@ export interface DebugInfo {
   drawnWalls: number;
   /** 현재 확대율. */
   zoom: number;
+  /** 플레이어가 선 칸. */
+  playerTile: { x: number; y: number };
+  /** 선택된 도구. */
+  tool: Tool;
 }
 
 /**
@@ -66,9 +71,11 @@ export class DebugOverlay {
     const tile = info.hovered
       ? `(${info.hovered.x}, ${info.hovered.y}) ${blockInfo(info.hoveredSurface).label} 높이 ${info.hoveredHeight}`
       : '(--, --)';
-    this.infoElement.textContent = `타일 ${tile} · 윗면 ${info.drawnColumns} 측면 ${info.drawnWalls} · 줌 ${info.zoom.toFixed(2)}x`;
+    this.infoElement.textContent =
+      `타일 ${tile} · 플레이어 (${info.playerTile.x}, ${info.playerTile.y})` +
+      ` · 윗면 ${info.drawnColumns} 측면 ${info.drawnWalls} · 줌 ${info.zoom.toFixed(2)}x`;
 
-    this.stashElement.textContent = formatStash(stash);
+    this.stashElement.textContent = `${toolLabel(info.tool)} · ${formatStash(stash)}`;
   }
 }
 
