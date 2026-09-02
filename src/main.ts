@@ -281,6 +281,10 @@ function bootstrap(): void {
    */
   let followPlayer = true;
 
+  /** 조작 안내를 담는 엘리먼트와 마지막으로 그린 문구. */
+  const hintElement = requireElement('hint');
+  let lastControlHint = '';
+
   const session = new SaveSession(store, {
     intervalMs: AUTOSAVE_INTERVAL_MS,
     lastSavedAt: loaded.ok ? loaded.data.savedAt : null,
@@ -406,6 +410,8 @@ function bootstrap(): void {
           game.inventory,
         );
 
+        const guidanceState = game.guidanceState();
+
         villageHud.update({
           level: game.villageLevel,
           goalLevel: game.goalLevel,
@@ -414,7 +420,15 @@ function bootstrap(): void {
           progress: game.levelProgress,
           residents: game.population.count,
           buildings: game.buildings.completedCount,
+          objective: game.guidance.objective(guidanceState),
         });
+
+        // 조작 안내는 상황에 맞는 것만 보여준다. 모든 키를 늘 늘어놓으면 지금 쓸 키가 묻힌다.
+        const controls = game.guidance.controls(guidanceState);
+        if (controls !== lastControlHint) {
+          lastControlHint = controls;
+          hintElement.textContent = controls;
+        }
 
         requestList.update(
           game.requests.requests.map((request) => ({

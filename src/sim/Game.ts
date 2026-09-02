@@ -28,6 +28,8 @@ import { zoneAt } from '../core/zones';
 import type { Entity, GhostPreview } from '../render/WorldRenderer';
 import { Buildings, type Building, type PlacementFailure } from './Buildings';
 import { Player } from './Player';
+import { Guidance } from './Guidance';
+import type { GuidanceState } from '../core/guidance';
 import { Population, type Migration } from './Population';
 import { RequestBoard, type RequestCompletion } from './Requests';
 import { ResourceField } from './ResourceField';
@@ -121,6 +123,8 @@ export class Game {
   readonly population: Population;
   /** 주민 요청 게시판. */
   readonly requests: RequestBoard;
+  /** 첫 플레이 안내. */
+  readonly guidance = new Guidance();
 
   /**
    * 이번 프레임에 UI로 알릴 사건들.
@@ -211,6 +215,32 @@ export class Game {
     }
 
     this.syncVillageLevel();
+
+    const hint = this.guidance.update(stepMs, this.guidanceState());
+    if (hint) this.pendingNotices.push({ message: hint, tone: 'neutral' });
+  }
+
+  /**
+   * 안내 규칙에 넘길 상태 요약을 만든다.
+   *
+   * @returns 상태 요약.
+   */
+  guidanceState(): GuidanceState {
+    return {
+      wood: this.totalHeld(ItemType.WOOD),
+      stone: this.totalHeld(ItemType.STONE),
+      carried: this.inventory.total,
+      nearStorage: this.nearStorage,
+      houses: this.buildings.sumCompleted((blueprint) => (blueprint.housing > 0 ? 1 : 0)),
+      residents: this.population.count,
+      buildings: this.buildings.completedCount,
+      requests: this.requests.requests.length,
+      payableRequests: this.requests.requests.filter((request) => this.canFulfill(request)).length,
+      level: this.level,
+      goalLevel: this.goalLevel,
+      buildMode: this.buildMode,
+      hasDeposited: this.guidance.hasDeposited,
+    };
   }
 
   /** 마을 점수. 건물·주민·요청 보상을 합산한 누적치다(기획서 6절). */
@@ -388,6 +418,8 @@ export class Game {
       level: this.level,
       experience: this.villageExperience,
       elapsedMs: this.elapsed,
+      seenHints: this.guidance.seenHints,
+      hasDeposited: this.guidance.hasDeposited,
     };
   }
 
@@ -445,6 +477,7 @@ export class Game {
       completed: data.completedRequests,
       timerMs: data.requestTimerMs,
     });
+    game.guidance.restore(data.seenHints, data.hasDeposited);
 
     return game;
   }
@@ -899,7 +932,10 @@ export class Game {
   depositAll(): Map<ItemType, number> {
     if (!this.nearStorage) return new Map();
 
-    return this.inventory.moveAllTo(this.storage, [ItemType.DIRT]);
+    const moved = this.inventory.moveAllTo(this.storage, [ItemType.DIRT]);
+    if (moved.size > 0) this.guidance.markDeposited();
+
+    return moved;
   }
 
   /**

@@ -255,6 +255,12 @@ body {
   font-size: 11px;
 }
 
+/* 지금 할 일. 튜토리얼 창 대신 이 한 줄이 다음 걸음을 알린다. */
+.village__objective {
+  margin-bottom: 2px;
+  color: #f0c04a;
+}
+
 /* 상단 미완료 요청 목록. 마을 표시 아래에 놓는다. */
 .requests {
   position: fixed;

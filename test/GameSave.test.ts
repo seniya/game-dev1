@@ -290,3 +290,39 @@ describe('Game 저장 거절', () => {
     expect(restored.requests.requests).toHaveLength(1);
   });
 });
+
+describe('Game 안내 진행도 저장', () => {
+  it('본 힌트가 보존돼 다시 뜨지 않는다', () => {
+    const game = makeGame();
+    game.inventory.add(ItemType.WOOD, 3);
+
+    // 힌트가 한 번 뜰 때까지 진행한다.
+    advance(game, 4000);
+    const seen = game.guidance.seenHints;
+    expect(seen.length).toBeGreaterThan(0);
+
+    const restored = Game.fromSave(game.toSave())!;
+
+    expect(restored.guidance.seenHints).toEqual(seen);
+  });
+
+  it('예치 경험이 보존된다', () => {
+    const game = makeGame();
+    game.inventory.add(ItemType.WOOD, 3);
+    game.depositAll();
+    expect(game.guidance.hasDeposited).toBe(true);
+
+    expect(Game.fromSave(game.toSave())!.guidance.hasDeposited).toBe(true);
+  });
+
+  it('안내 진행도가 없는 예전 저장도 읽힌다 — 선택적 필드다', () => {
+    const data = makeGame().toSave();
+    delete data.seenHints;
+    delete data.hasDeposited;
+
+    const restored = Game.fromSave(data);
+
+    expect(restored).not.toBeNull();
+    expect(restored!.guidance.seenHints).toEqual([]);
+  });
+});

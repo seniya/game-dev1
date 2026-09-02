@@ -14,6 +14,8 @@ export interface VillageHudState {
   residents: number;
   /** 완공 건물 수. */
   buildings: number;
+  /** 지금 할 일 한 줄. */
+  objective: string;
 }
 
 /**
@@ -30,10 +32,12 @@ export class VillageHud {
   private readonly labelElement: HTMLElement;
   private readonly fillElement: HTMLElement;
   private readonly goalElement: HTMLElement;
+  private readonly objectiveElement: HTMLElement;
 
   /** 마지막으로 그린 텍스트. 같으면 DOM을 건드리지 않는다. */
   private lastLabel = '';
   private lastGoal = '';
+  private lastObjective = '';
   /** 마지막으로 그린 게이지 폭(백분율 정수). */
   private lastFillPercent = -1;
 
@@ -55,8 +59,14 @@ export class VillageHud {
     this.goalElement = document.createElement('div');
     this.goalElement.className = 'village__goal';
 
+    // 지금 할 일을 목표 위에 둔다. 튜토리얼 창을 쓸 수 없으므로(기획서 7절)
+    // 이 한 줄이 "다음에 무엇을 하면 되는가"를 알리는 유일한 자리다.
+    this.objectiveElement = document.createElement('div');
+    this.objectiveElement.className = 'village__objective';
+
     this.root.appendChild(this.labelElement);
     this.root.appendChild(track);
+    this.root.appendChild(this.objectiveElement);
     this.root.appendChild(this.goalElement);
   }
 
@@ -81,6 +91,11 @@ export class VillageHud {
     if (percent !== this.lastFillPercent) {
       this.lastFillPercent = percent;
       this.fillElement.style.width = `${percent}%`;
+    }
+
+    if (state.objective !== this.lastObjective) {
+      this.lastObjective = state.objective;
+      this.objectiveElement.textContent = `지금: ${state.objective}`;
     }
 
     const goal =
