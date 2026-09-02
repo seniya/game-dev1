@@ -14,6 +14,8 @@ export const ItemType = {
   STONE: 'stone',
   /** 철광석. 중급 이상 곡괭이로 얻는다. */
   IRON_ORE: 'ironOre',
+  /** 수정. 동굴에서 고급 곡괭이로만 얻는다(기획서 5.2의 "희귀광물"). */
+  CRYSTAL: 'crystal',
   /** 흙. 지형을 되메우고 평탄화하는 재료다. */
   DIRT: 'dirt',
 } as const;
@@ -26,6 +28,7 @@ export const ITEM_ORDER: readonly ItemType[] = [
   ItemType.WOOD,
   ItemType.STONE,
   ItemType.IRON_ORE,
+  ItemType.CRYSTAL,
   ItemType.DIRT,
 ];
 
@@ -34,6 +37,7 @@ const ITEM_LABEL: Readonly<Record<ItemType, string>> = {
   [ItemType.WOOD]: '목재',
   [ItemType.STONE]: '돌',
   [ItemType.IRON_ORE]: '철광석',
+  [ItemType.CRYSTAL]: '수정',
   [ItemType.DIRT]: '흙',
 };
 
@@ -42,6 +46,7 @@ const ITEM_COLOR: Readonly<Record<ItemType, string>> = {
   [ItemType.WOOD]: '#a4713c',
   [ItemType.STONE]: '#8b8f96',
   [ItemType.IRON_ORE]: '#c98f5a',
+  [ItemType.CRYSTAL]: '#9a86e0',
   [ItemType.DIRT]: '#6b4b2f',
 };
 
@@ -78,6 +83,7 @@ const ITEM_TO_BLOCK: Readonly<Record<ItemType, BlockType | null>> = {
   [ItemType.WOOD]: null,
   [ItemType.STONE]: BlockType.STONE,
   [ItemType.IRON_ORE]: null,
+  [ItemType.CRYSTAL]: null,
   [ItemType.DIRT]: BlockType.DIRT,
 };
 

@@ -7,6 +7,8 @@ export const BlueprintId = {
   COTTAGE: 'cottage',
   /** 큰 집. 주민 2명이 산다. */
   MANOR: 'manor',
+  /** 대장간. 동굴의 수정을 써서 짓는다. */
+  FORGE: 'forge',
   /** 창고. 마을 저장 공간을 늘린다. */
   WAREHOUSE: 'warehouse',
   /** 우물. 주민 요청 대상이 되는 시설이다. */
@@ -122,6 +124,23 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     ],
     unlockLevel: 3,
     housing: 2,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.FORGE,
+    label: '대장간',
+    style: 'forge',
+    width: 2,
+    depth: 2,
+    materials: [
+      { item: ItemType.STONE, amount: 14 },
+      { item: ItemType.IRON_ORE, amount: 6 },
+      { item: ItemType.CRYSTAL, amount: 3 },
+    ],
+    // 동굴이 열리는 레벨과 같다. 수정 없이는 지을 수 없으므로 목록에 먼저 보이고,
+    // 동굴에 다녀와야 실제로 세워진다 — 갔다 온 보상이 마을에 남는 형태다.
+    unlockLevel: 5,
+    housing: 0,
     storageSlots: 0,
   },
 ];

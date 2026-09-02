@@ -1,4 +1,5 @@
 import { BLUEPRINTS } from './blueprints';
+import { MapId, mapLabel } from './maps';
 import { ToolKind, ToolTier } from './tools';
 import { Zone, ZONE_ORDER } from './zones';
 
@@ -54,6 +55,8 @@ export const LEVEL_THRESHOLDS: readonly number[] = [0, 8, 20, 38, 62, 90, 122, 1
 /** 해금 한 항목. */
 export type Unlock =
   | { kind: 'zone'; zone: Zone }
+  /** 새 맵이 열린다. */
+  | { kind: 'map'; map: MapId }
   | { kind: 'tool'; tool: ToolKind; tier: ToolTier }
   | { kind: 'blueprint'; label: string }
   /** 인벤토리 슬롯이 늘어난다. */
@@ -82,7 +85,12 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
     { kind: 'tool', tool: ToolKind.AXE, tier: ToolTier.HIGH },
     { kind: 'tool', tool: ToolKind.SHOVEL, tier: ToolTier.HIGH },
   ],
-  5: [{ kind: 'tool', tool: ToolKind.PICKAXE, tier: ToolTier.HIGH }],
+  // 동굴과 고급 곡괭이는 **같은 레벨에 열려야 한다.** 동굴의 수정 광맥이 고급 곡괭이를
+  // 요구하므로, 하나만 열리면 갈 수는 있는데 캘 것이 없거나 그 반대가 된다.
+  5: [
+    { kind: 'tool', tool: ToolKind.PICKAXE, tier: ToolTier.HIGH },
+    { kind: 'map', map: MapId.CAVE },
+  ],
 
   // 레벨 6부터는 새 콘텐츠 대신 **편의**를 연다. 로드맵 02는 완성도를 다루는 단계이고,
   // 새 자원·건물·지역은 로드맵 03의 영역이다. 자세한 근거는 ADR 0011에 있다.
@@ -216,6 +224,47 @@ export function isZoneUnlocked(zone: Zone, level: number): boolean {
 }
 
 /**
+ * 그 레벨에서 갈 수 있는 맵인지 확인한다.
+ *
+ * 구역 해금과 같은 방식이다 — **레벨에서 파생되므로 저장하지 않는다.** 되살릴 때
+ * 레벨만 알면 같은 답이 나온다.
+ *
+ * @param map 맵 종류.
+ * @param level 마을 레벨.
+ * @returns 갈 수 있으면 true.
+ */
+export function isMapUnlocked(map: MapId, level: number): boolean {
+  if (map === MapId.SURFACE) return true;
+
+  for (const [unlockLevel, unlocks] of Object.entries(LEVEL_UNLOCKS)) {
+    if (Number(unlockLevel) > level) continue;
+    for (const unlock of unlocks) {
+      if (unlock.kind === 'map' && unlock.map === map) return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * 그 맵이 열리는 레벨을 구한다. 안내 문구에 쓴다.
+ *
+ * @param map 맵 종류.
+ * @returns 열리는 레벨. 처음부터 열려 있으면 1.
+ */
+export function mapUnlockLevel(map: MapId): number {
+  if (map === MapId.SURFACE) return 1;
+
+  for (const [unlockLevel, unlocks] of Object.entries(LEVEL_UNLOCKS)) {
+    for (const unlock of unlocks) {
+      if (unlock.kind === 'map' && unlock.map === map) return Number(unlockLevel);
+    }
+  }
+
+  return MAX_VILLAGE_LEVEL;
+}
+
+/**
  * 그 레벨까지 받은 도구 등급을 구한다.
  *
  * @param tool 도구 종류.
@@ -251,6 +300,7 @@ export function describeUnlock(unlock: Unlock): string {
     const tierLabels = { 1: '초급', 2: '중급', 3: '고급' } as Record<number, string>;
     return `${tierLabels[unlock.tier]} ${toolLabels[unlock.tool]}`;
   }
+  if (unlock.kind === 'map') return `${mapLabel(unlock.map)} 개방`;
   if (unlock.kind === 'inventory') return `인벤토리 슬롯 +${unlock.slots}`;
   if (unlock.kind === 'storage') return `창고 슬롯 +${unlock.slots}`;
   if (unlock.kind === 'speed') return `이동 속도 +${Math.round((unlock.multiplier - 1) * 100)}%`;

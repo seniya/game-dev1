@@ -26,12 +26,23 @@ export type HarvestResult =
   | { ok: true; kind: NodeKind; destroyed: boolean; drop?: { item: ItemType; amount: number } }
   | { ok: false; reason: 'noNode' | 'wrongTool' | 'depleted' };
 
+/**
+ * 배치 규칙.
+ *
+ * 지상은 구역(초원·숲·산악)으로 나뉘지만 동굴에는 구역이 없다 — 구역은 마을 중심에서의
+ * 거리이고(ADR 0005) 동굴에는 마을이 없다. 그래서 배치 규칙을 맵 종류가 아니라
+ * **배치 방식**으로 받는다.
+ */
+export type ResourceLayout = 'surface' | 'cave';
+
 /** 노드 배치 설정. */
 export interface ResourceFieldOptions {
   /** 시드. 같은 시드는 항상 같은 배치를 만든다. */
   seed?: number;
   /** 구역별 노드 밀도 배수. 테스트에서 밀도를 0으로 만들 때 쓴다. */
   densityScale?: number;
+  /** 배치 방식. 기본값은 지상이다. */
+  layout?: ResourceLayout;
 }
 
 /**
@@ -55,6 +66,19 @@ const ZONE_DENSITY: Readonly<Record<Zone, ReadonlyArray<{ kind: NodeKind; chance
 };
 
 /**
+ * 동굴의 노드 분포.
+ *
+ * 수정은 동굴에만 있고, 철광석과 돌도 지상보다 촘촘하다 — 멀고 위험한 곳일수록
+ * 벌이가 좋아야 갈 이유가 생긴다(기획서 5.2의 구역 서열을 맵 단위로 잇는 것이다).
+ * 나무는 없다. 볕이 들지 않는 곳이다.
+ */
+const CAVE_DENSITY: ReadonlyArray<{ kind: NodeKind; chance: number }> = [
+  { kind: NodeKind.CRYSTAL_VEIN, chance: 0.07 },
+  { kind: NodeKind.IRON_VEIN, chance: 0.1 },
+  { kind: NodeKind.STONE_ROCK, chance: 0.16 },
+];
+
+/**
  * 맵 위의 자원 노드 모음.
  *
  * 노드는 칸당 최대 하나이며 `y * width + x`를 키로 하는 Map에 담는다. 배열이
@@ -72,7 +96,7 @@ export class ResourceField {
    */
   constructor(terrain: Terrain, options: ResourceFieldOptions = {}) {
     this.terrain = terrain;
-    this.populate(options.seed ?? 1, options.densityScale ?? 1);
+    this.populate(options.seed ?? 1, options.densityScale ?? 1, options.layout ?? 'surface');
   }
 
   /** 배치된 노드 총 개수(부서진 것 포함). */
@@ -303,13 +327,16 @@ export class ResourceField {
    *
    * @param seed 시드.
    * @param densityScale 밀도 배수.
+   * @param layout 배치 방식.
    */
-  private populate(seed: number, densityScale: number): void {
+  private populate(seed: number, densityScale: number, layout: ResourceLayout): void {
     for (let y = 0; y < this.terrain.height; y += 1) {
       for (let x = 0; x < this.terrain.width; x += 1) {
         if (!canStand(this.terrain, x, y)) continue;
+        // 동굴에서는 파낸 바닥에만 놓는다. 벽은 꽉 찬 암반 기둥이라 설 수 없다.
+        if (layout === 'cave' && this.terrain.columnHeight(x, y) !== 1) continue;
 
-        const kind = this.pickKind(x, y, seed, densityScale);
+        const kind = this.pickKind(x, y, seed, densityScale, layout);
         if (!kind) continue;
 
         this.nodes.set(this.key(x, y), {
@@ -330,13 +357,21 @@ export class ResourceField {
    * @param y 그리드 y.
    * @param seed 시드.
    * @param densityScale 밀도 배수.
+   * @param layout 배치 방식.
    * @returns 노드 종류. 놓지 않으면 null.
    */
-  private pickKind(x: number, y: number, seed: number, densityScale: number): NodeKind | null {
+  private pickKind(
+    x: number,
+    y: number,
+    seed: number,
+    densityScale: number,
+    layout: ResourceLayout,
+  ): NodeKind | null {
     const roll = hashNoise(x, y, seed + 5003);
     let threshold = 0;
 
-    for (const entry of ZONE_DENSITY[zoneAt(this.terrain, x, y)]) {
+    const table = layout === 'cave' ? CAVE_DENSITY : ZONE_DENSITY[zoneAt(this.terrain, x, y)];
+    for (const entry of table) {
       threshold += entry.chance * densityScale;
       if (roll < threshold) return entry.kind;
     }

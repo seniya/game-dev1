@@ -3,6 +3,7 @@ import { BlockType, blockInfo } from '../src/core/blocks';
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH, gridToWorld, worldToTile } from '../src/core/coordinates';
 import { Terrain } from '../src/core/Terrain';
 import { Camera } from '../src/render/Camera';
+import { MAX_DARKNESS, darkColor } from '../src/core/light';
 import { WorldRenderer } from '../src/render/WorldRenderer';
 
 /** 가짜 컨텍스트가 기록하는 경로 하나. */
@@ -35,6 +36,12 @@ class RecordingContext {
 
   private points: Array<{ x: number; y: number }> = [];
   private committedIndex: number | null = null;
+
+  /** 상태 저장. 실제 컨텍스트에는 늘 있으므로 대역에도 둔다. */
+  save(): void {}
+
+  /** 상태 복원. */
+  restore(): void {}
 
   /** 새 경로를 시작한다. */
   beginPath(): void {
@@ -75,8 +82,20 @@ class RecordingContext {
     this.commit(true);
   }
 
-  /** 배경 클리어용과 게이지용. 도형 기록에는 넣지 않는다. */
-  fillRect(): void {}
+  /** 화면을 덮은 사각형들. 어둠 덮개가 여기 담긴다. */
+  readonly rects: Array<{ x: number; y: number; width: number; height: number; fillStyle: string }> = [];
+
+  /**
+   * 배경 클리어·게이지·어둠 덮개. 도형 기록과 섞이지 않게 따로 담는다.
+   *
+   * @param x 화면 x.
+   * @param y 화면 y.
+   * @param width 너비.
+   * @param height 높이.
+   */
+  fillRect(x: number, y: number, width: number, height: number): void {
+    this.rects.push({ x, y, width, height, fillStyle: this.fillStyle });
+  }
 
   /** 그린 글자 기록. */
   readonly texts: Array<{ text: string; x: number; y: number }> = [];
@@ -781,5 +800,41 @@ describe('WorldRenderer 미리보기 이름', () => {
     renderer.render(null, [], { x: 2, y: 2, width: 2, depth: 2, valid: true });
 
     expect(ctx.texts).toHaveLength(0);
+  });
+});
+
+describe('동굴 어둠', () => {
+  it('빛을 넘기지 않으면 덮지 않는다 — 지상은 밝다', () => {
+    const { ctx, renderer } = setup(flat(9, 2));
+    renderer.render(null, [], null, 0, null, null);
+
+    expect(ctx.rects).toHaveLength(0);
+  });
+
+  it('빛을 넘기면 화면을 덮는다', () => {
+    const { ctx, renderer } = setup(flat(9, 2), { width: 900, height: 700 });
+    renderer.render(null, [], null, 0, null, { x: 4, y: 4, z: 1 });
+
+    expect(ctx.rects).toHaveLength(1);
+    expect(ctx.rects[0]).toMatchObject({ x: 0, y: 0, width: 900, height: 700 });
+  });
+
+  it('그라디언트를 만들 수 없으면 고른 어둠으로 떨어진다', () => {
+    // 가짜 컨텍스트에는 createRadialGradient가 없다. 도형 경로는 어떤 환경에서도
+    // 죽지 않아야 한다(로드맵 02의 진행 원칙).
+    const { ctx, renderer } = setup(flat(9, 2));
+    renderer.render(null, [], null, 0, null, { x: 4, y: 4, z: 1 });
+
+    expect(ctx.rects[0]?.fillStyle).toBe(darkColor(MAX_DARKNESS));
+  });
+
+  it('어둠은 지형과 오브젝트를 다 그린 뒤에 덮는다', () => {
+    const { ctx, renderer } = setup(flat(9, 2));
+    const before = ctx.paths.length;
+    renderer.render(null, [], null, 0, null, { x: 4, y: 4, z: 1 });
+
+    // 덮개가 먼저 그려졌다면 지형이 하나도 기록되지 않았을 것이다.
+    expect(ctx.paths.length).toBeGreaterThan(before);
+    expect(ctx.rects).toHaveLength(1);
   });
 });

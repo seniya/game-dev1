@@ -59,6 +59,11 @@ export class Camera {
    */
   private bounds: WorldBounds | null = null;
 
+  /** 화면 크기(CSS px). 화면 전체를 덮는 그리기에 쓴다. */
+  get viewport(): { width: number; height: number } {
+    return { width: this.viewportWidth, height: this.viewportHeight };
+  }
+
   /** 현재 확대율. */
   get zoom(): number {
     return this.scale;

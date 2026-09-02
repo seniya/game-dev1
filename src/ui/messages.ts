@@ -33,6 +33,8 @@ export function describeFailure(reason: ActionFailure, placement?: PlacementFail
       return '마을에서만 할 수 있습니다 — 지상으로 나가세요';
     case 'notPortal':
       return '통로 위에 서서 F를 누르세요';
+    case 'mapLocked':
+      return '아직 들어갈 수 없습니다';
     case 'blocked':
       return '여기에는 놓을 수 없습니다';
     case 'noBlueprint':

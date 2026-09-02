@@ -18,6 +18,7 @@ import { SAVE_VERSION, isSaveData, type SaveData } from '../core/save';
 import {
   bonusMultiplier,
   describeUnlock,
+  isMapUnlocked,
   isZoneUnlocked,
   levelForScore,
   levelProgress,
@@ -64,6 +65,8 @@ export type ActionFailure =
   | 'notVillage'
   /** 통로 위에 서 있지 않다. */
   | 'notPortal'
+  /** 아직 열리지 않은 맵이다. */
+  | 'mapLocked'
   /** 이동·휘두르기 중이라 새 행동을 받을 수 없다. */
   | 'busy'
   /** 대상이 인접 칸이 아니다. */
@@ -228,9 +231,11 @@ export class Game {
     const terrain = generateCave(surface.terrain.width, surface.terrain.height, {
       seed: mapSeed(this.seed, id),
     });
-    // 동굴의 자원은 로드맵 03 Phase 3이 채운다. 지금은 구조만 연다.
-    const resources = new ResourceField(terrain, { densityScale: 0 });
-    const created: WorldMapState = { terrain, resources, portal: findCaveExit(terrain) };
+    const resources = new ResourceField(terrain, {
+      seed: mapSeed(this.seed, id),
+      layout: 'cave',
+    });
+    const created: WorldMapState = { terrain, resources, portal: findCaveExit(terrain, resources) };
 
     this.maps.set(id, created);
 
@@ -255,6 +260,15 @@ export class Game {
   /** 지금 맵에 마을이 있는지. 건축·철거·예치가 여기에 달려 있다. */
   get inVillage(): boolean {
     return isVillageMap(this.current);
+  }
+
+  /**
+   * 지금 맵이 어두운지.
+   *
+   * 규칙은 여기 있고 표현은 렌더러가 한다 — 렌더러는 "동굴"을 모르고 빛의 중심만 받는다.
+   */
+  get dark(): boolean {
+    return this.current === MapId.CAVE;
   }
 
   /** 지금 맵의 통로 칸. 반대편 맵으로 이어진다. */
@@ -283,6 +297,8 @@ export class Game {
     if (!this.onPortal) return { ok: false, reason: 'notPortal' };
 
     const destination = this.current === MapId.SURFACE ? MapId.CAVE : MapId.SURFACE;
+    // 나오는 길은 언제나 열려 있다. 잠긴 맵에 갇히는 상황을 만들지 않는다.
+    if (!isMapUnlocked(destination, this.level)) return { ok: false, reason: 'mapLocked' };
     const arrival = this.mapState(destination);
 
     this.current = destination;
@@ -656,11 +672,8 @@ export class Game {
       const terrain = Terrain.fromSave(saved.terrain);
       if (!terrain) continue;
 
-      this.maps.set(saved.id, {
-        terrain,
-        resources: ResourceField.fromSave(terrain, saved.nodes),
-        portal: findCaveExit(terrain),
-      });
+      const resources = ResourceField.fromSave(terrain, saved.nodes);
+      this.maps.set(saved.id, { terrain, resources, portal: findCaveExit(terrain, resources) });
     }
 
     // 저장된 맵에 있을 때만 그 맵으로 돌아간다. 없으면 지상에서 시작한다.
@@ -1402,9 +1415,10 @@ function findPortalTile(terrain: Terrain, resources: ResourceField): TilePos {
  * 놓여 사방으로 길이 열린다.
  *
  * @param terrain 동굴 지형.
+ * @param resources 그 맵의 자원 노드(광맥 위에 출구를 두지 않는다).
  * @returns 출구 칸.
  */
-function findCaveExit(terrain: Terrain): TilePos {
+function findCaveExit(terrain: Terrain, resources: ResourceField): TilePos {
   const center = {
     x: Math.floor((terrain.width - 1) / 2),
     y: Math.floor((terrain.height - 1) / 2),
@@ -1417,6 +1431,8 @@ function findCaveExit(terrain: Terrain): TilePos {
     for (let x = 0; x < terrain.width; x += 1) {
       // 벽(꽉 찬 기둥)이 아니라 파낸 바닥이어야 설 수 있다.
       if (terrain.columnHeight(x, y) !== 1) continue;
+      // 광맥 위에는 설 수 없다. 출구가 막히면 나갈 길이 사라진다.
+      if (resources.isBlocked(x, y)) continue;
 
       const distance = Math.max(Math.abs(x - center.x), Math.abs(y - center.y));
       if (distance < bestDistance) {

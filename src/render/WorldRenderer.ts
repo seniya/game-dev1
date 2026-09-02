@@ -1,4 +1,5 @@
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH, gridToWorld } from '../core/coordinates';
+import { DARK_RADIUS, LIT_RADIUS, MAX_DARKNESS, darkColor, darknessAt } from '../core/light';
 import { BlockType, blockInfo } from '../core/blocks';
 import type { Terrain } from '../core/Terrain';
 import type { Camera } from './Camera';
@@ -28,7 +29,7 @@ export type Entity =
   | { kind: 'building'; x: number; y: number; z: number; width: number; depth: number; style: BuildingStyle; progress: number };
 
 /** 건물 외형 종류. 블루프린트가 이 값으로 자기 모습을 지정한다. */
-export type BuildingStyle = 'house' | 'bigHouse' | 'warehouse' | 'well' | 'workbench';
+export type BuildingStyle = 'house' | 'bigHouse' | 'warehouse' | 'well' | 'workbench' | 'forge';
 
 /**
  * 지형 위에 얹는 구역 표시.
@@ -197,6 +198,9 @@ export class WorldRenderer {
    * @param hovered 하이라이트할 타일. 없으면 null.
    * @param entities 지형 위에 그릴 오브젝트. 순서는 상관없다(내부에서 정렬한다).
    * @param ghost 반투명 미리보기. 건축 모드에서만 넘긴다.
+   * @param timeMs 시뮬레이션 시각. 시간에 따라 움직이는 연출에 쓴다.
+   * @param zones 구역 표시. 없으면 잠긴 칸을 칠하지 않는다.
+   * @param light 빛의 중심(그리드 좌표). 넘기면 그 바깥이 어두워진다 — 동굴에서 쓴다.
    * @returns 이번 프레임에 그린 양.
    */
   render(
@@ -205,6 +209,7 @@ export class WorldRenderer {
     ghost: GhostPreview | null = null,
     timeMs = 0,
     zones: ZoneOverlay | null = null,
+    light: { x: number; y: number; z: number } | null = null,
   ): RenderStats {
     this.timeMs = timeMs;
     const range = this.camera.visibleTileRange();
@@ -283,7 +288,67 @@ export class WorldRenderer {
       }
     }
 
+    // 어둠은 지형과 오브젝트를 모두 그린 뒤에 덮는다. 파편과 떠오르는 글자는
+    // 그 위에 얹히므로(`main.ts`) 어두운 곳에서도 읽힌다.
+    if (light) this.drawDarkness(light, zoom);
+
     return stats;
+  }
+
+  /**
+   * 빛의 중심 바깥을 어둡게 덮는다.
+   *
+   * 화면 전체를 한 번 덮는 방식이라 열 수와 무관하게 비용이 일정하다. 그라디언트를
+   * 만들 수 없는 컨텍스트(헤드리스 테스트의 가짜 컨텍스트)에서는 **고른 어둠**으로
+   * 떨어진다 — 도형 경로가 어떤 환경에서도 죽지 않아야 한다는 규칙(로드맵 02)과 같다.
+   *
+   * @param center 빛의 중심(그리드 좌표).
+   * @param zoom 확대율.
+   */
+  private drawDarkness(center: { x: number; y: number; z: number }, zoom: number): void {
+    const world = gridToWorld(center.x, center.y, center.z);
+    const screen = this.camera.worldToScreen(world.x, world.y);
+
+    // 타일 반폭을 한 칸의 대표 길이로 삼아 반경을 픽셀로 옮긴다.
+    const unit = (TILE_WIDTH / 2) * zoom;
+    const inner = LIT_RADIUS * unit;
+    const outer = DARK_RADIUS * unit;
+
+    const ctx = this.ctx;
+    const size = this.camera.viewport;
+
+    ctx.save();
+    // 카메라 변환 없이 화면 좌표로 덮는다.
+    ctx.fillStyle = this.darknessFill(screen, inner, outer);
+    ctx.fillRect(0, 0, size.width, size.height);
+    ctx.restore();
+  }
+
+  /**
+   * 어둠 덮개의 칠을 만든다.
+   *
+   * @param screen 빛의 중심 화면 좌표.
+   * @param inner 밝은 반경(px).
+   * @param outer 가장 어두운 반경(px).
+   * @returns 그라디언트 또는 고른 색.
+   */
+  private darknessFill(
+    screen: { x: number; y: number },
+    inner: number,
+    outer: number,
+  ): CanvasGradient | string {
+    const ctx = this.ctx;
+    if (typeof ctx.createRadialGradient !== 'function') return darkColor(MAX_DARKNESS);
+
+    const gradient = ctx.createRadialGradient(screen.x, screen.y, inner, screen.x, screen.y, outer);
+    // 중간 지점을 몇 개 찍어 `darknessAt`의 곡선을 그대로 옮긴다.
+    for (let step = 0; step <= 4; step += 1) {
+      const t = step / 4;
+      const distance = LIT_RADIUS + (DARK_RADIUS - LIT_RADIUS) * t;
+      gradient.addColorStop(t, darkColor(darknessAt(distance)));
+    }
+
+    return gradient;
   }
 
   /**
@@ -1013,6 +1078,9 @@ const BUILDING_STYLE: Readonly<
   warehouse: { roof: '#5f7d8c', wallX: '#c9b592', wallY: '#a89877', height: 1.6 },
   well: { roof: '#7a6a55', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.8 },
   workbench: { roof: '#8a6f47', wallX: '#b39566', wallY: '#957b54', height: 0.7 },
+  // 대장간은 어두운 벽과 달아오른 지붕으로 둔다 — 마을에서 한눈에 구분돼야
+  // 동굴에 다녀온 보람이 보인다.
+  forge: { roof: '#c26a3a', wallX: '#6f6a68', wallY: '#575250', height: 1.3 },
 };
 
 /**

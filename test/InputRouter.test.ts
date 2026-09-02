@@ -4,6 +4,7 @@ import { BlueprintId } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
 import { Terrain } from '../src/core/Terrain';
 import { MapId } from '../src/core/maps';
+import { mapUnlockLevel } from '../src/core/village';
 import type { ActionResult } from '../src/sim/Game';
 import { Game } from '../src/sim/Game';
 import { ResourceField } from '../src/sim/ResourceField';
@@ -281,6 +282,8 @@ describe('키보드만으로 플레이', () => {
 
   it('F로 동굴에 들어갔다 나온다 — 맵 이동도 키보드로 된다', () => {
     const { game, press, step } = setup();
+    // 동굴은 마을 레벨로 열린다.
+    game.setVillageLevel(mapUnlockLevel(MapId.CAVE));
     game.player.placeAt(game.portal.x, game.portal.y);
 
     press('KeyF');

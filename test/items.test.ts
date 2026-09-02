@@ -3,8 +3,18 @@ import { BlockType } from '../src/core/blocks';
 import { ITEM_ORDER, ItemType, blockToItem, itemColor, itemLabel, itemToBlock } from '../src/core/items';
 
 describe('아이템', () => {
-  it('MVP 자원 3종과 지형 재료 흙을 갖는다', () => {
-    expect(ITEM_ORDER).toEqual([ItemType.WOOD, ItemType.STONE, ItemType.IRON_ORE, ItemType.DIRT]);
+  it('MVP 자원 3종에 동굴의 수정과 지형 재료 흙을 더해 갖는다', () => {
+    expect(ITEM_ORDER).toEqual([
+      ItemType.WOOD,
+      ItemType.STONE,
+      ItemType.IRON_ORE,
+      ItemType.CRYSTAL,
+      ItemType.DIRT,
+    ]);
+  });
+
+  it('수정은 지형에 놓을 수 없다 — 자원이지 지형 재료가 아니다', () => {
+    expect(itemToBlock(ItemType.CRYSTAL)).toBeNull();
   });
 
   it('모든 아이템에 이름과 색이 있다', () => {

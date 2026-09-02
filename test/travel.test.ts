@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { BlockType } from '../src/core/blocks';
-import { BlueprintId } from '../src/core/blueprints';
+import { BlueprintId, blueprintById } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
+import { NodeKind, nodeDefinition } from '../src/core/resourceNodes';
+import { ToolKind, ToolTier } from '../src/core/tools';
+import { toolTierAtLevel } from '../src/core/village';
 import { MapId, isMapId, isVillageMap, mapSeed } from '../src/core/maps';
+import { isMapUnlocked, mapUnlockLevel } from '../src/core/village';
 import { walkableNeighbors } from '../src/core/movement';
 import { Terrain } from '../src/core/Terrain';
 import { generateTerrain } from '../src/core/terrainGen';
@@ -23,6 +27,8 @@ function makeGame(size = 13): Game {
 
   const game = new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
   game.setWorldSeed(1234);
+  // 동굴은 마을 레벨로 열린다. 이동을 다루는 테스트는 열린 상태에서 시작한다.
+  game.setVillageLevel(mapUnlockLevel(MapId.CAVE));
 
   return game;
 }
@@ -73,6 +79,36 @@ describe('맵 이동', () => {
 
     expect(result.ok).toBe(false);
     expect(result.ok === false && result.reason).toBe('notPortal');
+  });
+
+  it('레벨이 낮으면 동굴에 들어갈 수 없다', () => {
+    const game = makeGame();
+    game.setVillageLevel(1);
+    game.player.placeAt(game.portal.x, game.portal.y);
+
+    const result = game.travel();
+
+    expect(result.ok).toBe(false);
+    expect(result.ok === false && result.reason).toBe('mapLocked');
+  });
+
+  it('동굴과 고급 곡괭이가 같은 레벨에 열린다 — 하나만 열리면 헛걸음이다', () => {
+    const level = mapUnlockLevel(MapId.CAVE);
+
+    expect(isMapUnlocked(MapId.CAVE, level)).toBe(true);
+    expect(isMapUnlocked(MapId.CAVE, level - 1)).toBe(false);
+    expect(toolTierAtLevel(ToolKind.PICKAXE, level)).toBe(ToolTier.HIGH);
+  });
+
+  it('나오는 길은 언제나 열려 있다 — 잠긴 맵에 갇히지 않는다', () => {
+    const game = makeGame();
+    goThroughPortal(game);
+    game.setVillageLevel(1);
+
+    game.player.placeAt(game.portal.x, game.portal.y);
+
+    expect(game.travel().ok).toBe(true);
+    expect(game.currentMap).toBe(MapId.SURFACE);
   });
 
   it('통로를 타면 동굴로 간다', () => {
@@ -244,11 +280,17 @@ describe('마을 규칙은 지상에서만', () => {
 
   it('동굴에는 잠긴 구역이 없다 — 구역은 마을 중심에서의 거리다', () => {
     const game = makeGame(31);
-    expect(game.isZoneLocked(0, 0)).toBe(true);
-
     goThroughPortal(game);
+    // 구역이 잠기는 낮은 레벨로 되돌려도 동굴에서는 잠금이 없다.
+    game.setVillageLevel(1);
 
     expect(game.isZoneLocked(0, 0)).toBe(false);
+
+    game.player.placeAt(game.portal.x, game.portal.y);
+    game.travel();
+
+    // 같은 좌표가 지상에서는 아직 열리지 않은 산악이다.
+    expect(game.isZoneLocked(0, 0)).toBe(true);
   });
 
   it('동굴에서는 주민과 건물을 그리지 않는다', () => {
@@ -320,5 +362,142 @@ describe('맵과 저장', () => {
 
     expect(second.terrain.toSave().heights).toBe(first.terrain.toSave().heights);
     expect(second.portal).toEqual(first.portal);
+  });
+});
+
+describe('동굴의 자원', () => {
+  /** 동굴에 들어간 게임을 만든다. */
+  function inCave() {
+    const game = makeGame(21);
+    goThroughPortal(game);
+    return game;
+  }
+
+  it('동굴에만 수정 광맥이 있다', () => {
+    const game = inCave();
+    const kinds = new Set([...game.resources.all].map((node) => node.kind));
+
+    expect(kinds.has(NodeKind.CRYSTAL_VEIN)).toBe(true);
+    // 볕이 들지 않는 곳이다.
+    expect(kinds.has(NodeKind.TREE)).toBe(false);
+  });
+
+  it('광맥은 파낸 바닥에만 놓인다 — 벽 속에 있으면 닿을 수 없다', () => {
+    const game = inCave();
+
+    for (const node of game.resources.all) {
+      expect(game.terrain.columnHeight(node.x, node.y)).toBe(1);
+    }
+  });
+
+  it('출구에는 광맥을 두지 않는다 — 막히면 나갈 길이 사라진다', () => {
+    const game = inCave();
+
+    expect(game.resources.isBlocked(game.portal.x, game.portal.y)).toBe(false);
+  });
+
+  it('수정은 고급 곡괭이로만 캔다', () => {
+    const game = inCave();
+    const crystal = [...game.resources.all].find((node) => node.kind === NodeKind.CRYSTAL_VEIN);
+    if (!crystal) throw new Error('수정 광맥이 없다');
+
+    expect(nodeDefinition(NodeKind.CRYSTAL_VEIN).minTier).toBe(ToolTier.HIGH);
+
+    // 중급 곡괭이로는 거절된다.
+    const denied = game.resources.harvest(crystal.x, crystal.y, {
+      kind: ToolKind.PICKAXE,
+      tier: ToolTier.MID,
+    });
+    expect(denied.ok).toBe(false);
+    expect(denied.ok === false && denied.reason).toBe('wrongTool');
+
+    // 동굴이 열리는 레벨에서는 고급 곡괭이를 들고 있으므로 캘 수 있다.
+    game.player.placeAt(crystal.x + 1, crystal.y);
+    game.player.selectTool(1);
+    expect(game.player.tool.tier).toBe(ToolTier.HIGH);
+    expect(game.harvestAt({ x: crystal.x, y: crystal.y }).ok).toBe(true);
+  });
+
+  it('지상에는 수정이 없다 — 갈 이유가 동굴에 있어야 한다', () => {
+    const terrain = generateTerrain(32, 32, { seed: 20260901 });
+    const field = new ResourceField(terrain, { seed: 20260901 });
+    const kinds = new Set([...field.all].map((node) => node.kind));
+
+    expect(kinds.has(NodeKind.CRYSTAL_VEIN)).toBe(false);
+  });
+
+  it('동굴에서는 화면이 어둡다', () => {
+    const game = makeGame();
+
+    expect(game.dark).toBe(false);
+    goThroughPortal(game);
+    expect(game.dark).toBe(true);
+  });
+});
+
+describe('대장간', () => {
+  it('수정이 있어야 지어진다', () => {
+    const game = makeGame();
+    game.selectBlueprint(BlueprintId.FORGE);
+    game.storage.add(ItemType.STONE, 20);
+    game.storage.add(ItemType.IRON_ORE, 10);
+
+    const denied = game.buildAt({ x: 5, y: 5 });
+    expect(denied.ok).toBe(false);
+    expect(denied.ok === false && denied.reason).toBe('noMaterial');
+
+    game.storage.add(ItemType.CRYSTAL, 3);
+    const built = game.buildAt({ x: 5, y: 5 });
+
+    expect(built.ok).toBe(true);
+    expect(game.totalHeld(ItemType.CRYSTAL)).toBe(0);
+  });
+
+  it('동굴이 열리는 레벨에 함께 열린다', () => {
+    const forge = blueprintById(BlueprintId.FORGE);
+
+    expect(forge.unlockLevel).toBe(mapUnlockLevel(MapId.CAVE));
+  });
+});
+
+describe('Phase 3 완료 기준', () => {
+  it('동굴에서 수정을 캐 지상에 대장간을 짓는다', () => {
+    const game = makeGame(21);
+    goThroughPortal(game);
+
+    const crystal = [...game.resources.all].find((node) => node.kind === NodeKind.CRYSTAL_VEIN);
+    if (!crystal) throw new Error('수정 광맥이 없다');
+
+    // 광맥 옆에 서서 부술 때까지 캔다. 휘두르기 쿨다운이 있으므로 사이사이 시간을 흘린다.
+    game.player.placeAt(crystal.x + 1, crystal.y);
+    game.player.selectTool(1);
+    const needed = blueprintById(BlueprintId.FORGE).materials.find(
+      (material) => material.item === ItemType.CRYSTAL,
+    )!.amount;
+
+    for (let guard = 0; guard < 200 && game.inventory.count(ItemType.CRYSTAL) < needed; guard += 1) {
+      game.harvestAt({ x: crystal.x, y: crystal.y });
+      for (let step = 0; step < 40; step += 1) game.update(1000 / 60);
+    }
+
+    expect(game.inventory.count(ItemType.CRYSTAL)).toBeGreaterThanOrEqual(needed);
+
+    // 지상으로 돌아와 짓는다.
+    game.player.placeAt(game.portal.x, game.portal.y);
+    game.travel();
+    expect(game.currentMap).toBe(MapId.SURFACE);
+
+    game.storage.add(ItemType.STONE, 20);
+    game.storage.add(ItemType.IRON_ORE, 10);
+    game.selectBlueprint(BlueprintId.FORGE);
+
+    const built = game.buildAt({ x: 5, y: 5 });
+
+    expect(built.ok).toBe(true);
+    // 갔다 온 보상이 마을에 남는다.
+    for (let step = 0; step < 600; step += 1) game.update(1000 / 60);
+    expect(
+      [...game.buildings.all].some((building) => building.blueprintId === BlueprintId.FORGE),
+    ).toBe(true);
   });
 });

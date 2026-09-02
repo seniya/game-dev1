@@ -9,8 +9,8 @@ import {
 import { ItemType } from '../src/core/items';
 
 describe('블루프린트 정의', () => {
-  it('MVP 5종을 갖는다 — 집 2종, 창고, 우물, 작업대', () => {
-    expect(BLUEPRINTS).toHaveLength(5);
+  it('MVP 5종에 대장간을 더해 갖는다', () => {
+    expect(BLUEPRINTS).toHaveLength(6);
     expect(BLUEPRINTS.map((blueprint) => blueprint.id).sort()).toEqual(
       [
         BlueprintId.COTTAGE,
@@ -18,8 +18,17 @@ describe('블루프린트 정의', () => {
         BlueprintId.WAREHOUSE,
         BlueprintId.WELL,
         BlueprintId.WORKBENCH,
+        BlueprintId.FORGE,
       ].sort(),
     );
+  });
+
+  it('대장간만 수정을 요구한다 — 동굴에 갈 이유다', () => {
+    const needsCrystal = BLUEPRINTS.filter((blueprint) =>
+      blueprint.materials.some((material) => material.item === ItemType.CRYSTAL),
+    );
+
+    expect(needsCrystal.map((blueprint) => blueprint.id)).toEqual([BlueprintId.FORGE]);
   });
 
   it('모든 블루프린트에 이름·면적·자재가 있다', () => {

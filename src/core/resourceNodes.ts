@@ -9,6 +9,8 @@ export const NodeKind = {
   STONE_ROCK: 'stoneRock',
   /** 철광석 광맥. 중급 이상 곡괭이를 요구한다. */
   IRON_VEIN: 'ironVein',
+  /** 수정 광맥. 동굴에만 있고 고급 곡괭이를 요구한다. */
+  CRYSTAL_VEIN: 'crystalVein',
 } as const;
 
 /** 자원 노드 종류 값. */
@@ -70,6 +72,16 @@ export const NODE_DEFINITION: Readonly<Record<NodeKind, NodeDefinition>> = {
     drop: ItemType.IRON_ORE,
     dropAmount: 2,
     respawnMs: 45_000,
+  },
+  [NodeKind.CRYSTAL_VEIN]: {
+    label: '수정 광맥',
+    toolKind: ToolKind.PICKAXE,
+    minTier: ToolTier.HIGH,
+    durability: 8,
+    drop: ItemType.CRYSTAL,
+    dropAmount: 2,
+    // 가장 귀한 자원이므로 회복도 가장 느리다. 서열(나무 < 돌 < 철광석 < 수정)을 잇는다.
+    respawnMs: 70_000,
   },
 };
 
