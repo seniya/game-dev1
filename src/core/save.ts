@@ -101,7 +101,14 @@ export interface NpcSave {
 /** 저장된 요청 하나. */
 export type RequestSave =
   | { kind: 'deliver'; id: number; npcId: number; item: ItemType; amount: number }
-  | { kind: 'facility'; id: number; npcId: number; blueprintId: BlueprintId };
+  | { kind: 'facility'; id: number; npcId: number; blueprintId: BlueprintId }
+  /**
+   * 달성형 요청(주민 수·일꾼 수).
+   *
+   * 나중에 더한 종류다. 예전 저장에는 없고, 없으면 그런 요청이 없던 것으로 읽힌다 —
+   * 형식 버전을 올릴 이유가 아니다(ADR 0008).
+   */
+  | { kind: 'settle' | 'workforce'; id: number; npcId: number; target: number };
 
 /**
  * 저장된 맵 하나.

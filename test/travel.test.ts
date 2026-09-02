@@ -6,7 +6,7 @@ import { NodeKind, nodeDefinition } from '../src/core/resourceNodes';
 import { ToolKind, ToolTier } from '../src/core/tools';
 import { toolTierAtLevel } from '../src/core/village';
 import { MapId, isMapId, isVillageMap, mapSeed } from '../src/core/maps';
-import { isMapUnlocked, mapUnlockLevel } from '../src/core/village';
+import { MAX_VILLAGE_LEVEL, isMapUnlocked, mapUnlockLevel } from '../src/core/village';
 import { walkableNeighbors } from '../src/core/movement';
 import { Terrain } from '../src/core/Terrain';
 import { generateTerrain } from '../src/core/terrainGen';
@@ -499,5 +499,62 @@ describe('Phase 3 완료 기준', () => {
     expect(
       [...game.buildings.all].some((building) => building.blueprintId === BlueprintId.FORGE),
     ).toBe(true);
+  });
+});
+
+describe('수정 등대', () => {
+  it('밤 시야를 넓힌다 — 동굴에 다녀온 결과가 마을에 남는다', () => {
+    const game = makeGame(15);
+    game.setVillageLevel(MAX_VILLAGE_LEVEL);
+    game.storage.add(ItemType.STONE, 40);
+    game.storage.add(ItemType.CRYSTAL, 12);
+
+    // 밤으로 옮긴다.
+    const dayMs = 4 * 60_000;
+    for (let step = 0; step < (dayMs * 0.6) / (1000 / 60); step += 1) game.update(1000 / 60);
+    expect(game.isNight).toBe(true);
+
+    const before = game.atmosphere().light?.lit ?? 0;
+
+    game.selectBlueprint(BlueprintId.BEACON);
+    expect(game.buildAt({ x: 5, y: 5 }).ok).toBe(true);
+    game.selectBlueprint(null);
+    for (let step = 0; step < 400; step += 1) game.update(1000 / 60);
+
+    expect(game.beaconLight).toBeGreaterThan(0);
+    expect(game.atmosphere().light?.lit ?? 0).toBeGreaterThan(before);
+  });
+
+  it('등대를 아무리 지어도 대낮처럼 되지는 않는다', () => {
+    const game = makeGame(21);
+    game.setVillageLevel(MAX_VILLAGE_LEVEL);
+    game.storage.add(ItemType.STONE, 200);
+    game.storage.add(ItemType.CRYSTAL, 80);
+
+    game.selectBlueprint(BlueprintId.BEACON);
+    for (let i = 0; i < 8; i += 1) game.buildAt({ x: 3 + i * 2, y: 3 });
+    game.selectBlueprint(null);
+    for (let step = 0; step < 400; step += 1) game.update(1000 / 60);
+
+    expect(game.beaconLight).toBeLessThanOrEqual(6);
+  });
+
+  it('손상된 등대는 밤을 밝히지 못한다', () => {
+    const game = makeGame(15);
+    game.setVillageLevel(MAX_VILLAGE_LEVEL);
+    game.storage.add(ItemType.STONE, 40);
+    game.storage.add(ItemType.CRYSTAL, 12);
+
+    game.selectBlueprint(BlueprintId.BEACON);
+    game.buildAt({ x: 5, y: 5 });
+    game.selectBlueprint(null);
+    for (let step = 0; step < 400; step += 1) game.update(1000 / 60);
+    const lit = game.beaconLight;
+    expect(lit).toBeGreaterThan(0);
+
+    const beacon = [...game.buildings.all].find((b) => b.blueprintId === BlueprintId.BEACON)!;
+    game.buildings.damageBuilding(beacon.id);
+
+    expect(game.beaconLight).toBe(0);
   });
 });

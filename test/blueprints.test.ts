@@ -7,10 +7,11 @@ import {
   unlockedBlueprints,
 } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
+import { MAX_VILLAGE_LEVEL } from '../src/core/village';
 
 describe('블루프린트 정의', () => {
-  it('MVP 5종에 대장간·채석장·울타리·망루를 더해 갖는다', () => {
-    expect(BLUEPRINTS).toHaveLength(9);
+  it('MVP 5종에 로드맵 03·04가 더한 다섯 종이 붙는다', () => {
+    expect(BLUEPRINTS).toHaveLength(10);
     expect(BLUEPRINTS.map((blueprint) => blueprint.id).sort()).toEqual(
       [
         BlueprintId.COTTAGE,
@@ -22,16 +23,18 @@ describe('블루프린트 정의', () => {
         BlueprintId.QUARRY,
         BlueprintId.FENCE,
         BlueprintId.WATCHTOWER,
+        BlueprintId.BEACON,
       ].sort(),
     );
   });
 
-  it('대장간만 수정을 요구한다 — 동굴에 갈 이유다', () => {
+  it('수정을 쓰는 곳이 둘이다 — 하나뿐이면 동굴에 갈 이유가 한 번으로 끝난다', () => {
     const needsCrystal = BLUEPRINTS.filter((blueprint) =>
       blueprint.materials.some((material) => material.item === ItemType.CRYSTAL),
-    );
+    ).map((blueprint) => blueprint.id);
 
-    expect(needsCrystal.map((blueprint) => blueprint.id)).toEqual([BlueprintId.FORGE]);
+    expect(needsCrystal).toContain(BlueprintId.FORGE);
+    expect(needsCrystal).toContain(BlueprintId.BEACON);
   });
 
   it('모든 블루프린트에 이름·면적·자재가 있다', () => {
@@ -90,7 +93,7 @@ describe('unlockedBlueprints', () => {
   });
 
   it('정의 순서를 유지한다 — 목록 단축키 번호가 흔들리지 않게', () => {
-    const unlocked = unlockedBlueprints(9);
+    const unlocked = unlockedBlueprints(MAX_VILLAGE_LEVEL);
 
     expect(unlocked.map((blueprint) => blueprint.id)).toEqual(BLUEPRINTS.map((b) => b.id));
   });

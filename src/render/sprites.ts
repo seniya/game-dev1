@@ -560,6 +560,7 @@ const BUILDING_LOOK: Readonly<
   quarry: { roof: '#7f8892', roofDark: '#666e77', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9, door: false },
   fence: { roof: '#8a6f47', roofDark: '#6f5939', wallX: '#a4835a', wallY: '#87694a', height: 0.5, door: false },
   watchtower: { roof: '#6b7f5f', roofDark: '#55664c', wallX: '#c0ab86', wallY: '#9d8b6c', height: 2.4, door: true },
+  beacon: { roof: '#b6a6f0', roofDark: '#9184cc', wallX: '#8d8698', wallY: '#6f6a7c', height: 2, door: false },
 };
 
 /**

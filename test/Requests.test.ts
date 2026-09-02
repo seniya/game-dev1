@@ -2,7 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { BlueprintId, blueprintById } from '../src/core/blueprints';
 import { BlockType } from '../src/core/blocks';
 import { ItemType } from '../src/core/items';
-import { REQUEST_REWARD, RequestKind, requestLabel, requestMessage } from '../src/core/requests';
+import {
+  REQUEST_REWARD,
+  RequestKind,
+  countTarget,
+  isCountMet,
+  requestLabel,
+  requestMessage,
+} from '../src/core/requests';
 import { Terrain } from '../src/core/Terrain';
 import { Buildings, type NodeBlocker } from '../src/sim/Buildings';
 import { Population } from '../src/sim/Population';
@@ -254,5 +261,50 @@ describe('RequestBoard 완료', () => {
     }
 
     expect(board.completedCount).toBeGreaterThan(before);
+  });
+});
+
+describe('달성형 요청', () => {
+  it('주민 수와 일꾼 수를 채우면 닫힌다', () => {
+    expect(
+      isCountMet(
+        { kind: RequestKind.SETTLE, id: 1, npcId: 1, target: 5 },
+        { residents: 5, employed: 0 },
+      ),
+    ).toBe(true);
+    expect(
+      isCountMet(
+        { kind: RequestKind.SETTLE, id: 1, npcId: 1, target: 5 },
+        { residents: 4, employed: 9 },
+      ),
+    ).toBe(false);
+    expect(
+      isCountMet(
+        { kind: RequestKind.WORKFORCE, id: 2, npcId: 1, target: 3 },
+        { residents: 40, employed: 3 },
+      ),
+    ).toBe(true);
+  });
+
+  it('목표는 지금보다 조금 더 많은 수다 — 이미 채운 수를 부르면 나오자마자 닫힌다', () => {
+    expect(countTarget(4, 2)).toBe(6);
+    expect(countTarget(0, 1)).toBe(1);
+  });
+
+  it('달성형에도 이름과 안내 문구가 있다', () => {
+    const settle = { kind: RequestKind.SETTLE, id: 1, npcId: 1, target: 6 } as const;
+    const work = { kind: RequestKind.WORKFORCE, id: 2, npcId: 1, target: 2 } as const;
+
+    expect(requestLabel(settle)).toContain('6');
+    expect(requestMessage(settle)).toContain('주민');
+    expect(requestLabel(work)).toContain('2');
+    expect(requestMessage(work)).toContain('일터');
+  });
+
+  it('보상은 납품보다 크다 — 여러 번의 채집과 건축이 쌓여야 닫힌다', () => {
+    expect(REQUEST_REWARD[RequestKind.SETTLE]).toBeGreaterThan(REQUEST_REWARD[RequestKind.DELIVER]);
+    expect(REQUEST_REWARD[RequestKind.WORKFORCE]).toBeGreaterThan(
+      REQUEST_REWARD[RequestKind.DELIVER],
+    );
   });
 });

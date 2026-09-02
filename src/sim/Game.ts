@@ -164,6 +164,12 @@ const NIGHT_DARK_RADIUS = 14;
 /** 한밤에 가장 어두운 곳의 불투명도. 동굴(0.8)보다 옅다. */
 const MAX_NIGHT_DARKNESS = 0.45;
 
+/** 수정 등대 한 채가 밤에 넓혀 주는 반경(타일). */
+const BEACON_LIGHT_RADIUS = 2;
+
+/** 등대로 넓힐 수 있는 최대 반경(타일). 마을을 통째로 대낮처럼 만들지는 않는다. */
+const MAX_BEACON_LIGHT = 6;
+
 /** 맵 하나가 들고 있는 것. */
 interface WorldMapState {
   /** 그 맵의 지형. */
@@ -386,13 +392,17 @@ export class Game {
     const night = nightAmount(this.timeOfDay);
     if (night <= 0) return { tint: null, light: null };
 
+    // 수정 등대가 밤을 넓혀 준다. 동굴에 다녀와야 지을 수 있으므로, 밝은 마을은
+    // 동굴을 오간 결과로 남는다.
+    const beacons = this.beaconLight;
+
     // 밤의 시야는 동굴보다 넓고 옅다. 마을을 돌아다니는 것이 막히면 안 된다.
     return {
       tint: dayTint(this.timeOfDay),
       light: {
         ...pose,
-        lit: NIGHT_LIT_RADIUS,
-        dark: NIGHT_DARK_RADIUS,
+        lit: NIGHT_LIT_RADIUS + beacons,
+        dark: NIGHT_DARK_RADIUS + beacons,
         max: MAX_NIGHT_DARKNESS * night,
       },
     };
@@ -673,6 +683,23 @@ export class Game {
         });
       }
     }
+  }
+
+  /**
+   * 수정 등대가 넓혀 주는 밤 시야(타일).
+   *
+   * 세워진 등대에서 파생되므로 따로 저장하지 않는다.
+   */
+  get beaconLight(): number {
+    if (!this.inVillage) return 0;
+
+    let count = 0;
+    for (const building of this.buildings.all) {
+      if (building.buildRemainingMs > 0 || building.damage > 0) continue;
+      if (building.blueprintId === BlueprintId.BEACON) count += 1;
+    }
+
+    return Math.min(MAX_BEACON_LIGHT, count * BEACON_LIGHT_RADIUS);
   }
 
   /** 일터 한 채가 받는 자리 수. 마을 레벨에서 파생된다 — 저장하지 않는다. */

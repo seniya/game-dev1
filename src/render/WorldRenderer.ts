@@ -85,7 +85,8 @@ export type BuildingStyle =
   | 'forge'
   | 'quarry'
   | 'fence'
-  | 'watchtower';
+  | 'watchtower'
+  | 'beacon';
 
 /**
  * 지형 위에 얹는 구역 표시.
@@ -1248,6 +1249,8 @@ const BUILDING_STYLE: Readonly<
   quarry: { roof: '#7f8892', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9 },
   fence: { roof: '#8a6f47', wallX: '#a4835a', wallY: '#87694a', height: 0.5 },
   watchtower: { roof: '#6b7f5f', wallX: '#c0ab86', wallY: '#9d8b6c', height: 2.4 },
+  // 수정 지붕. 밤에 마을을 밝히는 건물이라 멀리서도 빛나 보여야 한다.
+  beacon: { roof: '#b6a6f0', wallX: '#8d8698', wallY: '#6f6a7c', height: 2 },
 };
 
 /**

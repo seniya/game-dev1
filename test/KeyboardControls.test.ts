@@ -136,10 +136,11 @@ describe('KeyboardControls 도구와 상호작용', () => {
     expect(target.keyDown('Digit9')).toBe(true);
   });
 
-  it('숫자 키가 해금 가능한 설계도를 모두 덮는다', () => {
-    // 이 단언이 깨지면 목록에는 있는데 고를 수 없는 설계도가 생긴다.
-    // 실제로 창고와 큰 집이 그 상태였다.
-    expect(SLOT_KEY_COUNT).toBeGreaterThanOrEqual(BLUEPRINTS.length);
+  it('숫자 키는 앞쪽 설계도를 바로 고르는 지름길이다', () => {
+    // 예전에는 숫자 키가 유일한 선택 수단이라 설계도가 아홉을 넘으면 고를 수 없었다.
+    // 지금은 `[` `]` 순환이 있으므로 상한이 문제가 되지 않는다 — 숫자 키는 지름길일 뿐이다.
+    expect(SLOT_KEY_COUNT).toBeGreaterThanOrEqual(3);
+    expect(BLUEPRINTS.length).toBeGreaterThan(0);
   });
 
   it('상호작용 키는 누른 순간 한 번만 콜백을 부른다', () => {

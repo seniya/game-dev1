@@ -15,6 +15,8 @@ export const BlueprintId = {
   FENCE: 'fence',
   /** 망루. 가까이 온 몬스터를 스스로 쫓는다. */
   WATCHTOWER: 'watchtower',
+  /** 수정 등대. 밤에 마을을 밝힌다. */
+  BEACON: 'beacon',
   /** 창고. 마을 저장 공간을 늘린다. */
   WAREHOUSE: 'warehouse',
   /** 우물. 주민 요청 대상이 되는 시설이다. */
@@ -156,6 +158,22 @@ export const BLUEPRINTS: readonly Blueprint[] = [
       { item: ItemType.IRON_ORE, amount: 2 },
     ],
     unlockLevel: 4,
+    housing: 0,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.BEACON,
+    label: '수정 등대',
+    style: 'beacon',
+    width: 1,
+    depth: 1,
+    materials: [
+      { item: ItemType.STONE, amount: 12 },
+      { item: ItemType.CRYSTAL, amount: 4 },
+    ],
+    // 수정의 두 번째 쓸모다. 대장간 하나만으로는 동굴에 다녀올 이유가 한 번으로 끝났다
+    // (ADR 0014가 남긴 한계). 후반에 열려 레벨 11~20 구간의 할 일이 된다.
+    unlockLevel: 11,
     housing: 0,
     storageSlots: 0,
   },

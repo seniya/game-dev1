@@ -209,11 +209,17 @@ describe('unlocksAtLevel', () => {
 });
 
 describe('편의 해금 (레벨 6~10)', () => {
-  it('레벨 6부터는 새 콘텐츠 대신 편의가 열린다', () => {
-    for (let level = 6; level <= MAX_VILLAGE_LEVEL; level += 1) {
+  it('레벨 6~10은 새 콘텐츠 대신 편의가 열린다 (ADR 0011)', () => {
+    for (let level = 6; level <= 10; level += 1) {
       const unlocks = unlocksAtLevel(level);
       expect(unlocks.length).toBeGreaterThan(0);
       expect(unlocks.every((unlock) => unlock.kind !== 'blueprint' && unlock.kind !== 'zone')).toBe(true);
+    }
+  });
+
+  it('레벨 11 이후에도 매 레벨 열리는 것이 있다', () => {
+    for (let level = 11; level <= MAX_VILLAGE_LEVEL; level += 1) {
+      expect(unlocksAtLevel(level).length).toBeGreaterThan(0);
     }
   });
 
