@@ -119,14 +119,25 @@ const DEFAULT_ROOM_COUNT = 7;
 const DEFAULT_ROOM_MIN = 3;
 const DEFAULT_ROOM_MAX = 6;
 
-/** 동굴 바닥 높이. 1이면 벽(최대 높이)과의 차가 커서 넘어갈 수 없다. */
+/** 동굴 바닥 높이. */
 const CAVE_FLOOR_HEIGHT = 1;
+
+/**
+ * 동굴 벽 높이.
+ *
+ * 처음에는 최대 높이(5)로 채웠는데, 브라우저에서 보니 **벽이 플레이어를 통째로 가렸다.**
+ * 통로를 걷는 동안 자기 캐릭터가 보이지 않아 어디 있는지 알 수 없었다.
+ *
+ * 3이면 바닥(1)과의 차가 2라 등반 한계 1칸(ADR 0004)을 여전히 넘지 못하므로 벽 노릇을
+ * 그대로 하면서, 화면에서 앞 열이 뒤 칸의 캐릭터를 덮지 않는다.
+ */
+const CAVE_WALL_HEIGHT = 3;
 
 /**
  * 동굴 맵을 생성한다.
  *
  * **높이맵은 천장을 표현할 수 없다**(ADR 0003). 그래서 동굴을 "위에서 내려다본 통로"로
- * 그린다 — 벽은 최대 높이까지 꽉 찬 암반 기둥이고, 파낸 자리는 높이 1의 바닥이다.
+ * 그린다 — 벽은 암반 기둥이고, 파낸 자리는 높이 1의 바닥이다.
  * 등반 한계가 1칸이므로(ADR 0004) 벽은 자연히 통행을 막는다. 자료구조를 바꾸지 않고
  * 동굴이 되는 셈이다.
  *
@@ -149,7 +160,7 @@ export function generateCave(width: number, height: number, options: CaveGenOpti
 
   // 먼저 전부 암반으로 채운다. 파낸 자리만 길이 된다.
   for (let y = 0; y < height; y += 1) {
-    for (let x = 0; x < width; x += 1) terrain.fillColumn(x, y, MAX_LAYERS, BlockType.STONE);
+    for (let x = 0; x < width; x += 1) terrain.fillColumn(x, y, CAVE_WALL_HEIGHT, BlockType.STONE);
   }
 
   let previous: { x: number; y: number } | null = null;

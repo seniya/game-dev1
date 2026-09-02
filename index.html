@@ -4,6 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>타운빌더</title>
+    <!--
+      아이콘을 파일로 두지 않고 인라인 SVG로 준다. 에셋을 코드로 만든다는 규약(ADR 0009)과
+      같은 결이고, 파일이 없어 404가 나던 것도 사라진다.
+    -->
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%232f4f2f'/%3E%3Cpath d='M6 20 16 14 26 20 16 26z' fill='%23d9c39a'/%3E%3Cpath d='M16 6 27 13 16 19 5 13z' fill='%23b8563f'/%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="/src/styles.css" />
   </head>
   <body>

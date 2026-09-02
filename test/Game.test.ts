@@ -1307,11 +1307,23 @@ describe('Game 오브젝트 구분', () => {
     const veins = game.entities().filter((entity) => entity.kind === 'oreVein');
     expect(veins).toHaveLength(2);
 
-    const iron = veins.find((entity) => entity.kind === 'oreVein' && entity.iron);
-    const stone = veins.find((entity) => entity.kind === 'oreVein' && !entity.iron);
+    const iron = veins.find((entity) => entity.kind === 'oreVein' && entity.ore === 'iron');
+    const stone = veins.find((entity) => entity.kind === 'oreVein' && entity.ore === 'stone');
 
     expect(iron).toBeDefined();
     expect(stone).toBeDefined();
+  });
+
+  it('수정 광맥은 돌·철광석과 다른 종류로 넘어간다 — 같으면 화면에서 구분되지 않는다', () => {
+    const game = makeGame(11, 3);
+    const field = game.resources as unknown as { addNode: (x: number, y: number, kind: NodeKind) => void };
+    field.addNode(4, 4, NodeKind.CRYSTAL_VEIN);
+
+    const crystal = game
+      .entities()
+      .find((entity) => entity.kind === 'oreVein' && entity.ore === 'crystal');
+
+    expect(crystal).toBeDefined();
   });
 });
 

@@ -12,8 +12,10 @@ export interface VillageHudState {
   progress: number;
   /** 주민 수. */
   residents: number;
-  /** 완공 건물 수. */
+  /** 제 기능을 하는 건물 수. */
   buildings: number;
+  /** 손상된 건물 수. 0이면 표시하지 않는다. */
+  damaged: number;
   /** 지금 할 일 한 줄. */
   objective: string;
   /** 며칠째인지. */
@@ -93,8 +95,11 @@ export class VillageHud {
    * @param state 표시할 값.
    */
   update(state: VillageHudState): void {
+    // 손상된 건물은 기능이 멈춰 건물 수에서 빠진다(ADR 0017). 그것만 보면 마을에 건물이
+    // 있는데 "건물 0"으로 보여 오해를 부르므로, 빠진 만큼을 따로 알린다.
+    const damaged = state.damaged > 0 ? ` (손상 ${state.damaged})` : '';
     const label =
-      `마을 레벨 ${state.level} · 주민 ${state.residents} · 건물 ${state.buildings}` +
+      `마을 레벨 ${state.level} · 주민 ${state.residents} · 건물 ${state.buildings}${damaged}` +
       (state.nextScore === null
         ? ' · 최대 레벨'
         : ` · ${state.score}/${state.nextScore}`);

@@ -72,7 +72,7 @@ function fakeSpriteSet(): SpriteSet {
     sideX: (block) => fakeSprite(`sx:${block}`),
     sideY: (block) => fakeSprite(`sy:${block}`),
     tree: (stage) => fakeSprite(`tree:${stage}`),
-    oreVein: (iron, stage) => fakeSprite(`ore:${iron ? 'iron' : 'stone'}:${stage}`),
+    oreVein: (ore, stage) => fakeSprite(`ore:${ore}:${stage}`),
     building: (style, width, depth) => fakeSprite(`b:${style}:${width}x${depth}`),
     pawn: (hue) => fakeSprite(`pawn:${hue}`),
   };
@@ -202,7 +202,7 @@ describe('WorldRenderer 오브젝트 스프라이트', () => {
       { kind: 'player', x: 1, y: 1, z: 0, swing: 0 },
       { kind: 'npc', x: 2, y: 1, z: 0, hue: 200 },
       { kind: 'tree', x: 3, y: 1, z: 0, damage: 0 },
-      { kind: 'oreVein', x: 4, y: 1, z: 0, damage: 0, iron: true },
+      { kind: 'oreVein', x: 4, y: 1, z: 0, damage: 0, ore: 'iron' },
       { kind: 'building', x: 1, y: 3, z: 0, width: 2, depth: 2, style: 'house', progress: 1 },
     ];
 
@@ -216,18 +216,20 @@ describe('WorldRenderer 오브젝트 스프라이트', () => {
     expect(ids).toContain('b:house:2x2');
   });
 
-  it('철광석과 돌 광맥이 다른 스프라이트를 쓴다', () => {
-    const { ctx, renderer } = setup(6, 1);
+  it('광맥 세 종류가 서로 다른 스프라이트를 쓴다 — 수정이 돌과 같으면 갈 이유가 안 보인다', () => {
+    const { ctx, renderer } = setup(8, 1);
     renderer.setSprites(fakeSpriteSet());
 
     renderer.render(null, [
-      { kind: 'oreVein', x: 1, y: 1, z: 0, damage: 0, iron: true },
-      { kind: 'oreVein', x: 3, y: 1, z: 0, damage: 0, iron: false },
+      { kind: 'oreVein', x: 1, y: 1, z: 0, damage: 0, ore: 'iron' },
+      { kind: 'oreVein', x: 3, y: 1, z: 0, damage: 0, ore: 'stone' },
+      { kind: 'oreVein', x: 5, y: 1, z: 0, damage: 0, ore: 'crystal' },
     ]);
 
     const ids = ctx.images.map((image) => image.id);
     expect(ids).toContain('ore:iron:0');
     expect(ids).toContain('ore:stone:0');
+    expect(ids).toContain('ore:crystal:0');
   });
 
   it('손상도가 단계로 바뀐다', () => {

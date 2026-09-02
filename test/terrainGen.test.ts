@@ -172,20 +172,37 @@ describe('동굴 생성', () => {
     const cave = makeCave();
 
     for (let x = 0; x < cave.width; x += 1) {
-      expect(cave.columnHeight(x, 0)).toBe(MAX_LAYERS);
-      expect(cave.columnHeight(x, cave.height - 1)).toBe(MAX_LAYERS);
+      expect(cave.columnHeight(x, 0)).toBeGreaterThan(1);
+      expect(cave.columnHeight(x, cave.height - 1)).toBeGreaterThan(1);
     }
   });
 
-  it('벽은 꽉 찬 기둥이고 바닥은 한 칸이다 — 등반 한계가 벽을 막는다', () => {
+  it('벽과 바닥 두 높이만 있고, 벽은 등반 한계를 넘는다', () => {
     const cave = makeCave();
+    const heights = new Set<number>();
+
+    for (let y = 0; y < cave.height; y += 1) {
+      for (let x = 0; x < cave.width; x += 1) heights.add(cave.columnHeight(x, y));
+    }
+
+    expect(heights.size).toBe(2);
+    const [floor, wall] = [...heights].sort((a, b) => a - b);
+    expect(floor).toBe(1);
+    // 등반 한계는 1칸이다(ADR 0004). 차이가 2 이상이면 벽으로 기능한다.
+    expect(wall! - floor!).toBeGreaterThanOrEqual(2);
+  });
+
+  it('벽이 캐릭터를 가릴 만큼 높지는 않다 — 브라우저에서 플레이어가 통째로 가려졌다', () => {
+    const cave = makeCave();
+    let tallest = 0;
 
     for (let y = 0; y < cave.height; y += 1) {
       for (let x = 0; x < cave.width; x += 1) {
-        const height = cave.columnHeight(x, y);
-        expect(height === 1 || height === MAX_LAYERS).toBe(true);
+        tallest = Math.max(tallest, cave.columnHeight(x, y));
       }
     }
+
+    expect(tallest).toBeLessThan(MAX_LAYERS);
   });
 
   it('파낸 자리가 서로 이어져 있다 — 닿을 수 없는 방이 생기면 안 된다', () => {

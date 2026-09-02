@@ -557,7 +557,7 @@ describe('WorldRenderer 오브젝트', () => {
     const stats = renderer.render(null, [
       { kind: 'tree', x: 4, y: 4, z: 0, damage: 0 },
       { kind: 'player', x: 1, y: 1, z: 0, swing: 0 },
-      { kind: 'oreVein', x: 2, y: 3, z: 0, damage: 0.5, iron: false },
+      { kind: 'oreVein', x: 2, y: 3, z: 0, damage: 0.5, ore: 'stone' },
     ]);
 
     expect(stats.drawnEntities).toBe(3);

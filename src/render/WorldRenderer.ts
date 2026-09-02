@@ -46,7 +46,7 @@ export interface TileRef {
 export type Entity =
   | { kind: 'player'; x: number; y: number; z: number; swing: number }
   | { kind: 'tree'; x: number; y: number; z: number; damage: number }
-  | { kind: 'oreVein'; x: number; y: number; z: number; damage: number; iron: boolean }
+  | { kind: 'oreVein'; x: number; y: number; z: number; damage: number; ore: OreKind }
   | { kind: 'npc'; x: number; y: number; z: number; hue: number }
   /** 다른 맵으로 통하는 칸. `inward`면 들어가는 입구, 아니면 나가는 출구다. */
   | { kind: 'portal'; x: number; y: number; z: number; inward: boolean }
@@ -66,6 +66,14 @@ export type Entity =
     }
   /** 밤에 몰려온 몬스터. */
   | { kind: 'monster'; x: number; y: number; z: number; health: number };
+
+/**
+ * 광맥 종류.
+ *
+ * 예전에는 `iron: boolean` 하나였는데, 그러면 **수정 광맥이 돌 광맥과 똑같이 그려진다** —
+ * 동굴에서 가장 귀한 자원이 가장 흔한 것과 구분되지 않았다. 브라우저에서 보고 찾았다.
+ */
+export type OreKind = 'stone' | 'iron' | 'crystal';
 
 /** 건물 외형 종류. 블루프린트가 이 값으로 자기 모습을 지정한다. */
 export type BuildingStyle =
@@ -639,7 +647,7 @@ export class WorldRenderer {
         this.drawTree(screen, zoom, entity.damage);
         break;
       case 'oreVein':
-        this.drawOreVein(screen, zoom, entity.damage, entity.iron);
+        this.drawOreVein(screen, zoom, entity.damage, entity.ore);
         break;
       case 'portal':
         this.drawPortal(screen, zoom, entity.inward);
@@ -680,7 +688,7 @@ export class WorldRenderer {
         break;
       case 'oreVein':
         this.drawSprite(
-          sprites.oreVein(entity.iron, this.damageStage(entity.damage)),
+          sprites.oreVein(entity.ore, this.damageStage(entity.damage)),
           screen.x,
           screen.y,
           zoom,
@@ -835,13 +843,13 @@ export class WorldRenderer {
    * @param screen 선 칸의 윗면 중심.
    * @param zoom 확대율.
    * @param damage 손상도(0~1).
-   * @param iron 철광석 광맥이면 true.
+   * @param ore 광맥 종류. 박힌 알갱이 색을 가른다.
    */
   private drawOreVein(
     screen: { x: number; y: number },
     zoom: number,
     damage: number,
-    iron: boolean,
+    ore: OreKind,
   ): void {
     const unit = TILE_HEIGHT * zoom;
     const size = unit * (0.62 - damage * 0.2);
@@ -860,7 +868,7 @@ export class WorldRenderer {
     this.ctx.closePath();
     this.ctx.fill();
 
-    this.ctx.fillStyle = iron ? '#c98f5a' : '#9aa1a9';
+    this.ctx.fillStyle = ORE_COLOR[ore];
     for (const spot of [
       { dx: -0.35, dy: -0.45 },
       { dx: 0.25, dy: -0.6 },
@@ -1216,6 +1224,13 @@ export class WorldRenderer {
 }
 
 /** 건물 외형별 색과 높이(타일 높이 배수). */
+/** 광맥에 박힌 알갱이 색. 인벤토리 바의 아이템 색과 맞춘다. */
+const ORE_COLOR: Readonly<Record<OreKind, string>> = {
+  stone: '#9aa1a9',
+  iron: '#c98f5a',
+  crystal: '#9a86e0',
+};
+
 const BUILDING_STYLE: Readonly<
   Record<BuildingStyle, { roof: string; wallX: string; wallY: string; height: number }>
 > = {

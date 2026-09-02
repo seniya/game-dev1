@@ -5,7 +5,8 @@ import { pickSurfaceTile } from './core/picking';
 import { generateTerrain } from './core/terrainGen';
 import { BlockType } from './core/blocks';
 import { itemColor, itemLabel } from './core/items';
-import { zoneAt } from './core/zones';
+import { mapLabel } from './core/maps';
+import { zoneAt, zoneLabel } from './core/zones';
 import { ResourceField } from './sim/ResourceField';
 import { CanvasRenderer } from './render/CanvasRenderer';
 import { Camera, boundsForMap } from './render/Camera';
@@ -375,9 +376,10 @@ function bootstrap(): void {
             zoom: camera.zoom,
             playerTile: game.player.position,
             tool: game.player.tool,
-            zone: hovered
-              ? zoneAt(game.terrain, hovered.x, hovered.y)
-              : zoneAt(game.terrain, 0, 0),
+            // 구역은 지상의 개념이다. 동굴에서는 맵 이름을 보여준다.
+            place: game.inVillage
+              ? zoneLabel(zoneAt(game.terrain, hovered?.x ?? 0, hovered?.y ?? 0))
+              : mapLabel(game.currentMap),
             target: hovered ? game.describeTile(hovered) : null,
           },
           game.inventory,
@@ -393,6 +395,7 @@ function bootstrap(): void {
           progress: game.levelProgress,
           residents: game.population.count,
           buildings: game.buildings.completedCount,
+          damaged: game.buildings.damagedCount,
           objective: game.guidance.objective(guidanceState),
           day: game.dayCount,
           clock: clockLabel(game.timeOfDay),
@@ -442,6 +445,14 @@ function bootstrap(): void {
     },
     { stepMs: DEFAULT_STEP_MS },
   );
+
+  // 개발 모드에서만 게임 상태를 창에 노출한다.
+  //
+  // 밤·침입·손상처럼 **한참 키워야 나오는 화면**을 확인하려면 상태를 직접 옮길 수 있어야
+  // 한다. 프로덕션 빌드에서는 `import.meta.env.DEV`가 false로 치환돼 이 블록이 사라진다.
+  if (import.meta.env.DEV) {
+    (window as unknown as Record<string, unknown>).__town = { game, camera, world, effects, toasts };
+  }
 
   loop.start();
 }

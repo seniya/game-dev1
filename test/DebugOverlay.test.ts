@@ -3,7 +3,7 @@ import { Inventory } from '../src/core/Inventory';
 import { BlockType } from '../src/core/blocks';
 import { ItemType } from '../src/core/items';
 import { ToolKind, ToolTier } from '../src/core/tools';
-import { Zone } from '../src/core/zones';
+import { Zone, zoneLabel } from '../src/core/zones';
 import { DebugOverlay } from '../src/ui/DebugOverlay';
 
 /** textContent만 갖는 최소 엘리먼트 대역. */
@@ -35,7 +35,7 @@ const baseInfo = {
   zoom: 1,
   playerTile: { x: 5, y: 6 },
   tool: { kind: ToolKind.SHOVEL, tier: ToolTier.BASIC },
-  zone: Zone.MEADOW,
+  place: zoneLabel(Zone.MEADOW),
   target: null,
 };
 
@@ -100,10 +100,18 @@ describe('DebugOverlay', () => {
     expect(info.textContent).not.toContain('흙');
   });
 
+  it('동굴에서는 구역 대신 맵 이름을 보여준다 — 동굴에는 구역이 없다', () => {
+    const { overlay, info, stash } = setup();
+
+    overlay.update(300, { ...baseInfo, place: '동굴' }, stash);
+
+    expect(info.textContent).toContain('동굴');
+  });
+
   it('구역 이름을 표시한다', () => {
     const { info, overlay, stash } = setup();
 
-    overlay.update(300, { ...baseInfo, zone: Zone.MOUNTAIN }, stash);
+    overlay.update(300, { ...baseInfo, place: zoneLabel(Zone.MOUNTAIN) }, stash);
 
     expect(info.textContent).toContain('산악');
   });

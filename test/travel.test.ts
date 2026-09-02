@@ -144,8 +144,8 @@ describe('맵 이동', () => {
 
     goThroughPortal(game);
 
-    // 동굴 벽은 꽉 찬 암반 기둥이라 지상의 흙 지면보다 훨씬 높다.
-    expect(game.terrain.columnHeight(0, 0)).toBeGreaterThan(3);
+    // 동굴 가장자리는 암반 벽이라 파낸 바닥(1)보다 높다.
+    expect(game.terrain.columnHeight(0, 0)).toBeGreaterThan(1);
     expect(surfaceSurface).toBe(BlockType.DIRT);
   });
 

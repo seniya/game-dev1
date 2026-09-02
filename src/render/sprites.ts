@@ -1,7 +1,7 @@
 import { BlockType } from '../core/blocks';
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH } from '../core/coordinates';
 import { lookById } from '../core/looks';
-import type { BuildingStyle } from './WorldRenderer';
+import type { BuildingStyle, OreKind } from './WorldRenderer';
 
 /**
  * 스프라이트를 만들 때 쓰는 배율.
@@ -60,7 +60,7 @@ export interface SpriteSet {
    * @param iron 철광석 광맥이면 true.
    * @param stage 손상 단계.
    */
-  oreVein(iron: boolean, stage: number): Sprite;
+  oreVein(ore: OreKind, stage: number): Sprite;
   /**
    * 건물. 기준점은 점유 영역 중심 칸의 윗면 중심이다.
    *
@@ -118,7 +118,7 @@ export function createSpriteSet(): SpriteSet | null {
     sideX: (block) => memo(`sx:${block}`, () => makeSide(block, true)),
     sideY: (block) => memo(`sy:${block}`, () => makeSide(block, false)),
     tree: (stage) => memo(`tree:${stage}`, () => makeTree(stage)),
-    oreVein: (iron, stage) => memo(`ore:${iron}:${stage}`, () => makeOreVein(iron, stage)),
+    oreVein: (ore, stage) => memo(`ore:${ore}:${stage}`, () => makeOreVein(ore, stage)),
     // 캐시 키에 외형을 넣지 않으면 같은 종류의 건물이 모두 마지막 외형으로 그려진다.
     building: (style, width, depth, look = 0) =>
       memo(`b:${style}:${width}:${depth}:${look}`, () => makeBuilding(style, width, depth, look)),
@@ -126,6 +126,20 @@ export function createSpriteSet(): SpriteSet | null {
     pawn: (hue) => memo(`pawn:${quantizeHue(hue)}`, () => makePawn(quantizeHue(hue))),
   };
 }
+
+/**
+ * 광맥 종류별 알갱이 표현.
+ *
+ * 색은 인벤토리 바의 아이템 색과 맞춘다 — 화면에서 캔 것과 손에 든 것이 같은 색이어야
+ * 무엇을 캐고 있는지 알 수 있다.
+ */
+const ORE_LOOK: Readonly<
+  Record<OreKind, { color: string; glint: string; alpha: number; count: number; radius: number; spread: number }>
+> = {
+  stone: { color: '#98a0a8', glint: '#b3bac1', alpha: 0.75, count: 4, radius: 0.07, spread: 0.04 },
+  iron: { color: '#d0894f', glint: '#f0b985', alpha: 1, count: 7, radius: 0.09, spread: 0.05 },
+  crystal: { color: '#9a86e0', glint: '#d6cbff', alpha: 1, count: 6, radius: 0.11, spread: 0.06 },
+};
 
 /**
  * 캔버스를 만들 수 있는 환경인지 확인한다.
@@ -465,7 +479,7 @@ function makeTree(stage: number): Sprite {
  * @param stage 손상 단계.
  * @returns 스프라이트.
  */
-function makeOreVein(iron: boolean, stage: number): Sprite {
+function makeOreVein(ore: OreKind, stage: number): Sprite {
   const unit = TILE_HEIGHT;
   const width = unit * 1.7;
   const height = unit * 1.3;
@@ -504,16 +518,19 @@ function makeOreVein(iron: boolean, stage: number): Sprite {
 
   // 광석 알갱이.
   //
-  // 철광석은 붉게 또렷이 박아 멀리서도 알아보게 하고, 돌 광맥은 바위와 비슷한 회색을
+  // 상위 자원일수록 또렷하게 박아 멀리서도 알아보게 하고, 돌 광맥은 바위와 비슷한 회색을
   // 옅게만 넣는다. 처음에는 둘 다 밝은 알갱이로 그렸더니 돌 광맥이 눈덩이처럼 보였다.
-  const oreColor = iron ? '#d0894f' : '#98a0a8';
-  const glint = iron ? '#f0b985' : '#b3bac1';
+  // 수정은 동굴에서 가장 귀한 것이라 가장 밝고 크게 둔다 — 예전에는 돌과 같은 모습이라
+  // 어두운 동굴에서 무엇이 수정인지 알 수 없었다.
+  const look = ORE_LOOK[ore];
+  const oreColor = look.color;
+  const glint = look.glint;
 
-  ctx.globalAlpha = iron ? 1 : 0.75;
-  for (let i = 0; i < (iron ? 7 : 4); i += 1) {
-    const px = baseX + (speckle(i, iron ? 21 : 22) - 0.5) * size * 1.25;
+  ctx.globalAlpha = look.alpha;
+  for (let i = 0; i < look.count; i += 1) {
+    const px = baseX + (speckle(i, ore === 'stone' ? 22 : 21) - 0.5) * size * 1.25;
     const py = baseY - size * (0.18 + speckle(i, 23) * 0.6);
-    const radius = size * (iron ? 0.09 + speckle(i, 24) * 0.05 : 0.07 + speckle(i, 24) * 0.04);
+    const radius = size * (look.radius + speckle(i, 24) * look.spread);
 
     ctx.fillStyle = oreColor;
     ctx.beginPath();

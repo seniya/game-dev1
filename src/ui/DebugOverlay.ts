@@ -3,7 +3,7 @@ import { BlockType, blockInfo } from '../core/blocks';
 import type { Inventory } from '../core/Inventory';
 import { ITEM_ORDER, itemLabel } from '../core/items';
 import { toolLabel, type Tool } from '../core/tools';
-import { zoneLabel, type Zone } from '../core/zones';
+
 
 /** 오버레이에 표시할 프레임별 정보. */
 export interface DebugInfo {
@@ -24,7 +24,14 @@ export interface DebugInfo {
   /** 선택된 도구. */
   tool: Tool;
   /** 커서가 올라간 칸의 구역. */
-  zone: Zone;
+  /**
+   * 지금 있는 곳의 이름.
+   *
+   * 지상에서는 구역(초원·숲·산악), 동굴에서는 맵 이름이다. 예전에는 구역만 받았는데
+   * 동굴에서도 `zoneAt`이 돌아 **동굴을 "초원"이라고 표시했다** — 구역은 마을 중심에서의
+   * 거리이고(ADR 0005) 동굴에는 마을이 없다.
+   */
+  place: string;
   /** 커서가 올라간 칸에 있는 것에 대한 설명. 없으면 null. */
   target: string | null;
 }
@@ -92,7 +99,7 @@ export class DebugOverlay {
 
     const tile = info.hovered
       ? `(${info.hovered.x}, ${info.hovered.y}) ${info.target ?? blockInfo(info.hoveredSurface).label}` +
-        ` 높이 ${info.hoveredHeight} · ${zoneLabel(info.zone)}`
+        ` 높이 ${info.hoveredHeight} · ${info.place}`
       : '(--, --)';
     this.infoElement.textContent =
       `타일 ${tile} · 플레이어 (${info.playerTile.x}, ${info.playerTile.y})` +

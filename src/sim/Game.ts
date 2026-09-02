@@ -149,11 +149,17 @@ export type ActionResult =
  * 적용한다. DOM과 렌더링을 전혀 모르므로 단위 테스트가 가능하다 — 조작 규칙이
  * 늘어날수록 이 분리의 이득이 커진다.
  */
-/** 밤에 밝게 남는 반경(타일). 동굴보다 넓다 — 마을을 돌아다닐 수 있어야 한다. */
-const NIGHT_LIT_RADIUS = 8;
+/**
+ * 밤에 밝게 남는 반경(타일).
+ *
+ * 처음에는 8칸이었는데, 브라우저에서 보니 **확대 상태에서 화면 대부분이 밝은 반경 안**이라
+ * 한밤 22시가 흐린 낮처럼 보였다. 5칸으로 줄여 밤이 화면에 드러나게 한다. 동굴(5칸)과
+ * 같은 반경이지만 세기가 훨씬 옅어(0.45 대 0.8) 마을을 돌아다니는 데는 지장이 없다.
+ */
+const NIGHT_LIT_RADIUS = 5;
 
 /** 밤에 가장 어두워지는 반경(타일). */
-const NIGHT_DARK_RADIUS = 18;
+const NIGHT_DARK_RADIUS = 14;
 
 /** 한밤에 가장 어두운 곳의 불투명도. 동굴(0.8)보다 옅다. */
 const MAX_NIGHT_DARKNESS = 0.45;
@@ -751,7 +757,8 @@ export class Game {
       night: this.isNight,
       openJobs: Math.max(0, this.jobSlots.total - this.jobSlots.assigned),
       raiding: this.inVillage && this.raid.active,
-      damagedBuildings: this.buildings.damagedCount,
+      // 수리는 마을에서만 할 수 있다. 동굴에서 안내가 뜨면 할 수 없는 일을 시키는 셈이다.
+      damagedBuildings: this.inVillage ? this.buildings.damagedCount : 0,
       hasDeposited: this.guidance.hasDeposited,
     };
   }
@@ -1634,14 +1641,15 @@ export class Game {
       if (node.kind === 'tree') {
         this.entityBuffer.push({ kind: 'tree', x: node.x, y: node.y, z, damage });
       } else {
-        // 철광석 광맥은 돌 광맥과 다르게 그려야 멀리서도 구분된다.
+        // 광맥은 종류마다 다르게 그려야 멀리서도 구분된다. 특히 동굴의 수정은
+        // 가장 귀한 자원이라 돌과 같은 모습이면 갈 이유가 보이지 않는다.
         this.entityBuffer.push({
           kind: 'oreVein',
           x: node.x,
           y: node.y,
           z,
           damage,
-          iron: node.kind === 'ironVein',
+          ore: node.kind === 'ironVein' ? 'iron' : node.kind === 'crystalVein' ? 'crystal' : 'stone',
         });
       }
     }
