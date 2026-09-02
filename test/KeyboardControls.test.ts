@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { KeyboardControls } from '../src/ui/KeyboardControls';
+import { KeyboardControls, SLOT_KEY_COUNT } from '../src/ui/KeyboardControls';
+import { BLUEPRINTS } from '../src/core/blueprints';
 
 /** 키 이벤트를 직접 흘려보낼 수 있는 최소 이벤트 대상 대역. */
 class FakeTarget {
@@ -151,6 +152,26 @@ describe('KeyboardControls 도구와 상호작용', () => {
     target.keyDown('Digit3');
 
     expect(picked).toEqual([0, 2]);
+  });
+
+  it('세 번째를 넘는 숫자 키도 받는다 — 설계도 목록이 도구보다 길다', () => {
+    const { target, controls } = setup();
+    const picked: number[] = [];
+    controls.setSlotHandler((index) => picked.push(index));
+
+    target.keyDown('Digit4');
+    target.keyUp('Digit4');
+    target.keyDown('Digit5');
+
+    expect(picked).toEqual([3, 4]);
+    // 브라우저 기본 동작도 함께 막아야 한다.
+    expect(target.keyDown('Digit9')).toBe(true);
+  });
+
+  it('숫자 키가 해금 가능한 설계도를 모두 덮는다', () => {
+    // 이 단언이 깨지면 목록에는 있는데 고를 수 없는 설계도가 생긴다.
+    // 실제로 창고와 큰 집이 그 상태였다.
+    expect(SLOT_KEY_COUNT).toBeGreaterThanOrEqual(BLUEPRINTS.length);
   });
 
   it('상호작용 키는 누른 순간 한 번만 콜백을 부른다', () => {

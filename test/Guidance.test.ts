@@ -21,6 +21,7 @@ function state(overrides: Partial<GuidanceState> = {}): GuidanceState {
     level: 1,
     goalLevel: 5,
     buildMode: false,
+    blueprintCount: 3,
     hasDeposited: false,
     ...overrides,
   };

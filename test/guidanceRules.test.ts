@@ -20,6 +20,7 @@ function state(overrides: Partial<GuidanceState> = {}): GuidanceState {
     level: 1,
     goalLevel: 5,
     buildMode: false,
+    blueprintCount: 3,
     hasDeposited: false,
     ...overrides,
   };
@@ -147,5 +148,17 @@ describe('조작 안내', () => {
 
     expect(hint).toContain('배치');
     expect(hint).not.toContain('WASD');
+  });
+});
+
+describe('설계도 선택 안내', () => {
+  it('건축 모드 안내가 실제 설계도 수를 말한다', () => {
+    // 3으로 박아 두었을 때, 다섯 종이 열린 뒤에도 "1~3"이라고 안내해
+    // 네 번째와 다섯 번째를 아무도 고르지 않았다.
+    expect(controlHint(state({ buildMode: true, blueprintCount: 5 }))).toContain('1~5: 설계도');
+  });
+
+  it('설계도가 하나뿐이면 범위로 말하지 않는다', () => {
+    expect(controlHint(state({ buildMode: true, blueprintCount: 1 }))).toContain('1: 설계도');
   });
 });

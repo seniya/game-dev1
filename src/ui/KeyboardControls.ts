@@ -24,12 +24,27 @@ const KEY_MOVES: Readonly<Record<string, MoveIntent>> = {
   ArrowUp: { dx: 0, dy: -1 },
 };
 
-/** 도구 슬롯 선택 키. */
-const KEY_SLOTS: Readonly<Record<string, number>> = {
-  Digit1: 0,
-  Digit2: 1,
-  Digit3: 2,
-};
+/**
+ * 숫자 키로 고를 수 있는 항목 수.
+ *
+ * 이 키는 문맥에 따라 **도구 슬롯**(3개)과 **블루프린트 목록**(레벨에 따라 늘어난다)을
+ * 고른다. 예전에는 도구 수에 맞춰 1~3만 받았는데, 그 사이 블루프린트가 다섯 종으로
+ * 늘면서 **네 번째부터는 어떤 입력으로도 고를 수 없는 상태**가 됐다 — 목록 패널은
+ * `4.` `5.`까지 번호를 붙여 놓아 안내와도 어긋났다. 목록 쪽이 계속 자라므로 키를
+ * 목록에 맞춰 넓혀 둔다. `test/KeyboardControls.test.ts`가 블루프린트 수를 덮는지
+ * 지킨다.
+ */
+export const SLOT_KEY_COUNT = 9;
+
+/**
+ * 숫자 키 → 항목 번호 표. `Digit1`~`Digit9`가 0~8번에 대응한다.
+ *
+ * 범위 밖 번호는 받는 쪽이 무시한다(도구는 `Player.selectTool`, 블루프린트는
+ * 목록 길이). 그래서 키를 넓혀도 없는 항목을 고르는 일은 생기지 않는다.
+ */
+const KEY_SLOTS: Readonly<Record<string, number>> = Object.fromEntries(
+  Array.from({ length: SLOT_KEY_COUNT }, (_, index) => [`Digit${index + 1}`, index]),
+);
 
 /** 상호작용(휘두르기) 키. */
 const ACTION_KEY = 'Space';

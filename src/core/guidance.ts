@@ -32,6 +32,8 @@ export interface GuidanceState {
   goalLevel: number;
   /** 건축 모드인지. */
   buildMode: boolean;
+  /** 지금 고를 수 있는 블루프린트 수. 숫자 키 안내에 쓴다. */
+  blueprintCount: number;
   /** 창고에 한 번이라도 예치했는지. */
   hasDeposited: boolean;
 }
@@ -143,7 +145,12 @@ export function currentObjective(state: GuidanceState): string {
  * @returns 조작 안내 문구.
  */
 export function controlHint(state: GuidanceState): string {
-  if (state.buildMode) return '1~3: 설계도 · 좌클릭: 배치 · B/Esc: 닫기 · 드래그/휠: 시야';
+  // 설계도 개수는 마을 레벨에 따라 늘어난다. 문구에 3을 박아 두면 늘어난 뒤에
+  // 안내가 거짓말을 한다 — 실제로 그렇게 어긋나 있었다.
+  if (state.buildMode) {
+    const picker = state.blueprintCount > 1 ? `1~${state.blueprintCount}` : '1';
+    return `${picker}: 설계도 · 좌클릭: 배치 · B/Esc: 닫기 · 드래그/휠: 시야`;
+  }
 
   const parts = ['WASD: 걷기', '1~3: 도구', '좌클릭: 채집/파기', '우클릭: 쌓기'];
 

@@ -240,6 +240,7 @@ export class Game {
       level: this.level,
       goalLevel: this.goalLevel,
       buildMode: this.buildMode,
+      blueprintCount: this.availableBlueprints.length,
       hasDeposited: this.guidance.hasDeposited,
     };
   }
