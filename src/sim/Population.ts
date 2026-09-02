@@ -1,10 +1,11 @@
 import { blueprintById } from '../core/blueprints';
+import { hashNoise } from '../core/random';
 import { type TilePos, canStand } from '../core/movement';
 import type { Terrain } from '../core/Terrain';
 import type { NpcSave } from '../core/save';
 import type { Buildings, Building } from './Buildings';
 import { SLOTS_PER_WORKPLACE, isWorkplace } from '../core/jobs';
-import { Npc } from './Npc';
+import { INDOOR_RADIUS, Npc, WANDER_RADIUS } from './Npc';
 
 /** 이주 결과. */
 export interface Migration {
@@ -24,6 +25,12 @@ export interface Migration {
  * 집을 짓는 순간 주민이 튀어나오면 "이주"라는 느낌이 없고, 큰 집을 지었을 때
  * 두 명이 동시에 나타나 어색하다.
  */
+/** 낮에 집 안에 머무는 비율. 너무 높으면 마을이 비고, 낮으면 집이 빈다. */
+const HOME_VISIT_CHANCE = 0.4;
+
+/** 집을 드나드는 결정을 가르는 시드. */
+const HOME_VISIT_SEED = 4211;
+
 export class Population {
   private readonly terrain: Terrain;
   private readonly buildings: Buildings;
@@ -134,10 +141,12 @@ export class Population {
    *
    * @param stepMs 스텝 길이(ms).
    * @param workTime 지금이 일하는 시간대인지. 낮이면 배정된 주민이 일터로 간다.
+   * @param restTime 지금이 쉬는 시간대인지. 밤이면 주민이 집 안으로 들어간다.
+   * @param block 시간 덩어리 번호. 낮에 집을 드나드는 주기를 가른다.
    * @returns 이번 스텝에 일어난 이주 목록.
    */
-  update(stepMs: number, workTime = false): Migration[] {
-    this.syncAnchors(workTime);
+  update(stepMs: number, workTime = false, restTime = false, block = 0): Migration[] {
+    this.syncAnchors(workTime, restTime, block);
 
     for (const npc of this.npcs) npc.update(stepMs, this.terrain);
 
@@ -163,15 +172,56 @@ export class Population {
    * 주민이 걸어서 오간다 — 출퇴근이 배회 로직 위에 그대로 얹힌다.
    *
    * @param workTime 지금이 일하는 시간대인지.
+   * @param restTime 지금이 쉬는 시간대인지.
+   * @param block 시간 덩어리 번호.
    */
-  private syncAnchors(workTime: boolean): void {
+  private syncAnchors(workTime: boolean, restTime: boolean, block: number): void {
     for (const npc of this.npcs) {
-      const job = workTime ? npc.jobBuildingId : null;
-      const workplace = job === null ? null : this.workplaceById(job);
-      const doorstep = workplace ? this.findDoorstep(workplace) : null;
+      // 낮에 일자리가 있으면 일터 **안**에서 일한다.
+      if (workTime && npc.jobBuildingId !== null) {
+        const workplace = this.workplaceById(npc.jobBuildingId);
+        if (workplace) {
+          npc.setAnchor(interiorTile(workplace), INDOOR_RADIUS);
+          continue;
+        }
+      }
 
-      npc.setAnchor(doorstep ?? npc.homeTile);
+      // 밤에는 집 **안**으로 들어간다. 지붕이 없으므로 그 모습이 보인다(ADR 0020).
+      if (restTime) {
+        const home = this.homeById(npc.homeBuildingId);
+        if (home) {
+          npc.setAnchor(interiorTile(home), INDOOR_RADIUS);
+          continue;
+        }
+      }
+
+      // 일자리가 없는 주민은 낮 동안 집과 마을을 오간다. 계속 밖에만 있으면 **집 안이
+      // 늘 비어** 지붕을 걷어낸 의미가 없고, 계속 안에만 있으면 마을이 죽는다.
+      // 시간 덩어리마다 결정적으로 갈라 같은 사람이 들락날락하게 만든다.
+      const home = this.homeById(npc.homeBuildingId);
+      if (home && hashNoise(npc.id, block, HOME_VISIT_SEED) < HOME_VISIT_CHANCE) {
+        npc.setAnchor(interiorTile(home), INDOOR_RADIUS);
+        continue;
+      }
+
+      npc.setAnchor(npc.homeTile, WANDER_RADIUS);
     }
+  }
+
+  /**
+   * 집으로 쓰는 완공 건물을 번호로 찾는다.
+   *
+   * @param buildingId 건물 번호.
+   * @returns 건물. 없으면 null.
+   */
+  private homeById(buildingId: number): Building | null {
+    for (const building of this.buildings.all) {
+      if (building.id !== buildingId) continue;
+
+      return building.buildRemainingMs > 0 ? null : building;
+    }
+
+    return null;
   }
 
   /**
@@ -338,4 +388,22 @@ export class Population {
 
     return null;
   }
+}
+
+/**
+ * 건물 안쪽 칸을 구한다.
+ *
+ * 점유 영역의 가운데다. 1×1 건물이면 그 칸 자체다. 지붕이 없어져 안이 보이므로
+ * 주민의 기준점을 문 앞이 아니라 여기로 둔다(ADR 0020).
+ *
+ * @param building 대상 건물.
+ * @returns 안쪽 칸.
+ */
+function interiorTile(building: Building): TilePos {
+  const blueprint = blueprintById(building.blueprintId);
+
+  return {
+    x: building.x + Math.floor(blueprint.width / 2),
+    y: building.y + Math.floor(blueprint.depth / 2),
+  };
 }

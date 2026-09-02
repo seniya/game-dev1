@@ -164,6 +164,14 @@ const NIGHT_DARK_RADIUS = 14;
 /** 한밤에 가장 어두운 곳의 불투명도. 동굴(0.8)보다 옅다. */
 const MAX_NIGHT_DARKNESS = 0.45;
 
+/**
+ * 주민이 낮에 집을 드나드는 주기(ms).
+ *
+ * 하루가 4분이므로 30초면 하루에 여덟 번 갈린다 — 늘 같은 자리에 서 있지 않고,
+ * 그렇다고 쉴 새 없이 움직이지도 않는 간격이다.
+ */
+const HOME_VISIT_BLOCK_MS = 30_000;
+
 /** 수정 등대 한 채가 밤에 넓혀 주는 반경(타일). */
 const BEACON_LIGHT_RADIUS = 2;
 
@@ -474,7 +482,9 @@ export class Game {
 
     // 낮에만 일한다. 밤에는 집으로 돌아간다(기획서 5.4의 "정해진 시간대").
     const workTime = this.dayPhase === DayPhase.DAY;
-    for (const migration of this.population.update(stepMs, workTime)) {
+    // 시간 덩어리 번호. 주민이 낮에 집을 드나드는 주기를 가른다.
+    const block = Math.floor(this.elapsed / HOME_VISIT_BLOCK_MS);
+    for (const migration of this.population.update(stepMs, workTime, this.isNight, block)) {
       this.onMigration(migration);
     }
 

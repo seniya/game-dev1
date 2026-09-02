@@ -7,6 +7,9 @@
  *
  * 외형은 규칙에 아무 영향을 주지 않는다. 마을 점수도, 기능도, 방어도 그대로다.
  * **오직 보기 위한 것**이며, 그래서 해금 보상으로 알맞다.
+ *
+ * 처음에는 **지붕 색**이었다. 지붕을 걷어내고 건물 안을 보이게 하면서(ADR 0020) 꾸밀
+ * 자리가 사라졌으므로 **바닥 색**으로 옮겼다. 벽은 건물 종류를 알아보는 단서라 그대로 둔다.
  */
 
 /** 외형 하나. */
@@ -15,9 +18,14 @@ export interface BuildingLook {
   readonly id: number;
   /** 표시 이름. */
   readonly label: string;
-  /** 지붕 색. null이면 건물 종류가 정한 원래 색을 쓴다. */
+  /**
+   * 바닥 색. null이면 건물 종류가 정한 원래 색을 쓴다.
+   *
+   * 필드 이름은 지붕이던 시절의 것을 그대로 쓴다 — 저장에 담기는 것은 번호(`id`)뿐이라
+   * 이름을 바꿔도 얻는 것이 없고, 바꾸면 렌더러·스프라이트·테스트가 함께 움직인다.
+   */
   readonly roof: string | null;
-  /** 지붕 그늘 색. */
+  /** 바닥 결 색. */
   readonly roofDark: string | null;
   /** 이 외형이 열리는 마을 레벨. */
   readonly unlockLevel: number;
@@ -26,16 +34,16 @@ export interface BuildingLook {
 /**
  * 고를 수 있는 외형들.
  *
- * 지붕 색만 바꾼다. 벽 색까지 바꾸면 건물 종류를 구분하는 단서(집은 밝은 흙벽, 대장간은
+ * 바닥 색만 바꾼다. 벽 색까지 바꾸면 건물 종류를 구분하는 단서(집은 밝은 흙벽, 대장간은
  * 어두운 돌벽)가 흐려진다 — 외형은 알아보는 것을 방해하지 않아야 한다.
  */
 export const BUILDING_LOOKS: readonly BuildingLook[] = [
   { id: 0, label: '기본', roof: null, roofDark: null, unlockLevel: 1 },
-  { id: 1, label: '푸른 지붕', roof: '#4a7fa5', roofDark: '#3b6684', unlockLevel: 3 },
-  { id: 2, label: '초록 지붕', roof: '#5f8a52', roofDark: '#4c6f42', unlockLevel: 6 },
-  { id: 3, label: '황금 지붕', roof: '#c9a227', roofDark: '#a3831f', unlockLevel: 9 },
-  { id: 4, label: '붉은 지붕', roof: '#b5453a', roofDark: '#8f362d', unlockLevel: 12 },
-  { id: 5, label: '검은 지붕', roof: '#3f434a', roofDark: '#2f3238', unlockLevel: 18 },
+  { id: 1, label: '푸른 바닥', roof: '#4a7fa5', roofDark: '#3b6684', unlockLevel: 3 },
+  { id: 2, label: '초록 바닥', roof: '#5f8a52', roofDark: '#4c6f42', unlockLevel: 6 },
+  { id: 3, label: '황금 바닥', roof: '#c9a227', roofDark: '#a3831f', unlockLevel: 9 },
+  { id: 4, label: '붉은 바닥', roof: '#b5453a', roofDark: '#8f362d', unlockLevel: 12 },
+  { id: 5, label: '검은 바닥', roof: '#3f434a', roofDark: '#2f3238', unlockLevel: 18 },
 ];
 
 /**

@@ -213,7 +213,7 @@ export const ALL_CONTROLS: ReadonlyArray<{ keys: string; what: string }> = [
   { keys: 'R', what: '주민 요청 납품' },
   { keys: 'F', what: '통로에서 동굴·지상 이동' },
   { keys: 'G', what: '일터에 주민 배정·해제' },
-  { keys: 'V', what: '건물 지붕 색 바꾸기' },
+  { keys: 'V', what: '건물 바닥 색 바꾸기' },
   { keys: '+ -', what: '확대·축소' },
   { keys: 'C', what: '카메라를 플레이어에게 되돌리기' },
   { keys: 'H', what: '이 도움말 열고 닫기' },

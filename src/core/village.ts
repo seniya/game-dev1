@@ -108,7 +108,7 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
   ],
   3: [
     { kind: 'tool', tool: ToolKind.PICKAXE, tier: ToolTier.MID },
-    { kind: 'look', label: '푸른 지붕' },
+    { kind: 'look', label: '푸른 바닥' },
   ],
   4: [
     { kind: 'tool', tool: ToolKind.AXE, tier: ToolTier.HIGH },
@@ -123,13 +123,13 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
 
   // 레벨 6부터는 새 콘텐츠 대신 **편의**를 연다. 로드맵 02는 완성도를 다루는 단계이고,
   // 새 자원·건물·지역은 로드맵 03의 영역이다. 자세한 근거는 ADR 0011에 있다.
-  6: [{ kind: 'inventory', slots: 2 }, { kind: 'look', label: '초록 지붕' }],
+  6: [{ kind: 'inventory', slots: 2 }, { kind: 'look', label: '초록 바닥' }],
   7: [{ kind: 'speed', multiplier: 1.2 }],
   8: [{ kind: 'storage', slots: 8 }],
   9: [
     { kind: 'inventory', slots: 2 },
     { kind: 'harvest', multiplier: 1.25 },
-    { kind: 'look', label: '황금 지붕' },
+    { kind: 'look', label: '황금 바닥' },
   ],
   10: [{ kind: 'speed', multiplier: 1.15 }],
 
@@ -137,13 +137,13 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
   // 맡는다"고 남긴 자리이며, 여기서는 이미 열린 시스템(일터·망루·외형)을 키운다.
   // 새 자원이나 새 맵을 더 열지 않는 이유는 그것이 또 하나의 로드맵이기 때문이다.
   11: [{ kind: 'jobSlot', slots: 1 }],
-  12: [{ kind: 'look', label: '붉은 지붕' }],
+  12: [{ kind: 'look', label: '붉은 바닥' }],
   13: [{ kind: 'defense', label: '망루 사거리 +2' }],
   14: [{ kind: 'inventory', slots: 2 }],
   15: [{ kind: 'harvest', multiplier: 1.25 }],
   16: [{ kind: 'jobSlot', slots: 1 }],
   17: [{ kind: 'storage', slots: 8 }],
-  18: [{ kind: 'look', label: '검은 지붕' }],
+  18: [{ kind: 'look', label: '검은 바닥' }],
   19: [{ kind: 'speed', multiplier: 1.15 }],
   20: [{ kind: 'production', multiplier: 1.5 }],
 };

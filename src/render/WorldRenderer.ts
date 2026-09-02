@@ -893,6 +893,32 @@ export class WorldRenderer {
    * @param entity 건물 오브젝트.
    */
   /**
+   * 네 점을 잇는 사각형을 채운다. 벽면을 그리는 데 쓴다.
+   *
+   * @param a 첫 점.
+   * @param b 둘째 점.
+   * @param c 셋째 점.
+   * @param d 넷째 점.
+   * @param color 채울 색.
+   */
+  private fillQuad(
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    c: { x: number; y: number },
+    d: { x: number; y: number },
+    color: string,
+  ): void {
+    this.ctx.fillStyle = color;
+    this.ctx.beginPath();
+    this.ctx.moveTo(a.x, a.y);
+    this.ctx.lineTo(b.x, b.y);
+    this.ctx.lineTo(c.x, c.y);
+    this.ctx.lineTo(d.x, d.y);
+    this.ctx.closePath();
+    this.ctx.fill();
+  }
+
+  /**
    * 손상된 건물 위에 표식을 얹는다.
    *
    * 손상은 기능이 멈춘 상태이므로 **한눈에 보여야 한다.** 지붕 위 붉은 삼각형 하나로
@@ -905,11 +931,13 @@ export class WorldRenderer {
   private drawDamageMark(
     screen: { x: number; y: number },
     zoom: number,
-    entity: { width: number; depth: number },
+    entity: { width: number; depth: number; style: BuildingStyle },
   ): void {
     const ctx = this.ctx;
     const centerX = screen.x + ((entity.width - 1) - (entity.depth - 1)) * (TILE_WIDTH / 4) * zoom;
-    const top = screen.y - TILE_HEIGHT * 1.8 * zoom;
+    // 지붕이 없어진 뒤로는 표식이 건물에서 멀찍이 떠 보였다. 벽 높이에 맞춘다.
+    const wall = TILE_HEIGHT * style_height(BUILDING_STYLE[entity.style].height) * zoom;
+    const top = screen.y - wall - TILE_HEIGHT * 0.5 * zoom;
     const size = TILE_HEIGHT * 0.5 * zoom;
 
     ctx.save();
@@ -989,9 +1017,10 @@ export class WorldRenderer {
     entity: Extract<Entity, { kind: 'building' }>,
   ): void {
     const base = BUILDING_STYLE[entity.style];
-    // 외형은 지붕 색만 바꾼다. 벽까지 바꾸면 건물 종류를 알아보기 어려워진다.
+    // 외형은 **바닥 색**을 바꾼다. 지붕이 없어졌으므로 꾸밀 자리가 바닥으로 옮겨 왔고,
+    // 벽은 건물 종류를 알아보는 단서라 그대로 둔다(ADR 0020).
     const variant = lookById(entity.look ?? 0);
-    const style = variant.roof ? { ...base, roof: variant.roof } : base;
+    const floorColor = variant.roof ?? base.floor;
     const halfW = (TILE_WIDTH / 2) * zoom;
     const halfH = (TILE_HEIGHT / 2) * zoom;
     const done = entity.progress >= 1;
@@ -1006,33 +1035,71 @@ export class WorldRenderer {
     const footHalfW = halfW * (entity.width + entity.depth) * 0.5;
     const footHalfH = halfH * (entity.width + entity.depth) * 0.5;
 
-    const bodyHeight = TILE_HEIGHT * zoom * style.height * (done ? 1 : 0.35);
+    const bodyHeight = TILE_HEIGHT * zoom * style_height(base.height) * (done ? 1 : 0.35);
 
-    // 벽면 두 장.
-    this.ctx.fillStyle = done ? style.wallX : 'rgba(150, 130, 100, 0.55)';
-    this.ctx.beginPath();
-    this.ctx.moveTo(baseX + footHalfW, baseY - bodyHeight);
-    this.ctx.lineTo(baseX, baseY + footHalfH - bodyHeight);
-    this.ctx.lineTo(baseX, baseY + footHalfH);
-    this.ctx.lineTo(baseX + footHalfW, baseY);
-    this.ctx.closePath();
-    this.ctx.fill();
+    // 마름모의 네 꼭짓점. 카메라를 향하는 면은 E-S와 S-W이고(ADR 0002의 축 규약),
+    // 그 반대편인 N-E와 W-N이 뒤쪽 벽이다.
+    const north = { x: baseX, y: baseY - footHalfH };
+    const east = { x: baseX + footHalfW, y: baseY };
+    const south = { x: baseX, y: baseY + footHalfH };
+    const west = { x: baseX - footHalfW, y: baseY };
 
-    this.ctx.fillStyle = done ? style.wallY : 'rgba(120, 104, 80, 0.55)';
-    this.ctx.beginPath();
-    this.ctx.moveTo(baseX, baseY + footHalfH - bodyHeight);
-    this.ctx.lineTo(baseX - footHalfW, baseY - bodyHeight);
-    this.ctx.lineTo(baseX - footHalfW, baseY);
-    this.ctx.lineTo(baseX, baseY + footHalfH);
-    this.ctx.closePath();
-    this.ctx.fill();
+    // 뒤쪽 벽 두 장. 지붕이 없으므로 이것이 건물의 몸이다.
+    this.fillQuad(
+      { x: north.x, y: north.y - bodyHeight },
+      { x: east.x, y: east.y - bodyHeight },
+      east,
+      north,
+      done ? base.wallX : 'rgba(150, 130, 100, 0.55)',
+    );
+    this.fillQuad(
+      { x: west.x, y: west.y - bodyHeight },
+      { x: north.x, y: north.y - bodyHeight },
+      north,
+      west,
+      done ? base.wallY : 'rgba(120, 104, 80, 0.55)',
+    );
 
-    // 지붕(윗면 마름모).
-    this.ctx.fillStyle = done ? style.roof : 'rgba(190, 175, 145, 0.5)';
-    this.traceDiamond(baseX, baseY - bodyHeight, footHalfW, footHalfH);
+    // 벽 윗면. 얇은 띠를 얹으면 담장이 아니라 두께가 있는 건물로 읽힌다.
+    const cap = Math.max(1, halfH * 0.22);
+    this.fillQuad(
+      { x: north.x, y: north.y - bodyHeight - cap },
+      { x: east.x, y: east.y - bodyHeight - cap },
+      { x: east.x, y: east.y - bodyHeight },
+      { x: north.x, y: north.y - bodyHeight },
+      done ? lighten(base.wallX) : 'rgba(190, 175, 145, 0.5)',
+    );
+    this.fillQuad(
+      { x: west.x, y: west.y - bodyHeight - cap },
+      { x: north.x, y: north.y - bodyHeight - cap },
+      { x: north.x, y: north.y - bodyHeight },
+      { x: west.x, y: west.y - bodyHeight },
+      done ? lighten(base.wallY) : 'rgba(190, 175, 145, 0.5)',
+    );
+
+    // 바닥. 뒤쪽 벽 다음에 그려 벽 밑동을 덮는다.
+    this.ctx.fillStyle = done ? floorColor : 'rgba(190, 175, 145, 0.5)';
+    this.traceDiamond(baseX, baseY, footHalfW, footHalfH);
     this.ctx.fill();
-    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
+    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.25)';
     this.ctx.stroke();
+
+    // 앞쪽은 턱만 남긴다. 높으면 안이 안 보이고, 없으면 건물이 바닥 무늬처럼 보인다.
+    const lip = bodyHeight * FRONT_LIP_RATIO;
+    this.fillQuad(
+      { x: east.x, y: east.y - lip },
+      { x: south.x, y: south.y - lip },
+      south,
+      east,
+      done ? base.wallX : 'rgba(150, 130, 100, 0.4)',
+    );
+    this.fillQuad(
+      { x: south.x, y: south.y - lip },
+      { x: west.x, y: west.y - lip },
+      west,
+      south,
+      done ? base.wallY : 'rgba(120, 104, 80, 0.4)',
+    );
 
     if (!done) {
       this.drawDust(baseX, baseY, footHalfW, footHalfH);
@@ -1228,6 +1295,42 @@ export class WorldRenderer {
 }
 
 /** 건물 외형별 색과 높이(타일 높이 배수). */
+/**
+ * 앞쪽 턱의 높이 비율.
+ *
+ * 지붕을 걷어낸 뒤 앞쪽 벽까지 그대로 세우면 안이 보이지 않는다. 낮은 턱만 남겨
+ * 건물의 테두리를 알리되 안을 들여다볼 수 있게 한다(ADR 0020).
+ */
+const FRONT_LIP_RATIO = 0.28;
+
+/**
+ * 벽 높이를 정한다.
+ *
+ * 지붕이 없어졌으므로 예전 몸통 높이를 그대로 쓰면 담장처럼 보인다. 화면에서 보고
+ * 두 번 낮췄다 — 안에 선 주민이 벽에 묻히지 않고, 건물이 벽만 두른 마당으로 보이지도
+ * 않는 높이다.
+ *
+ * @param height 건물 종류가 정한 높이 배수.
+ * @returns 실제로 쓸 높이 배수.
+ */
+function style_height(height: number): number {
+  return Math.min(height, 0.8);
+}
+
+/**
+ * 색을 조금 밝게 만든다. 벽 윗면처럼 같은 재질의 다른 면을 칠할 때 쓴다.
+ *
+ * @param hex `#rrggbb` 색.
+ * @returns 밝아진 색.
+ */
+function lighten(hex: string): string {
+  const value = Number.parseInt(hex.slice(1), 16);
+  const mix = (shift: number): number =>
+    Math.min(255, Math.round(((value >> shift) & 0xff) * 1.18 + 16));
+
+  return `rgb(${mix(16)}, ${mix(8)}, ${mix(0)})`;
+}
+
 /** 광맥에 박힌 알갱이 색. 인벤토리 바의 아이템 색과 맞춘다. */
 const ORE_COLOR: Readonly<Record<OreKind, string>> = {
   stone: '#9aa1a9',
@@ -1235,22 +1338,28 @@ const ORE_COLOR: Readonly<Record<OreKind, string>> = {
   crystal: '#9a86e0',
 };
 
+/**
+ * 건물 종류별 색과 높이.
+ *
+ * 지붕을 걷어낸 뒤(ADR 0020) 건물을 알아보는 단서는 **벽 색과 바닥 색**이다. 예전 지붕
+ * 색을 바닥으로 옮겨, 멀리서도 종류가 구분되던 성질을 잃지 않게 했다.
+ */
 const BUILDING_STYLE: Readonly<
-  Record<BuildingStyle, { roof: string; wallX: string; wallY: string; height: number }>
+  Record<BuildingStyle, { floor: string; wallX: string; wallY: string; height: number }>
 > = {
-  house: { roof: '#b8563f', wallX: '#d9c39a', wallY: '#b8a37e', height: 1.5 },
-  bigHouse: { roof: '#8e4a6b', wallX: '#dcc7a4', wallY: '#b9a482', height: 2 },
-  warehouse: { roof: '#5f7d8c', wallX: '#c9b592', wallY: '#a89877', height: 1.6 },
-  well: { roof: '#7a6a55', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.8 },
-  workbench: { roof: '#8a6f47', wallX: '#b39566', wallY: '#957b54', height: 0.7 },
-  // 대장간은 어두운 벽과 달아오른 지붕으로 둔다 — 마을에서 한눈에 구분돼야
+  house: { floor: '#a8776a', wallX: '#d9c39a', wallY: '#b8a37e', height: 1.5 },
+  bigHouse: { floor: '#916b83', wallX: '#dcc7a4', wallY: '#b9a482', height: 2 },
+  warehouse: { floor: '#79909b', wallX: '#c9b592', wallY: '#a89877', height: 1.6 },
+  well: { floor: '#6f8798', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.8 },
+  workbench: { floor: '#9a8560', wallX: '#b39566', wallY: '#957b54', height: 0.7 },
+  // 대장간은 어두운 벽과 달아오른 바닥으로 둔다 — 마을에서 한눈에 구분돼야
   // 동굴에 다녀온 보람이 보인다.
-  forge: { roof: '#c26a3a', wallX: '#6f6a68', wallY: '#575250', height: 1.3 },
-  quarry: { roof: '#7f8892', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9 },
-  fence: { roof: '#8a6f47', wallX: '#a4835a', wallY: '#87694a', height: 0.5 },
-  watchtower: { roof: '#6b7f5f', wallX: '#c0ab86', wallY: '#9d8b6c', height: 2.4 },
-  // 수정 지붕. 밤에 마을을 밝히는 건물이라 멀리서도 빛나 보여야 한다.
-  beacon: { roof: '#b6a6f0', wallX: '#8d8698', wallY: '#6f6a7c', height: 2 },
+  forge: { floor: '#b8794f', wallX: '#6f6a68', wallY: '#575250', height: 1.3 },
+  quarry: { floor: '#8a929b', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9 },
+  fence: { floor: '#8a6f47', wallX: '#a4835a', wallY: '#87694a', height: 0.5 },
+  watchtower: { floor: '#7c8d72', wallX: '#c0ab86', wallY: '#9d8b6c', height: 2.4 },
+  // 수정 바닥. 밤에 마을을 밝히는 건물이라 멀리서도 빛나 보여야 한다.
+  beacon: { floor: '#a094d6', wallX: '#8d8698', wallY: '#6f6a7c', height: 2 },
 };
 
 /**
@@ -1266,7 +1375,10 @@ const BUILDING_STYLE: Readonly<
  */
 function entityAnchor(entity: Entity): { x: number; y: number } {
   if (entity.kind === 'building') {
-    return { x: entity.x + entity.width - 1, y: entity.y + entity.depth - 1 };
+    // 지붕이 있던 시절에는 **앞쪽 칸**이 기준이었다(ADR 0006) — 상자 모양이라 앞을 가려야
+    // 맞았기 때문이다. 지붕을 걷어내고 뒤쪽 벽만 남기자 반대가 됐다. 뒤쪽 칸을 기준으로
+    // 삼아야 건물이 먼저 그려지고, **그 안에 선 주민이 바닥에 덮이지 않는다**(ADR 0020).
+    return { x: entity.x, y: entity.y };
   }
 
   return { x: Math.round(entity.x), y: Math.round(entity.y) };

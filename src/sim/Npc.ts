@@ -9,8 +9,16 @@ export const NPC_MOVE_DURATION_MS = 420;
 const IDLE_MIN_MS = 900;
 const IDLE_MAX_MS = 2600;
 
-/** 집에서 벗어날 수 있는 최대 거리(타일). 마을 안에 머물게 한다. */
-const WANDER_RADIUS = 6;
+/** 기준점에서 벗어날 수 있는 기본 거리(타일). 마을 안에 머물게 한다. */
+export const WANDER_RADIUS = 6;
+
+/**
+ * 건물 안에 있을 때의 배회 거리(타일).
+ *
+ * 지붕을 걷어낸 뒤(ADR 0020) 주민이 건물 안에서 지내는 모습이 보이게 됐다. 반경이 넓으면
+ * 안에 있어야 할 시간에 밖으로 새어 나가 그 모습이 사라진다.
+ */
+export const INDOOR_RADIUS = 1;
 
 /** 렌더러에 넘길 NPC 위치. */
 export interface NpcPose {
@@ -48,10 +56,14 @@ export class Npc {
   /**
    * 지금 머무는 기준점.
    *
-   * 낮에 일터가 있으면 일터 앞, 그 밖에는 집 앞이다. 배회 반경은 이 점을 중심으로
-   * 잡는다 — "정해진 시간대에 배회한다"(기획서 5.4)를 경로 탐색 없이 표현하는 방법이다.
+   * 낮에 일터가 있으면 일터 안, 밤에는 집 안이고, 그 밖에는 집 앞이다. 배회 반경은 이
+   * 점을 중심으로 잡는다 — "정해진 시간대에 배회한다"(기획서 5.4)를 경로 탐색 없이
+   * 표현하는 방법이다.
    */
   private anchorTile: TilePos;
+
+  /** 기준점에서 벗어날 수 있는 거리. 실내에서는 좁다(ADR 0020). */
+  private anchorRadius = WANDER_RADIUS;
 
   /** 현재 서 있는 칸. */
   private tile: TilePos;
@@ -103,9 +115,16 @@ export class Npc {
    * 배회가 곧 출퇴근이 되는 셈이라 새 이동 로직이 필요 없다.
    *
    * @param tile 새 기준점.
+   * @param radius 벗어날 수 있는 거리. 생략하면 기본값.
    */
-  setAnchor(tile: TilePos): void {
+  setAnchor(tile: TilePos, radius: number = WANDER_RADIUS): void {
     this.anchorTile = { x: tile.x, y: tile.y };
+    this.anchorRadius = Math.max(0, radius);
+  }
+
+  /** 지금 기준점에서 벗어날 수 있는 거리. */
+  get radius(): number {
+    return this.anchorRadius;
   }
 
   /** 현재 서 있는 칸(정수). */
@@ -173,9 +192,16 @@ export class Npc {
 
     // 기준점에서 멀어져 있으면(출퇴근 중) 가까워지는 칸만 후보로 둔다. 경로 탐색은
     // 하지 않으므로 막히면 제자리에 머물 뿐, 곤란해지지 않는다.
-    const homeward = here > WANDER_RADIUS
+    const homeward = here > this.anchorRadius
       ? neighbors.filter((tile) => this.distanceFromAnchor(tile) < here)
-      : neighbors.filter((tile) => this.distanceFromAnchor(tile) <= WANDER_RADIUS);
+      : neighbors.filter((tile) => this.distanceFromAnchor(tile) <= this.anchorRadius);
+
+    // 반경 안에 갈 곳이 없으면(1×1 건물 안 등) 제자리에 머문다. 밖으로 새어 나가면
+    // 실내에서 지내는 모습이 사라진다.
+    if (homeward.length === 0 && here <= this.anchorRadius) {
+      this.idleRemainingMs = this.pickIdleTime();
+      return;
+    }
 
     const candidates = homeward.length > 0 ? homeward : neighbors;
 

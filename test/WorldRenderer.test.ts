@@ -873,3 +873,51 @@ describe('시간대 색조', () => {
     expect(ctx.rects[1]?.fillStyle).toBe(darkColor(0.45));
   });
 });
+
+describe('지붕 없는 건물 (ADR 0020)', () => {
+  it('건물 안에 선 주민이 건물보다 나중에 그려진다 — 바닥에 덮이면 안 보인다', () => {
+    const { ctx, renderer } = setup(flat(12, 2));
+
+    // 2×2 집과 그 안에 선 주민.
+    renderer.render(null, [
+      { kind: 'building', x: 4, y: 4, z: 1, width: 2, depth: 2, style: 'house', progress: 1 },
+      { kind: 'npc', x: 5, y: 5, z: 1, hue: 120 },
+    ]);
+
+    // 주민의 몸은 원(점 하나짜리 경로)으로 그려진다. 건물 바닥 마름모보다 나중이어야 한다.
+    const lastBuildingPath = ctx.paths.findLastIndex((path) => path.points.length === 4);
+    const npcDot = ctx.dots.length;
+
+    expect(lastBuildingPath).toBeGreaterThanOrEqual(0);
+    expect(npcDot).toBeGreaterThan(0);
+  });
+
+  it('건물을 그릴 때 지붕 대신 바닥과 벽을 그린다', () => {
+    const { ctx, renderer } = setup(flat(12, 2));
+    const before = ctx.paths.length;
+
+    renderer.render(null, [
+      { kind: 'building', x: 4, y: 4, z: 1, width: 2, depth: 2, style: 'house', progress: 1 },
+    ]);
+
+    // 뒤쪽 벽 둘 + 벽 윗면 둘 + 바닥 + 앞턱 둘 = 일곱 조각이 나온다.
+    expect(ctx.paths.length - before).toBeGreaterThanOrEqual(7);
+  });
+
+  it('외형을 바꾸면 바닥 색이 달라진다', () => {
+    const { ctx, renderer } = setup(flat(12, 2));
+
+    renderer.render(null, [
+      { kind: 'building', x: 4, y: 4, z: 1, width: 2, depth: 2, style: 'house', progress: 1 },
+    ]);
+    const plain = ctx.paths.map((path) => path.fillStyle);
+
+    const second = setup(flat(12, 2));
+    second.renderer.render(null, [
+      { kind: 'building', x: 4, y: 4, z: 1, width: 2, depth: 2, style: 'house', progress: 1, look: 1 },
+    ]);
+    const tinted = second.ctx.paths.map((path) => path.fillStyle);
+
+    expect(tinted).not.toEqual(plain);
+  });
+});

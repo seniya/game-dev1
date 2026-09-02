@@ -549,18 +549,21 @@ function makeOreVein(ore: OreKind, stage: number): Sprite {
 
 /** 건물 외형별 색과 높이(타일 높이 배수). */
 const BUILDING_LOOK: Readonly<
-  Record<BuildingStyle, { roof: string; roofDark: string; wallX: string; wallY: string; height: number; door: boolean }>
+  Record<
+    BuildingStyle,
+    { floor: string; floorDark: string; wallX: string; wallY: string; height: number; door: boolean }
+  >
 > = {
-  house: { roof: '#b8563f', roofDark: '#96422f', wallX: '#d9c39a', wallY: '#b8a37e', height: 1.5, door: true },
-  bigHouse: { roof: '#8e4a6b', roofDark: '#743a56', wallX: '#dcc7a4', wallY: '#b9a482', height: 2, door: true },
-  warehouse: { roof: '#5f7d8c', roofDark: '#4c6673', wallX: '#c9b592', wallY: '#a89877', height: 1.6, door: true },
-  well: { roof: '#7a6a55', roofDark: '#615343', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.8, door: false },
-  workbench: { roof: '#8a6f47', roofDark: '#6f5939', wallX: '#b39566', wallY: '#957b54', height: 0.7, door: false },
-  forge: { roof: '#c26a3a', roofDark: '#9c5330', wallX: '#6f6a68', wallY: '#575250', height: 1.3, door: true },
-  quarry: { roof: '#7f8892', roofDark: '#666e77', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9, door: false },
-  fence: { roof: '#8a6f47', roofDark: '#6f5939', wallX: '#a4835a', wallY: '#87694a', height: 0.5, door: false },
-  watchtower: { roof: '#6b7f5f', roofDark: '#55664c', wallX: '#c0ab86', wallY: '#9d8b6c', height: 2.4, door: true },
-  beacon: { roof: '#b6a6f0', roofDark: '#9184cc', wallX: '#8d8698', wallY: '#6f6a7c', height: 2, door: false },
+  house: { floor: '#a8776a', floorDark: '#96422f', wallX: '#d9c39a', wallY: '#b8a37e', height: 1.5, door: true },
+  bigHouse: { floor: '#916b83', floorDark: '#743a56', wallX: '#dcc7a4', wallY: '#b9a482', height: 2, door: true },
+  warehouse: { floor: '#79909b', floorDark: '#4c6673', wallX: '#c9b592', wallY: '#a89877', height: 1.6, door: true },
+  well: { floor: '#6f8798', floorDark: '#615343', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.8, door: false },
+  workbench: { floor: '#9a8560', floorDark: '#6f5939', wallX: '#b39566', wallY: '#957b54', height: 0.7, door: false },
+  forge: { floor: '#b8794f', floorDark: '#9c5330', wallX: '#6f6a68', wallY: '#575250', height: 1.3, door: true },
+  quarry: { floor: '#8a929b', floorDark: '#666e77', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9, door: false },
+  fence: { floor: '#8a6f47', floorDark: '#6f5939', wallX: '#a4835a', wallY: '#87694a', height: 0.5, door: false },
+  watchtower: { floor: '#7c8d72', floorDark: '#55664c', wallX: '#c0ab86', wallY: '#9d8b6c', height: 2.4, door: true },
+  beacon: { floor: '#a094d6', floorDark: '#9184cc', wallX: '#8d8698', wallY: '#6f6a7c', height: 2, door: false },
 };
 
 /**
@@ -579,12 +582,15 @@ function makeBuilding(
 ): Sprite {
   const base = BUILDING_LOOK[style];
   const variant = lookById(variantId);
-  const look = variant.roof && variant.roofDark
-    ? { ...base, roof: variant.roof, roofDark: variant.roofDark }
-    : base;
+  // 외형은 바닥 색을 바꾼다. 지붕이 없어졌으므로 꾸밀 자리가 바닥으로 옮겨 왔다(ADR 0020).
+  const floorColor = variant.roof ?? base.floor;
+  const floorDark = variant.roofDark ?? base.floorDark;
+
   const halfW = (TILE_WIDTH / 2) * (width + depth) * 0.5;
   const halfH = (TILE_HEIGHT / 2) * (width + depth) * 0.5;
-  const body = TILE_HEIGHT * look.height;
+  // 벽만 남았으므로 예전 몸통 높이를 조금 낮춘다 — 안에 선 주민의 머리가 보여야 한다.
+  const body = TILE_HEIGHT * Math.min(base.height, 0.8);
+  const lip = body * 0.28;
 
   const spriteWidth = halfW * 2;
   const spriteHeight = halfH * 2 + body;
@@ -595,72 +601,84 @@ function makeBuilding(
   const cx = spriteWidth / 2;
   const cy = body + halfH;
 
-  // 오른쪽 벽.
-  ctx.fillStyle = look.wallX;
-  ctx.beginPath();
-  ctx.moveTo(cx + halfW, cy - body);
-  ctx.lineTo(cx, cy + halfH - body);
-  ctx.lineTo(cx, cy + halfH);
-  ctx.lineTo(cx + halfW, cy);
-  ctx.closePath();
-  ctx.fill();
-  paintPlanks(ctx, cx, cx + halfW, cy - body, cy + halfH - body, body, 'rgba(0, 0, 0, 0.09)');
+  const north = { x: cx, y: cy - halfH };
+  const east = { x: cx + halfW, y: cy };
+  const south = { x: cx, y: cy + halfH };
+  const west = { x: cx - halfW, y: cy };
 
-  // 왼쪽 벽.
-  ctx.fillStyle = look.wallY;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy + halfH - body);
-  ctx.lineTo(cx - halfW, cy - body);
-  ctx.lineTo(cx - halfW, cy);
-  ctx.lineTo(cx, cy + halfH);
-  ctx.closePath();
-  ctx.fill();
-  paintPlanks(ctx, cx - halfW, cx, cy - body, cy + halfH - body, body, 'rgba(0, 0, 0, 0.13)');
-
-  // 문. 앞쪽 모서리에 둔다.
-  if (look.door) {
-    const doorWidth = Math.min(halfW * 0.32, TILE_WIDTH * 0.28);
-    const doorHeight = Math.min(body * 0.66, TILE_HEIGHT * 0.9);
-    ctx.fillStyle = '#5a4327';
+  /** 네 점을 잇는 면을 채운다. */
+  const quad = (
+    a: { x: number; y: number },
+    b: { x: number; y: number },
+    c: { x: number; y: number },
+    d: { x: number; y: number },
+    color: string,
+  ): void => {
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.moveTo(cx, cy + halfH);
-    ctx.lineTo(cx + doorWidth, cy + halfH - doorWidth / 2);
-    ctx.lineTo(cx + doorWidth, cy + halfH - doorWidth / 2 - doorHeight);
-    ctx.lineTo(cx, cy + halfH - doorHeight);
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.lineTo(c.x, c.y);
+    ctx.lineTo(d.x, d.y);
     ctx.closePath();
     ctx.fill();
-  }
+  };
 
-  // 지붕(윗면 마름모).
-  ctx.fillStyle = look.roof;
+  // 뒤쪽 벽 두 장. 카메라를 향하는 면(E-S, S-W)의 반대편이다.
+  quad({ x: north.x, y: north.y - body }, { x: east.x, y: east.y - body }, east, north, base.wallX);
+  paintPlanks(ctx, cx, cx + halfW, north.y - body, east.y - body, body, 'rgba(0, 0, 0, 0.09)');
+
+  quad({ x: west.x, y: west.y - body }, { x: north.x, y: north.y - body }, north, west, base.wallY);
+  paintPlanks(ctx, cx - halfW, cx, west.y - body, north.y - body, body, 'rgba(0, 0, 0, 0.13)');
+
+  // 바닥. 벽 밑동을 덮으며 건물 안을 채운다.
+  ctx.fillStyle = floorColor;
   ctx.beginPath();
-  ctx.moveTo(cx, cy - body - halfH);
-  ctx.lineTo(cx + halfW, cy - body);
-  ctx.lineTo(cx, cy - body + halfH);
-  ctx.lineTo(cx - halfW, cy - body);
+  ctx.moveTo(north.x, north.y);
+  ctx.lineTo(east.x, east.y);
+  ctx.lineTo(south.x, south.y);
+  ctx.lineTo(west.x, west.y);
   ctx.closePath();
   ctx.fill();
 
-  // 지붕 결. 마름모를 따라 선을 그어 기와처럼 보이게 한다.
-  ctx.strokeStyle = look.roofDark;
-  ctx.globalAlpha = 0.55;
+  // 바닥 결. 마름모를 따라 선을 그어 널을 깐 것처럼 보이게 한다.
+  ctx.strokeStyle = floorDark;
+  ctx.globalAlpha = 0.5;
   ctx.lineWidth = 1;
   for (let i = 1; i < 5; i += 1) {
     const t = i / 5;
     ctx.beginPath();
-    ctx.moveTo(cx - halfW * (1 - t), cy - body - halfH * t);
-    ctx.lineTo(cx + halfW * t, cy - body - halfH * (1 - t));
+    ctx.moveTo(cx - halfW * (1 - t), cy - halfH * t);
+    ctx.lineTo(cx + halfW * t, cy - halfH * (1 - t));
     ctx.stroke();
   }
   ctx.globalAlpha = 1;
 
-  // 지붕 테두리로 형태를 또렷하게 한다.
-  ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+  // 앞쪽 턱. 낮게 남겨 테두리는 알리되 안을 들여다볼 수 있게 한다.
+  quad({ x: east.x, y: east.y - lip }, { x: south.x, y: south.y - lip }, south, east, base.wallX);
+  quad({ x: south.x, y: south.y - lip }, { x: west.x, y: west.y - lip }, west, south, base.wallY);
+
+  // 문턱. 앞쪽 모서리를 조금 비워 드나드는 자리를 보인다.
+  if (base.door) {
+    const doorWidth = Math.min(halfW * 0.34, TILE_WIDTH * 0.3);
+    ctx.fillStyle = floorColor;
+    ctx.beginPath();
+    ctx.moveTo(south.x, south.y);
+    ctx.lineTo(south.x + doorWidth, south.y - doorWidth / 2 - lip);
+    ctx.lineTo(south.x + doorWidth, south.y - doorWidth / 2);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // 테두리로 형태를 또렷하게 한다.
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.32)';
   ctx.beginPath();
-  ctx.moveTo(cx, cy - body - halfH);
-  ctx.lineTo(cx + halfW, cy - body);
-  ctx.lineTo(cx, cy - body + halfH);
-  ctx.lineTo(cx - halfW, cy - body);
+  ctx.moveTo(north.x, north.y - body);
+  ctx.lineTo(east.x, east.y - body);
+  ctx.lineTo(east.x, east.y);
+  ctx.lineTo(south.x, south.y);
+  ctx.lineTo(west.x, west.y);
+  ctx.lineTo(west.x, west.y - body);
   ctx.closePath();
   ctx.stroke();
 

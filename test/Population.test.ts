@@ -155,3 +155,92 @@ describe('Population 이주', () => {
     expect(after).not.toEqual(before);
   });
 });
+
+describe('실내 생활 (ADR 0020)', () => {
+  /**
+   * 집 한 채와 일터 한 채가 선 마을을 만든다.
+   *
+   * @param size 정사각 맵의 한 변.
+   */
+  function village(size = 16) {
+    const terrain = flat(size);
+    const buildings = new Buildings(terrain);
+    const population = new Population(terrain, buildings);
+
+    const home = buildings.place(blueprintById(BlueprintId.COTTAGE), 3, 3, noNodes, true)!;
+    const work = buildings.place(blueprintById(BlueprintId.WORKBENCH), 9, 3, noNodes, true)!;
+
+    // 주민이 들어올 때까지 진행한다.
+    for (let step = 0; step < 1200; step += 1) population.update(1000 / 60);
+
+    return { terrain, buildings, population, home, work };
+  }
+
+  /**
+   * 칸이 건물 점유 영역 안인지 본다.
+   *
+   * @param building 건물.
+   * @param tile 확인할 칸.
+   */
+  function isInside(building: { x: number; y: number; blueprintId: BlueprintId }, tile: { x: number; y: number }) {
+    const blueprint = blueprintById(building.blueprintId);
+
+    return (
+      tile.x >= building.x &&
+      tile.x < building.x + blueprint.width &&
+      tile.y >= building.y &&
+      tile.y < building.y + blueprint.depth
+    );
+  }
+
+  it('밤에는 집 안을 기준점으로 삼는다', () => {
+    const { population, home } = village();
+    expect(population.count).toBeGreaterThan(0);
+
+    population.update(1000 / 60, false, true, 0);
+
+    for (const npc of population.all) {
+      expect(isInside(home, npc.anchor)).toBe(true);
+      expect(npc.radius).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('낮에 일자리가 있으면 일터 안을 기준점으로 삼는다', () => {
+    const { population, work } = village();
+    const npc = population.all[0]!;
+    npc.setJob(work.id);
+
+    population.update(1000 / 60, true, false, 0);
+
+    expect(isInside(work, npc.anchor)).toBe(true);
+    expect(npc.radius).toBeLessThanOrEqual(1);
+  });
+
+  it('일자리가 없는 주민은 시간 덩어리마다 집과 마을을 오간다', () => {
+    const { population, home } = village();
+    const npc = population.all[0]!;
+
+    const insideBlocks = new Set<number>();
+    const outsideBlocks = new Set<number>();
+    for (let block = 0; block < 30; block += 1) {
+      population.update(1000 / 60, true, false, block);
+      if (isInside(home, npc.anchor)) insideBlocks.add(block);
+      else outsideBlocks.add(block);
+    }
+
+    // 계속 안에만 있으면 마을이 죽고, 계속 밖에만 있으면 집이 빈다.
+    expect(insideBlocks.size).toBeGreaterThan(0);
+    expect(outsideBlocks.size).toBeGreaterThan(0);
+  });
+
+  it('같은 덩어리에서는 같은 판단이 나온다 — 매 프레임 들락거리지 않는다', () => {
+    const { population, home } = village();
+    const npc = population.all[0]!;
+
+    population.update(1000 / 60, true, false, 7);
+    const first = isInside(home, npc.anchor);
+    for (let i = 0; i < 20; i += 1) population.update(1000 / 60, true, false, 7);
+
+    expect(isInside(home, npc.anchor)).toBe(first);
+  });
+});
