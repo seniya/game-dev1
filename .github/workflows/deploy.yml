@@ -1,0 +1,49 @@
+# main에 올라온 것을 GitHub Pages로 배포한다.
+#
+# dist/는 .gitignore에 있으므로 산출물을 커밋하지 않고 여기서 빌드한다.
+# `npm run build`가 `tsc --noEmit`을 포함하므로 타입 오류는 배포를 막는다.
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  # 저장소 Actions 탭에서 손으로도 돌릴 수 있게 한다.
+  workflow_dispatch:
+
+# Pages 배포에 필요한 최소 권한.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포는 한 번에 하나만. 뒤에 온 것이 앞의 것을 기다렸다가 덮는다.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # 배포본이 깨지는 것보다 배포가 멈추는 편이 낫다.
+      - run: npm test
+      - run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
