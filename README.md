@@ -3,9 +3,14 @@
 2.5D 아이소메트릭 마을 건설 게임. 자원을 모아 완성된 건물을 즉시 짓고, 주민을 늘려
 마을 레벨을 올린다. 스토리와 대사창은 없다 — 모든 안내는 토스트와 아이콘으로 한다.
 
+**현재 상태**: 단위 테스트 941개, 자동 플레이로 세 시드 모두 마을 레벨 20 도달(12~14분),
+후반 규모에서 60fps. 키보드만으로도 마우스만으로도 끝까지 플레이된다.
+가장 최근 작업 기록은 [`docs/state/`](docs/state)의 마지막 파일에 있다.
+
 - 기획서: [`docs/plan/project.md`](docs/plan/project.md)
 - 개발 로드맵: [01 MVP](docs/plan/roadmap_01.md) · [02 완성도](docs/plan/roadmap_02.md) ·
-  [03 콘텐츠 확장](docs/plan/roadmap_03.md)
+  [03 콘텐츠 확장](docs/plan/roadmap_03.md) · [04 내보내고 보고 고침](docs/plan/roadmap_04.md) ·
+  [05 남의 손에 쥐여 준다](docs/plan/roadmap_05.md)
 - 기술 결정 기록: [`docs/adr/`](docs/adr)
 
 ## 플레이
