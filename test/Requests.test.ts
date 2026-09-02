@@ -264,6 +264,80 @@ describe('RequestBoard 완료', () => {
   });
 });
 
+describe('달성형 요청 생성', () => {
+  /**
+   * 주민이 여럿 사는 마을을 만든다. 달성형 요청은 마을이 자란 뒤에 나온다.
+   *
+   * @param houses 지을 집 수.
+   */
+  function grownVillage(houses = 8) {
+    const context = setupDeliveryOnly({ intervalMs: 1000 });
+    for (let i = 0; i < houses; i += 1) {
+      context.buildings.place(blueprintById(BlueprintId.COTTAGE), 1 + i * 3, 1, noNodes, true);
+    }
+    // 주민이 들어올 때까지 진행한다.
+    context.advance(60_000);
+
+    return context;
+  }
+
+  it('마을이 자라면 달성형이 섞여 나온다', () => {
+    const context = grownVillage();
+    expect(context.population.count).toBeGreaterThanOrEqual(4);
+
+    const kinds = new Set<string>();
+    // 요청이 쌓이면 새로 만들지 않으므로, 만들어진 것을 비워 가며 여러 번 본다.
+    for (let round = 0; round < 40; round += 1) {
+      const { created } = context.advance(1500);
+      for (const request of created) kinds.add(request.kind);
+      context.board.requests.forEach((request) => {
+        if (request.kind === RequestKind.DELIVER) {
+          context.board.fulfillDelivery(request.id, () => true, () => {});
+        }
+      });
+    }
+
+    expect(kinds.has(RequestKind.SETTLE) || kinds.has(RequestKind.WORKFORCE)).toBe(true);
+  });
+
+  it('주민이 적으면 나오지 않는다 — 마을 전체의 목표를 요청으로 내밀지 않는다', () => {
+    const context = setupDeliveryOnly({ intervalMs: 1000 });
+    context.advance(30_000);
+    expect(context.population.count).toBeLessThan(4);
+
+    const kinds = new Set<string>();
+    for (let round = 0; round < 20; round += 1) {
+      const { created } = context.advance(1500);
+      for (const request of created) kinds.add(request.kind);
+      context.board.requests.forEach((request) => {
+        if (request.kind === RequestKind.DELIVER) {
+          context.board.fulfillDelivery(request.id, () => true, () => {});
+        }
+      });
+    }
+
+    expect(kinds.has(RequestKind.SETTLE)).toBe(false);
+    expect(kinds.has(RequestKind.WORKFORCE)).toBe(false);
+  });
+
+  it('주민 수를 채우면 스스로 닫힌다', () => {
+    const context = grownVillage(10);
+    const before = context.population.count;
+
+    // 지금보다 한 명 적은 목표는 이미 채워진 것이라 곧바로 닫힌다.
+    context.board.restore({
+      requests: [{ kind: 'settle', id: 99, npcId: 1, target: Math.max(1, before - 1) }],
+      nextId: 100,
+      completed: 0,
+      timerMs: 10_000,
+    });
+
+    const { completed } = context.advance(200);
+
+    expect(completed.some((entry) => entry.request.id === 99)).toBe(true);
+  });
+});
+
 describe('달성형 요청', () => {
   it('주민 수와 일꾼 수를 채우면 닫힌다', () => {
     expect(
