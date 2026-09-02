@@ -1,9 +1,32 @@
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH, gridToWorld } from '../core/coordinates';
-import { DARK_RADIUS, LIT_RADIUS, MAX_DARKNESS, darkColor, darknessAt } from '../core/light';
+import { darkColor, darknessAt } from '../core/light';
 import { BlockType, blockInfo } from '../core/blocks';
 import type { Terrain } from '../core/Terrain';
 import type { Camera } from './Camera';
 import { DAMAGE_STAGES, type Sprite, type SpriteSet } from './sprites';
+
+/**
+ * 화면 전체에 얹는 분위기.
+ *
+ * 렌더러는 "동굴"도 "밤"도 모른다. 색조와 빛의 중심만 받는다 — 어디가 왜 어두운지는
+ * 규칙(`Game`)의 몫이다.
+ */
+export interface Atmosphere {
+  /** 화면 전체에 얹을 색조. 없으면 얹지 않는다. */
+  tint?: { color: string; alpha: number } | null;
+  /** 빛의 중심과 반경(타일). 없으면 어둡게 하지 않는다. */
+  light?: {
+    x: number;
+    y: number;
+    z: number;
+    /** 이 반경 안은 밝다. */
+    lit: number;
+    /** 이 반경 밖은 가장 어둡다. */
+    dark: number;
+    /** 가장 어두운 곳의 불투명도. */
+    max: number;
+  } | null;
+}
 
 /** 타일 한 칸을 가리키는 좌표. 커서 하이라이트 대상 등에 쓴다. */
 export interface TileRef {
@@ -200,7 +223,7 @@ export class WorldRenderer {
    * @param ghost 반투명 미리보기. 건축 모드에서만 넘긴다.
    * @param timeMs 시뮬레이션 시각. 시간에 따라 움직이는 연출에 쓴다.
    * @param zones 구역 표시. 없으면 잠긴 칸을 칠하지 않는다.
-   * @param light 빛의 중심(그리드 좌표). 넘기면 그 바깥이 어두워진다 — 동굴에서 쓴다.
+   * @param atmosphere 색조와 빛. 동굴의 어둠과 밤의 시야가 여기로 들어온다.
    * @returns 이번 프레임에 그린 양.
    */
   render(
@@ -209,7 +232,7 @@ export class WorldRenderer {
     ghost: GhostPreview | null = null,
     timeMs = 0,
     zones: ZoneOverlay | null = null,
-    light: { x: number; y: number; z: number } | null = null,
+    atmosphere: Atmosphere | null = null,
   ): RenderStats {
     this.timeMs = timeMs;
     const range = this.camera.visibleTileRange();
@@ -288,9 +311,10 @@ export class WorldRenderer {
       }
     }
 
-    // 어둠은 지형과 오브젝트를 모두 그린 뒤에 덮는다. 파편과 떠오르는 글자는
+    // 색조와 어둠은 지형과 오브젝트를 모두 그린 뒤에 덮는다. 파편과 떠오르는 글자는
     // 그 위에 얹히므로(`main.ts`) 어두운 곳에서도 읽힌다.
-    if (light) this.drawDarkness(light, zoom);
+    if (atmosphere?.tint && atmosphere.tint.alpha > 0) this.drawOverlay(atmosphere.tint.color);
+    if (atmosphere?.light) this.drawDarkness(atmosphere.light, zoom);
 
     return stats;
   }
@@ -302,24 +326,37 @@ export class WorldRenderer {
    * 만들 수 없는 컨텍스트(헤드리스 테스트의 가짜 컨텍스트)에서는 **고른 어둠**으로
    * 떨어진다 — 도형 경로가 어떤 환경에서도 죽지 않아야 한다는 규칙(로드맵 02)과 같다.
    *
-   * @param center 빛의 중심(그리드 좌표).
+   * @param light 빛의 중심과 반경.
    * @param zoom 확대율.
    */
-  private drawDarkness(center: { x: number; y: number; z: number }, zoom: number): void {
-    const world = gridToWorld(center.x, center.y, center.z);
+  private drawDarkness(light: NonNullable<Atmosphere['light']>, zoom: number): void {
+    const world = gridToWorld(light.x, light.y, light.z);
     const screen = this.camera.worldToScreen(world.x, world.y);
 
     // 타일 반폭을 한 칸의 대표 길이로 삼아 반경을 픽셀로 옮긴다.
     const unit = (TILE_WIDTH / 2) * zoom;
-    const inner = LIT_RADIUS * unit;
-    const outer = DARK_RADIUS * unit;
 
     const ctx = this.ctx;
     const size = this.camera.viewport;
 
     ctx.save();
     // 카메라 변환 없이 화면 좌표로 덮는다.
-    ctx.fillStyle = this.darknessFill(screen, inner, outer);
+    ctx.fillStyle = this.darknessFill(screen, light, unit);
+    ctx.fillRect(0, 0, size.width, size.height);
+    ctx.restore();
+  }
+
+  /**
+   * 화면 전체를 한 색으로 덮는다. 시간대 색조에 쓴다.
+   *
+   * @param color 덮을 색(불투명도 포함).
+   */
+  private drawOverlay(color: string): void {
+    const ctx = this.ctx;
+    const size = this.camera.viewport;
+
+    ctx.save();
+    ctx.fillStyle = color;
     ctx.fillRect(0, 0, size.width, size.height);
     ctx.restore();
   }
@@ -328,24 +365,31 @@ export class WorldRenderer {
    * 어둠 덮개의 칠을 만든다.
    *
    * @param screen 빛의 중심 화면 좌표.
-   * @param inner 밝은 반경(px).
-   * @param outer 가장 어두운 반경(px).
+   * @param light 빛의 반경과 세기(타일 단위).
+   * @param unit 타일 한 칸의 대표 픽셀 길이.
    * @returns 그라디언트 또는 고른 색.
    */
   private darknessFill(
     screen: { x: number; y: number },
-    inner: number,
-    outer: number,
+    light: NonNullable<Atmosphere['light']>,
+    unit: number,
   ): CanvasGradient | string {
     const ctx = this.ctx;
-    if (typeof ctx.createRadialGradient !== 'function') return darkColor(MAX_DARKNESS);
+    if (typeof ctx.createRadialGradient !== 'function') return darkColor(light.max);
 
-    const gradient = ctx.createRadialGradient(screen.x, screen.y, inner, screen.x, screen.y, outer);
+    const gradient = ctx.createRadialGradient(
+      screen.x,
+      screen.y,
+      light.lit * unit,
+      screen.x,
+      screen.y,
+      light.dark * unit,
+    );
     // 중간 지점을 몇 개 찍어 `darknessAt`의 곡선을 그대로 옮긴다.
     for (let step = 0; step <= 4; step += 1) {
       const t = step / 4;
-      const distance = LIT_RADIUS + (DARK_RADIUS - LIT_RADIUS) * t;
-      gradient.addColorStop(t, darkColor(darknessAt(distance)));
+      const distance = light.lit + (light.dark - light.lit) * t;
+      gradient.addColorStop(t, darkColor(darknessAt(distance, light.lit, light.dark, light.max)));
     }
 
     return gradient;

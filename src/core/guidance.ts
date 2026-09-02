@@ -34,6 +34,8 @@ export interface GuidanceState {
   buildMode: boolean;
   /** 지금 통로 위에 서 있는지. 맵 이동 안내에 쓴다. */
   onPortal: boolean;
+  /** 지금이 밤인지. 첫 밤에 한 번만 알린다. */
+  night: boolean;
   /** 지금 고를 수 있는 블루프린트 수. 숫자 키 안내에 쓴다. */
   blueprintCount: number;
   /** 창고에 한 번이라도 예치했는지. */
@@ -50,6 +52,8 @@ export const HintId = {
   REQUEST: 'request',
   /** 건물이 늘었을 때 — 철거를 알린다. */
   DEMOLISH: 'demolish',
+  /** 첫 밤이 왔을 때 — 시야가 좁아지는 이유를 알린다. */
+  NIGHT: 'night',
 } as const;
 
 /** 힌트 종류 값. */
@@ -61,6 +65,7 @@ const HINT_TEXT: Readonly<Record<HintId, string>> = {
   [HintId.BUILD]: 'B를 누르면 건축 모드입니다',
   [HintId.REQUEST]: '자재가 있으면 R로 주민 요청을 냅니다',
   [HintId.DEMOLISH]: 'X로 건물을 철거하면 자재 절반이 돌아옵니다',
+  [HintId.NIGHT]: '밤에는 시야가 좁아집니다 — 아침이 오면 다시 넓어집니다',
 };
 
 /**
@@ -85,6 +90,8 @@ export function pickHint(state: GuidanceState, seen: ReadonlySet<HintId>): HintI
   if (!seen.has(HintId.BUILD) && canAffordCottage(state)) return HintId.BUILD;
   if (!seen.has(HintId.REQUEST) && state.requests > 0) return HintId.REQUEST;
   if (!seen.has(HintId.DEMOLISH) && state.buildings >= 3) return HintId.DEMOLISH;
+  // 첫 밤은 화면이 눈에 띄게 달라지는 순간이다. 왜 달라졌는지 한 번은 알려야 한다.
+  if (!seen.has(HintId.NIGHT) && state.night) return HintId.NIGHT;
 
   return null;
 }

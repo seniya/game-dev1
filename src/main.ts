@@ -1,4 +1,5 @@
 import { gridToWorld } from './core/coordinates';
+import { clockLabel, phaseLabel } from './core/daycycle';
 import { DEFAULT_STEP_MS } from './core/fixedTimestep';
 import { pickSurfaceTile } from './core/picking';
 import { generateTerrain } from './core/terrainGen';
@@ -345,16 +346,14 @@ function bootstrap(): void {
         // 칸도 똑같이 보여야 무엇에 대고 행동하는지 알 수 있다.
         const hovered = router.target;
         // 건축 먼지처럼 시간에 따라 움직이는 연출을 위해 시뮬레이션 시각을 넘긴다.
-        // 어두운 맵(동굴)에서는 플레이어를 중심으로 빛을 둔다. 렌더러는 어디가 왜
-        // 어두운지 모르고 빛의 중심만 받는다.
-        const pose = game.player.pose(game.terrain);
+        // 어디가 왜 어두운지는 규칙이 정한다. 렌더러는 색조와 빛의 중심만 받는다.
         const stats = world.render(
           hovered,
           game.entities(),
           game.ghost(hovered),
           state.elapsedMs,
           { locked: (x, y) => game.isZoneLocked(x, y) },
-          game.dark ? pose : null,
+          game.atmosphere(),
         );
         // 파편과 글자는 지형·오브젝트를 모두 그린 뒤에 얹는다.
         effects.draw(surface.context, camera);
@@ -391,6 +390,9 @@ function bootstrap(): void {
           residents: game.population.count,
           buildings: game.buildings.completedCount,
           objective: game.guidance.objective(guidanceState),
+          day: game.dayCount,
+          clock: clockLabel(game.timeOfDay),
+          phase: phaseLabel(game.dayPhase),
         });
 
         // 조작 안내는 상황에 맞는 것만 보여준다. 모든 키를 늘 늘어놓으면 지금 쓸 키가 묻힌다.

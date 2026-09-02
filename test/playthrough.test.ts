@@ -4,6 +4,7 @@ import { ItemType } from '../src/core/items';
 import { BlockType } from '../src/core/blocks';
 import { canWalk, walkableNeighbors, type TilePos } from '../src/core/movement';
 import { generateTerrain } from '../src/core/terrainGen';
+import { DAY_LENGTH_MS, dayNumber } from '../src/core/daycycle';
 import { MAX_VILLAGE_LEVEL } from '../src/core/village';
 import { Game } from '../src/sim/Game';
 import { MOVE_DURATION_MS, SWING_DURATION_MS } from '../src/sim/Player';
@@ -540,6 +541,18 @@ describe('통과 플레이', () => {
 
     expect(result.level).toBe(MAX_VILLAGE_LEVEL);
     expect(result.elapsedMs).toBeLessThan(TIME_BUDGET_MS);
+  });
+
+  it('한 판 안에 해가 여러 번 뜨고 진다 — 하루 길이가 세션에 맞는다', () => {
+    const result = playToLevel(20260901);
+    const days = dayNumber(result.elapsedMs);
+
+    console.log(`통과 플레이 동안 ${days}일이 흘렀다 (하루 ${DAY_LENGTH_MS / 60000}분)`);
+
+    // 한 번도 밤을 보지 못하면 사이클을 넣은 의미가 없고, 열 번을 넘기면
+    // 사람 기준으로는 밤이 너무 잦다(봇 1분은 사람 8~12분에 해당한다).
+    expect(days).toBeGreaterThanOrEqual(2);
+    expect(days).toBeLessThanOrEqual(10);
   });
 
   it('다른 시드에서도 막히지 않는다', () => {

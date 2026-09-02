@@ -260,6 +260,13 @@ body {
   background: #f0c04a;
 }
 
+.village__clock {
+  /* 시각은 상태 표시라 레벨 줄보다 한 단계 옅게 둔다. */
+  font-size: 11px;
+  color: #b6c2cf;
+  opacity: 0.9;
+}
+
 .village__goal {
   color: #8b949e;
   font-size: 11px;

@@ -16,6 +16,12 @@ export interface VillageHudState {
   buildings: number;
   /** 지금 할 일 한 줄. */
   objective: string;
+  /** 며칠째인지. */
+  day: number;
+  /** 시계 문구("07:30"). */
+  clock: string;
+  /** 시간대 이름("낮"). */
+  phase: string;
 }
 
 /**
@@ -33,11 +39,13 @@ export class VillageHud {
   private readonly fillElement: HTMLElement;
   private readonly goalElement: HTMLElement;
   private readonly objectiveElement: HTMLElement;
+  private readonly clockElement: HTMLElement;
 
   /** 마지막으로 그린 텍스트. 같으면 DOM을 건드리지 않는다. */
   private lastLabel = '';
   private lastGoal = '';
   private lastObjective = '';
+  private lastClock = '';
   /** 마지막으로 그린 게이지 폭(백분율 정수). */
   private lastFillPercent = -1;
 
@@ -64,6 +72,11 @@ export class VillageHud {
     this.objectiveElement = document.createElement('div');
     this.objectiveElement.className = 'village__objective';
 
+    // 시각은 대사창 없이 알려야 하는 값이라(기획서 7절) 레벨 줄 옆에 한 조각으로 둔다.
+    this.clockElement = document.createElement('div');
+    this.clockElement.className = 'village__clock';
+
+    this.root.appendChild(this.clockElement);
     this.root.appendChild(this.labelElement);
     this.root.appendChild(track);
     this.root.appendChild(this.objectiveElement);
@@ -91,6 +104,12 @@ export class VillageHud {
     if (percent !== this.lastFillPercent) {
       this.lastFillPercent = percent;
       this.fillElement.style.width = `${percent}%`;
+    }
+
+    const clock = `${state.day}일차 ${state.clock} · ${state.phase}`;
+    if (clock !== this.lastClock) {
+      this.lastClock = clock;
+      this.clockElement.textContent = clock;
     }
 
     if (state.objective !== this.lastObjective) {

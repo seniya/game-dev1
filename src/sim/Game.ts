@@ -6,6 +6,15 @@ import {
   unlockedBlueprints,
   type Blueprint,
 } from '../core/blueprints';
+import {
+  DayPhase,
+  dayNumber,
+  dayTint,
+  isNight,
+  nightAmount,
+  phaseAt,
+  timeOfDay,
+} from '../core/daycycle';
 import { ItemType, blockToItem, itemToBlock } from '../core/items';
 import { MapId, isVillageMap, mapLabel, mapSeed } from '../core/maps';
 import { canInteract, walkableNeighbors, type TilePos } from '../core/movement';
@@ -29,7 +38,8 @@ import {
   MAX_VILLAGE_LEVEL,
 } from '../core/village';
 import { distanceFromCenter, zoneAt } from '../core/zones';
-import type { Entity, GhostPreview } from '../render/WorldRenderer';
+import { DARK_RADIUS, LIT_RADIUS, MAX_DARKNESS } from '../core/light';
+import type { Atmosphere, Entity, GhostPreview } from '../render/WorldRenderer';
 import { Buildings, type Building, type PlacementFailure } from './Buildings';
 import { Player } from './Player';
 import { Guidance } from './Guidance';
@@ -116,6 +126,15 @@ export type ActionResult =
  * 적용한다. DOM과 렌더링을 전혀 모르므로 단위 테스트가 가능하다 — 조작 규칙이
  * 늘어날수록 이 분리의 이득이 커진다.
  */
+/** 밤에 밝게 남는 반경(타일). 동굴보다 넓다 — 마을을 돌아다닐 수 있어야 한다. */
+const NIGHT_LIT_RADIUS = 8;
+
+/** 밤에 가장 어두워지는 반경(타일). */
+const NIGHT_DARK_RADIUS = 18;
+
+/** 한밤에 가장 어두운 곳의 불투명도. 동굴(0.8)보다 옅다. */
+const MAX_NIGHT_DARKNESS = 0.45;
+
 /** 맵 하나가 들고 있는 것. */
 interface WorldMapState {
   /** 그 맵의 지형. */
@@ -271,6 +290,65 @@ export class Game {
     return this.current === MapId.CAVE;
   }
 
+  /**
+   * 하루 안에서의 위치(0~1).
+   *
+   * **누적 시간에서 파생되므로 저장하지 않는다.** 되살릴 때 누적 시간만 알면 같은 시각이
+   * 나온다 — 레벨에서 파생되는 보너스를 저장하지 않는 것과 같은 규칙이다(ADR 0011).
+   */
+  get timeOfDay(): number {
+    return timeOfDay(this.elapsed);
+  }
+
+  /** 며칠째인지. 표시에만 쓴다. */
+  get dayCount(): number {
+    return dayNumber(this.elapsed);
+  }
+
+  /** 지금 시간대. */
+  get dayPhase(): DayPhase {
+    return phaseAt(this.timeOfDay);
+  }
+
+  /** 지금이 밤인지. 이후 Phase(직업 시간대·야간 침입)가 이 값을 본다. */
+  get isNight(): boolean {
+    return isNight(this.timeOfDay);
+  }
+
+  /**
+   * 화면에 얹을 색조와 빛을 정한다.
+   *
+   * 두 가지 어둠이 있다 — **동굴의 어둠**은 장소의 성격이고 시간과 무관하며(ADR 0014),
+   * **밤의 어둠**은 시간의 성격이고 지상에만 온다. 동굴 안에서는 하늘이 보이지 않으므로
+   * 시간대 색조를 얹지 않는다.
+   *
+   * @returns 렌더러에 넘길 분위기.
+   */
+  atmosphere(): Atmosphere {
+    const pose = this.player.pose(this.terrain);
+
+    if (this.dark) {
+      return {
+        tint: null,
+        light: { ...pose, lit: LIT_RADIUS, dark: DARK_RADIUS, max: MAX_DARKNESS },
+      };
+    }
+
+    const night = nightAmount(this.timeOfDay);
+    if (night <= 0) return { tint: null, light: null };
+
+    // 밤의 시야는 동굴보다 넓고 옅다. 마을을 돌아다니는 것이 막히면 안 된다.
+    return {
+      tint: dayTint(this.timeOfDay),
+      light: {
+        ...pose,
+        lit: NIGHT_LIT_RADIUS,
+        dark: NIGHT_DARK_RADIUS,
+        max: MAX_NIGHT_DARKNESS * night,
+      },
+    };
+  }
+
   /** 지금 맵의 통로 칸. 반대편 맵으로 이어진다. */
   get portal(): TilePos {
     return this.maps.get(this.current)!.portal;
@@ -374,6 +452,7 @@ export class Game {
       buildMode: this.buildMode,
       blueprintCount: this.availableBlueprints.length,
       onPortal: this.onPortal,
+      night: this.isNight,
       hasDeposited: this.guidance.hasDeposited,
     };
   }

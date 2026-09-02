@@ -3,7 +3,7 @@ import { BlockType, blockInfo } from '../src/core/blocks';
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH, gridToWorld, worldToTile } from '../src/core/coordinates';
 import { Terrain } from '../src/core/Terrain';
 import { Camera } from '../src/render/Camera';
-import { MAX_DARKNESS, darkColor } from '../src/core/light';
+import { DARK_RADIUS, LIT_RADIUS, MAX_DARKNESS, darkColor } from '../src/core/light';
 import { WorldRenderer } from '../src/render/WorldRenderer';
 
 /** 가짜 컨텍스트가 기록하는 경로 하나. */
@@ -813,7 +813,9 @@ describe('동굴 어둠', () => {
 
   it('빛을 넘기면 화면을 덮는다', () => {
     const { ctx, renderer } = setup(flat(9, 2), { width: 900, height: 700 });
-    renderer.render(null, [], null, 0, null, { x: 4, y: 4, z: 1 });
+    renderer.render(null, [], null, 0, null, {
+      light: { x: 4, y: 4, z: 1, lit: LIT_RADIUS, dark: DARK_RADIUS, max: MAX_DARKNESS },
+    });
 
     expect(ctx.rects).toHaveLength(1);
     expect(ctx.rects[0]).toMatchObject({ x: 0, y: 0, width: 900, height: 700 });
@@ -823,7 +825,9 @@ describe('동굴 어둠', () => {
     // 가짜 컨텍스트에는 createRadialGradient가 없다. 도형 경로는 어떤 환경에서도
     // 죽지 않아야 한다(로드맵 02의 진행 원칙).
     const { ctx, renderer } = setup(flat(9, 2));
-    renderer.render(null, [], null, 0, null, { x: 4, y: 4, z: 1 });
+    renderer.render(null, [], null, 0, null, {
+      light: { x: 4, y: 4, z: 1, lit: LIT_RADIUS, dark: DARK_RADIUS, max: MAX_DARKNESS },
+    });
 
     expect(ctx.rects[0]?.fillStyle).toBe(darkColor(MAX_DARKNESS));
   });
@@ -831,10 +835,41 @@ describe('동굴 어둠', () => {
   it('어둠은 지형과 오브젝트를 다 그린 뒤에 덮는다', () => {
     const { ctx, renderer } = setup(flat(9, 2));
     const before = ctx.paths.length;
-    renderer.render(null, [], null, 0, null, { x: 4, y: 4, z: 1 });
+    renderer.render(null, [], null, 0, null, {
+      light: { x: 4, y: 4, z: 1, lit: LIT_RADIUS, dark: DARK_RADIUS, max: MAX_DARKNESS },
+    });
 
     // 덮개가 먼저 그려졌다면 지형이 하나도 기록되지 않았을 것이다.
     expect(ctx.paths.length).toBeGreaterThan(before);
     expect(ctx.rects).toHaveLength(1);
+  });
+});
+
+describe('시간대 색조', () => {
+  it('색조를 넘기면 화면을 덮는다', () => {
+    const { ctx, renderer } = setup(flat(9, 2));
+    renderer.render(null, [], null, 0, null, { tint: { color: 'rgba(10, 20, 40, 0.4)', alpha: 0.4 } });
+
+    expect(ctx.rects).toHaveLength(1);
+    expect(ctx.rects[0]?.fillStyle).toBe('rgba(10, 20, 40, 0.4)');
+  });
+
+  it('불투명도가 0이면 덮지 않는다 — 대낮에는 얹을 것이 없다', () => {
+    const { ctx, renderer } = setup(flat(9, 2));
+    renderer.render(null, [], null, 0, null, { tint: { color: 'rgba(0, 0, 0, 0)', alpha: 0 } });
+
+    expect(ctx.rects).toHaveLength(0);
+  });
+
+  it('색조와 빛을 함께 넘기면 색조를 먼저 덮는다 — 빛은 색조까지 뚫는다', () => {
+    const { ctx, renderer } = setup(flat(9, 2));
+    renderer.render(null, [], null, 0, null, {
+      tint: { color: 'rgba(10, 20, 40, 0.4)', alpha: 0.4 },
+      light: { x: 4, y: 4, z: 1, lit: 8, dark: 18, max: 0.45 },
+    });
+
+    expect(ctx.rects).toHaveLength(2);
+    expect(ctx.rects[0]?.fillStyle).toBe('rgba(10, 20, 40, 0.4)');
+    expect(ctx.rects[1]?.fillStyle).toBe(darkColor(0.45));
   });
 });
