@@ -1313,3 +1313,121 @@ describe('Game 오브젝트 구분', () => {
     expect(stone).toBeDefined();
   });
 });
+
+describe('Game 흙 예치 규칙', () => {
+  /**
+   * 창고 옆에 선 게임을 만든다.
+   *
+   * @param size 맵 크기.
+   */
+  function storageGame(size = 12): Game {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    return new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
+  }
+
+  it('흙이 한 묶음 이하면 그대로 남긴다 — 평탄화에 계속 쓴다', () => {
+    const game = storageGame();
+    game.inventory.add(ItemType.DIRT, 5);
+
+    game.depositAll();
+
+    expect(game.inventory.count(ItemType.DIRT)).toBe(5);
+    expect(game.storage.count(ItemType.DIRT)).toBe(0);
+  });
+
+  it('흙이 한 묶음을 넘으면 넘는 만큼 맡긴다 — 인벤토리가 흙으로 막히지 않게', () => {
+    const game = storageGame();
+    const keep = game.inventory.stackLimit;
+    game.inventory.add(ItemType.DIRT, keep + 15);
+
+    const moved = game.depositAll();
+
+    expect(game.inventory.count(ItemType.DIRT)).toBe(keep);
+    expect(game.storage.count(ItemType.DIRT)).toBe(15);
+    expect(moved.get(ItemType.DIRT)).toBe(15);
+  });
+
+  it('다른 자원은 전부 맡긴다', () => {
+    const game = storageGame();
+    game.inventory.add(ItemType.WOOD, 7);
+    game.inventory.add(ItemType.DIRT, 3);
+
+    game.depositAll();
+
+    expect(game.inventory.count(ItemType.WOOD)).toBe(0);
+    expect(game.inventory.count(ItemType.DIRT)).toBe(3);
+  });
+
+  it('흙만 넘칠 때도 예치로 인정한다', () => {
+    const game = storageGame();
+    game.inventory.add(ItemType.DIRT, game.inventory.stackLimit + 1);
+
+    expect(game.depositAll().size).toBe(1);
+    expect(game.guidance.hasDeposited).toBe(true);
+  });
+});
+
+describe('Game 레벨 보너스', () => {
+  /**
+   * 넓은 평지 게임을 만든다.
+   *
+   * @param size 맵 크기.
+   */
+  function bonusGame(size = 16): Game {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    return new Game(terrain, new ResourceField(terrain, { densityScale: 0 }));
+  }
+
+  it('레벨 6에서 인벤토리가 넓어진다', () => {
+    const game = bonusGame();
+    const before = game.inventory.slotCount;
+
+    game.setVillageLevel(6);
+
+    expect(game.inventory.slotCount).toBeGreaterThan(before);
+  });
+
+  it('레벨 7에서 이동이 빨라진다', () => {
+    const game = bonusGame();
+    const before = game.player.moveDurationMs;
+
+    game.setVillageLevel(7);
+
+    expect(game.player.moveDurationMs).toBeLessThan(before);
+  });
+
+  it('레벨 8에서 창고가 넓어진다', () => {
+    const game = bonusGame();
+    const before = game.storage.slotCount;
+
+    game.setVillageLevel(8);
+
+    expect(game.storage.slotCount).toBeGreaterThan(before);
+  });
+
+  it('속도 보너스는 레벨에서 파생되므로 저장 없이도 되살아난다', () => {
+    const game = bonusGame();
+    game.setVillageLevel(10);
+    const fast = game.player.moveDurationMs;
+
+    const restored = Game.fromSave(game.toSave())!;
+
+    expect(restored.player.moveDurationMs).toBeCloseTo(fast, 6);
+  });
+
+  it('슬롯 확장은 저장된 슬롯 수에 이미 반영돼 있어 두 번 늘지 않는다', () => {
+    const game = bonusGame();
+    game.setVillageLevel(9);
+    const slots = game.inventory.slotCount;
+
+    const restored = Game.fromSave(game.toSave())!;
+
+    expect(restored.inventory.slotCount).toBe(slots);
+  });
+});

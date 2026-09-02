@@ -57,6 +57,13 @@ export class Player {
   private toolIndex = 0;
 
   /**
+   * 이동 속도 배수. 마을 레벨 보상으로 오른다.
+   *
+   * 값을 따로 저장하지 않는다 — 레벨에서 파생되므로 되살릴 때 다시 계산하면 된다.
+   */
+  private speed = 1;
+
+  /**
    * @param x 시작 그리드 x.
    * @param y 시작 그리드 y.
    */
@@ -97,6 +104,21 @@ export class Player {
   /** 보유 도구 슬롯 수. */
   get slotCount(): number {
     return this.tools.length;
+  }
+
+  /**
+   * 이동 속도 배수를 설정한다.
+   *
+   * @param multiplier 배수. 1 이상만 받는다.
+   */
+  setSpeedMultiplier(multiplier: number): void {
+    if (!Number.isFinite(multiplier) || multiplier < 1) return;
+    this.speed = multiplier;
+  }
+
+  /** 한 칸 이동에 걸리는 시간(ms). 속도 보너스가 반영된 값이다. */
+  get moveDurationMs(): number {
+    return MOVE_DURATION_MS / this.speed;
   }
 
   /**
@@ -168,7 +190,7 @@ export class Player {
 
     if (this.movement) {
       this.movement.elapsedMs += stepMs;
-      if (this.movement.elapsedMs >= MOVE_DURATION_MS) {
+      if (this.movement.elapsedMs >= this.moveDurationMs) {
         this.tile = this.movement.to;
         this.movement = null;
       }
@@ -266,7 +288,7 @@ export class Player {
     }
 
     const { from, to, elapsedMs } = this.movement;
-    const progress = Math.min(1, elapsedMs / MOVE_DURATION_MS);
+    const progress = Math.min(1, elapsedMs / this.moveDurationMs);
 
     const fromZ = Math.max(0, terrain.columnHeight(from.x, from.y) - 1);
     const toZ = Math.max(0, terrain.columnHeight(to.x, to.y) - 1);

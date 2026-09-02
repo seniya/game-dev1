@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { BlueprintId, type Blueprint } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
+import { BlockType } from '../src/core/blocks';
 import { canWalk, walkableNeighbors, type TilePos } from '../src/core/movement';
 import { generateTerrain } from '../src/core/terrainGen';
 import { MAX_VILLAGE_LEVEL } from '../src/core/village';
@@ -11,8 +12,13 @@ import { ResourceField } from '../src/sim/ResourceField';
 /** 시뮬레이션 스텝 길이(ms). 게임 루프와 같은 60Hz. */
 const STEP_MS = 1000 / 60;
 
-/** 이 시간(게임 시간, ms) 안에 목표 레벨에 닿아야 한다. */
-const TIME_BUDGET_MS = 20 * 60 * 1000;
+/**
+ * 이 시간(게임 시간, ms) 안에 목표 레벨에 닿아야 한다.
+ *
+ * 봇은 최적 플레이(가장 가까운 노드를 즉시 알고 헛클릭이 없음)라 사람은 훨씬 오래 걸린다.
+ * 봇 기준 몇 분이면 사람 기준 수십 분으로, 첫 플레이 분량으로 알맞다.
+ */
+const TIME_BUDGET_MS = 12 * 60 * 1000;
 
 /** 무한 루프 방지용 최대 행동 수. */
 const MAX_ACTIONS = 20_000;
@@ -35,6 +41,8 @@ interface PlaythroughResult {
   harvested: number;
   /** 걸은 칸 수. */
   steps: number;
+  /** 행동 종류별 횟수. 막혔을 때 무엇을 반복했는지 보려고 센다. */
+  tally: Record<string, number>;
 }
 
 /**
@@ -63,6 +71,16 @@ function playToLevel(
   let elapsedMs = 0;
   let harvested = 0;
   let steps = 0;
+  const tally: Record<string, number> = {};
+
+  /**
+   * 행동 횟수를 센다.
+   *
+   * @param key 행동 이름.
+   */
+  const count = (key: string): void => {
+    tally[key] = (tally[key] ?? 0) + 1;
+  };
 
   /**
    * 시뮬레이션을 지정 시간만큼 진행한다.
@@ -83,6 +101,35 @@ function playToLevel(
       advance(STEP_MS);
       guard += 1;
     }
+  };
+
+  /**
+   * 플레이어에서 걸어갈 수 있는 모든 칸까지의 거리를 잰다.
+   *
+   * 직선거리는 이 지형에서 이동 비용의 좋은 대리값이 아니다. 등반이 1칸으로 제한돼
+   * 있어(ADR 0004) 절벽 하나가 긴 우회를 만들기 때문이다. 실제로 직선거리로 노드를
+   * 고르게 했더니 어떤 시드에서 채집 한 번에 40칸씩 걸어 다녔다.
+   *
+   * @returns 칸 키 → 걸음 수.
+   */
+  const walkDistances = (): Map<string, number> => {
+    const start = game.player.position;
+    const distances = new Map<string, number>([[`${start.x},${start.y}`, 0]]);
+    const queue: TilePos[] = [start];
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const distance = distances.get(`${current.x},${current.y}`)!;
+
+      for (const next of walkableNeighbors(game.terrain, current)) {
+        const key = `${next.x},${next.y}`;
+        if (distances.has(key)) continue;
+        distances.set(key, distance + 1);
+        queue.push(next);
+      }
+    }
+
+    return distances;
   };
 
   /**
@@ -151,7 +198,9 @@ function playToLevel(
    * @returns 블루프린트. 없으면 null.
    */
   const pickAffordable = (): Blueprint | null => {
-    const order = [BlueprintId.MANOR, BlueprintId.COTTAGE, BlueprintId.WELL, BlueprintId.WORKBENCH];
+    // 집을 먼저 짓는다. 주민이 점수에 가장 크게 기여하고, 큰 집을 기다리느라 자재를
+    // 쌓아 두면 그동안 아무 진전이 없다.
+    const order = [BlueprintId.COTTAGE, BlueprintId.MANOR, BlueprintId.WELL, BlueprintId.WORKBENCH];
 
     for (const id of order) {
       const blueprint = game.availableBlueprints.find((candidate) => candidate.id === id);
@@ -201,6 +250,118 @@ function playToLevel(
   };
 
   /**
+   * 블루프린트를 놓을 수 있도록 땅을 고르는 한 걸음을 밟는다.
+   *
+   * 기획서 5.1이 지형 변형의 목적으로 "건축 부지 평탄화"를 든다. 마을 주변의 평탄한
+   * 자리는 금방 떨어지므로, 계속 지으려면 파고 메워 자리를 만들어야 한다. 봇이 이것을
+   * 하지 않으면 중반에 막힌다 — 실제로 막혔고, 그래서 넣었다.
+   *
+   * @param blueprint 놓으려는 블루프린트.
+   * @returns 한 걸음이라도 진행했으면 true.
+   */
+  const levelGroundStep = (blueprint: Blueprint): boolean => {
+    const target = findFlattenTarget(blueprint);
+    if (!target) return false;
+
+    const player = game.player.position;
+    if (Math.abs(target.tile.x - player.x) + Math.abs(target.tile.y - player.y) !== 1) {
+      return stepTowardAdjacent(target.tile);
+    }
+
+    waitIdle();
+    const height = game.terrain.columnHeight(target.tile.x, target.tile.y);
+
+    if (height > target.height) {
+      // 표면 블록에 맞는 도구로 바꿔 판다.
+      const surface = game.terrain.surfaceBlock(target.tile.x, target.tile.y);
+      game.player.selectTool(surface === BlockType.DIRT ? 0 : 1);
+      const result = game.digAt(target.tile);
+      advance(SWING_DURATION_MS);
+      return result.ok;
+    }
+
+    // 낮으면 메운다. 흙이 없으면 옆 땅을 파서 마련한다.
+    if (game.inventory.count(ItemType.DIRT) === 0 && game.totalHeld(ItemType.DIRT) === 0) {
+      const dirtSource = walkableNeighbors(game.terrain, player).find(
+        (tile) =>
+          !game.isOccupied(tile) &&
+          !game.resources.isBlocked(tile.x, tile.y) &&
+          game.terrain.surfaceBlock(tile.x, tile.y) === BlockType.DIRT,
+      );
+      if (!dirtSource) return false;
+
+      game.player.selectTool(0);
+      const dug = game.digAt(dirtSource);
+      advance(SWING_DURATION_MS);
+      return dug.ok;
+    }
+
+    const result = game.placeAt(target.tile);
+    advance(SWING_DURATION_MS);
+
+    return result.ok;
+  };
+
+  /**
+   * 평탄화할 자리와 목표 높이를 찾는다.
+   *
+   * 건물·노드가 없고 맵 안인 영역 중, 높이를 맞추면 지을 수 있게 되는 곳을 고른다.
+   * 목표 높이는 그 영역에서 가장 흔한 높이다 — 손대야 할 칸이 가장 적다.
+   *
+   * @param blueprint 놓으려는 블루프린트.
+   * @returns 손댈 칸과 목표 높이. 없으면 null.
+   */
+  const findFlattenTarget = (
+    blueprint: Blueprint,
+  ): { tile: TilePos; height: number } | null => {
+    const center = { x: 15, y: 15 };
+
+    for (let radius = 1; radius <= 12; radius += 1) {
+      for (let dy = -radius; dy <= radius; dy += 1) {
+        for (let dx = -radius; dx <= radius; dx += 1) {
+          if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
+
+          const origin = { x: center.x + dx, y: center.y + dy };
+          const counts = new Map<number, number>();
+          let usable = true;
+
+          for (let ty = 0; ty < blueprint.depth && usable; ty += 1) {
+            for (let tx = 0; tx < blueprint.width; tx += 1) {
+              const tile = { x: origin.x + tx, y: origin.y + ty };
+              if (!game.terrain.contains(tile.x, tile.y)) { usable = false; break; }
+              if (game.isOccupied(tile)) { usable = false; break; }
+              if (game.resources.isBlocked(tile.x, tile.y)) { usable = false; break; }
+
+              const height = game.terrain.columnHeight(tile.x, tile.y);
+              if (height < 1) { usable = false; break; }
+              counts.set(height, (counts.get(height) ?? 0) + 1);
+            }
+          }
+          if (!usable) continue;
+
+          // 가장 흔한 높이를 목표로 삼는다.
+          let goalHeight = 0;
+          let best = 0;
+          for (const [height, count] of counts) {
+            if (count > best) { best = count; goalHeight = height; }
+          }
+
+          for (let ty = 0; ty < blueprint.depth; ty += 1) {
+            for (let tx = 0; tx < blueprint.width; tx += 1) {
+              const tile = { x: origin.x + tx, y: origin.y + ty };
+              if (game.terrain.columnHeight(tile.x, tile.y) !== goalHeight) {
+                return { tile, height: goalHeight };
+              }
+            }
+          }
+        }
+      }
+    }
+
+    return null;
+  };
+
+  /**
    * 채집할 노드를 고른다. 필요한 자원을 우선한다.
    *
    * @returns 노드 좌표. 없으면 null.
@@ -208,23 +369,48 @@ function playToLevel(
   const pickNode = (): TilePos | null => {
     const player = game.player.position;
     const needIron = game.totalHeld(ItemType.IRON_ORE) < 3 && game.villageLevel >= 3;
+    const pickaxeTier = Math.max(
+      ...[0, 1, 2].map((slot) => {
+        game.player.selectTool(slot);
+        return game.player.tool.kind === 'pickaxe' ? game.player.tool.tier : 0;
+      }),
+    );
+
+    const distances = walkDistances();
 
     let best: TilePos | null = null;
     let bestCost = Number.POSITIVE_INFINITY;
 
     for (const node of game.resources.all) {
       if (node.durability <= 0) continue;
+      // 캘 수 없는 노드로 걸어가는 것은 시간 낭비다. 사람도 그러지 않는다.
+      if (game.isZoneLocked(node.x, node.y)) continue;
+      if (node.kind === 'ironVein' && pickaxeTier < 2) continue;
 
-      const distance = Math.abs(node.x - player.x) + Math.abs(node.y - player.y);
+      // 노드 옆에 설 수 있는 칸 중 가장 가까운 곳까지의 걸음 수를 비용으로 본다.
+      let reach = Number.POSITIVE_INFINITY;
+      for (const [dx, dy] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ] as const) {
+        const stand = distances.get(`${node.x + dx},${node.y + dy}`);
+        if (stand !== undefined && stand < reach) reach = stand;
+      }
+      if (!Number.isFinite(reach)) continue;
+
       // 필요한 자원에 가중치를 줘 가까운 것만 캐다 막히는 상황을 피한다.
       const priority = needIron && node.kind === 'ironVein' ? 0.4 : 1;
-      const cost = distance * priority;
+      const cost = reach * priority;
 
       if (cost < bestCost) {
         bestCost = cost;
         best = { x: node.x, y: node.y };
       }
     }
+
+    void player;
 
     return best;
   };
@@ -256,7 +442,7 @@ function playToLevel(
     // 1. 낼 수 있는 요청은 즉시 낸다. 점수 효율이 가장 좋다.
     if (game.fulfillRequest()) continue;
 
-    // 2. 지을 수 있으면 짓는다.
+    // 2. 지을 수 있으면 짓는다. 자리가 없으면 땅을 골라 자리를 만든다.
     const blueprint = pickAffordable();
     if (blueprint) {
       const spot = findSpot(blueprint);
@@ -266,14 +452,20 @@ function playToLevel(
         const result = game.buildAt(spot);
         game.selectBlueprint(null);
         if (result.ok) {
+          count('build');
           advance(200);
           continue;
         }
+        count('buildFailed');
+      } else if (levelGroundStep(blueprint)) {
+        count('flatten');
+        continue;
       }
     }
 
-    // 3. 인벤토리가 차면 창고에 넣는다. 창고까지 걸어간다.
-    if (game.inventory.isFull) {
+    // 3. 슬롯이 다 차면 창고에 넣는다. 모든 슬롯이 상한까지 찰 때까지 기다리면
+    //    새 종류의 자원을 받지 못해 채집이 계속 거절된다.
+    if (game.inventory.usedSlots >= game.inventory.slotCount) {
       const storage = { x: game.startingStorage.x, y: game.startingStorage.y };
       if (!game.nearStorage) {
         if (!stepTowardAdjacent(storage)) advance(500);
@@ -287,6 +479,7 @@ function playToLevel(
     const target = pickNode();
     if (!target) {
       // 노드가 모두 부서졌으면 리스폰을 기다린다.
+      count('noNode');
       advance(2000);
       continue;
     }
@@ -295,8 +488,9 @@ function playToLevel(
     if (Math.abs(target.x - player.x) + Math.abs(target.y - player.y) !== 1) {
       if (!stepTowardAdjacent(target)) {
         // 길이 없으면 그 노드를 잠시 포기하고 시간을 흘린다.
+        count('unreachable');
         advance(500);
-      }
+      } else count('walk');
       continue;
     }
 
@@ -305,6 +499,7 @@ function playToLevel(
     const result = game.actAt(target);
     advance(SWING_DURATION_MS);
 
+    count(result.ok ? 'hit' : `hitFail:${result.reason}`);
     if (result.ok && result.destroyed) harvested += 1;
     if (!result.ok && result.reason === 'inventoryFull') {
       // 창고로 가서 비운다.
@@ -328,18 +523,19 @@ function playToLevel(
     requests: game.completedRequestCount,
     harvested,
     steps,
+    tally,
   };
 }
 
 describe('통과 플레이', () => {
-  it('봇이 기본 시드에서 마을 레벨 5까지 도달한다', () => {
+  it('봇이 기본 시드에서 최대 레벨까지 도달한다', () => {
     const result = playToLevel(20260901);
 
     // 밸런싱 판단 근거로 남긴다.
     console.log(
       `레벨 ${result.level} · ${(result.elapsedMs / 60000).toFixed(1)}분 · ` +
         `건물 ${result.buildings} · 주민 ${result.residents} · 요청 ${result.requests} · ` +
-        `채집 ${result.harvested} · 이동 ${result.steps}칸`,
+        `채집 ${result.harvested} · 이동 ${result.steps}칸 · ${JSON.stringify(result.tally)}`,
     );
 
     expect(result.level).toBe(MAX_VILLAGE_LEVEL);
@@ -357,7 +553,7 @@ describe('통과 플레이', () => {
 });
 
 describe('저장을 끼운 통과 플레이', () => {
-  it('중간에 저장하고 불러와도 레벨 5까지 도달한다', () => {
+  it('중간에 저장하고 불러와도 최대 레벨까지 도달한다', () => {
     const result = playToLevel(20260901, MAX_VILLAGE_LEVEL, 40);
 
     console.log(

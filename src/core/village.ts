@@ -2,8 +2,13 @@ import { BLUEPRINTS } from './blueprints';
 import { ToolKind, ToolTier } from './tools';
 import { Zone, ZONE_ORDER } from './zones';
 
-/** MVP 최대 마을 레벨. 기획서 8절의 "마을 레벨 1~5". */
-export const MAX_VILLAGE_LEVEL = 5;
+/**
+ * 최대 마을 레벨.
+ *
+ * MVP는 5까지였고(기획서 8절), 로드맵 02 Phase 6에서 기획서 6절이 예로 든
+ * "마을 레벨 10 달성"까지 늘렸다.
+ */
+export const MAX_VILLAGE_LEVEL = 10;
 
 /**
  * 마을 레벨 산정에 들어가는 값들.
@@ -44,13 +49,21 @@ const WEIGHT = {
  * 전달되고, 뒤로 갈수록 한 번의 레벨업이 커야 목표로 느껴진다.
  * 수치는 Phase 9 밸런싱 대상이다.
  */
-export const LEVEL_THRESHOLDS: readonly number[] = [0, 8, 20, 38, 62];
+export const LEVEL_THRESHOLDS: readonly number[] = [0, 8, 20, 38, 62, 90, 122, 158, 198, 242];
 
 /** 해금 한 항목. */
 export type Unlock =
   | { kind: 'zone'; zone: Zone }
   | { kind: 'tool'; tool: ToolKind; tier: ToolTier }
-  | { kind: 'blueprint'; label: string };
+  | { kind: 'blueprint'; label: string }
+  /** 인벤토리 슬롯이 늘어난다. */
+  | { kind: 'inventory'; slots: number }
+  /** 창고 슬롯이 늘어난다. */
+  | { kind: 'storage'; slots: number }
+  /** 이동이 빨라진다. 값은 배수다. */
+  | { kind: 'speed'; multiplier: number }
+  /** 채집이 빨라진다. 값은 배수다. */
+  | { kind: 'harvest'; multiplier: number };
 
 /**
  * 레벨별 해금 목록(블루프린트는 `BLUEPRINTS`의 `unlockLevel`에서 파생한다).
@@ -70,6 +83,17 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
     { kind: 'tool', tool: ToolKind.SHOVEL, tier: ToolTier.HIGH },
   ],
   5: [{ kind: 'tool', tool: ToolKind.PICKAXE, tier: ToolTier.HIGH }],
+
+  // 레벨 6부터는 새 콘텐츠 대신 **편의**를 연다. 로드맵 02는 완성도를 다루는 단계이고,
+  // 새 자원·건물·지역은 로드맵 03의 영역이다. 자세한 근거는 ADR 0011에 있다.
+  6: [{ kind: 'inventory', slots: 2 }],
+  7: [{ kind: 'speed', multiplier: 1.2 }],
+  8: [{ kind: 'storage', slots: 8 }],
+  9: [
+    { kind: 'inventory', slots: 2 },
+    { kind: 'harvest', multiplier: 1.25 },
+  ],
+  10: [{ kind: 'speed', multiplier: 1.15 }],
 };
 
 /**
@@ -227,6 +251,53 @@ export function describeUnlock(unlock: Unlock): string {
     const tierLabels = { 1: '초급', 2: '중급', 3: '고급' } as Record<number, string>;
     return `${tierLabels[unlock.tier]} ${toolLabels[unlock.tool]}`;
   }
+  if (unlock.kind === 'inventory') return `인벤토리 슬롯 +${unlock.slots}`;
+  if (unlock.kind === 'storage') return `창고 슬롯 +${unlock.slots}`;
+  if (unlock.kind === 'speed') return `이동 속도 +${Math.round((unlock.multiplier - 1) * 100)}%`;
+  if (unlock.kind === 'harvest') return `채집 속도 +${Math.round((unlock.multiplier - 1) * 100)}%`;
 
   return `${unlock.label} 설계도`;
+}
+
+/**
+ * 그 레벨까지 쌓인 배수형 보너스를 곱해 구한다.
+ *
+ * 레벨업마다 배수가 곱해지므로, 되살린 게임에서도 레벨만 알면 같은 값이 나온다 —
+ * 보너스를 따로 저장할 필요가 없다.
+ *
+ * @param kind 보너스 종류.
+ * @param level 마을 레벨.
+ * @returns 누적 배수. 해당 보너스가 없으면 1.
+ */
+export function bonusMultiplier(kind: 'speed' | 'harvest', level: number): number {
+  let multiplier = 1;
+
+  for (const [unlockLevel, unlocks] of Object.entries(LEVEL_UNLOCKS)) {
+    if (Number(unlockLevel) > level) continue;
+    for (const unlock of unlocks) {
+      if (unlock.kind === kind) multiplier *= unlock.multiplier;
+    }
+  }
+
+  return multiplier;
+}
+
+/**
+ * 그 레벨까지 늘어난 슬롯 수를 더해 구한다.
+ *
+ * @param kind 슬롯 종류.
+ * @param level 마을 레벨.
+ * @returns 늘어난 슬롯 수.
+ */
+export function bonusSlots(kind: 'inventory' | 'storage', level: number): number {
+  let slots = 0;
+
+  for (const [unlockLevel, unlocks] of Object.entries(LEVEL_UNLOCKS)) {
+    if (Number(unlockLevel) > level) continue;
+    for (const unlock of unlocks) {
+      if (unlock.kind === kind) slots += unlock.slots;
+    }
+  }
+
+  return slots;
 }

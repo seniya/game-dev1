@@ -194,9 +194,10 @@ export class ResourceField {
    * @param x 그리드 x.
    * @param y 그리드 y.
    * @param tool 사용할 도구.
+   * @param bonus 마을 레벨에서 오는 채집 속도 배수.
    * @returns 채집 결과.
    */
-  harvest(x: number, y: number, tool: Tool): HarvestResult {
+  harvest(x: number, y: number, tool: Tool, bonus = 1): HarvestResult {
     const node = this.nodes.get(this.key(x, y));
     if (!node) return { ok: false, reason: 'noNode' };
     if (node.durability <= 0) return { ok: false, reason: 'depleted' };
@@ -206,7 +207,7 @@ export class ResourceField {
       return { ok: false, reason: 'wrongTool' };
     }
 
-    node.durability -= tierSpeedMultiplier(tool.tier);
+    node.durability -= tierSpeedMultiplier(tool.tier) * Math.max(1, bonus);
 
     if (node.durability > 0) {
       return { ok: true, kind: node.kind, destroyed: false };

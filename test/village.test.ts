@@ -3,6 +3,8 @@ import { ToolKind, ToolTier } from '../src/core/tools';
 import {
   LEVEL_THRESHOLDS,
   MAX_VILLAGE_LEVEL,
+  bonusMultiplier,
+  bonusSlots,
   describeUnlock,
   isZoneUnlocked,
   levelForScore,
@@ -200,5 +202,52 @@ describe('unlocksAtLevel', () => {
       '중급 곡괭이',
     );
     expect(describeUnlock({ kind: 'blueprint', label: '창고' })).toBe('창고 설계도');
+  });
+});
+
+describe('편의 해금 (레벨 6~10)', () => {
+  it('레벨 6부터는 새 콘텐츠 대신 편의가 열린다', () => {
+    for (let level = 6; level <= MAX_VILLAGE_LEVEL; level += 1) {
+      const unlocks = unlocksAtLevel(level);
+      expect(unlocks.length).toBeGreaterThan(0);
+      expect(unlocks.every((unlock) => unlock.kind !== 'blueprint' && unlock.kind !== 'zone')).toBe(true);
+    }
+  });
+
+  it('배수형 보너스는 레벨이 오를수록 누적된다', () => {
+    let previous = 1;
+    for (let level = 1; level <= MAX_VILLAGE_LEVEL; level += 1) {
+      const speed = bonusMultiplier('speed', level);
+      expect(speed).toBeGreaterThanOrEqual(previous);
+      previous = speed;
+    }
+
+    expect(bonusMultiplier('speed', MAX_VILLAGE_LEVEL)).toBeGreaterThan(1);
+    expect(bonusMultiplier('harvest', MAX_VILLAGE_LEVEL)).toBeGreaterThan(1);
+  });
+
+  it('보너스가 없는 레벨에서는 배수가 1이다', () => {
+    expect(bonusMultiplier('speed', 5)).toBe(1);
+    expect(bonusMultiplier('harvest', 5)).toBe(1);
+  });
+
+  it('슬롯 보너스는 더해진다', () => {
+    expect(bonusSlots('inventory', 5)).toBe(0);
+    expect(bonusSlots('inventory', 6)).toBeGreaterThan(0);
+    expect(bonusSlots('inventory', 9)).toBeGreaterThan(bonusSlots('inventory', 6));
+    expect(bonusSlots('storage', 8)).toBeGreaterThan(0);
+  });
+
+  it('편의 해금에도 읽을 수 있는 문구가 있다', () => {
+    for (let level = 6; level <= MAX_VILLAGE_LEVEL; level += 1) {
+      for (const unlock of unlocksAtLevel(level)) {
+        expect(describeUnlock(unlock)).toMatch(/[가-힣]/);
+      }
+    }
+  });
+
+  it('최대 레벨은 10이고 임계값도 그만큼 있다', () => {
+    expect(MAX_VILLAGE_LEVEL).toBe(10);
+    expect(LEVEL_THRESHOLDS).toHaveLength(10);
   });
 });

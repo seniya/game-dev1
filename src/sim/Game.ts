@@ -14,6 +14,7 @@ import { canDigBlock, tierSpeedMultiplier } from '../core/tools';
 import { requestMessage, type VillageRequest } from '../core/requests';
 import { SAVE_VERSION, isSaveData, type SaveData } from '../core/save';
 import {
+  bonusMultiplier,
   describeUnlock,
   isZoneUnlocked,
   levelForScore,
@@ -291,8 +292,38 @@ export class Game {
     this.pendingNotices.push({ message: `마을 레벨 ${level} 달성`, tone: 'good', cue: 'levelUp' });
 
     for (const unlock of unlocksAtLevel(level)) {
-      if (unlock.kind === 'tool') this.player.upgradeTool(unlock.tool, unlock.tier);
+      this.applyUnlock(unlock);
       this.pendingNotices.push({ message: `해금: ${describeUnlock(unlock)}`, tone: 'good', cue: 'unlock' });
+    }
+  }
+
+  /**
+   * 해금 항목 하나를 실제 상태에 반영한다.
+   *
+   * 배수형 보너스(이동·채집)는 레벨에서 파생되므로 여기서 다시 계산해 넣는다 —
+   * 저장에 담지 않아도 되살릴 때 같은 값이 나온다.
+   *
+   * @param unlock 해금 항목.
+   */
+  private applyUnlock(unlock: ReturnType<typeof unlocksAtLevel>[number]): void {
+    switch (unlock.kind) {
+      case 'tool':
+        this.player.upgradeTool(unlock.tool, unlock.tier);
+        break;
+      case 'inventory':
+        this.inventory.expand(unlock.slots);
+        break;
+      case 'storage':
+        this.storage.expand(unlock.slots);
+        break;
+      case 'speed':
+        this.player.setSpeedMultiplier(bonusMultiplier('speed', this.level));
+        break;
+      case 'harvest':
+        // 채집 보너스는 타격할 때 읽으므로 따로 반영할 상태가 없다.
+        break;
+      default:
+        break;
     }
   }
 
@@ -528,6 +559,10 @@ export class Game {
     this.level = parts.level;
     this.villageExperience = parts.experience;
     this.elapsed = parts.elapsedMs;
+
+    // 배수형 보너스는 저장하지 않고 레벨에서 다시 계산한다. 슬롯 확장은 저장된
+    // 슬롯 수에 이미 반영돼 있으므로 다시 늘리지 않는다.
+    this.player.setSpeedMultiplier(bonusMultiplier('speed', this.level));
   }
 
   /** 현재 마을 레벨. */
@@ -555,9 +590,7 @@ export class Game {
     while (this.level < target) {
       this.level += 1;
       this.player.upgradeTool(this.player.tool.kind, toolTierAtLevel(this.player.tool.kind, this.level));
-      for (const unlock of unlocksAtLevel(this.level)) {
-        if (unlock.kind === 'tool') this.player.upgradeTool(unlock.tool, unlock.tier);
-      }
+      for (const unlock of unlocksAtLevel(this.level)) this.applyUnlock(unlock);
     }
 
     this.level = target;
@@ -817,7 +850,12 @@ export class Game {
       }
     }
 
-    const result = this.resources.harvest(target.x, target.y, this.player.tool);
+    const result = this.resources.harvest(
+      target.x,
+      target.y,
+      this.player.tool,
+      bonusMultiplier('harvest', this.level),
+    );
     if (!result.ok) {
       if (result.reason === 'wrongTool') return { ok: false, reason: 'wrongTool' };
       return { ok: false, reason: 'empty' };
@@ -922,10 +960,12 @@ export class Game {
   }
 
   /**
-   * 인벤토리의 아이템을 창고로 모두 옮긴다.
+   * 인벤토리의 아이템을 창고로 옮긴다.
    *
-   * 지형 재료(흙)는 남긴다 — 평탄화 작업 중에 흙까지 예치되면 곧바로 다시
-   * 꺼내야 해서 번거롭다.
+   * 지형 재료(흙)는 **한 묶음만 남기고** 나머지를 맡긴다. 평탄화 중에 흙까지 전부
+   * 예치되면 곧바로 다시 꺼내야 해서 번거롭지만, 반대로 흙을 통째로 제외하면
+   * 인벤토리가 흙으로 막혀 다른 자원을 아예 받지 못한다 — 자동 플레이에서 채집이
+   * 880번 거절되는 것으로 드러난 문제다.
    *
    * @returns 종류별로 옮긴 개수. 창고에 닿지 않으면 빈 Map.
    */
@@ -933,6 +973,14 @@ export class Game {
     if (!this.nearStorage) return new Map();
 
     const moved = this.inventory.moveAllTo(this.storage, [ItemType.DIRT]);
+
+    const keep = this.inventory.stackLimit;
+    const dirt = this.inventory.count(ItemType.DIRT);
+    if (dirt > keep) {
+      const sent = this.inventory.moveTo(this.storage, ItemType.DIRT, dirt - keep);
+      if (sent > 0) moved.set(ItemType.DIRT, sent);
+    }
+
     if (moved.size > 0) this.guidance.markDeposited();
 
     return moved;
@@ -999,7 +1047,9 @@ export class Game {
     const node = this.resources.nodeAt(target.x, target.y);
     if (!node || node.durability <= 0) return false;
 
-    return node.durability - tierSpeedMultiplier(this.player.tool.tier) <= 0;
+    return (
+      node.durability - tierSpeedMultiplier(this.player.tool.tier) * bonusMultiplier('harvest', this.level) <= 0
+    );
   }
 
   entities(): readonly Entity[] {

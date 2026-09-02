@@ -35,9 +35,13 @@ export interface NodeDefinition {
 /**
  * 노드 종류별 정의.
  *
- * 수치는 Phase 9 밸런싱 대상이다. 지금은 "나무가 가장 빨리 회복되고 철광석이
- * 가장 느리다"는 서열만 맞춰 뒀다 — 상위 자원이 귀해야 마을 레벨 진행에
- * 의미가 생긴다(기획서 6절).
+ * 서열은 "나무가 가장 빨리 회복되고 철광석이 가장 느리다"이다 — 상위 자원이 귀해야
+ * 마을 레벨 진행에 의미가 생긴다(기획서 6절).
+ *
+ * 리스폰 시간은 로드맵 02 Phase 6에서 한 번 줄였다. 자동 플레이로 재 보니 후반에
+ * 마을 근처 노드가 고갈돼 봇이 3,600칸 넘게 걸어 다녔다 — 채집이 아니라 이동이
+ * 시간의 대부분을 먹는 상태였다. 회복이 빨라지면 같은 자리를 다시 쓸 수 있어
+ * 이동이 줄어든다.
  */
 export const NODE_DEFINITION: Readonly<Record<NodeKind, NodeDefinition>> = {
   [NodeKind.TREE]: {
@@ -47,7 +51,7 @@ export const NODE_DEFINITION: Readonly<Record<NodeKind, NodeDefinition>> = {
     durability: 3,
     drop: ItemType.WOOD,
     dropAmount: 3,
-    respawnMs: 25_000,
+    respawnMs: 16_000,
   },
   [NodeKind.STONE_ROCK]: {
     label: '돌 광맥',
@@ -56,7 +60,7 @@ export const NODE_DEFINITION: Readonly<Record<NodeKind, NodeDefinition>> = {
     durability: 4,
     drop: ItemType.STONE,
     dropAmount: 3,
-    respawnMs: 40_000,
+    respawnMs: 26_000,
   },
   [NodeKind.IRON_VEIN]: {
     label: '철광석 광맥',
@@ -65,7 +69,7 @@ export const NODE_DEFINITION: Readonly<Record<NodeKind, NodeDefinition>> = {
     durability: 6,
     drop: ItemType.IRON_ORE,
     dropAmount: 2,
-    respawnMs: 70_000,
+    respawnMs: 45_000,
   },
 };
 
