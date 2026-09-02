@@ -1,4 +1,4 @@
-import type { Blueprint } from '../core/blueprints';
+import type { Blueprint, BlueprintId } from '../core/blueprints';
 import { itemLabel, type ItemType } from '../core/items';
 
 /** 패널에 표시할 블루프린트 한 줄. */
@@ -21,6 +21,9 @@ export interface BlueprintRow {
  * 넣으면 레이아웃 비용이 그대로 프레임에 실린다.
  */
 export class BuildPanel {
+  /** 설계도를 고를 때 부를 콜백. 마우스로 목록을 누를 때 쓴다. */
+  private onSelect: ((id: BlueprintId) => void) | null = null;
+
   private readonly root: HTMLElement;
   /** 마지막으로 그린 내용의 요약. 같으면 DOM을 건드리지 않는다. */
   private lastSignature = '';
@@ -76,6 +79,18 @@ export class BuildPanel {
   }
 
   /**
+   * 설계도 선택 콜백을 등록한다.
+   *
+   * 예전에는 목록이 클릭을 받지 않아 **마우스만 쥔 사람은 무엇을 지을지 고를 수 없었다** —
+   * 키보드 쪽에서 고쳤던 것과 같은 결함이 반대편에 남아 있었다(로드맵 05 Phase 1).
+   *
+   * @param handler 고른 설계도 식별자를 받는 콜백.
+   */
+  setSelectHandler(handler: (id: BlueprintId) => void): void {
+    this.onSelect = handler;
+  }
+
+  /**
    * 블루프린트 한 줄을 만든다.
    *
    * @param row 표시 정보.
@@ -86,6 +101,7 @@ export class BuildPanel {
     const element = document.createElement('div');
     element.className = 'panel__row';
     if (row.selected) element.classList.add('panel__row--selected');
+    element.addEventListener('click', () => this.onSelect?.(row.blueprint.id));
 
     const name = document.createElement('span');
     name.className = 'panel__name';

@@ -17,6 +17,9 @@ export interface RequestRow {
  */
 export class RequestList {
   private readonly root: HTMLElement;
+
+  /** 요청을 낼 때 부를 콜백. 마우스로 아이콘을 누를 때 쓴다. */
+  private onFulfill: ((request: VillageRequest) => void) | null = null;
   /** 마지막으로 그린 내용 요약. 같으면 DOM을 건드리지 않는다. */
   private lastSignature = '';
 
@@ -25,6 +28,17 @@ export class RequestList {
    */
   constructor(root: HTMLElement) {
     this.root = root;
+  }
+
+  /**
+   * 요청 납품 콜백을 등록한다.
+   *
+   * 키보드에는 `R`이 있지만 마우스에는 아무 길도 없었다(로드맵 05 Phase 1).
+   *
+   * @param handler 누른 요청을 받는 콜백.
+   */
+  setFulfillHandler(handler: (request: VillageRequest) => void): void {
+    this.onFulfill = handler;
   }
 
   /**
@@ -58,6 +72,11 @@ export class RequestList {
   private renderRow(row: RequestRow): HTMLElement {
     const element = document.createElement('span');
     element.className = 'request';
+    // 낼 수 있는 요청만 누를 수 있다. 낼 수 없는 것을 눌러 아무 일도 없으면 고장으로 보인다.
+    if (row.payable) {
+      element.classList.add('request--clickable');
+      element.addEventListener('click', () => this.onFulfill?.(row.request));
+    }
     if (row.payable) element.classList.add('request--payable');
 
     const dot = document.createElement('span');

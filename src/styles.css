@@ -109,6 +109,26 @@ body {
   white-space: nowrap;
 }
 
+/*
+ * 도구 표시는 눌러서 넘길 수 있다. 마우스만 쥔 사람에게는 숫자 키가 없다
+ * (로드맵 05 Phase 1). 바 전체는 클릭을 캔버스로 넘기므로 여기만 연다.
+ */
+.bar__tool {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font: inherit;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.bar__tool:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.bar__tool:focus-visible {
+  outline: 2px solid #f0c674;
+  outline-offset: 2px;
+}
+
 /* 창고에 손이 닿으면 강조해 예치가 가능함을 알린다. */
 .bar__storage--near {
   color: #7ee787;
@@ -200,6 +220,9 @@ body {
 }
 
 .panel__row {
+  /* 목록을 눌러 고를 수 있다. 컨테이너는 클릭을 캔버스로 넘기고 줄만 받는다. */
+  pointer-events: auto;
+  cursor: pointer;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
@@ -315,6 +338,16 @@ body {
   color: #7ee787;
 }
 
+.request--clickable {
+  /* 낼 수 있는 요청만 눌린다. 낼 수 없는 것을 눌러 아무 일도 없으면 고장으로 보인다. */
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.request--clickable:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
 .request__dot {
   width: 8px;
   height: 8px;
@@ -395,8 +428,38 @@ body {
   position: absolute;
   left: 12px;
   bottom: 44px;
-  display: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
   max-width: 340px;
+  pointer-events: none;
+}
+
+/* 여는 버튼은 늘 보인다. 키보드를 모르는 사람에게는 이것이 유일한 길이다. */
+.help__button {
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #c9d1d9;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.help__button:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.help__button:focus-visible {
+  outline: 2px solid #f0c674;
+  outline-offset: 2px;
+}
+
+.help__body {
+  display: none;
   padding: 10px 12px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 6px;
@@ -404,10 +467,9 @@ body {
   color: #c9d1d9;
   font-size: 12px;
   line-height: 1.6;
-  pointer-events: none;
 }
 
-.help--open {
+.help--open .help__body {
   display: block;
 }
 

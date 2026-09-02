@@ -241,6 +241,22 @@ function bootstrap(): void {
   // 조작 안내 한 줄에 담지 못한 키들이 여기 모인다.
   keyboard.bind('KeyH', () => help.toggle());
   bar.setModeHandler(() => router.toggleBuildMode());
+  // 마우스로도 끝까지 되게 한다(로드맵 05 Phase 1). 키보드 경로는 그대로 둔다.
+  bar.setToolHandler(() => {
+    audio.unlock();
+    const player = game.player;
+    player.selectTool((player.selectedSlot + 1) % player.slotCount);
+  });
+  panel.setSelectHandler((id) => {
+    audio.unlock();
+    game.selectBlueprint(id);
+  });
+  requestList.setFulfillHandler(() => {
+    audio.unlock();
+    if (game.fulfillRequest()) return;
+    toasts.show('낼 수 있는 요청이 없습니다', 'bad');
+    audio.play(SoundId.DENY);
+  });
   keyboard.attach();
 
   /** 조작 안내를 담는 엘리먼트와 마지막으로 그린 문구. */

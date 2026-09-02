@@ -3,75 +3,7 @@ import { Inventory } from '../src/core/Inventory';
 import { ItemType, itemColor } from '../src/core/items';
 import { ToolKind, ToolTier } from '../src/core/tools';
 import { InventoryBar } from '../src/ui/InventoryBar';
-
-/** 최소 엘리먼트 대역. 필요한 속성만 흉내낸다. */
-class FakeElement {
-  textContent: string | null = null;
-  title = '';
-  className = '';
-  readonly style: Record<string, string> = {};
-  readonly children: FakeElement[] = [];
-  private readonly classes = new Set<string>();
-  private readonly listeners = new Map<string, Array<() => void>>();
-
-  /**
-   * 리스너를 등록한다.
-   *
-   * @param type 이벤트 타입.
-   * @param handler 리스너.
-   */
-  addEventListener(type: string, handler: () => void): void {
-    const list = this.listeners.get(type) ?? [];
-    list.push(handler);
-    this.listeners.set(type, list);
-  }
-
-  /**
-   * 등록된 리스너를 직접 호출한다.
-   *
-   * @param type 이벤트 타입.
-   */
-  emit(type: string): void {
-    for (const handler of this.listeners.get(type) ?? []) handler();
-  }
-
-  /**
-   * 자식을 붙인다.
-   *
-   * @param child 붙일 엘리먼트.
-   */
-  appendChild(child: FakeElement): void {
-    this.children.push(child);
-  }
-
-  /** classList 흉내. */
-  readonly classList = {
-    add: (name: string) => {
-      this.classes.add(name);
-    },
-    remove: (name: string) => {
-      this.classes.delete(name);
-    },
-    toggle: (name: string, force?: boolean) => {
-      if (force === undefined) {
-        if (this.classes.has(name)) this.classes.delete(name);
-        else this.classes.add(name);
-      } else if (force) this.classes.add(name);
-      else this.classes.delete(name);
-    },
-    contains: (name: string) => this.classes.has(name),
-  };
-}
-
-/**
- * document.createElement를 대역으로 바꾼다.
- * InventoryBar가 슬롯 DOM을 직접 만들기 때문에 필요하다.
- */
-function installFakeDocument(): void {
-  (globalThis as unknown as { document: unknown }).document = {
-    createElement: () => new FakeElement(),
-  };
-}
+import { FakeElement, installFakeDocument } from './support/fakeDom';
 
 /**
  * 바와 상태를 준비한다.

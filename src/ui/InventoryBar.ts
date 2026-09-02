@@ -50,6 +50,9 @@ export class InventoryBar {
   /** 모드 전환 버튼을 눌렀을 때의 콜백. */
   private onToggleMode: (() => void) | null = null;
 
+  /** 도구를 넘길 때 부를 콜백. 마우스로 도구 표시를 누를 때 쓴다. */
+  private onCycleTool: (() => void) | null = null;
+
   /**
    * @param root 하단 바 컨테이너.
    * @param slotCount 만들어 둘 슬롯 수.
@@ -66,8 +69,10 @@ export class InventoryBar {
       this.slotElements.push(slot);
     }
 
-    this.toolElement = document.createElement('div');
+    // 도구 표시도 눌러서 넘길 수 있다. 마우스만 쥔 사람에게는 숫자 키가 없다.
+    this.toolElement = document.createElement('button');
     this.toolElement.className = 'bar__tool';
+    this.toolElement.addEventListener('click', () => this.onCycleTool?.());
 
     this.storageElement = document.createElement('div');
     this.storageElement.className = 'bar__storage';
@@ -91,6 +96,15 @@ export class InventoryBar {
    */
   setModeHandler(handler: () => void): void {
     this.onToggleMode = handler;
+  }
+
+  /**
+   * 도구 넘기기 콜백을 등록한다.
+   *
+   * @param handler 콜백.
+   */
+  setToolHandler(handler: () => void): void {
+    this.onCycleTool = handler;
   }
 
   /**
