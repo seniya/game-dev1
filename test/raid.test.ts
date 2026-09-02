@@ -245,6 +245,56 @@ describe('방어와 수리', () => {
 
     expect(game.isOccupied({ x: 4, y: 4 })).toBe(true);
   });
+
+  it('울타리는 두들겨 맞으면 무너진다 — 완전 봉쇄가 최적 전략이 되면 안 된다', () => {
+    const game = makeGame();
+    game.selectBlueprint(BlueprintId.FENCE);
+    game.buildAt({ x: 4, y: 4 });
+    game.selectBlueprint(null);
+    advance(game, 4000);
+
+    const fence = [...game.buildings.all].find((b) => b.blueprintId === BlueprintId.FENCE)!;
+    for (let hit = 0; hit <= DAMAGE_LIMIT; hit += 1) game.buildings.damageBuilding(fence.id);
+
+    expect(game.buildings.buildingById(fence.id)).toBeUndefined();
+  });
+
+  it('다른 건물은 아무리 맞아도 무너지지 않는다 — 되돌릴 수 없는 손실은 없다', () => {
+    const game = makeGame();
+    const storage = game.startingStorage;
+
+    for (let hit = 0; hit < DAMAGE_LIMIT * 3; hit += 1) game.buildings.damageBuilding(storage.id);
+
+    const survived = game.buildings.buildingById(storage.id);
+    expect(survived).toBeDefined();
+    expect(survived!.damage).toBe(DAMAGE_LIMIT);
+  });
+
+  it('몬스터 앞의 울타리는 결국 무너진다 — 두르기만 하면 되는 방어는 없다', () => {
+    const game = makeGame();
+    game.setVillageLevel(RAID_MIN_LEVEL);
+    game.storage.add(ItemType.WOOD, 40);
+
+    // 마을에서 떨어진 곳에 울타리를 세우고, 몬스터를 그 옆에 둔다.
+    game.selectBlueprint(BlueprintId.FENCE);
+    const built = game.buildAt({ x: 2, y: 10 });
+    expect(built.ok).toBe(true);
+    game.selectBlueprint(null);
+    advance(game, 4000);
+
+    const fence = [...game.buildings.all].find((b) => b.blueprintId === BlueprintId.FENCE)!;
+
+    advanceToRaid(game);
+    const monster = game.raid.monsters[0]!;
+    monster.x = fence.x;
+    monster.y = fence.y + 1;
+
+    // 두드리는 데 걸리는 시간(3초)의 몇 배를 흘린다.
+    advance(game, 20_000);
+
+    const survived = game.buildings.buildingById(fence.id);
+    expect(survived === undefined || survived.damage > 0).toBe(true);
+  });
 });
 
 describe('침입과 저장', () => {

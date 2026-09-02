@@ -4,9 +4,10 @@ import { ItemType } from '../src/core/items';
 import { BlockType } from '../src/core/blocks';
 import { DIRECTIONS, canWalk, walkableNeighbors, type TilePos } from '../src/core/movement';
 import { isWorkplace } from '../src/core/jobs';
+import { MapId } from '../src/core/maps';
 import { generateTerrain } from '../src/core/terrainGen';
 import { DAY_LENGTH_MS, dayNumber } from '../src/core/daycycle';
-import { GOAL_VILLAGE_LEVEL, MAX_VILLAGE_LEVEL } from '../src/core/village';
+import { GOAL_VILLAGE_LEVEL, MAX_VILLAGE_LEVEL, isMapUnlocked } from '../src/core/village';
 import { Game } from '../src/sim/Game';
 import { MOVE_DURATION_MS, SWING_DURATION_MS } from '../src/sim/Player';
 import { ResourceField } from '../src/sim/ResourceField';
@@ -50,6 +51,13 @@ interface PlaythroughResult {
   tally: Record<string, number>;
   /** 레벨에 처음 닿은 시각(ms). 인덱스가 레벨 - 1이다. 구간 소요 시간을 여기서 읽는다. */
   levelTimesMs: number[];
+  /**
+   * 마을에 선 건물의 종류별 수.
+   *
+   * "봇이 새 시스템을 실제로 쓰는가"를 이 값으로 확인한다 — 로드맵이 두 번 강조한 것이고,
+   * 실제로 두 번 다 봇이 쓰지 않아 측정이 거짓이 될 뻔했다.
+   */
+  builtTypes: Record<string, number>;
 }
 
 /**
@@ -209,7 +217,19 @@ function playToLevel(
   const pickAffordable = (): Blueprint | null => {
     // 집을 먼저 짓는다. 주민이 점수에 가장 크게 기여하고, 큰 집을 기다리느라 자재를
     // 쌓아 두면 그동안 아무 진전이 없다.
-    const order = [BlueprintId.COTTAGE, BlueprintId.MANOR, BlueprintId.WELL, BlueprintId.WORKBENCH];
+    const order = [
+      BlueprintId.COTTAGE,
+      BlueprintId.MANOR,
+      BlueprintId.WELL,
+      BlueprintId.WORKBENCH,
+      // 일터를 지어야 주민에게 일자리가 생기고, 일자리 요청도 닫힌다.
+      BlueprintId.QUARRY,
+      // 방어 시설. 망루가 있으면 자리를 비운 밤에도 마을이 버틴다.
+      BlueprintId.WATCHTOWER,
+      // 수정을 쓰는 것들. 동굴에 다녀와야 지을 수 있다.
+      BlueprintId.FORGE,
+      BlueprintId.BEACON,
+    ];
 
     for (const id of order) {
       const blueprint = game.availableBlueprints.find((candidate) => candidate.id === id);
@@ -222,6 +242,57 @@ function playToLevel(
     }
 
     return null;
+  };
+
+  /**
+   * 통로 칸 **위로** 올라선다.
+   *
+   * `stepTowardAdjacent`는 목표에 인접한 자리까지만 간다. 자원 노드는 옆에서 캐지만
+   * 통로는 밟아야 하므로(ADR 0013) 마지막 한 걸음을 더 디뎌야 한다 — 그러지 않으면
+   * 봇이 통로 옆에서 영원히 서성인다.
+   *
+   * @returns 한 걸음이라도 나아갔으면 true.
+   */
+  const stepOntoPortal = (): boolean => {
+    const portal = game.portal;
+    const at = game.player.position;
+    if (at.x === portal.x && at.y === portal.y) return true;
+
+    const dx = portal.x - at.x;
+    const dy = portal.y - at.y;
+    if (Math.abs(dx) + Math.abs(dy) === 1) {
+      waitIdle();
+      if (game.movePlayer(Math.sign(dx), Math.sign(dy))) {
+        steps += 1;
+        advance(MOVE_DURATION_MS);
+        return true;
+      }
+      return false;
+    }
+
+    return stepTowardAdjacent(portal);
+  };
+
+  /**
+   * 수정이 더 필요한지 본다.
+   *
+   * 대장간과 수정 등대가 수정을 요구한다. 둘 다 세워졌으면 더 캘 이유가 없다 —
+   * 동굴은 목적이 있을 때만 간다.
+   *
+   * @returns 필요한 수정 개수. 필요 없으면 0.
+   */
+  const crystalNeeded = (): number => {
+    let need = 0;
+    for (const id of [BlueprintId.FORGE, BlueprintId.BEACON]) {
+      const blueprint = game.availableBlueprints.find((candidate) => candidate.id === id);
+      if (!blueprint) continue;
+      if (game.buildings.hasCompleted(id)) continue;
+
+      const wants = blueprint.materials.find((material) => material.item === ItemType.CRYSTAL);
+      if (wants) need = Math.max(need, wants.amount);
+    }
+
+    return Math.max(0, need - game.totalHeld(ItemType.CRYSTAL));
   };
 
   /**
@@ -415,7 +486,13 @@ function playToLevel(
       if (!Number.isFinite(reach)) continue;
 
       // 필요한 자원에 가중치를 줘 가까운 것만 캐다 막히는 상황을 피한다.
-      const priority = needIron && node.kind === 'ironVein' ? 0.4 : 1;
+      // 동굴에 들어간 이유는 수정이므로 그것을 먼저 본다.
+      const priority =
+        node.kind === 'crystalVein'
+          ? 0.2
+          : needIron && node.kind === 'ironVein'
+            ? 0.4
+            : 1;
       const cost = reach * priority;
 
       if (cost < bestCost) {
@@ -550,6 +627,40 @@ function playToLevel(
       continue;
     }
 
+    // 0.8 수정이 필요하면 동굴에 다녀온다. 대장간과 수정 등대는 그것 없이는 못 짓는다.
+    const needCrystal = crystalNeeded();
+    if (game.currentMap === MapId.CAVE) {
+      // 다 캤으면 나간다. 인벤토리가 차도 나간다 — 창고는 지상에 있다.
+      const full = game.inventory.usedSlots >= game.inventory.slotCount;
+      if (needCrystal === 0 || full) {
+        if (game.onPortal) {
+          game.travel();
+          count('travel');
+        } else if (!stepOntoPortal()) {
+          advance(500);
+        } else count('walk');
+        continue;
+      }
+    } else if (needCrystal > 0 && isMapUnlocked(MapId.CAVE, game.villageLevel)) {
+      // 창고를 비우고 들어간다. 손이 차 있으면 수정을 받을 자리가 없다.
+      if (game.inventory.usedSlots >= game.inventory.slotCount && !game.nearStorage) {
+        if (!stepTowardAdjacent({ x: game.startingStorage.x, y: game.startingStorage.y })) advance(500);
+        continue;
+      }
+      if (game.inventory.usedSlots >= game.inventory.slotCount) {
+        game.depositAll();
+        continue;
+      }
+
+      if (game.onPortal) {
+        game.travel();
+        count('travel');
+      } else if (!stepOntoPortal()) {
+        advance(500);
+      } else count('walk');
+      continue;
+    }
+
     // 1. 낼 수 있는 요청은 즉시 낸다. 점수 효율이 가장 좋다.
     if (game.fulfillRequest()) continue;
 
@@ -636,6 +747,14 @@ function playToLevel(
     steps,
     tally,
     levelTimesMs,
+    builtTypes: (() => {
+      const types: Record<string, number> = {};
+      for (const building of game.buildings.all) {
+        if (building.buildRemainingMs > 0) continue;
+        types[building.blueprintId] = (types[building.blueprintId] ?? 0) + 1;
+      }
+      return types;
+    })(),
   };
 }
 
@@ -677,6 +796,7 @@ describe('통과 플레이', () => {
         `채집 ${result.harvested} · 이동 ${result.steps}칸 · ${JSON.stringify(result.tally)}`,
     );
 
+    console.log('건물 종류:', JSON.stringify(result.builtTypes));
     console.log(
       '구간: ' +
         result.levelTimesMs
@@ -706,6 +826,24 @@ describe('통과 플레이', () => {
     const result = play(20260901);
 
     expect(result.levelTimesMs[GOAL_VILLAGE_LEVEL - 1]).toBeLessThan(result.elapsedMs * 0.5);
+  });
+
+  it('봇이 새 시스템을 실제로 쓴다 — 쓰지 않는 시스템은 측정되지 않는다', () => {
+    const result = play(20260901);
+
+    // 동굴: 수정 없이는 대장간도 등대도 못 짓는다. 지었다면 다녀온 것이다.
+    expect(result.tally.travel ?? 0).toBeGreaterThan(0);
+    expect(result.builtTypes.forge ?? 0).toBeGreaterThan(0);
+    expect(result.builtTypes.beacon ?? 0).toBeGreaterThan(0);
+
+    // 일터와 배정.
+    expect(result.builtTypes.quarry ?? 0).toBeGreaterThan(0);
+    expect(result.tally.assign ?? 0).toBeGreaterThan(0);
+
+    // 방어와 수리.
+    expect(result.builtTypes.watchtower ?? 0).toBeGreaterThan(0);
+    expect(result.tally.fight ?? 0).toBeGreaterThan(0);
+    expect(result.tally.repair ?? 0).toBeGreaterThan(0);
   });
 
   it('한 판 안에 해가 여러 번 뜨고 진다 — 하루 길이가 세션에 맞는다', () => {

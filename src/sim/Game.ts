@@ -529,6 +529,15 @@ export class Game {
       });
     }
 
+    for (const building of events.collapsed) {
+      this.pendingNotices.push({
+        message: `${blueprintById(building.blueprintId).label}이(가) 무너졌습니다`,
+        tone: 'bad',
+        cue: 'damage',
+      });
+      this.population.releaseWorkplace(building.id);
+    }
+
     if (events.defeated > 0) this.rewardDefeat(events.defeated);
 
     if (events.ended) {

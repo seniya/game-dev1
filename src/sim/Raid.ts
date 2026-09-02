@@ -35,6 +35,8 @@ export interface RaidEvents {
   started: number;
   /** 이번 스텝에 손상된 건물들. */
   damaged: Building[];
+  /** 이번 스텝에 무너진 건물들(울타리). */
+  collapsed: Building[];
   /** 이번 스텝에 물리친 마릿수. */
   defeated: number;
   /** 침입이 끝났으면 true. */
@@ -48,7 +50,7 @@ const TOWER_INTERVAL_MS = 2_200;
 const TOWER_RANGE = 6;
 
 /** 빈 결과. 아무 일도 없는 스텝에 새 배열을 만들지 않는다. */
-const NOTHING: RaidEvents = { started: 0, damaged: [], defeated: 0, ended: false };
+const NOTHING: RaidEvents = { started: 0, damaged: [], collapsed: [], defeated: 0, ended: false };
 
 /**
  * 밤의 침입을 관리한다.
@@ -118,16 +120,16 @@ export class Raid {
 
       this.raiders.length = 0;
 
-      return { started: 0, damaged: [], defeated: 0, ended: true };
+      return { started: 0, damaged: [], collapsed: [], defeated: 0, ended: true };
     }
 
     const started = this.trySpawn(context);
     if (this.raiders.length === 0) return started > 0 ? { ...NOTHING, started } : NOTHING;
 
-    const damaged = this.advance(stepMs);
+    const hits = this.advance(stepMs);
     const defeated = this.fireTowers(stepMs, context.towerRangeBonus ?? 0);
 
-    return { started, damaged, defeated, ended: false };
+    return { started, damaged: hits.damaged, collapsed: hits.collapsed, defeated, ended: false };
   }
 
   /**
@@ -219,10 +221,22 @@ export class Raid {
    * 몬스터를 움직이고, 건물 옆에 닿았으면 두드리게 한다.
    *
    * @param stepMs 스텝 길이(ms).
-   * @returns 이번 스텝에 손상된 건물들.
+   * @returns 이번 스텝에 손상된 건물들과 무너진 건물들.
    */
-  private advance(stepMs: number): Building[] {
+  private advance(stepMs: number): { damaged: Building[]; collapsed: Building[] } {
     const damaged: Building[] = [];
+    const collapsed: Building[] = [];
+
+    /**
+     * 건물 하나를 두드린다.
+     *
+     * @param building 대상 건물.
+     */
+    const hit = (building: Building): void => {
+      const result = this.buildings.damageBuilding(building.id);
+      if (result === 'damaged') damaged.push(building);
+      if (result === 'collapsed') collapsed.push(building);
+    };
 
     for (const monster of this.raiders) {
       const target = this.nearestBuilding(monster);
@@ -233,19 +247,52 @@ export class Raid {
         if (monster.attackElapsedMs < MONSTER_ATTACK_MS) continue;
 
         monster.attackElapsedMs = 0;
-        if (this.buildings.damageBuilding(target.id)) damaged.push(target);
+        hit(target);
         continue;
       }
 
-      monster.attackElapsedMs = 0;
       monster.moveElapsedMs += stepMs;
       if (monster.moveElapsedMs < MONSTER_MOVE_MS) continue;
 
       monster.moveElapsedMs = 0;
-      this.stepToward(monster, target);
+      if (this.stepToward(monster, target)) {
+        monster.attackElapsedMs = 0;
+        continue;
+      }
+
+      // 길이 막혔다. 앞을 가로막은 것을 두드린다 — 울타리로 완전히 두르면 몬스터가
+      // 갇혀 아무 일도 일어나지 않던 문제다(ADR 0019).
+      const blocker = this.blockingBuilding(monster);
+      if (!blocker) continue;
+
+      monster.attackElapsedMs += MONSTER_MOVE_MS;
+      if (monster.attackElapsedMs < MONSTER_ATTACK_MS) continue;
+
+      monster.attackElapsedMs = 0;
+      hit(blocker);
     }
 
-    return damaged;
+    return { damaged, collapsed };
+  }
+
+  /**
+   * 몬스터를 가로막고 있는 건물을 찾는다.
+   *
+   * @param monster 대상 몬스터.
+   * @returns 인접한 건물. 없으면 null.
+   */
+  private blockingBuilding(monster: Monster): Building | null {
+    for (const step of [
+      { dx: 1, dy: 0 },
+      { dx: -1, dy: 0 },
+      { dx: 0, dy: 1 },
+      { dx: 0, dy: -1 },
+    ]) {
+      const building = this.buildings.buildingAt(monster.x + step.dx, monster.y + step.dy);
+      if (building && building.buildRemainingMs <= 0) return building;
+    }
+
+    return null;
   }
 
   /**
@@ -256,8 +303,9 @@ export class Raid {
    *
    * @param monster 움직일 몬스터.
    * @param target 목표 건물.
+   * @returns 한 칸이라도 움직였으면 true.
    */
-  private stepToward(monster: Monster, target: Building): void {
+  private stepToward(monster: Monster, target: Building): boolean {
     const goal = this.buildingCenter(target);
     const here = Math.abs(monster.x - goal.x) + Math.abs(monster.y - goal.y);
 
@@ -286,10 +334,12 @@ export class Raid {
       }
     }
 
-    if (!best) return;
+    if (!best) return false;
 
     monster.x = best.x;
     monster.y = best.y;
+
+    return true;
   }
 
   /**

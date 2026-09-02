@@ -52,6 +52,13 @@ export interface Blueprint {
   readonly materials: readonly MaterialRequirement[];
   /** 이 블루프린트가 해금되는 마을 레벨. */
   readonly unlockLevel: number;
+  /**
+   * 손상이 한계를 넘으면 무너지는지.
+   *
+   * 울타리만 그렇다. 막으라고 세운 것이라 영원히 버티면 완전 봉쇄가 최적 전략이 되고,
+   * 그 안에 몬스터가 갇힌다(ADR 0019). 다른 건물은 상하기만 하고 사라지지 않는다.
+   */
+  readonly breakable?: boolean;
   /** 완공 시 늘어나는 주민 수용 인원. 집이 아니면 0. */
   readonly housing: number;
   /** 완공 시 늘어나는 창고 슬롯 수. 창고가 아니면 0. */
@@ -143,6 +150,7 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     materials: [{ item: ItemType.WOOD, amount: 3 }],
     // 침입이 시작되는 레벨과 같다. 막을 것이 없는데 울타리부터 열리면 쓸모를 모른다.
     unlockLevel: 4,
+    breakable: true,
     housing: 0,
     storageSlots: 0,
   },

@@ -112,17 +112,28 @@ export class Buildings {
   /**
    * 건물에 손상을 준다.
    *
+   * 대부분의 건물은 한계까지 상하고 **거기서 멈춘다** — 되돌릴 수 없는 손실은 캐주얼
+   * 성격과 어긋난다(ADR 0017). 다만 **울타리는 무너진다**: 막으라고 세운 것이므로
+   * 영원히 버티면 완전 봉쇄가 최적 전략이 되고, 몬스터는 벽 앞에 갇힌다(ADR 0019).
+   *
    * @param id 건물 번호.
-   * @returns 손상이 늘었으면 true. 이미 한계까지 부서졌거나 없는 건물이면 false.
+   * @returns 무슨 일이 있었는지.
    */
-  damageBuilding(id: number): boolean {
+  damageBuilding(id: number): 'none' | 'damaged' | 'collapsed' {
     const building = this.buildings.get(id);
-    if (!building || building.buildRemainingMs > 0) return false;
-    if (building.damage >= DAMAGE_LIMIT) return false;
+    if (!building || building.buildRemainingMs > 0) return 'none';
+
+    const breakable = blueprintById(building.blueprintId).breakable;
+    if (building.damage >= DAMAGE_LIMIT && !breakable) return 'none';
 
     building.damage += 1;
 
-    return true;
+    if (breakable && building.damage > DAMAGE_LIMIT) {
+      this.remove(id);
+      return 'collapsed';
+    }
+
+    return 'damaged';
   }
 
   /**
