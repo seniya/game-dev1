@@ -1,77 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { KeyboardControls, SLOT_KEY_COUNT } from '../src/ui/KeyboardControls';
 import { BLUEPRINTS } from '../src/core/blueprints';
-
-/** 키 이벤트를 직접 흘려보낼 수 있는 최소 이벤트 대상 대역. */
-class FakeTarget {
-  private readonly listeners = new Map<string, Set<(event: unknown) => void>>();
-
-  /**
-   * 리스너를 등록한다.
-   *
-   * @param type 이벤트 타입.
-   * @param handler 리스너.
-   */
-  addEventListener(type: string, handler: (event: unknown) => void): void {
-    let set = this.listeners.get(type);
-    if (!set) {
-      set = new Set();
-      this.listeners.set(type, set);
-    }
-    set.add(handler);
-  }
-
-  /**
-   * 리스너를 뗀다.
-   *
-   * @param type 이벤트 타입.
-   * @param handler 리스너.
-   */
-  removeEventListener(type: string, handler: (event: unknown) => void): void {
-    this.listeners.get(type)?.delete(handler);
-  }
-
-  /** 특정 타입에 등록된 리스너 수. */
-  listenerCount(type: string): number {
-    return this.listeners.get(type)?.size ?? 0;
-  }
-
-  /**
-   * 키를 누른다.
-   *
-   * @param code 키 코드.
-   * @returns preventDefault가 호출됐는지 여부.
-   */
-  keyDown(code: string): boolean {
-    let prevented = false;
-    this.emit('keydown', { code, preventDefault: () => { prevented = true; } });
-    return prevented;
-  }
-
-  /**
-   * 키를 뗀다.
-   *
-   * @param code 키 코드.
-   */
-  keyUp(code: string): void {
-    this.emit('keyup', { code, preventDefault: () => {} });
-  }
-
-  /** 창 포커스를 잃는다. */
-  blur(): void {
-    this.emit('blur', {});
-  }
-
-  /**
-   * 등록된 리스너를 직접 호출한다.
-   *
-   * @param type 이벤트 타입.
-   * @param event 리스너에 넘길 이벤트 객체.
-   */
-  private emit(type: string, event: Record<string, unknown>): void {
-    for (const handler of this.listeners.get(type) ?? []) handler({ type, ...event });
-  }
-}
+import { FakeTarget } from './support/keyTarget';
 
 /** 대역 대상에 붙인 컨트롤러를 준비한다. */
 function setup() {
@@ -88,15 +18,53 @@ describe('KeyboardControls 이동', () => {
     expect(controls.moveIntent).toBeNull();
   });
 
-  it('WASD와 방향키를 모두 받는다', () => {
+  it('걷기는 WASD가 맡는다', () => {
     const { target, controls } = setup();
 
     target.keyDown('KeyD');
     expect(controls.moveIntent).toEqual({ dx: 1, dy: 0 });
     target.keyUp('KeyD');
 
-    target.keyDown('ArrowUp');
+    target.keyDown('KeyW');
     expect(controls.moveIntent).toEqual({ dx: 0, dy: -1 });
+  });
+
+  it('방향키는 걷지 않고 겨냥한다 — 마우스 없이 대상을 고르는 유일한 길이다', () => {
+    const { target, controls } = setup();
+
+    target.keyDown('ArrowUp');
+
+    expect(controls.moveIntent).toBeNull();
+    expect(controls.aimIntent).toEqual({ dx: 0, dy: -1 });
+
+    target.keyUp('ArrowUp');
+    expect(controls.aimIntent).toBeNull();
+  });
+
+  it('겨냥도 마지막에 누른 방향을 쓴다', () => {
+    const { target, controls } = setup();
+
+    target.keyDown('ArrowRight');
+    target.keyDown('ArrowDown');
+    expect(controls.aimIntent).toEqual({ dx: 0, dy: 1 });
+
+    target.keyUp('ArrowDown');
+    expect(controls.aimIntent).toEqual({ dx: 1, dy: 0 });
+  });
+
+  it('포커스가 버튼에 있으면 키를 브라우저에 넘긴다', () => {
+    const { target, controls } = setup();
+    let actions = 0;
+    controls.setActionHandler(() => {
+      actions += 1;
+    });
+
+    // Space를 가로채면 저장 메뉴 버튼이 눌리지 않아 키보드로 메뉴를 쓸 수 없다.
+    expect(target.keyDown('Space', { tagName: 'BUTTON' })).toBe(false);
+    expect(actions).toBe(0);
+
+    expect(target.keyDown('Space')).toBe(true);
+    expect(actions).toBe(1);
   });
 
   it('키를 떼면 이동 의도가 사라진다', () => {

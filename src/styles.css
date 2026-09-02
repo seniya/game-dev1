@@ -162,6 +162,16 @@ body {
   border-color: rgba(255, 255, 255, 0.45);
 }
 
+/*
+ * 키보드로 닿았을 때가 보여야 한다. 마우스 없이 저장 메뉴를 쓰려면 Tab으로
+ * 옮겨 다니는데, 지금 어디에 있는지 보이지 않으면 그 이동이 깜깜이가 된다.
+ */
+.save__button:focus-visible,
+.bar__mode:focus-visible {
+  outline: 2px solid #f0c674;
+  outline-offset: 2px;
+}
+
 /* 되돌릴 수 없는 조작은 한 번 더 확인받는다. */
 .save__button--danger {
   border-color: rgba(255, 123, 114, 0.7);

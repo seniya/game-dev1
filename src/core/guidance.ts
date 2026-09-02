@@ -149,17 +149,17 @@ export function controlHint(state: GuidanceState): string {
   // 안내가 거짓말을 한다 — 실제로 그렇게 어긋나 있었다.
   if (state.buildMode) {
     const picker = state.blueprintCount > 1 ? `1~${state.blueprintCount}` : '1';
-    return `${picker}: 설계도 · 좌클릭: 배치 · B/Esc: 닫기 · 드래그/휠: 시야`;
+    return `${picker}: 설계도 · 방향키: 부지 · Space/좌클릭: 배치 · B/Esc: 닫기`;
   }
 
-  const parts = ['WASD: 걷기', '1~3: 도구', '좌클릭: 채집/파기', '우클릭: 쌓기'];
+  const parts = ['WASD: 걷기', '방향키: 겨냥', 'Space/좌클릭: 채집·파기', '1~3: 도구'];
 
-  if (state.carried > 0) parts.push('E: 창고 예치');
+  if (state.carried > 0) parts.push('Q: 쌓기', 'E: 창고 예치');
   if (state.wood > 0 || state.stone > 0) parts.push('B: 건축');
   if (state.payableRequests > 0) parts.push('R: 요청 납품');
   if (state.buildings >= 3) parts.push('X: 철거');
 
-  parts.push('드래그/휠: 시야');
+  parts.push('+/-: 확대');
 
   return parts.join(' · ');
 }

@@ -22,6 +22,7 @@ import { SaveStore } from './sim/SaveStore';
 import { BuildPanel } from './ui/BuildPanel';
 import { DebugOverlay } from './ui/DebugOverlay';
 import { InventoryBar } from './ui/InventoryBar';
+import { InputRouter } from './ui/InputRouter';
 import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
 import { describeFailure } from './ui/messages';
@@ -201,77 +202,6 @@ function bootstrap(): void {
   pointer.attach();
 
   const keyboard = new KeyboardControls();
-  keyboard.setSlotHandler((index) => {
-    // 건축 모드에서는 숫자 키가 블루프린트 선택이다.
-    if (game.buildMode) {
-      const blueprint = game.availableBlueprints[index];
-      if (blueprint) game.selectBlueprint(blueprint.id);
-      return;
-    }
-
-    game.player.selectTool(index);
-  });
-  // Space는 커서가 올라간 칸에 주 행동을 한다 — 마우스 없이도 채집이 되게.
-  keyboard.setActionHandler(() => {
-    audio.unlock();
-    const target = pointer.hovered;
-    if (target) report(game.buildMode ? game.buildAt(target) : game.actAt(target), target);
-  });
-  keyboard.bind('KeyE', () => {
-    audio.unlock();
-    const moved = game.depositAll();
-    if (moved.size === 0) {
-      toasts.show(game.nearStorage ? '예치할 자원이 없습니다' : '창고 옆으로 가세요', 'bad');
-      audio.play(SoundId.DENY);
-      return;
-    }
-    audio.play(SoundId.DEPOSIT);
-  });
-  /** 건축 모드를 켜고 끈다. 켤 때는 첫 번째 블루프린트를 고른다. */
-  function toggleBuildMode(): void {
-    if (game.buildMode) {
-      game.selectBlueprint(null);
-      return;
-    }
-
-    const first = game.availableBlueprints[0];
-    if (first) game.selectBlueprint(first.id);
-  }
-
-  keyboard.bind('KeyB', () => {
-    audio.unlock();
-    toggleBuildMode();
-  });
-  bar.setModeHandler(() => {
-    audio.unlock();
-    toggleBuildMode();
-  });
-
-  saveMenu.setVolumeHandler(() => {
-    audio.unlock();
-    audio.cycleVolume();
-    settingsStore.save({ volumeStep: audio.volumeStep });
-  });
-  keyboard.bind('Escape', () => game.selectBlueprint(null));
-  keyboard.bind('KeyX', () => {
-    const target = pointer.hovered;
-    if (!target) return;
-
-    const result = game.demolishAt(target);
-    if (result.ok) {
-      toasts.show('철거 — 자재 절반을 돌려받았습니다', 'neutral');
-      audio.play(SoundId.DEMOLISH);
-      effects.burst(target.x, target.y, Math.max(0, terrain.columnHeight(target.x, target.y) - 1), '#c9b592', 8);
-    } else report(result, target);
-  });
-  keyboard.bind('KeyR', () => {
-    audio.unlock();
-    if (!game.fulfillRequest()) {
-      toasts.show('낼 수 있는 요청이 없습니다', 'bad');
-      audio.play(SoundId.DENY);
-    }
-  });
-  keyboard.attach();
 
   /**
    * 카메라가 플레이어를 따라가는지 여부.
@@ -280,6 +210,25 @@ function bootstrap(): void {
    * 조작과 플레이어 추적이 서로 싸우지 않는다 — 둘러보다가 걸으면 다시 따라온다.
    */
   let followPlayer = true;
+
+  // 키 입력을 게임 행동으로 옮기는 곳은 여기 하나다. 겨냥 커서도 여기 있다.
+  const router = new InputRouter(game, keyboard, {
+    unlock: () => audio.unlock(),
+    report,
+    toast: (message, tone) => toasts.show(message, tone),
+    play: (sound) => audio.play(sound),
+    burst: (x, y, color, count) => {
+      effects.burst(x, y, Math.max(0, terrain.columnHeight(x, y) - 1), color, count);
+    },
+    // 키보드 줌은 화면 가운데를 고정한다. 마우스 휠과 달리 기준으로 삼을 커서가 없다.
+    zoomBy: (factor) => camera.zoomAt(surface.size.width / 2, surface.size.height / 2, factor),
+    follow: () => {
+      followPlayer = true;
+    },
+  });
+  router.bind();
+  bar.setModeHandler(() => router.toggleBuildMode());
+  keyboard.attach();
 
   /** 조작 안내를 담는 엘리먼트와 마지막으로 그린 문구. */
   const hintElement = requireElement('hint');
@@ -347,17 +296,12 @@ function bootstrap(): void {
       update: (stepMs) => {
         state.step(stepMs);
 
-        // 이동은 키 이벤트가 아니라 눌린 상태를 보고 고정 간격으로 시도한다.
-        const intent = keyboard.moveIntent;
-        if (intent && game.movePlayer(intent.dx, intent.dy)) followPlayer = true;
+        // 마우스가 가리키는 칸을 커서에 알린다. 마우스가 움직였을 때만 겨냥을
+        // 가져가므로, 마우스를 책상에 둔 채 키보드로 플레이할 수 있다.
+        router.setPointerTile(pointer.hovered);
 
-        // 연속 채집: 버튼을 누르고 있으면 이어서 때린다. 반복 속도는 휘두르기 쿨다운이
-        // 정하므로 별도 타이머가 필요 없다. 건축 모드에서는 하지 않는다 — 누르고 있는
-        // 동안 건물이 줄줄이 세워지면 자재가 순식간에 사라진다.
-        if (!game.buildMode && game.player.idle) {
-          const held = pointer.heldTile ?? (keyboard.actionHeld ? pointer.hovered : null);
-          if (held) report(game.actAt(held), held);
-        }
+        // 걷기·겨냥·연속 채집은 키 이벤트가 아니라 눌린 상태를 보고 고정 간격으로 처리한다.
+        router.update(stepMs, pointer.heldTile);
 
         game.update(stepMs);
         toasts.update(stepMs);
@@ -385,7 +329,9 @@ function bootstrap(): void {
         const size = surface.beginFrame();
         camera.setViewport(size.width, size.height);
 
-        const hovered = pointer.hovered;
+        // 화면에 강조할 칸은 마우스가 아니라 커서가 정한다 — 키보드로 겨냥한
+        // 칸도 똑같이 보여야 무엇에 대고 행동하는지 알 수 있다.
+        const hovered = router.target;
         // 건축 먼지처럼 시간에 따라 움직이는 연출을 위해 시뮬레이션 시각을 넘긴다.
         const stats = world.render(hovered, game.entities(), game.ghost(hovered), state.elapsedMs, {
           locked: (x, y) => game.isZoneLocked(x, y),

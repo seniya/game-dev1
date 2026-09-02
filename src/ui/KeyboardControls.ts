@@ -5,22 +5,35 @@ export interface MoveIntent {
 }
 
 /**
- * 키 → 이동 델타 표. WASD와 방향키를 모두 받는다.
+ * 걷기 키 → 이동 델타 표.
  *
  * 아이소메트릭 화면에서 W는 "화면 위쪽"이 자연스러우므로 그리드 -y가 아니라
  * 화면 기준으로 매핑한다. 그리드 x는 화면 오른쪽-아래, y는 왼쪽-아래이므로
  * 화면 위쪽 = (-x, -y), 오른쪽 = (+x, -y) 조합이 되지만, 4방향 이동만 지원하는
  * 이상 정확한 대각 매핑은 불가능하다. 여기서는 **그리드 축에 직접** 매핑해
  * 조작과 결과가 1:1로 대응하게 한다 — 어느 키가 어느 축인지 화면 안내로 알린다.
+ *
+ * 예전에는 방향키도 걷기였다. 지금은 방향키가 **겨냥**이다(`KEY_AIM`) —
+ * 마우스 없이 대상을 고를 방법이 필요했고, 새 키를 만드는 것보다 이미 있는
+ * 중복 매핑을 쓰는 편이 외울 것을 늘리지 않는다(ADR 0012).
  */
 const KEY_MOVES: Readonly<Record<string, MoveIntent>> = {
   KeyD: { dx: 1, dy: 0 },
-  ArrowRight: { dx: 1, dy: 0 },
   KeyA: { dx: -1, dy: 0 },
-  ArrowLeft: { dx: -1, dy: 0 },
   KeyS: { dx: 0, dy: 1 },
-  ArrowDown: { dx: 0, dy: 1 },
   KeyW: { dx: 0, dy: -1 },
+};
+
+/**
+ * 겨냥 키 → 커서 델타 표. 걷기와 같은 그리드 축 규약을 쓴다.
+ *
+ * 왼손(WASD)이 걷고 오른손(방향키)이 겨냥한다. 마우스가 있으면 마우스가 겨냥을
+ * 가져가고, 방향키를 누르면 다시 키보드가 가져간다.
+ */
+const KEY_AIM: Readonly<Record<string, MoveIntent>> = {
+  ArrowRight: { dx: 1, dy: 0 },
+  ArrowLeft: { dx: -1, dy: 0 },
+  ArrowDown: { dx: 0, dy: 1 },
   ArrowUp: { dx: 0, dy: -1 },
 };
 
@@ -63,11 +76,17 @@ export class KeyboardControls {
   /** 이동 키가 눌린 순서. 마지막에 누른 방향을 우선한다. */
   private readonly moveOrder: string[] = [];
 
+  /** 겨냥 키가 눌린 순서. 이동과 같은 규칙으로 마지막 방향을 우선한다. */
+  private readonly aimOrder: string[] = [];
+
   /** 도구 슬롯 선택 콜백. */
   private onSelectSlot: ((index: number) => void) | null = null;
 
   /** 상호작용 키를 누른 순간의 콜백. */
   private onAction: (() => void) | null = null;
+
+  /** 겨냥 키를 누른 순간의 콜백. */
+  private onAim: ((dx: number, dy: number) => void) | null = null;
 
   /** 키 코드별 단발 콜백. `bind`로 등록한다. */
   private readonly bindings = new Map<string, () => void>();
@@ -98,6 +117,18 @@ export class KeyboardControls {
    */
   setActionHandler(handler: () => void): void {
     this.onAction = handler;
+  }
+
+  /**
+   * 겨냥 콜백을 등록한다. 키를 누른 순간 한 번 호출된다.
+   *
+   * 눌린 상태(`aimIntent`)만 보고 처리하면 톡 눌렀다 뗀 키가 프레임 사이에서
+   * 사라져 반응이 없다. 첫 한 칸은 이벤트로, 그 뒤 반복은 상태로 처리한다.
+   *
+   * @param handler 커서 델타를 받는 콜백.
+   */
+  setAimHandler(handler: (dx: number, dy: number) => void): void {
+    this.onAim = handler;
   }
 
   /**
@@ -143,6 +174,23 @@ export class KeyboardControls {
     return null;
   }
 
+  /**
+   * 지금 눌려 있는 겨냥 방향. 이동과 같은 규칙으로 마지막에 누른 것을 쓴다.
+   *
+   * 누르고 있으면 계속 나오므로, 반복 속도는 이 값을 읽는 쪽이 정한다 —
+   * 키 반복 속도가 OS 설정에 좌우되지 않게 하려는 것이다.
+   *
+   * @returns 커서 델타. 눌린 겨냥 키가 없으면 null.
+   */
+  get aimIntent(): MoveIntent | null {
+    for (let i = this.aimOrder.length - 1; i >= 0; i -= 1) {
+      const aim = KEY_AIM[this.aimOrder[i]!];
+      if (aim) return aim;
+    }
+
+    return null;
+  }
+
   /** 상호작용 키가 눌려 있는지 여부. 꾹 눌러 연속 채집할 때 쓴다. */
   get actionHeld(): boolean {
     return this.pressed.has(ACTION_KEY);
@@ -152,6 +200,7 @@ export class KeyboardControls {
   reset(): void {
     this.pressed.clear();
     this.moveOrder.length = 0;
+    this.aimOrder.length = 0;
   }
 
   /**
@@ -161,10 +210,22 @@ export class KeyboardControls {
    */
   private handleKeyDown = (event: Event): void => {
     const keyEvent = event as KeyboardEvent;
+
+    // 메뉴 버튼에 포커스가 있을 때는 브라우저에게 양보한다. 그러지 않으면
+    // Space가 게임 행동으로 먹혀 버튼이 눌리지 않고, 키보드로 저장 메뉴를
+    // 쓸 수 없게 된다 — 키보드만으로 플레이하려면 여기가 열려 있어야 한다.
+    if (isEditableTarget(keyEvent.target)) return;
+
     const code = keyEvent.code;
 
     // 스페이스로 페이지가 스크롤되거나 방향키로 화면이 밀리는 것을 막는다.
-    if (code in KEY_MOVES || code in KEY_SLOTS || code === ACTION_KEY || this.bindings.has(code)) {
+    if (
+      code in KEY_MOVES ||
+      code in KEY_AIM ||
+      code in KEY_SLOTS ||
+      code === ACTION_KEY ||
+      this.bindings.has(code)
+    ) {
       keyEvent.preventDefault?.();
     }
 
@@ -173,11 +234,15 @@ export class KeyboardControls {
     this.pressed.add(code);
 
     if (code in KEY_MOVES) this.moveOrder.push(code);
+    if (code in KEY_AIM) this.aimOrder.push(code);
 
     const slot = KEY_SLOTS[code];
     if (slot !== undefined) this.onSelectSlot?.(slot);
 
     if (code === ACTION_KEY) this.onAction?.();
+
+    const aim = KEY_AIM[code];
+    if (aim) this.onAim?.(aim.dx, aim.dy);
 
     this.bindings.get(code)?.();
   };
@@ -191,12 +256,33 @@ export class KeyboardControls {
     const code = (event as KeyboardEvent).code;
     this.pressed.delete(code);
 
-    const index = this.moveOrder.indexOf(code);
-    if (index >= 0) this.moveOrder.splice(index, 1);
+    const moveIndex = this.moveOrder.indexOf(code);
+    if (moveIndex >= 0) this.moveOrder.splice(moveIndex, 1);
+
+    const aimIndex = this.aimOrder.indexOf(code);
+    if (aimIndex >= 0) this.aimOrder.splice(aimIndex, 1);
   };
 
   /** 창 포커스를 잃으면 키가 눌린 채로 남는 것을 막는다. */
   private handleBlur = (): void => {
     this.reset();
   };
+}
+
+/** 키를 게임이 아니라 브라우저에 넘겨야 하는 대상인지 확인한다. */
+const FOCUSABLE_TAGS = new Set(['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA', 'A']);
+
+/**
+ * 이벤트가 UI 컨트롤에서 났는지 본다.
+ *
+ * @param target 이벤트 대상.
+ * @returns 브라우저에 넘겨야 하면 true.
+ */
+function isEditableTarget(target: unknown): boolean {
+  if (!target || typeof target !== 'object') return false;
+
+  const element = target as { tagName?: unknown; isContentEditable?: unknown };
+  if (element.isContentEditable === true) return true;
+
+  return typeof element.tagName === 'string' && FOCUSABLE_TAGS.has(element.tagName);
 }
