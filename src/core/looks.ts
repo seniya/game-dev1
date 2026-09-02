@@ -34,6 +34,8 @@ export const BUILDING_LOOKS: readonly BuildingLook[] = [
   { id: 1, label: '푸른 지붕', roof: '#4a7fa5', roofDark: '#3b6684', unlockLevel: 3 },
   { id: 2, label: '초록 지붕', roof: '#5f8a52', roofDark: '#4c6f42', unlockLevel: 6 },
   { id: 3, label: '황금 지붕', roof: '#c9a227', roofDark: '#a3831f', unlockLevel: 9 },
+  { id: 4, label: '붉은 지붕', roof: '#b5453a', roofDark: '#8f362d', unlockLevel: 12 },
+  { id: 5, label: '검은 지붕', roof: '#3f434a', roofDark: '#2f3238', unlockLevel: 18 },
 ];
 
 /**

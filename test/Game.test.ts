@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BlockType } from '../src/core/blocks';
 import { Terrain } from '../src/core/Terrain';
 import { ToolTier } from '../src/core/tools';
-import { MAX_VILLAGE_LEVEL } from '../src/core/village';
+import { GOAL_VILLAGE_LEVEL, MAX_VILLAGE_LEVEL } from '../src/core/village';
 import { BlueprintId } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
 import { NodeKind, nodeDefinition } from '../src/core/resourceNodes';
@@ -1017,8 +1017,9 @@ describe('Game 마을 레벨', () => {
     expect(game.villageScore).toBeGreaterThan(afterFirst);
   });
 
-  it('1차 목표 레벨을 알려준다', () => {
-    expect(levelGame().goalLevel).toBe(MAX_VILLAGE_LEVEL);
+  it('1차 목표 레벨을 알려준다 — 최대 레벨과는 다르다', () => {
+    expect(levelGame().goalLevel).toBe(GOAL_VILLAGE_LEVEL);
+    expect(GOAL_VILLAGE_LEVEL).toBeLessThan(MAX_VILLAGE_LEVEL);
   });
 
   it('건물을 지으면 점수가 오른다', () => {

@@ -2,13 +2,17 @@ import { describe, expect, it } from 'vitest';
 import { BlueprintId, type Blueprint } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
 import { BlockType } from '../src/core/blocks';
-import { canWalk, walkableNeighbors, type TilePos } from '../src/core/movement';
+import { DIRECTIONS, canWalk, walkableNeighbors, type TilePos } from '../src/core/movement';
+import { isWorkplace } from '../src/core/jobs';
 import { generateTerrain } from '../src/core/terrainGen';
 import { DAY_LENGTH_MS, dayNumber } from '../src/core/daycycle';
-import { MAX_VILLAGE_LEVEL } from '../src/core/village';
+import { GOAL_VILLAGE_LEVEL, MAX_VILLAGE_LEVEL } from '../src/core/village';
 import { Game } from '../src/sim/Game';
 import { MOVE_DURATION_MS, SWING_DURATION_MS } from '../src/sim/Player';
 import { ResourceField } from '../src/sim/ResourceField';
+
+/** 맵 한 변의 길이. `main.ts`와 같은 값을 쓴다. */
+const MAP_SIZE = 32;
 
 /** 시뮬레이션 스텝 길이(ms). 게임 루프와 같은 60Hz. */
 const STEP_MS = 1000 / 60;
@@ -19,7 +23,7 @@ const STEP_MS = 1000 / 60;
  * 봇은 최적 플레이(가장 가까운 노드를 즉시 알고 헛클릭이 없음)라 사람은 훨씬 오래 걸린다.
  * 봇 기준 몇 분이면 사람 기준 수십 분으로, 첫 플레이 분량으로 알맞다.
  */
-const TIME_BUDGET_MS = 12 * 60 * 1000;
+const TIME_BUDGET_MS = 20 * 60 * 1000;
 
 /** 무한 루프 방지용 최대 행동 수. */
 const MAX_ACTIONS = 20_000;
@@ -44,6 +48,8 @@ interface PlaythroughResult {
   steps: number;
   /** 행동 종류별 횟수. 막혔을 때 무엇을 반복했는지 보려고 센다. */
   tally: Record<string, number>;
+  /** 레벨에 처음 닿은 시각(ms). 인덱스가 레벨 - 1이다. 구간 소요 시간을 여기서 읽는다. */
+  levelTimesMs: number[];
 }
 
 /**
@@ -64,7 +70,7 @@ function playToLevel(
   goalLevel = MAX_VILLAGE_LEVEL,
   saveEveryActions = 0,
 ): PlaythroughResult {
-  const startTerrain = generateTerrain(32, 32, { seed });
+  const startTerrain = generateTerrain(MAP_SIZE, MAP_SIZE, { seed });
   // 저장/불러오기를 끼워 넣으면 게임 객체 자체가 교체되므로 재대입이 가능해야 한다.
   let game = new Game(startTerrain, new ResourceField(startTerrain, { seed }));
   game.setWorldSeed(seed);
@@ -73,6 +79,8 @@ function playToLevel(
   let harvested = 0;
   let steps = 0;
   const tally: Record<string, number> = {};
+  // 레벨에 처음 닿은 시각. 구간이 앞 구간보다 지나치게 길어지는지 보려고 남긴다.
+  const levelTimesMs: number[] = [0];
 
   /**
    * 행동 횟수를 센다.
@@ -223,9 +231,14 @@ function playToLevel(
    * @returns 놓을 좌표. 없으면 null.
    */
   const findSpot = (blueprint: Blueprint): TilePos | null => {
-    const center = { x: 15, y: 15 };
+    // 마을은 시작 지점(맵 중앙) 둘레로 자란다. 반경을 맵 크기에서 뽑지 않으면
+    // **봇이 다 채운 뒤 평탄화만 반복한다** — 실제로 그렇게 측정됐다.
+    // centerTile은 짝수 맵에서 소수를 준다(15.5). 정수 칸으로 내림한다.
+    const raw = game.terrain.centerTile;
+    const center = { x: Math.floor(raw.x), y: Math.floor(raw.y) };
+    const maxRadius = Math.floor(Math.min(game.terrain.width, game.terrain.height) / 2) - 1;
 
-    for (let radius = 1; radius <= 10; radius += 1) {
+    for (let radius = 1; radius <= maxRadius; radius += 1) {
       for (let dy = -radius; dy <= radius; dy += 1) {
         for (let dx = -radius; dx <= radius; dx += 1) {
           if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
@@ -428,7 +441,68 @@ function playToLevel(
     game.player.selectTool(node.kind === 'tree' ? 2 : 1);
   };
 
+  /**
+   * 손상된 건물 하나를 찾는다.
+   *
+   * @returns 손상된 건물 칸. 없으면 null.
+   */
+  const findDamaged = (): TilePos | null => {
+    for (const building of game.buildings.all) {
+      if (building.buildRemainingMs > 0 || building.damage <= 0) continue;
+
+      return { x: building.x, y: building.y };
+    }
+
+    return null;
+  };
+
+  /**
+   * 가장 가까운 몬스터를 찾는다.
+   *
+   * @returns 몬스터 칸. 없거나 닿을 수 없으면 null.
+   */
+  const findMonster = (): TilePos | null => {
+    if (game.raid.monsters.length === 0) return null;
+
+    const distances = walkDistances();
+    let best: TilePos | null = null;
+    let bestCost = Number.POSITIVE_INFINITY;
+
+    for (const monster of game.raid.monsters) {
+      for (const step of DIRECTIONS) {
+        const stand = distances.get(`${monster.x + step.dx},${monster.y + step.dy}`);
+        if (stand === undefined || stand >= bestCost) continue;
+
+        bestCost = stand;
+        best = { x: monster.x, y: monster.y };
+      }
+    }
+
+    // 멀리 있는 몬스터를 쫓아다니면 채집이 멈춘다. 마을 근처만 상대한다.
+    return bestCost <= 12 ? best : null;
+  };
+
+  /**
+   * 비어 있는 일터에 주민을 배정한다.
+   *
+   * @returns 배정했으면 true.
+   */
+  const fillJobs = (): boolean => {
+    if (game.population.idleWorkers.length === 0) return false;
+
+    for (const building of game.buildings.all) {
+      if (building.buildRemainingMs > 0 || building.damage > 0) continue;
+      if (!isWorkplace(building.blueprintId)) continue;
+      if (game.population.workersAt(building.id).length >= game.slotsPerWorkplace) continue;
+
+      if (game.toggleWorker({ x: building.x, y: building.y }).ok) return true;
+    }
+
+    return false;
+  };
+
   for (let action = 0; action < MAX_ACTIONS; action += 1) {
+    while (levelTimesMs.length < game.villageLevel) levelTimesMs.push(elapsedMs);
     if (game.villageLevel >= goalLevel) break;
     if (elapsedMs >= TIME_BUDGET_MS) break;
 
@@ -438,6 +512,42 @@ function playToLevel(
       const restored = Game.fromSave(JSON.parse(JSON.stringify(game.toSave())));
       if (!restored) throw new Error(`행동 ${action}에서 저장을 되살리지 못했다`);
       game = restored;
+    }
+
+    // 0. 몬스터가 마을 근처에 있으면 먼저 쫓는다. 두면 건물이 상하고, 상한 건물은
+    //    마을 점수에서 빠진다 — 방어가 곧 진행이다.
+    const monster = findMonster();
+    if (monster) {
+      const player = game.player.position;
+      if (Math.abs(monster.x - player.x) + Math.abs(monster.y - player.y) === 1) {
+        waitIdle();
+        const hit = game.actAt(monster);
+        advance(SWING_DURATION_MS);
+        count(hit.ok ? 'fight' : `fightFail:${hit.ok === false ? hit.reason : ''}`);
+      } else if (stepTowardAdjacent(monster)) {
+        count('walk');
+      } else {
+        advance(300);
+      }
+      continue;
+    }
+
+    // 0.5 손상된 건물을 고친다. 고치기 전에는 기능도 점수도 돌아오지 않는다.
+    const damaged = findDamaged();
+    if (damaged) {
+      const repaired = game.repairAt(damaged);
+      if (repaired.ok) {
+        count('repair');
+        continue;
+      }
+      // 자재가 없으면 나중에 다시 온다.
+      if (repaired.ok === false && repaired.reason !== 'noMaterial') count('repairFail');
+    }
+
+    // 0.7 놀고 있는 주민을 일터에 넣는다. 낮 동안 자원이 조금씩 쌓인다.
+    if (fillJobs()) {
+      count('assign');
+      continue;
     }
 
     // 1. 낼 수 있는 요청은 즉시 낸다. 점수 효율이 가장 좋다.
@@ -525,12 +635,40 @@ function playToLevel(
     harvested,
     steps,
     tally,
+    levelTimesMs,
   };
+}
+
+/**
+ * 같은 조건의 통과 플레이 결과를 재사용한다.
+ *
+ * 레벨 20까지 도는 데 몇 초가 걸리므로, 같은 시드를 여러 테스트가 각자 돌리면 테스트가
+ * 수십 초로 늘어난다. 결과는 결정적이라 나눠 써도 안전하다.
+ */
+const cache = new Map<string, PlaythroughResult>();
+
+/**
+ * 통과 플레이를 돌리되 같은 조건이면 앞선 결과를 쓴다.
+ *
+ * @param seed 시드.
+ * @param goalLevel 목표 레벨.
+ * @param saveEveryActions 저장 간격.
+ * @returns 플레이 결과.
+ */
+function play(seed: number, goalLevel = MAX_VILLAGE_LEVEL, saveEveryActions = 0): PlaythroughResult {
+  const key = `${seed}:${goalLevel}:${saveEveryActions}`;
+  const cached = cache.get(key);
+  if (cached) return cached;
+
+  const result = playToLevel(seed, goalLevel, saveEveryActions);
+  cache.set(key, result);
+
+  return result;
 }
 
 describe('통과 플레이', () => {
   it('봇이 기본 시드에서 최대 레벨까지 도달한다', () => {
-    const result = playToLevel(20260901);
+    const result = play(20260901);
 
     // 밸런싱 판단 근거로 남긴다.
     console.log(
@@ -539,12 +677,39 @@ describe('통과 플레이', () => {
         `채집 ${result.harvested} · 이동 ${result.steps}칸 · ${JSON.stringify(result.tally)}`,
     );
 
+    console.log(
+      '구간: ' +
+        result.levelTimesMs
+          .map((time, index) => `${index + 1}=${(time / 60000).toFixed(1)}분`)
+          .join(' '),
+    );
+
     expect(result.level).toBe(MAX_VILLAGE_LEVEL);
     expect(result.elapsedMs).toBeLessThan(TIME_BUDGET_MS);
   });
 
+  it('구간이 앞 구간보다 지나치게 길어지지 않는다', () => {
+    const result = play(20260901);
+    const times = result.levelTimesMs;
+
+    // 초반 몇 레벨은 워낙 짧아 비율이 크게 흔들린다. 중반 이후만 본다.
+    for (let level = 6; level < times.length; level += 1) {
+      const gap = times[level]! - times[level - 1]!;
+      const previous = times[level - 1]! - times[level - 2]!;
+      if (previous <= 0) continue;
+
+      expect(gap).toBeLessThan(previous * 3);
+    }
+  });
+
+  it('1차 목표(레벨 10)는 한 판의 앞쪽에서 닿는다 — 나머지는 여운이다', () => {
+    const result = play(20260901);
+
+    expect(result.levelTimesMs[GOAL_VILLAGE_LEVEL - 1]).toBeLessThan(result.elapsedMs * 0.5);
+  });
+
   it('한 판 안에 해가 여러 번 뜨고 진다 — 하루 길이가 세션에 맞는다', () => {
-    const result = playToLevel(20260901);
+    const result = play(20260901);
     const days = dayNumber(result.elapsedMs);
 
     console.log(`통과 플레이 동안 ${days}일이 흘렀다 (하루 ${DAY_LENGTH_MS / 60000}분)`);
@@ -557,8 +722,11 @@ describe('통과 플레이', () => {
 
   it('다른 시드에서도 막히지 않는다', () => {
     for (const seed of [7, 4242]) {
-      const result = playToLevel(seed);
-      console.log(`시드 ${seed}: 레벨 ${result.level} · ${(result.elapsedMs / 60000).toFixed(1)}분`);
+      const result = play(seed);
+      console.log(
+        `시드 ${seed}: 레벨 ${result.level} · ${(result.elapsedMs / 60000).toFixed(1)}분 · ` +
+          `건물 ${result.buildings} · 주민 ${result.residents} · ${JSON.stringify(result.tally)}`,
+      );
 
       expect(result.level).toBe(MAX_VILLAGE_LEVEL);
     }
@@ -567,7 +735,7 @@ describe('통과 플레이', () => {
 
 describe('저장을 끼운 통과 플레이', () => {
   it('중간에 저장하고 불러와도 최대 레벨까지 도달한다', () => {
-    const result = playToLevel(20260901, MAX_VILLAGE_LEVEL, 40);
+    const result = play(20260901, MAX_VILLAGE_LEVEL, 40);
 
     console.log(
       `저장 왕복 포함: 레벨 ${result.level} · ${(result.elapsedMs / 60000).toFixed(1)}분 · ` +
@@ -578,8 +746,8 @@ describe('저장을 끼운 통과 플레이', () => {
   });
 
   it('잦은 저장에도 진행이 뒤로 가지 않는다', () => {
-    const plain = playToLevel(7);
-    const withSaves = playToLevel(7, MAX_VILLAGE_LEVEL, 15);
+    const plain = play(7);
+    const withSaves = play(7, MAX_VILLAGE_LEVEL, 15);
 
     expect(withSaves.level).toBe(plain.level);
     // 저장 왕복은 시뮬레이션 시간을 늘리지 않는다. 오차는 봇의 판단 차이 정도여야 한다.

@@ -16,7 +16,7 @@ import {
   timeOfDay,
 } from '../core/daycycle';
 import { ItemType, blockToItem, itemLabel, itemToBlock } from '../core/items';
-import { SLOTS_PER_WORKPLACE, isWorkplace, jobDefinition, jobForWorkplace } from '../core/jobs';
+import { isWorkplace, jobDefinition, jobForWorkplace } from '../core/jobs';
 import { lookById, nextLook, unlockedLooks } from '../core/looks';
 import { DEFEAT_REWARD } from '../core/monsters';
 import { MapId, isVillageMap, mapLabel, mapSeed } from '../core/maps';
@@ -30,8 +30,11 @@ import { SAVE_VERSION, isSaveData, type SaveData } from '../core/save';
 import {
   bonusMultiplier,
   describeUnlock,
+  GOAL_VILLAGE_LEVEL,
   isMapUnlocked,
   isZoneUnlocked,
+  jobSlotsAtLevel,
+  towerRangeBonus,
   levelForScore,
   levelProgress,
   nextThreshold,
@@ -491,6 +494,7 @@ export class Game {
       day: this.dayCount,
       level: this.level,
       seed: this.seed,
+      towerRangeBonus: towerRangeBonus(this.level),
     });
 
     if (events.started > 0) {
@@ -644,14 +648,16 @@ export class Game {
       if (!job) continue;
 
       const definition = jobDefinition(job);
+      // 생산 속도 보너스는 레벨에서 파생된다(ADR 0011의 규칙). 간격을 줄이는 방식이다.
+      const interval = definition.intervalMs / bonusMultiplier('production', this.level);
       const progress = (this.jobProgressMs.get(npc.id) ?? 0) + stepMs;
-      if (progress < definition.intervalMs) {
+      if (progress < interval) {
         this.jobProgressMs.set(npc.id, progress);
         continue;
       }
 
       // 남는 시간은 다음 몫으로 넘긴다. 프레임 길이에 생산량이 좌우되지 않게 한다.
-      this.jobProgressMs.set(npc.id, progress - definition.intervalMs);
+      this.jobProgressMs.set(npc.id, progress - interval);
 
       const added = this.storage.add(definition.produces, definition.amount);
       if (added > 0) {
@@ -663,12 +669,18 @@ export class Game {
     }
   }
 
+  /** 일터 한 채가 받는 자리 수. 마을 레벨에서 파생된다 — 저장하지 않는다. */
+  get slotsPerWorkplace(): number {
+    return jobSlotsAtLevel(this.level);
+  }
+
   /** 일터 자리 현황. HUD 표시에 쓴다. */
   get jobSlots(): { assigned: number; total: number } {
+    const perBuilding = this.slotsPerWorkplace;
     let total = 0;
     for (const building of this.buildings.all) {
       if (building.buildRemainingMs > 0) continue;
-      if (isWorkplace(building.blueprintId)) total += SLOTS_PER_WORKPLACE;
+      if (isWorkplace(building.blueprintId)) total += perBuilding;
     }
 
     return { assigned: this.population.employed, total };
@@ -695,7 +707,8 @@ export class Game {
     const label = jobDefinition(job).label;
 
     const working = this.population.workersAt(building.id);
-    if (working.length > 0) {
+    // 자리가 남아 있으면 더 넣고, 꽉 찼으면 한 명을 뺀다.
+    if (working.length >= this.slotsPerWorkplace) {
       const removed = this.population.unassign(building.id);
       if (removed) this.jobProgressMs.delete(removed.id);
       this.pendingNotices.push({ message: `${label}를 그만두었습니다`, tone: 'neutral', cue: 'job' });
@@ -705,7 +718,7 @@ export class Game {
 
     if (this.population.idleWorkers.length === 0) return { ok: false, reason: 'noWorker' };
 
-    const assigned = this.population.assign(building);
+    const assigned = this.population.assign(building, this.slotsPerWorkplace);
     if (!assigned) return { ok: false, reason: 'jobFull' };
 
     this.jobProgressMs.set(assigned.id, 0);
@@ -763,9 +776,9 @@ export class Game {
     return nextThreshold(this.level);
   }
 
-  /** MVP의 1차 목표 레벨. 상단에 상시 노출한다(기획서 6절). */
+  /** 1차 목표 레벨. 상단에 상시 노출한다(기획서 6절). 최대 레벨과는 다르다. */
   get goalLevel(): number {
-    return MAX_VILLAGE_LEVEL;
+    return GOAL_VILLAGE_LEVEL;
   }
 
   /**

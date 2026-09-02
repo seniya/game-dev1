@@ -219,12 +219,13 @@ export class Population {
    * 토스트와 아이콘)과 맞지 않는다. **가장 가까운 놀고 있는 주민**이 간다.
    *
    * @param building 일터 건물.
+   * @param slots 이 일터가 받는 자리 수. 마을 레벨에서 온다.
    * @returns 배정된 주민. 자리가 없거나 놀고 있는 주민이 없으면 null.
    */
-  assign(building: Building): Npc | null {
+  assign(building: Building, slots: number = SLOTS_PER_WORKPLACE): Npc | null {
     if (!isWorkplace(building.blueprintId)) return null;
     if (building.buildRemainingMs > 0) return null;
-    if (this.workersAt(building.id).length >= SLOTS_PER_WORKPLACE) return null;
+    if (this.workersAt(building.id).length >= slots) return null;
 
     let best: Npc | null = null;
     let bestDistance = Number.POSITIVE_INFINITY;

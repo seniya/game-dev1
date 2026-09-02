@@ -7,9 +7,19 @@ import { Zone, ZONE_ORDER } from './zones';
  * 최대 마을 레벨.
  *
  * MVP는 5까지였고(기획서 8절), 로드맵 02 Phase 6에서 기획서 6절이 예로 든
- * "마을 레벨 10 달성"까지 늘렸다.
+ * "마을 레벨 10 달성"까지 늘렸다. 로드맵 03 Phase 8이 20까지 잇는다 — 1차 목표(10)를
+ * 넘긴 뒤에도 마을을 키울 이유가 있어야 샌드박스가 된다(기획서 6절의 "엔딩 없이 지속 성장형").
  */
-export const MAX_VILLAGE_LEVEL = 10;
+export const MAX_VILLAGE_LEVEL = 20;
+
+/**
+ * 1차 목표 레벨.
+ *
+ * 기획서 6절이 "'마을 레벨 10 달성' 같은 명확한 1차 목표를 UI에 상시 노출"하라고 한다.
+ * 최대 레벨이 20이 된 뒤에도 **처음 잡는 목표는 10** 그대로다 — 20을 목표로 내걸면
+ * 첫 화면에서부터 멀게 느껴지고, 10을 넘긴 뒤의 열 레벨은 목표가 아니라 여운이다.
+ */
+export const GOAL_VILLAGE_LEVEL = 10;
 
 /**
  * 마을 레벨 산정에 들어가는 값들.
@@ -50,7 +60,15 @@ const WEIGHT = {
  * 전달되고, 뒤로 갈수록 한 번의 레벨업이 커야 목표로 느껴진다.
  * 수치는 Phase 9 밸런싱 대상이다.
  */
-export const LEVEL_THRESHOLDS: readonly number[] = [0, 8, 20, 38, 62, 90, 122, 158, 198, 242];
+export const LEVEL_THRESHOLDS: readonly number[] = [
+  0, 8, 20, 38, 62, 90, 122, 158, 198, 242,
+  // 11~20. 앞 구간의 간격(약 +40)을 조금씩 늘려 이어 붙인다. 후반이 급격히 길어지면
+  // 진행이 멈춘 것처럼 보이고, 평평하면 레벨업이 가벼워진다.
+  //
+  // 값은 자동 플레이로 맞췄다. 처음 잡은 곡선(20 = 1012)에서는 봇이 18.8분에 도달했는데,
+  // 봇 1분이 사람 8~12분이라 그것은 너무 길다. 20을 743으로 낮춰 봇 15분 안에 들어오게 했다.
+  286, 331, 377, 425, 475, 527, 581, 638, 698, 761,
+];
 
 /** 해금 한 항목. */
 export type Unlock =
@@ -68,7 +86,13 @@ export type Unlock =
   /** 채집이 빨라진다. 값은 배수다. */
   | { kind: 'harvest'; multiplier: number }
   /** 건물 외형이 하나 늘어난다. 규칙에는 영향이 없다. */
-  | { kind: 'look'; label: string };
+  | { kind: 'look'; label: string }
+  /** 일터 한 채가 받는 자리가 늘어난다. */
+  | { kind: 'jobSlot'; slots: number }
+  /** 망루가 세진다. */
+  | { kind: 'defense'; label: string }
+  /** 자동 생산이 빨라진다. 값은 배수다. */
+  | { kind: 'production'; multiplier: number };
 
 /**
  * 레벨별 해금 목록(블루프린트는 `BLUEPRINTS`의 `unlockLevel`에서 파생한다).
@@ -108,6 +132,20 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
     { kind: 'look', label: '황금 지붕' },
   ],
   10: [{ kind: 'speed', multiplier: 1.15 }],
+
+  // 레벨 11부터는 **1차 목표를 넘긴 마을**이다. ADR 0011이 "진짜 새로움은 로드맵 03이
+  // 맡는다"고 남긴 자리이며, 여기서는 이미 열린 시스템(일터·망루·외형)을 키운다.
+  // 새 자원이나 새 맵을 더 열지 않는 이유는 그것이 또 하나의 로드맵이기 때문이다.
+  11: [{ kind: 'jobSlot', slots: 1 }],
+  12: [{ kind: 'look', label: '붉은 지붕' }],
+  13: [{ kind: 'defense', label: '망루 사거리 +2' }],
+  14: [{ kind: 'inventory', slots: 2 }],
+  15: [{ kind: 'harvest', multiplier: 1.25 }],
+  16: [{ kind: 'jobSlot', slots: 1 }],
+  17: [{ kind: 'storage', slots: 8 }],
+  18: [{ kind: 'look', label: '검은 지붕' }],
+  19: [{ kind: 'speed', multiplier: 1.15 }],
+  20: [{ kind: 'production', multiplier: 1.5 }],
 };
 
 /**
@@ -308,6 +346,11 @@ export function describeUnlock(unlock: Unlock): string {
   }
   if (unlock.kind === 'map') return `${mapLabel(unlock.map)} 개방`;
   if (unlock.kind === 'look') return `${unlock.label} (V로 교체)`;
+  if (unlock.kind === 'jobSlot') return `일터 자리 +${unlock.slots}`;
+  if (unlock.kind === 'defense') return unlock.label;
+  if (unlock.kind === 'production') {
+    return `생산 속도 +${Math.round((unlock.multiplier - 1) * 100)}%`;
+  }
   if (unlock.kind === 'inventory') return `인벤토리 슬롯 +${unlock.slots}`;
   if (unlock.kind === 'storage') return `창고 슬롯 +${unlock.slots}`;
   if (unlock.kind === 'speed') return `이동 속도 +${Math.round((unlock.multiplier - 1) * 100)}%`;
@@ -326,7 +369,7 @@ export function describeUnlock(unlock: Unlock): string {
  * @param level 마을 레벨.
  * @returns 누적 배수. 해당 보너스가 없으면 1.
  */
-export function bonusMultiplier(kind: 'speed' | 'harvest', level: number): number {
+export function bonusMultiplier(kind: 'speed' | 'harvest' | 'production', level: number): number {
   let multiplier = 1;
 
   for (const [unlockLevel, unlocks] of Object.entries(LEVEL_UNLOCKS)) {
@@ -337,6 +380,47 @@ export function bonusMultiplier(kind: 'speed' | 'harvest', level: number): numbe
   }
 
   return multiplier;
+}
+
+/**
+ * 그 레벨의 일터 한 채가 받는 자리 수를 구한다.
+ *
+ * 후반에는 마을이 커져 주민이 남아돈다. 일터 종류를 더 늘리는 대신 한 채가 받는 사람을
+ * 늘리는 편이, 이미 지은 건물의 쓸모를 키우면서 새 콘텐츠를 만들지 않는 방법이다.
+ *
+ * @param level 마을 레벨.
+ * @returns 일터 한 채의 자리 수.
+ */
+export function jobSlotsAtLevel(level: number): number {
+  let slots = 1;
+
+  for (const [unlockLevel, unlocks] of Object.entries(LEVEL_UNLOCKS)) {
+    if (Number(unlockLevel) > level) continue;
+    for (const unlock of unlocks) {
+      if (unlock.kind === 'jobSlot') slots += unlock.slots;
+    }
+  }
+
+  return slots;
+}
+
+/**
+ * 그 레벨의 망루 사거리 보너스를 구한다.
+ *
+ * @param level 마을 레벨.
+ * @returns 늘어난 사거리(타일).
+ */
+export function towerRangeBonus(level: number): number {
+  let bonus = 0;
+
+  for (const [unlockLevel, unlocks] of Object.entries(LEVEL_UNLOCKS)) {
+    if (Number(unlockLevel) > level) continue;
+    for (const unlock of unlocks) {
+      if (unlock.kind === 'defense') bonus += 2;
+    }
+  }
+
+  return bonus;
 }
 
 /**

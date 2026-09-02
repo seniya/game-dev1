@@ -242,3 +242,63 @@ describe('Buildings 조회', () => {
     expect(buildings.adjacentCompleted({ x: 2, y: 3 }, BlueprintId.WAREHOUSE)).toBeUndefined();
   });
 });
+
+describe('문 앞 규칙', () => {
+  /**
+   * 평평한 지형과 건물 모음을 만든다.
+   *
+   * @param size 정사각 맵의 한 변 길이.
+   */
+  function setup(size = 9) {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+
+    return { terrain, buildings: new Buildings(terrain) };
+  }
+
+  /** 아무것도 막지 않는 자원 판정. */
+  const noNodes = { isBlocked: () => false };
+
+  it('이웃의 마지막 문 앞을 막는 배치를 거절한다', () => {
+    const { buildings } = setup();
+    const well = blueprintById(BlueprintId.WELL);
+    const fence = blueprintById(BlueprintId.FENCE);
+
+    // 1×1 우물을 놓고 사방을 울타리로 둘러싼다. 마지막 한 칸이 거절돼야 한다.
+    buildings.place(well, 4, 4, noNodes, true);
+    expect(buildings.place(fence, 3, 4, noNodes, true)).not.toBeNull();
+    expect(buildings.place(fence, 5, 4, noNodes, true)).not.toBeNull();
+    expect(buildings.place(fence, 4, 3, noNodes, true)).not.toBeNull();
+
+    const check = buildings.canPlace(fence, 4, 5, noNodes);
+
+    expect(check.ok).toBe(false);
+    expect(check.ok === false && check.reason).toBe('blocksDoor');
+  });
+
+  it('문 앞이 하나라도 남으면 놓을 수 있다', () => {
+    const { buildings } = setup();
+    const well = blueprintById(BlueprintId.WELL);
+    const fence = blueprintById(BlueprintId.FENCE);
+
+    buildings.place(well, 4, 4, noNodes, true);
+    buildings.place(fence, 3, 4, noNodes, true);
+    buildings.place(fence, 5, 4, noNodes, true);
+
+    expect(buildings.canPlace(fence, 4, 3, noNodes).ok).toBe(true);
+  });
+
+  it('울타리 자신은 문 앞을 따지지 않는다 — 막으라고 짓는 것이다', () => {
+    const { buildings } = setup();
+    const fence = blueprintById(BlueprintId.FENCE);
+
+    buildings.place(fence, 4, 4, noNodes, true);
+    buildings.place(fence, 3, 4, noNodes, true);
+    buildings.place(fence, 5, 4, noNodes, true);
+    buildings.place(fence, 4, 3, noNodes, true);
+
+    expect(buildings.canPlace(fence, 4, 5, noNodes).ok).toBe(true);
+  });
+});

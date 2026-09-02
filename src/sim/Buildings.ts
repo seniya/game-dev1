@@ -41,7 +41,9 @@ export type PlacementFailure =
   /** 자원 노드가 막고 있다. */
   | 'nodeInWay'
   /** 다른 건물과 겹친다. */
-  | 'overlaps';
+  | 'overlaps'
+  /** 이웃 건물의 문 앞을 막는다. */
+  | 'blocksDoor';
 
 /** 배치 가능 여부 판정 결과. */
 export type PlacementCheck = { ok: true } | { ok: false; reason: PlacementFailure };
@@ -280,7 +282,89 @@ export class Buildings {
       }
     }
 
+    if (this.sealsNeighbor(blueprint, x, y)) return { ok: false, reason: 'blocksDoor' };
+
     return { ok: true };
+  }
+
+  /**
+   * 이 배치가 이웃 건물의 마지막 문 앞을 막는지 확인한다.
+   *
+   * 집은 문 앞에 설 자리가 있어야 주민이 들어오고(`Population.findDoorstep`), 창고는
+   * 옆에 서야 자원을 맡길 수 있다. 자리를 아끼려고 건물을 빽빽하게 붙이면 **주민이
+   * 들어오지 못하는 집**과 **쓸 수 없는 창고**가 조용히 생긴다.
+   *
+   * 자동 플레이로 실제로 겪었다 — 어떤 시드에서 봇이 건물 217채를 지었는데 주민은
+   * 51명뿐이었다. 다른 시드에서는 138채에 134명이었다. 규칙으로 막는 편이 낫다.
+   *
+   * 새 배치에 닿는 이웃만 본다. 멀리 있는 건물은 이 배치로 막힐 수 없다.
+   *
+   * @param blueprint 놓으려는 블루프린트.
+   * @param x 점유 영역 좌상단 그리드 x.
+   * @param y 점유 영역 좌상단 그리드 y.
+   * @returns 이웃의 마지막 문 앞을 막으면 true.
+   */
+  private sealsNeighbor(blueprint: Blueprint, x: number, y: number): boolean {
+    /** 새 배치가 덮는 칸인지 확인한다. */
+    const covered = (tx: number, ty: number): boolean =>
+      tx >= x && tx < x + blueprint.width && ty >= y && ty < y + blueprint.depth;
+
+    const checked = new Set<number>();
+
+    for (let dy = 0; dy < blueprint.depth; dy += 1) {
+      for (let dx = 0; dx < blueprint.width; dx += 1) {
+        for (const step of DOOR_STEPS) {
+          const neighbor = this.buildingAt(x + dx + step.dx, y + dy + step.dy);
+          if (!neighbor || checked.has(neighbor.id)) continue;
+          checked.add(neighbor.id);
+
+          const need = blueprintById(neighbor.blueprintId);
+          // 문 앞이 필요한 건물만 본다 — 사람이 드나들거나(집) 손이 닿아야 하는 곳(창고·일터).
+          if (need.housing <= 0 && need.storageSlots <= 0 && !isWorkplaceLike(need)) continue;
+
+          if (!this.hasFreeDoorstep(neighbor, covered)) return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  /**
+   * 건물 둘레에 설 수 있는 칸이 남는지 확인한다.
+   *
+   * @param building 대상 건물.
+   * @param covered 새 배치가 덮을 칸을 알려주는 함수.
+   * @returns 한 칸이라도 남으면 true.
+   */
+  private hasFreeDoorstep(
+    building: Building,
+    covered: (x: number, y: number) => boolean,
+  ): boolean {
+    const blueprint = blueprintById(building.blueprintId);
+
+    for (let dy = -1; dy <= blueprint.depth; dy += 1) {
+      for (let dx = -1; dx <= blueprint.width; dx += 1) {
+        const inside = dx >= 0 && dy >= 0 && dx < blueprint.width && dy < blueprint.depth;
+        if (inside) continue;
+
+        // 모서리(대각선)는 문 앞이 아니다. 4방향 규약(ADR 0004)을 따른다.
+        const straight =
+          (dx === -1 || dx === blueprint.width) === !(dy === -1 || dy === blueprint.depth);
+        if (!straight) continue;
+
+        const tx = building.x + dx;
+        const ty = building.y + dy;
+        if (!this.terrain.contains(tx, ty)) continue;
+        if (covered(tx, ty)) continue;
+        if (this.isOccupied(tx, ty)) continue;
+        if (this.terrain.columnHeight(tx, ty) < 1) continue;
+
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -507,4 +591,26 @@ export class Buildings {
  */
 export function isFunctional(building: Building): boolean {
   return building.buildRemainingMs <= 0 && building.damage <= 0;
+}
+
+/** 문 앞을 살펴야 하는 이웃 방향. 4방향만 본다(ADR 0004). */
+const DOOR_STEPS = [
+  { dx: 1, dy: 0 },
+  { dx: -1, dy: 0 },
+  { dx: 0, dy: 1 },
+  { dx: 0, dy: -1 },
+] as const;
+
+/**
+ * 일터처럼 사람이 드나드는 건물인지 확인한다.
+ *
+ * `Buildings`는 직업 규칙을 모르므로 블루프린트 성격으로만 판단한다 — 주민도 창고도
+ * 아닌 시설(우물·작업대·대장간 등)도 사람이 다가가야 쓸 수 있다.
+ *
+ * @param blueprint 블루프린트.
+ * @returns 문 앞이 필요하면 true.
+ */
+function isWorkplaceLike(blueprint: Blueprint): boolean {
+  // 울타리는 막으라고 짓는 것이므로 문 앞을 따지지 않는다.
+  return blueprint.id !== BlueprintId.FENCE;
 }

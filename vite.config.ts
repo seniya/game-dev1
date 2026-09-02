@@ -20,5 +20,10 @@ export default defineConfig(({ command }) => ({
   test: {
     environment: 'node',
     include: ['test/**/*.test.ts'],
+    /*
+     * 통과 플레이는 마을 레벨 20까지 시뮬레이션을 돌리므로 기본 5초로는 모자란다.
+     * 이 테스트가 밸런스의 유일한 측정 수단이라 시간을 주고 돌린다.
+     */
+    testTimeout: 60_000,
   },
 }));

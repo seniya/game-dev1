@@ -103,7 +103,14 @@ export class Raid {
    */
   update(
     stepMs: number,
-    context: { night: boolean; day: number; level: number; seed: number },
+    context: {
+      night: boolean;
+      day: number;
+      level: number;
+      seed: number;
+      /** 마을 레벨로 늘어난 망루 사거리(타일). */
+      towerRangeBonus?: number;
+    },
   ): RaidEvents {
     if (!context.night) {
       // 해가 뜨면 남은 몬스터는 물러간다. 밤을 넘겨 쫓아다니게 두지 않는다.
@@ -118,7 +125,7 @@ export class Raid {
     if (this.raiders.length === 0) return started > 0 ? { ...NOTHING, started } : NOTHING;
 
     const damaged = this.advance(stepMs);
-    const defeated = this.fireTowers(stepMs);
+    const defeated = this.fireTowers(stepMs, context.towerRangeBonus ?? 0);
 
     return { started, damaged, defeated, ended: false };
   }
@@ -289,9 +296,10 @@ export class Raid {
    * 망루가 가까운 몬스터를 쫓는다.
    *
    * @param stepMs 스텝 길이(ms).
+   * @param rangeBonus 마을 레벨로 늘어난 사거리(타일).
    * @returns 이번 스텝에 물리친 마릿수.
    */
-  private fireTowers(stepMs: number): number {
+  private fireTowers(stepMs: number, rangeBonus: number): number {
     const towers: Building[] = [];
     for (const building of this.buildings.all) {
       if (!isFunctional(building)) continue;
@@ -313,7 +321,8 @@ export class Raid {
       const center = this.buildingCenter(tower);
       const victim = this.raiders.find(
         (monster) =>
-          Math.abs(monster.x - center.x) + Math.abs(monster.y - center.y) <= TOWER_RANGE,
+          Math.abs(monster.x - center.x) + Math.abs(monster.y - center.y) <=
+          TOWER_RANGE + rangeBonus,
       );
       if (!victim) continue;
 

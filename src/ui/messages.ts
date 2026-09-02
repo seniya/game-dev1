@@ -75,6 +75,8 @@ function describePlacement(placement?: PlacementFailure): string {
       return '나무나 광맥이 자리를 막고 있습니다';
     case 'overlaps':
       return '다른 건물과 겹칩니다';
+    case 'blocksDoor':
+      return '이웃 건물의 문 앞을 막습니다 — 한 칸 띄우세요';
     case 'outOfBounds':
       return '맵을 벗어납니다';
     default:

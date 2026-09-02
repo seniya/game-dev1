@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ToolKind, ToolTier } from '../src/core/tools';
 import {
+  GOAL_VILLAGE_LEVEL,
   LEVEL_THRESHOLDS,
   MAX_VILLAGE_LEVEL,
   bonusMultiplier,
@@ -10,7 +11,9 @@ import {
   levelForScore,
   levelProgress,
   nextThreshold,
+  jobSlotsAtLevel,
   toolTierAtLevel,
+  towerRangeBonus,
   unlockedZones,
   unlocksAtLevel,
   villageScore,
@@ -246,8 +249,42 @@ describe('편의 해금 (레벨 6~10)', () => {
     }
   });
 
-  it('최대 레벨은 10이고 임계값도 그만큼 있다', () => {
-    expect(MAX_VILLAGE_LEVEL).toBe(10);
-    expect(LEVEL_THRESHOLDS).toHaveLength(10);
+  it('최대 레벨과 임계값 개수가 맞는다', () => {
+    expect(MAX_VILLAGE_LEVEL).toBe(20);
+    expect(LEVEL_THRESHOLDS).toHaveLength(MAX_VILLAGE_LEVEL);
+  });
+});
+
+describe('후반 레벨(11~20)', () => {
+  it('1차 목표는 최대 레벨과 다르다 — 10을 넘긴 뒤의 열 레벨은 여운이다', () => {
+    expect(GOAL_VILLAGE_LEVEL).toBeLessThan(MAX_VILLAGE_LEVEL);
+  });
+
+  it('임계값 간격이 뒤로 갈수록 넓어진다', () => {
+    for (let level = 2; level < LEVEL_THRESHOLDS.length; level += 1) {
+      const gap = LEVEL_THRESHOLDS[level]! - LEVEL_THRESHOLDS[level - 1]!;
+      const previous = LEVEL_THRESHOLDS[level - 1]! - LEVEL_THRESHOLDS[level - 2]!;
+
+      expect(gap).toBeGreaterThanOrEqual(previous);
+    }
+  });
+
+  it('후반에도 레벨마다 열리는 것이 있다 — 숫자만 커지는 진행이 아니다', () => {
+    for (let level = 11; level <= MAX_VILLAGE_LEVEL; level += 1) {
+      expect(unlocksAtLevel(level).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('일터 자리가 후반에 늘어난다', () => {
+    expect(jobSlotsAtLevel(20)).toBeGreaterThan(jobSlotsAtLevel(10));
+  });
+
+  it('망루 사거리가 후반에 늘어난다', () => {
+    expect(towerRangeBonus(20)).toBeGreaterThan(towerRangeBonus(10));
+  });
+
+  it('생산 속도 보너스는 최대 레벨에서만 붙는다', () => {
+    expect(bonusMultiplier('production', 19)).toBe(1);
+    expect(bonusMultiplier('production', 20)).toBeGreaterThan(1);
   });
 });
