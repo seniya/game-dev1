@@ -208,10 +208,36 @@ describe('자동 생산', () => {
     return game;
   }
 
-  it('낮 동안 창고에 자원이 쌓인다', () => {
+  it('낮 동안 창고에 자원이 쌓인다 — 다만 일터에 닿은 뒤부터다', () => {
     const game = withCarpenter();
     const before = game.storage.count(ItemType.WOOD);
 
+    // 출퇴근 시간이 있다. 배정만으로 곧바로 생산되지 않는다(로드맵 05 Phase 4).
+    advance(game, jobDefinition(JobKind.CARPENTER).intervalMs * 3);
+
+    expect(game.storage.count(ItemType.WOOD)).toBeGreaterThan(before);
+  });
+
+  it('일터에 닿기 전에는 생산하지 않는다 — 밖을 걷는 사람이 자원을 낼 수는 없다', () => {
+    const game = withCarpenter();
+    const worker = game.population.all.find((npc) => npc.jobBuildingId !== null)!;
+    const before = game.storage.count(ItemType.WOOD);
+
+    // 막 배정된 주민은 집에 있다. 걸어가는 동안에는 아무것도 나오지 않는다.
+    expect(Math.abs(worker.position.x - 8) + Math.abs(worker.position.y - 8)).toBeGreaterThan(2);
+    advance(game, 1500);
+
+    expect(game.storage.count(ItemType.WOOD)).toBe(before);
+  });
+
+  it('닿은 뒤에는 그 자리에서 계속 낸다', () => {
+    const game = withCarpenter();
+    // 출퇴근을 마칠 만큼 흘린 뒤부터 잰다.
+    advance(game, 12_000);
+    const worker = game.population.all.find((npc) => npc.jobBuildingId !== null)!;
+    expect(Math.abs(worker.position.x - 8) + Math.abs(worker.position.y - 8)).toBeLessThanOrEqual(2);
+
+    const before = game.storage.count(ItemType.WOOD);
     advance(game, jobDefinition(JobKind.CARPENTER).intervalMs * 2);
 
     expect(game.storage.count(ItemType.WOOD)).toBeGreaterThan(before);

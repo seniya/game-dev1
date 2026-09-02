@@ -703,6 +703,13 @@ export class Game {
       const job = jobForWorkplace(building.blueprintId);
       if (!job) continue;
 
+      // **일터에 닿아야 일한다**(로드맵 05 Phase 4). 배정만 하면 걸어가는 도중에도
+      // 생산되던 것은 ADR 0016이 경로 탐색을 피하려고 감수한 것이었다. 지붕을 걷어낸
+      // 뒤로는 그것이 눈에 보이는 어긋남이 됐다 — 밖을 걷는 사람이 자원을 낸다.
+      //
+      // 진행도는 초기화하지 않는다. 출퇴근으로 두 번 벌하지 않는다.
+      if (!atWorkplace(npc.position, building)) continue;
+
       const definition = jobDefinition(job);
       // 생산 속도 보너스는 레벨에서 파생된다(ADR 0011의 규칙). 간격을 줄이는 방식이다.
       const interval = definition.intervalMs / bonusMultiplier('production', this.level);
@@ -1937,6 +1944,28 @@ function findStartTile(terrain: Terrain, resources: ResourceField): TilePos {
   }
 
   return center;
+}
+
+/**
+ * 주민이 일터에 닿았는지 본다.
+ *
+ * 점유 영역과 그 바로 옆까지를 "일터에 있다"로 본다 — 1×1 작업대는 안에 서면 한 칸이
+ * 전부이고, 배회 반경이 1이라 옆칸으로 한 걸음 나갔다 돌아오는 것이 정상이다. 그 한
+ * 걸음마다 생산이 끊기면 값이 흔들린다.
+ *
+ * @param at 주민이 선 칸.
+ * @param building 일터 건물.
+ * @returns 닿았으면 true.
+ */
+function atWorkplace(at: TilePos, building: Building): boolean {
+  const blueprint = blueprintById(building.blueprintId);
+
+  return (
+    at.x >= building.x - 1 &&
+    at.x <= building.x + blueprint.width &&
+    at.y >= building.y - 1 &&
+    at.y <= building.y + blueprint.depth
+  );
 }
 
 /**

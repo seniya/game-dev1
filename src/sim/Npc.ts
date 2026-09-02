@@ -5,9 +5,18 @@ import type { Terrain } from '../core/Terrain';
 /** NPC 한 칸 이동에 걸리는 시간(ms). 플레이어보다 느긋하게 걷는다. */
 export const NPC_MOVE_DURATION_MS = 420;
 
-/** 이동 사이에 머무는 최소·최대 시간(ms). */
+/** 이동 사이에 머무는 최소·최대 시간(ms). 기준점 근처를 어슬렁거릴 때 쓴다. */
 const IDLE_MIN_MS = 900;
 const IDLE_MAX_MS = 2600;
+
+/**
+ * 기준점이 멀 때 걸음 사이에 머무는 시간(ms).
+ *
+ * 어슬렁거리는 간격(0.9~2.6초)으로 출퇴근하면 열두 칸에 40초가 걸린다 — 하루가 4분인데
+ * 그 절반을 길에서 보내는 셈이다(로드맵 05 Phase 4에서 재고 고쳤다). 갈 길이 멀면
+ * 발걸음을 재게 한다. 도착해서 어슬렁거리는 모습은 그대로 남는다.
+ */
+const COMMUTE_IDLE_MS = 120;
 
 /** 기준점에서 벗어날 수 있는 기본 거리(타일). 마을 안에 머물게 한다. */
 export const WANDER_RADIUS = 6;
@@ -229,6 +238,9 @@ export class Npc {
    * @returns 대기 시간(ms).
    */
   private pickIdleTime(): number {
+    // 기준점에서 멀면 출퇴근 중이다. 가까우면 어슬렁거리는 중이다.
+    if (this.distanceFromAnchor(this.tile) > this.anchorRadius) return COMMUTE_IDLE_MS;
+
     return IDLE_MIN_MS + this.roll() * (IDLE_MAX_MS - IDLE_MIN_MS);
   }
 
