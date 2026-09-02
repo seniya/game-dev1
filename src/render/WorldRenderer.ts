@@ -28,6 +28,22 @@ export type Entity =
 /** 건물 외형 종류. 블루프린트가 이 값으로 자기 모습을 지정한다. */
 export type BuildingStyle = 'house' | 'bigHouse' | 'warehouse' | 'well' | 'workbench';
 
+/**
+ * 지형 위에 얹는 구역 표시.
+ *
+ * 렌더러는 구역이 무엇인지 모른다. "이 칸이 잠겼는가"만 물어보고, 잠긴 칸을 어둡게
+ * 칠하고 잠금이 바뀌는 경계에 선을 긋는다. 규칙(어디가 왜 잠겼는지)은 `Game`의 몫이다.
+ */
+export interface ZoneOverlay {
+  /**
+   * 그 칸이 잠겨 있는지 확인한다.
+   *
+   * @param x 그리드 x.
+   * @param y 그리드 y.
+   */
+  locked(x: number, y: number): boolean;
+}
+
 /** 건축 모드의 반투명 미리보기. */
 export interface GhostPreview {
   /** 점유 영역 좌상단 그리드 x. */
@@ -40,6 +56,8 @@ export interface GhostPreview {
   depth: number;
   /** 여기 지어도 되는지. 색으로 구분한다. */
   valid: boolean;
+  /** 무엇을 짓는지. 커서 옆에 띄운다. */
+  label?: string;
 }
 
 /** 이번 프레임에 실제로 그린 양. 컬링과 면 생략이 동작하는지 확인하는 용도다. */
@@ -57,6 +75,12 @@ export interface RenderStats {
 const TILE_STROKE = 'rgba(0, 0, 0, 0.25)';
 const HOVER_FILL = 'rgba(255, 236, 150, 0.35)';
 const HOVER_STROKE = '#ffe98a';
+
+/** 잠긴 구역을 덮는 색. 지형이 보이되 손댈 수 없음이 읽혀야 한다. */
+const ZONE_LOCKED_FILL = 'rgba(20, 26, 40, 0.35)';
+
+/** 구역 경계선 색. */
+const ZONE_EDGE = 'rgba(150, 180, 240, 0.55)';
 
 /** 이 확대율보다 작아지면 타일 외곽선을 생략한다 — 선이 뭉쳐 지저분해진다. */
 const OUTLINE_MIN_ZOOM = 0.6;
@@ -166,6 +190,7 @@ export class WorldRenderer {
     entities: readonly Entity[] = [],
     ghost: GhostPreview | null = null,
     timeMs = 0,
+    zones: ZoneOverlay | null = null,
   ): RenderStats {
     this.timeMs = timeMs;
     const range = this.camera.visibleTileRange();
@@ -216,13 +241,21 @@ export class WorldRenderer {
         this.drawTop(x, y, screen, halfWidth, halfHeight, drawOutline);
         stats.drawnColumns += 1;
 
+        if (zones) this.drawZoneMark(zones, x, y, screen, halfWidth, halfHeight);
+
         // 하이라이트는 이 열을 그린 직후에 얹는다. 앞쪽 열은 나중에 그려지므로
         // 가려야 할 부분을 정상적으로 덮는다.
         if (hovered && hovered.x === x && hovered.y === y) {
           this.drawHighlight(screen, halfWidth, halfHeight);
         }
 
-        if (ghost) this.drawGhostTile(ghost, x, y, screen, halfWidth, halfHeight);
+        if (ghost) {
+          this.drawGhostTile(ghost, x, y, screen, halfWidth, halfHeight);
+          // 이름은 점유 영역의 기준 칸에서 한 번만 그린다.
+          if (ghost.label && x === ghost.x && y === ghost.y) {
+            this.drawGhostLabel(ghost.label, screen, halfHeight, zoom);
+          }
+        }
 
         // 이 칸에 놓인 오브젝트를 그린다. 같은 칸에 여럿 있을 수 있다.
         while (
@@ -793,6 +826,56 @@ export class WorldRenderer {
   }
 
   /**
+   * 잠긴 구역을 표시한다.
+   *
+   * 잠긴 칸은 어둡게 덮고, 잠금이 바뀌는 변에는 선을 긋는다. ADR 0007이 "구역 잠금이
+   * 규칙이라 화면만 봐서는 경계가 보이지 않는다"를 감수 사항으로 남겨 뒀는데, 이것이
+   * 그 답이다.
+   *
+   * @param zones 구역 표시 제공자.
+   * @param x 그리드 x.
+   * @param y 그리드 y.
+   * @param screen 윗면 중심의 화면 좌표.
+   * @param halfWidth 마름모 반폭(px).
+   * @param halfHeight 마름모 반높이(px).
+   */
+  private drawZoneMark(
+    zones: ZoneOverlay,
+    x: number,
+    y: number,
+    screen: { x: number; y: number },
+    halfWidth: number,
+    halfHeight: number,
+  ): void {
+    const locked = zones.locked(x, y);
+
+    if (locked) {
+      this.traceDiamond(screen.x, screen.y, halfWidth, halfHeight);
+      this.ctx.fillStyle = ZONE_LOCKED_FILL;
+      this.ctx.fill();
+    }
+
+    // 경계선은 잠금이 바뀌는 쪽에만 긋는다. 양쪽에서 그으면 선이 두 번 겹친다.
+    this.ctx.strokeStyle = ZONE_EDGE;
+    this.ctx.lineWidth = 2;
+
+    if (zones.locked(x + 1, y) !== locked) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(screen.x + halfWidth, screen.y);
+      this.ctx.lineTo(screen.x, screen.y + halfHeight);
+      this.ctx.stroke();
+    }
+    if (zones.locked(x, y + 1) !== locked) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(screen.x, screen.y + halfHeight);
+      this.ctx.lineTo(screen.x - halfWidth, screen.y);
+      this.ctx.stroke();
+    }
+
+    this.ctx.lineWidth = 1;
+  }
+
+  /**
    * 건축 미리보기의 한 칸을 그린다. 점유 영역에 속한 칸만 칠한다.
    *
    * @param ghost 미리보기 정보.
@@ -820,6 +903,37 @@ export class WorldRenderer {
     this.ctx.lineWidth = 2;
     this.ctx.stroke();
     this.ctx.lineWidth = 1;
+  }
+
+  /**
+   * 미리보기 이름을 커서 위에 띄운다.
+   *
+   * 하단 패널에도 같은 정보가 있지만, 배치하는 동안 시선은 커서에 있다. 무엇을 놓는지
+   * 확인하려고 시선을 옮겨야 하면 배치가 번거로워진다.
+   *
+   * @param label 표시할 이름.
+   * @param screen 기준 칸 윗면 중심의 화면 좌표.
+   * @param halfHeight 마름모 반높이(px).
+   * @param zoom 확대율.
+   */
+  private drawGhostLabel(
+    label: string,
+    screen: { x: number; y: number },
+    halfHeight: number,
+    zoom: number,
+  ): void {
+    const y = screen.y - halfHeight - 10 * zoom;
+
+    this.ctx.font = `${Math.max(11, 12 * zoom)}px ui-monospace, monospace`;
+    this.ctx.textAlign = 'center';
+    this.ctx.lineWidth = 3;
+    this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+    this.ctx.strokeText(label, screen.x, y);
+    this.ctx.fillStyle = '#f0f3f6';
+    this.ctx.fillText(label, screen.x, y);
+
+    this.ctx.lineWidth = 1;
+    this.ctx.textAlign = 'left';
   }
 
   /**

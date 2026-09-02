@@ -78,6 +78,27 @@ class RecordingContext {
   /** 배경 클리어용과 게이지용. 도형 기록에는 넣지 않는다. */
   fillRect(): void {}
 
+  /** 그린 글자 기록. */
+  readonly texts: Array<{ text: string; x: number; y: number }> = [];
+
+  /** 글자 설정. 기록에는 쓰지 않는다. */
+  font = '';
+  textAlign = 'left';
+
+  /**
+   * 글자를 채운다.
+   *
+   * @param text 글자.
+   * @param x x.
+   * @param y y.
+   */
+  fillText(text: string, x: number, y: number): void {
+    this.texts.push({ text, x, y });
+  }
+
+  /** 글자 외곽선. 기록하지 않는다. */
+  strokeText(): void {}
+
   /** 그린 이미지 기록. 스프라이트 경로를 검증할 때 쓴다. */
   readonly images: Array<{ id: string; x: number; y: number; w: number; h: number }> = [];
 
@@ -689,5 +710,76 @@ describe('WorldRenderer 건축 먼지', () => {
     renderer.render(null, [done], null, 5000);
 
     expect(JSON.stringify(ctx.dots.map((dot) => [dot.x, dot.y]))).toBe(before);
+  });
+});
+
+describe('WorldRenderer 구역 표시', () => {
+  /** 특정 칸들만 잠긴 구역으로 보는 제공자. */
+  const lockedBeyond = (limit: number) => ({ locked: (x: number) => x > limit });
+
+  it('구역 제공자가 없으면 아무것도 더 그리지 않는다', () => {
+    const { ctx, renderer } = setup(flat(5, 1));
+
+    renderer.render(null);
+    const plain = ctx.paths.length;
+
+    ctx.paths.length = 0;
+    renderer.render(null, [], null, 0, null);
+
+    expect(ctx.paths.length).toBe(plain);
+  });
+
+  it('잠긴 칸을 덮는다', () => {
+    const { ctx, renderer } = setup(flat(5, 1));
+
+    renderer.render(null, [], null, 0, lockedBeyond(2));
+
+    const covers = ctx.paths.filter((path) => path.fillStyle === 'rgba(20, 26, 40, 0.35)');
+    // x가 3, 4인 칸 = 5×2 = 10칸.
+    expect(covers).toHaveLength(10);
+  });
+
+  it('전부 열려 있으면 덮지 않는다', () => {
+    const { ctx, renderer } = setup(flat(5, 1));
+
+    renderer.render(null, [], null, 0, { locked: () => false });
+
+    expect(ctx.paths.some((path) => path.fillStyle === 'rgba(20, 26, 40, 0.35)')).toBe(false);
+  });
+
+  it('잠금이 바뀌는 변에 경계선을 긋는다', () => {
+    const { ctx, renderer } = setup(flat(5, 1));
+
+    renderer.render(null, [], null, 0, lockedBeyond(2));
+
+    const edges = ctx.strokes.filter((stroke) => stroke.strokeStyle === 'rgba(150, 180, 240, 0.55)');
+    // x=2에서 x=3으로 넘어가는 변이 y마다 하나씩 = 5개.
+    expect(edges).toHaveLength(5);
+  });
+
+  it('경계가 없으면 선도 없다', () => {
+    const { ctx, renderer } = setup(flat(5, 1));
+
+    renderer.render(null, [], null, 0, { locked: () => true });
+
+    expect(ctx.strokes.some((stroke) => stroke.strokeStyle === 'rgba(150, 180, 240, 0.55)')).toBe(false);
+  });
+});
+
+describe('WorldRenderer 미리보기 이름', () => {
+  it('이름이 있으면 기준 칸에서 한 번만 그린다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [], { x: 2, y: 2, width: 2, depth: 2, valid: true, label: '작은 집' });
+
+    expect(ctx.texts.filter((text) => text.text === '작은 집')).toHaveLength(1);
+  });
+
+  it('이름이 없으면 그리지 않는다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [], { x: 2, y: 2, width: 2, depth: 2, valid: true });
+
+    expect(ctx.texts).toHaveLength(0);
   });
 });

@@ -2,6 +2,8 @@ import {
   LAYER_HEIGHT,
   MAX_LAYERS,
   TILE_HEIGHT,
+  TILE_WIDTH,
+  gridToWorld,
   worldToGrid,
   type WorldPos,
 } from '../core/coordinates';
@@ -49,6 +51,14 @@ export class Camera {
   private viewportWidth = 1;
   private viewportHeight = 1;
 
+  /**
+   * 카메라 중심이 머물 수 있는 월드 영역. null이면 제한하지 않는다.
+   *
+   * 제한이 없으면 드래그로 맵에서 한없이 멀어져 검은 화면만 남는다 — 되돌아올 단서가
+   * 없어 사실상 길을 잃는다.
+   */
+  private bounds: WorldBounds | null = null;
+
   /** 현재 확대율. */
   get zoom(): number {
     return this.scale;
@@ -68,6 +78,23 @@ export class Camera {
   setViewport(width: number, height: number): void {
     this.viewportWidth = Math.max(1, width);
     this.viewportHeight = Math.max(1, height);
+    // 창 크기가 바뀌면 보이는 영역도 바뀌므로 범위를 다시 적용한다.
+    this.applyBounds();
+  }
+
+  /**
+   * 카메라 중심이 머물 수 있는 범위를 정한다.
+   *
+   * @param bounds 월드 영역. null이면 제한을 없앤다.
+   */
+  setBounds(bounds: WorldBounds | null): void {
+    this.bounds = bounds;
+    this.applyBounds();
+  }
+
+  /** 지금 걸려 있는 범위. 없으면 null. */
+  get limits(): WorldBounds | null {
+    return this.bounds;
   }
 
   /**
@@ -79,6 +106,33 @@ export class Camera {
   lookAt(worldX: number, worldY: number): void {
     this.centerX = worldX;
     this.centerY = worldY;
+    this.applyBounds();
+  }
+
+  /**
+   * 중심을 허용 범위 안으로 되돌린다.
+   *
+   * 단순히 중심 좌표만 자르면 축소했을 때 맵이 화면 구석으로 밀린다 — 보이는 영역이
+   * 맵보다 커지기 때문이다. 그래서 **보이는 영역**을 기준으로 자른다.
+   *
+   * - 맵이 화면보다 크면: 화면이 맵 밖을 넘지 않도록 중심을 제한한다.
+   * - 맵이 화면보다 작으면: 팬할 여지가 없으므로 맵 가운데에 고정한다.
+   */
+  private applyBounds(): void {
+    if (!this.bounds) return;
+
+    const halfW = this.viewportWidth / 2 / this.scale;
+    const halfH = this.viewportHeight / 2 / this.scale;
+
+    const spanX = this.bounds.right - this.bounds.left;
+    const spanY = this.bounds.bottom - this.bounds.top;
+    const midX = (this.bounds.left + this.bounds.right) / 2;
+    const midY = (this.bounds.top + this.bounds.bottom) / 2;
+
+    this.centerX =
+      spanX <= halfW * 2 ? midX : clamp(this.centerX, this.bounds.left + halfW, this.bounds.right - halfW);
+    this.centerY =
+      spanY <= halfH * 2 ? midY : clamp(this.centerY, this.bounds.top + halfH, this.bounds.bottom - halfH);
   }
 
   /**
@@ -108,6 +162,7 @@ export class Camera {
     const ratio = Math.max(0, Math.min(1, factor));
     this.centerX += (worldX - this.centerX) * ratio;
     this.centerY += (worldY - this.centerY) * ratio;
+    this.applyBounds();
   }
 
   /**
@@ -150,6 +205,7 @@ export class Camera {
     // 커서를 오른쪽으로 끌면 화면 내용도 오른쪽으로 따라와야 하므로 카메라는 왼쪽으로 간다.
     this.centerX -= screenDeltaX / this.scale;
     this.centerY -= screenDeltaY / this.scale;
+    this.applyBounds();
   }
 
   /**
@@ -170,6 +226,7 @@ export class Camera {
     // 줌 때문에 커서 아래 월드 지점이 밀린 만큼 카메라를 되돌린다.
     this.centerX += before.x - after.x;
     this.centerY += before.y - after.y;
+    this.applyBounds();
   }
 
   /** 현재 화면에 보이는 월드 영역. */
@@ -246,4 +303,31 @@ export class Camera {
  */
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * 맵 전체를 감싸는 카메라 이동 범위를 계산한다.
+ *
+ * 맵 네 모서리를 월드 좌표로 옮긴 뒤 여유를 둔다. 여유가 없으면 가장자리 타일이 화면
+ * 끝에 딱 붙어 무엇이 있는지 보기 어렵다.
+ *
+ * @param width 맵 가로 타일 수.
+ * @param height 맵 세로 타일 수.
+ * @param margin 여유(px).
+ * @returns 카메라 중심이 머물 수 있는 영역.
+ */
+export function boundsForMap(width: number, height: number, margin = TILE_WIDTH * 2): WorldBounds {
+  const corners = [
+    gridToWorld(0, 0, 0),
+    gridToWorld(width - 1, 0, 0),
+    gridToWorld(0, height - 1, 0),
+    gridToWorld(width - 1, height - 1, 0),
+  ];
+
+  return {
+    left: Math.min(...corners.map((corner) => corner.x)) - margin,
+    right: Math.max(...corners.map((corner) => corner.x)) + margin,
+    top: Math.min(...corners.map((corner) => corner.y)) - margin,
+    bottom: Math.max(...corners.map((corner) => corner.y)) + margin,
+  };
 }

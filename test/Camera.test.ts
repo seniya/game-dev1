@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_ZOOM, MIN_ZOOM, Camera } from '../src/render/Camera';
+import { MAX_ZOOM, MIN_ZOOM, Camera, boundsForMap } from '../src/render/Camera';
 import { TILE_HEIGHT, TILE_WIDTH, gridToWorld } from '../src/core/coordinates';
 
 /**
@@ -301,5 +301,112 @@ describe('Camera.moveToward', () => {
     camera.moveToward(0, Number.POSITIVE_INFINITY, 0.5);
 
     expect(camera.center).toEqual({ x: 5, y: 5 });
+  });
+});
+
+describe('Camera 이동 범위', () => {
+  it('맵이 화면보다 크면 화면이 맵 밖을 넘지 않는다', () => {
+    const camera = makeCamera(800, 600);
+    camera.setBounds({ left: -2000, right: 2000, top: -2000, bottom: 2000 });
+
+    camera.lookAt(9999, 9999);
+
+    // 화면 절반(400, 300)만큼 안쪽까지만 갈 수 있다.
+    expect(camera.center).toEqual({ x: 1600, y: 1700 });
+  });
+
+  it('맵이 화면보다 작으면 가운데에 고정된다 — 축소해도 구석으로 밀리지 않는다', () => {
+    const camera = makeCamera(800, 600);
+    camera.setBounds({ left: -100, right: 100, top: -50, bottom: 50 });
+
+    camera.lookAt(500, 500);
+
+    expect(camera.center).toEqual({ x: 0, y: 0 });
+  });
+
+  it('팬으로도 범위를 벗어나지 않는다', () => {
+    const camera = makeCamera(400, 300);
+    camera.setBounds({ left: -2000, right: 2000, top: -2000, bottom: 2000 });
+
+    camera.panByScreen(-50_000, -50_000);
+
+    expect(camera.center.x).toBe(2000 - 200);
+    expect(camera.center.y).toBe(2000 - 150);
+  });
+
+  it('줌으로도 범위를 벗어나지 않는다', () => {
+    const camera = makeCamera(400, 300);
+    camera.setBounds({ left: -2000, right: 2000, top: -2000, bottom: 2000 });
+    camera.lookAt(1800, 1800);
+
+    for (let i = 0; i < 20; i += 1) camera.zoomAt(0, 0, 1.3);
+
+    const limits = camera.limits!;
+    expect(camera.center.x).toBeLessThanOrEqual(limits.right);
+    expect(camera.center.y).toBeLessThanOrEqual(limits.bottom);
+  });
+
+  it('추적도 범위 안에서만 움직인다', () => {
+    const camera = makeCamera(400, 300);
+    camera.setBounds({ left: -2000, right: 2000, top: -2000, bottom: 2000 });
+
+    for (let i = 0; i < 200; i += 1) camera.moveToward(50_000, 50_000, 0.5);
+
+    expect(camera.center.x).toBeCloseTo(1800, 6);
+    expect(camera.center.y).toBeCloseTo(1850, 6);
+  });
+
+  it('범위를 정하는 순간 이미 밖에 있으면 안으로 되돌린다', () => {
+    const camera = makeCamera(400, 300);
+    camera.lookAt(9999, 9999);
+
+    camera.setBounds({ left: -2000, right: 2000, top: -2000, bottom: 2000 });
+
+    expect(camera.center.x).toBe(1800);
+    expect(camera.center.y).toBe(1850);
+  });
+
+  it('축소해 맵이 화면에 다 들어오면 팬해도 움직이지 않는다', () => {
+    const camera = makeCamera(800, 600);
+    camera.setBounds(boundsForMap(8, 8, 0));
+
+    camera.setZoom(0.4);
+    camera.panByScreen(400, 400);
+
+    const before = camera.center;
+    camera.panByScreen(-800, -800);
+
+    expect(camera.center).toEqual(before);
+  });
+
+  it('범위를 없애면 다시 자유롭게 움직인다', () => {
+    const camera = makeCamera();
+    camera.setBounds({ left: 0, right: 10, top: 0, bottom: 10 });
+
+    camera.setBounds(null);
+    camera.lookAt(500, 500);
+
+    expect(camera.center).toEqual({ x: 500, y: 500 });
+    expect(camera.limits).toBeNull();
+  });
+
+  it('맵 범위는 네 모서리를 모두 감싼다', () => {
+    const bounds = boundsForMap(32, 32, 0);
+
+    const corners = [gridToWorld(0, 0, 0), gridToWorld(31, 0, 0), gridToWorld(0, 31, 0), gridToWorld(31, 31, 0)];
+    for (const corner of corners) {
+      expect(corner.x).toBeGreaterThanOrEqual(bounds.left);
+      expect(corner.x).toBeLessThanOrEqual(bounds.right);
+      expect(corner.y).toBeGreaterThanOrEqual(bounds.top);
+      expect(corner.y).toBeLessThanOrEqual(bounds.bottom);
+    }
+  });
+
+  it('맵 범위에는 여유가 들어간다 — 가장자리가 화면 끝에 붙지 않게', () => {
+    const tight = boundsForMap(16, 16, 0);
+    const loose = boundsForMap(16, 16, 100);
+
+    expect(loose.left).toBeLessThan(tight.left);
+    expect(loose.right).toBeGreaterThan(tight.right);
   });
 });

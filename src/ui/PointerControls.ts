@@ -72,6 +72,21 @@ export class PointerControls {
   }
 
   /**
+   * 주 버튼을 누른 채 거의 움직이지 않고 있는 칸.
+   *
+   * 연속 채집에 쓴다. 누를 때마다 클릭하지 않아도 되도록, 게임 루프가 이 값을 보고
+   * 반복해서 행동한다 — 실제 반복 속도는 휘두르기 쿨다운이 정한다.
+   *
+   * 움직이기 시작하면(팬) null이 된다. 그래야 시야를 옮기다가 땅이 파이지 않는다.
+   */
+  get heldTile(): TileRef | null {
+    if (this.pressButton !== 'primary') return null;
+    if (this.dragDistance > CLICK_SLOP_PX) return null;
+
+    return this.hoveredTile;
+  }
+
+  /**
    * 타일 클릭 콜백을 등록한다. 드래그로 판정된 조작은 클릭으로 보지 않는다.
    *
    * @param handler 클릭된 타일과 버튼 종류를 받는 콜백.

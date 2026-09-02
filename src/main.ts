@@ -7,7 +7,7 @@ import { itemColor, itemLabel } from './core/items';
 import { zoneAt } from './core/zones';
 import { ResourceField } from './sim/ResourceField';
 import { CanvasRenderer } from './render/CanvasRenderer';
-import { Camera } from './render/Camera';
+import { Camera, boundsForMap } from './render/Camera';
 import { WorldRenderer } from './render/WorldRenderer';
 import { createSpriteSet } from './render/sprites';
 import { GameLoop } from './sim/GameLoop';
@@ -102,6 +102,8 @@ function bootstrap(): void {
   const camera = new Camera();
   camera.setViewport(surface.size.width, surface.size.height);
   camera.setZoom(INITIAL_ZOOM);
+  // 맵 밖으로 한없이 나가면 검은 화면만 남고 되돌아올 단서가 없다.
+  camera.setBounds(boundsForMap(terrain.width, terrain.height));
   const world = new WorldRenderer(surface.context, camera, terrain);
   // 스프라이트를 만들 수 없는 환경이면 null이 오고, 렌더러는 도형으로 그린다.
   world.setSprites(createSpriteSet());
@@ -345,6 +347,14 @@ function bootstrap(): void {
         const intent = keyboard.moveIntent;
         if (intent && game.movePlayer(intent.dx, intent.dy)) followPlayer = true;
 
+        // 연속 채집: 버튼을 누르고 있으면 이어서 때린다. 반복 속도는 휘두르기 쿨다운이
+        // 정하므로 별도 타이머가 필요 없다. 건축 모드에서는 하지 않는다 — 누르고 있는
+        // 동안 건물이 줄줄이 세워지면 자재가 순식간에 사라진다.
+        if (!game.buildMode && game.player.idle) {
+          const held = pointer.heldTile ?? (keyboard.actionHeld ? pointer.hovered : null);
+          if (held) report(game.actAt(held), held);
+        }
+
         game.update(stepMs);
         toasts.update(stepMs);
         effects.update(stepMs);
@@ -373,7 +383,9 @@ function bootstrap(): void {
 
         const hovered = pointer.hovered;
         // 건축 먼지처럼 시간에 따라 움직이는 연출을 위해 시뮬레이션 시각을 넘긴다.
-        const stats = world.render(hovered, game.entities(), game.ghost(hovered), state.elapsedMs);
+        const stats = world.render(hovered, game.entities(), game.ghost(hovered), state.elapsedMs, {
+          locked: (x, y) => game.isZoneLocked(x, y),
+        });
         // 파편과 글자는 지형·오브젝트를 모두 그린 뒤에 얹는다.
         effects.draw(surface.context, camera);
 

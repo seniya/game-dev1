@@ -611,7 +611,21 @@ export class Game {
       width: this.selectedBlueprint.width,
       depth: this.selectedBlueprint.depth,
       valid: check.ok && this.missingMaterials(this.selectedBlueprint).length === 0,
+      label: this.selectedBlueprint.label,
     };
+  }
+
+  /**
+   * 그 칸이 잠긴 구역인지 확인한다. 화면 표시에 쓴다.
+   *
+   * @param x 그리드 x.
+   * @param y 그리드 y.
+   * @returns 잠겨 있으면 true.
+   */
+  isZoneLocked(x: number, y: number): boolean {
+    if (!this.terrain.contains(x, y)) return false;
+
+    return !isZoneUnlocked(zoneAt(this.terrain, x, y), this.level);
   }
 
   /**
