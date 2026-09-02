@@ -78,6 +78,22 @@ class RecordingContext {
   /** 배경 클리어용과 게이지용. 도형 기록에는 넣지 않는다. */
   fillRect(): void {}
 
+  /** 그린 이미지 기록. 스프라이트 경로를 검증할 때 쓴다. */
+  readonly images: Array<{ id: string; x: number; y: number; w: number; h: number }> = [];
+
+  /**
+   * 이미지를 그린다.
+   *
+   * @param image 이미지(테스트에서는 식별용 객체).
+   * @param x 목적지 x.
+   * @param y 목적지 y.
+   * @param w 목적지 폭.
+   * @param h 목적지 높이.
+   */
+  drawImage(image: unknown, x: number, y: number, w: number, h: number): void {
+    this.images.push({ id: (image as { id: string }).id, x, y, w, h });
+  }
+
   /** 타원. 캐릭터 그림자 등에 쓰인다. 점 기록만 남긴다. */
   ellipse(x: number, y: number): void {
     this.points.push({ x, y });
@@ -501,7 +517,7 @@ describe('WorldRenderer 오브젝트', () => {
     const stats = renderer.render(null, [
       { kind: 'tree', x: 4, y: 4, z: 0, damage: 0 },
       { kind: 'player', x: 1, y: 1, z: 0, swing: 0 },
-      { kind: 'oreVein', x: 2, y: 3, z: 0, damage: 0.5 },
+      { kind: 'oreVein', x: 2, y: 3, z: 0, damage: 0.5, iron: false },
     ]);
 
     expect(stats.drawnEntities).toBe(3);

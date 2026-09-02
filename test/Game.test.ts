@@ -1290,3 +1290,26 @@ describe('Game 철거', () => {
     expect(game.inventory.count(ItemType.STONE)).toBeGreaterThan(inventoryBefore);
   });
 });
+
+describe('Game 오브젝트 구분', () => {
+  it('철광석 광맥과 돌 광맥을 구분해 내보낸다', () => {
+    const terrain = new Terrain(9, 9);
+    for (let y = 0; y < 9; y += 1) {
+      for (let x = 0; x < 9; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+    const field = new ResourceField(terrain, { densityScale: 0 });
+    const game = new Game(terrain, field);
+
+    field.addNode(1, 1, NodeKind.STONE_ROCK);
+    field.addNode(7, 7, NodeKind.IRON_VEIN);
+
+    const veins = game.entities().filter((entity) => entity.kind === 'oreVein');
+    expect(veins).toHaveLength(2);
+
+    const iron = veins.find((entity) => entity.kind === 'oreVein' && entity.iron);
+    const stone = veins.find((entity) => entity.kind === 'oreVein' && !entity.iron);
+
+    expect(iron).toBeDefined();
+    expect(stone).toBeDefined();
+  });
+});

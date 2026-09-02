@@ -2,6 +2,7 @@ import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH, gridToWorld } from '../core/coor
 import { BlockType, blockInfo } from '../core/blocks';
 import type { Terrain } from '../core/Terrain';
 import type { Camera } from './Camera';
+import { DAMAGE_STAGES, type Sprite, type SpriteSet } from './sprites';
 
 /** 타일 한 칸을 가리키는 좌표. 커서 하이라이트 대상 등에 쓴다. */
 export interface TileRef {
@@ -20,7 +21,7 @@ export interface TileRef {
 export type Entity =
   | { kind: 'player'; x: number; y: number; z: number; swing: number }
   | { kind: 'tree'; x: number; y: number; z: number; damage: number }
-  | { kind: 'oreVein'; x: number; y: number; z: number; damage: number }
+  | { kind: 'oreVein'; x: number; y: number; z: number; damage: number; iron: boolean }
   | { kind: 'npc'; x: number; y: number; z: number; hue: number }
   | { kind: 'building'; x: number; y: number; z: number; width: number; depth: number; style: BuildingStyle; progress: number };
 
@@ -90,6 +91,14 @@ export class WorldRenderer {
   private timeMs = 0;
 
   /**
+   * 스프라이트 모음. 없으면 도형으로 그린다.
+   *
+   * 도형 경로를 지우지 않는 이유는 로드맵 02의 진행 원칙에 적어 뒀다 — 캔버스를 만들 수
+   * 없는 환경(헤드리스 테스트)과 첫 프레임이 그 위에서 돈다.
+   */
+  private sprites: SpriteSet | null = null;
+
+  /**
    * @param ctx CSS 픽셀 좌표계로 설정된 2D 컨텍스트.
    * @param camera 팬/줌 상태를 담은 카메라.
    * @param terrain 그릴 지형.
@@ -98,6 +107,50 @@ export class WorldRenderer {
     this.ctx = ctx;
     this.camera = camera;
     this.terrain = terrain;
+  }
+
+  /**
+   * 스프라이트 모음을 붙인다. null이면 도형으로 그린다.
+   *
+   * @param sprites 스프라이트 모음.
+   */
+  setSprites(sprites: SpriteSet | null): void {
+    this.sprites = sprites;
+  }
+
+  /** 지금 스프라이트로 그리는지 여부. */
+  get usingSprites(): boolean {
+    return this.sprites !== null;
+  }
+
+  /**
+   * 스프라이트를 기준점에 맞춰 그린다.
+   *
+   * @param sprite 스프라이트.
+   * @param anchorX 기준점의 화면 x.
+   * @param anchorY 기준점의 화면 y.
+   * @param zoom 확대율.
+   */
+  private drawSprite(sprite: Sprite, anchorX: number, anchorY: number, zoom: number): void {
+    this.ctx.drawImage(
+      sprite.image,
+      anchorX + sprite.offsetX * zoom,
+      anchorY + sprite.offsetY * zoom,
+      sprite.width * zoom,
+      sprite.height * zoom,
+    );
+  }
+
+  /**
+   * 손상도를 스프라이트 단계로 바꾼다.
+   *
+   * @param damage 손상도(0~1).
+   * @returns 단계 번호.
+   */
+  private damageStage(damage: number): number {
+    const stage = Math.floor(damage * DAMAGE_STAGES);
+
+    return Math.max(0, Math.min(DAMAGE_STAGES - 1, stage));
   }
 
   /**
@@ -276,6 +329,17 @@ export class WorldRenderer {
       const offsetBottom = offsetTop + layerPixels;
       const info = blockInfo(block);
 
+      if (this.sprites) {
+        const zoom = layerPixels / LAYER_HEIGHT;
+        const sprite = towardX ? this.sprites.sideX(block) : this.sprites.sideY(block);
+        // 측면 스프라이트의 기준점은 윗면 중심이다. 레이어마다 아래로 내려 그린다.
+        const anchorX = towardX ? edgeA.x - (TILE_WIDTH / 2) * zoom : edgeB.x + (TILE_WIDTH / 2) * zoom;
+        const anchorY = (towardX ? edgeA.y : edgeB.y) + offsetTop;
+        this.drawSprite(sprite, anchorX, anchorY, zoom);
+        drawn += 1;
+        continue;
+      }
+
       this.ctx.beginPath();
       this.ctx.moveTo(edgeA.x, edgeA.y + offsetTop);
       this.ctx.lineTo(edgeB.x, edgeB.y + offsetTop);
@@ -310,6 +374,12 @@ export class WorldRenderer {
     drawOutline: boolean,
   ): void {
     const surface = this.terrain.surfaceBlock(x, y);
+
+    if (this.sprites) {
+      const zoom = (halfWidth * 2) / TILE_WIDTH;
+      this.drawSprite(this.sprites.top(surface), center.x, center.y, zoom);
+      return;
+    }
 
     this.traceDiamond(center.x, center.y, halfWidth, halfHeight);
     this.ctx.fillStyle = blockInfo(surface).topColor;
@@ -370,6 +440,11 @@ export class WorldRenderer {
     const world = gridToWorld(entity.x, entity.y, entity.z);
     const screen = this.camera.worldToScreen(world.x, world.y);
 
+    if (this.sprites) {
+      this.drawEntitySprite(entity, screen, zoom);
+      return;
+    }
+
     switch (entity.kind) {
       case 'player':
         // 몸통은 파란 계열로 둔다. 건물 벽(베이지)과 지면(초록) 어느 쪽과도
@@ -383,12 +458,81 @@ export class WorldRenderer {
         this.drawTree(screen, zoom, entity.damage);
         break;
       case 'oreVein':
-        this.drawOreVein(screen, zoom, entity.damage);
+        this.drawOreVein(screen, zoom, entity.damage, entity.iron);
         break;
       case 'building':
         this.drawBuilding(screen, zoom, entity);
         break;
     }
+  }
+
+  /**
+   * 오브젝트를 스프라이트로 그린다.
+   *
+   * 건축 중 연출(반투명 골조·먼지·게이지)은 스프라이트로 만들 수 없으므로 도형 경로를
+   * 그대로 쓴다 — 진행도에 따라 매 프레임 달라지는 그림이라 캐시할 대상이 아니다.
+   *
+   * @param entity 오브젝트.
+   * @param screen 기준점의 화면 좌표.
+   * @param zoom 확대율.
+   */
+  private drawEntitySprite(entity: Entity, screen: { x: number; y: number }, zoom: number): void {
+    const sprites = this.sprites!;
+
+    switch (entity.kind) {
+      case 'player':
+        this.drawSprite(sprites.pawn(-1), screen.x, screen.y, zoom);
+        if (entity.swing > 0) this.drawSwing(screen, zoom, entity.swing);
+        break;
+      case 'npc':
+        this.drawSprite(sprites.pawn(entity.hue), screen.x, screen.y, zoom);
+        break;
+      case 'tree':
+        this.drawSprite(sprites.tree(this.damageStage(entity.damage)), screen.x, screen.y, zoom);
+        break;
+      case 'oreVein':
+        this.drawSprite(
+          sprites.oreVein(entity.iron, this.damageStage(entity.damage)),
+          screen.x,
+          screen.y,
+          zoom,
+        );
+        break;
+      case 'building':
+        if (entity.progress >= 1) {
+          this.drawSprite(
+            sprites.building(entity.style, entity.width, entity.depth),
+            screen.x + ((entity.width - 1) - (entity.depth - 1)) * (TILE_WIDTH / 4) * zoom,
+            screen.y + ((entity.width - 1) + (entity.depth - 1)) * (TILE_HEIGHT / 4) * zoom,
+            zoom,
+          );
+          break;
+        }
+        this.drawBuilding(screen, zoom, entity);
+        break;
+    }
+  }
+
+  /**
+   * 도구를 휘두르는 선을 그린다. 스프라이트 경로에서도 동작이 보이게 한다.
+   *
+   * @param screen 발이 놓인 칸의 윗면 중심.
+   * @param zoom 확대율.
+   * @param swing 휘두르기 진행도(0~1).
+   */
+  private drawSwing(screen: { x: number; y: number }, zoom: number, swing: number): void {
+    const unit = TILE_HEIGHT * zoom;
+    const angle = -Math.PI / 3 + swing * (Math.PI / 2);
+    const originX = screen.x + unit * 0.2;
+    const originY = screen.y - unit * 0.55;
+
+    this.ctx.strokeStyle = '#c9b089';
+    this.ctx.lineWidth = Math.max(1, unit * 0.09);
+    this.ctx.beginPath();
+    this.ctx.moveTo(originX, originY);
+    this.ctx.lineTo(originX + Math.cos(angle) * unit * 0.7, originY + Math.sin(angle) * unit * 0.7);
+    this.ctx.stroke();
+    this.ctx.lineWidth = 1;
   }
 
   /**
@@ -494,8 +638,14 @@ export class WorldRenderer {
    * @param screen 선 칸의 윗면 중심.
    * @param zoom 확대율.
    * @param damage 손상도(0~1).
+   * @param iron 철광석 광맥이면 true.
    */
-  private drawOreVein(screen: { x: number; y: number }, zoom: number, damage: number): void {
+  private drawOreVein(
+    screen: { x: number; y: number },
+    zoom: number,
+    damage: number,
+    iron: boolean,
+  ): void {
     const unit = TILE_HEIGHT * zoom;
     const size = unit * (0.62 - damage * 0.2);
 
@@ -513,7 +663,7 @@ export class WorldRenderer {
     this.ctx.closePath();
     this.ctx.fill();
 
-    this.ctx.fillStyle = '#c98f5a';
+    this.ctx.fillStyle = iron ? '#c98f5a' : '#9aa1a9';
     for (const spot of [
       { dx: -0.35, dy: -0.45 },
       { dx: 0.25, dy: -0.6 },

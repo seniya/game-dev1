@@ -937,7 +937,15 @@ export class Game {
       if (node.kind === 'tree') {
         this.entityBuffer.push({ kind: 'tree', x: node.x, y: node.y, z, damage });
       } else {
-        this.entityBuffer.push({ kind: 'oreVein', x: node.x, y: node.y, z, damage });
+        // 철광석 광맥은 돌 광맥과 다르게 그려야 멀리서도 구분된다.
+        this.entityBuffer.push({
+          kind: 'oreVein',
+          x: node.x,
+          y: node.y,
+          z,
+          damage,
+          iron: node.kind === 'ironVein',
+        });
       }
     }
 

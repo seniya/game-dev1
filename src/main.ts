@@ -8,6 +8,7 @@ import { ResourceField } from './sim/ResourceField';
 import { CanvasRenderer } from './render/CanvasRenderer';
 import { Camera } from './render/Camera';
 import { WorldRenderer } from './render/WorldRenderer';
+import { createSpriteSet } from './render/sprites';
 import { GameLoop } from './sim/GameLoop';
 import { GameState } from './sim/GameState';
 import { Game } from './sim/Game';
@@ -91,6 +92,8 @@ function bootstrap(): void {
   camera.setViewport(surface.size.width, surface.size.height);
   camera.setZoom(INITIAL_ZOOM);
   const world = new WorldRenderer(surface.context, camera, terrain);
+  // 스프라이트를 만들 수 없는 환경이면 null이 오고, 렌더러는 도형으로 그린다.
+  world.setSprites(createSpriteSet());
 
   // 시작 시점에 플레이어가 화면 가운데 오도록 카메라를 맞춘다.
   const start = game.player.position;
