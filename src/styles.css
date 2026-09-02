@@ -348,3 +348,8 @@ body {
   background: rgba(240, 192, 74, 0.2);
   color: #f0c04a;
 }
+
+/* 소리를 끈 상태는 버튼을 흐리게 해 한눈에 알린다. */
+.save__button--off {
+  color: #6e7681;
+}

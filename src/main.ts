@@ -3,6 +3,7 @@ import { DEFAULT_STEP_MS } from './core/fixedTimestep';
 import { pickSurfaceTile } from './core/picking';
 import { generateTerrain } from './core/terrainGen';
 import { BlockType } from './core/blocks';
+import { itemColor, itemLabel } from './core/items';
 import { zoneAt } from './core/zones';
 import { ResourceField } from './sim/ResourceField';
 import { CanvasRenderer } from './render/CanvasRenderer';
@@ -12,7 +13,11 @@ import { createSpriteSet } from './render/sprites';
 import { GameLoop } from './sim/GameLoop';
 import { GameState } from './sim/GameState';
 import { Game } from './sim/Game';
+import { AudioPlayer, VOLUME_STEPS } from './audio/AudioPlayer';
+import { SoundId } from './audio/sounds';
+import { Effects } from './render/Effects';
 import { SaveSession } from './sim/SaveSession';
+import { SettingsStore } from './sim/SettingsStore';
 import { SaveStore } from './sim/SaveStore';
 import { BuildPanel } from './ui/BuildPanel';
 import { DebugOverlay } from './ui/DebugOverlay';
@@ -84,6 +89,12 @@ function bootstrap(): void {
   const bar = new InventoryBar(requireElement('bar'), game.inventory.slotCount);
   const panel = new BuildPanel(requireElement('panel'));
   const saveMenu = new SaveMenu(requireElement('save'));
+
+  const settingsStore = new SettingsStore();
+  const audio = new AudioPlayer();
+  audio.setVolumeStep(settingsStore.load().volumeStep);
+
+  const effects = new Effects();
   const toasts = new Toasts(requireElement('toasts'));
   const requestList = new RequestList(requireElement('requests'));
   const villageHud = new VillageHud(requireElement('village'));
@@ -105,27 +116,85 @@ function bootstrap(): void {
     pickSurfaceTile(terrain, worldX, worldY),
   );
   /**
-   * 행동 결과를 보고 실패 사유를 토스트로 알린다.
+   * 행동 결과를 보고 소리·연출·안내를 낸다.
    *
-   * 규칙(`Game`)은 사유를 값으로만 돌려주고, 문구와 표시는 UI가 맡는다.
+   * 규칙(`Game`)은 무슨 일이 있었는지 값으로만 돌려주고, 그것을 무엇으로 보여줄지는
+   * 여기서 정한다.
    *
    * @param result 행동 결과.
+   * @param target 행동 대상 칸. 연출 위치로 쓴다.
    */
-  function report(result: ReturnType<typeof game.actAt>): void {
-    if (result.ok) return;
+  function report(result: ReturnType<typeof game.actAt>, target?: { x: number; y: number }): void {
+    if (!result.ok) {
+      const message = describeFailure(result.reason, result.placement);
+      if (message) {
+        toasts.show(message, 'bad');
+        audio.play(SoundId.DENY);
+      }
+      return;
+    }
 
-    const message = describeFailure(result.reason, result.placement);
-    if (message) toasts.show(message, 'bad');
+    const spot = target ?? game.player.position;
+    const z = Math.max(0, terrain.columnHeight(spot.x, spot.y) - 1);
+
+    if (result.node !== undefined) {
+      audio.play(result.node === 'tree' ? SoundId.CHOP : SoundId.DIG_STONE);
+      effects.burst(spot.x, spot.y, z, result.node === 'tree' ? '#5c8f4f' : '#9aa1a9', 5);
+      if (result.destroyed) audio.play(SoundId.NODE_BREAK);
+    } else if (result.block !== undefined) {
+      audio.play(result.block === BlockType.DIRT ? SoundId.DIG_DIRT : SoundId.DIG_STONE);
+      effects.burst(spot.x, spot.y, z, result.block === BlockType.DIRT ? '#6b4b2f' : '#8b8f96', 4);
+    }
+
+    if (result.building !== undefined) audio.play(SoundId.BUILD_START);
+
+    if (result.gained) {
+      effects.float(
+        spot.x,
+        spot.y,
+        z,
+        `+${result.gained.amount} ${itemLabel(result.gained.item)}`,
+        itemColor(result.gained.item),
+      );
+    }
+  }
+
+  /**
+   * 알림 종류를 소리로 옮긴다.
+   *
+   * @param cue 알림 종류.
+   * @returns 낼 소리. 소리를 내지 않을 종류면 null.
+   */
+  function soundForCue(cue: string | undefined): SoundId | null {
+    switch (cue) {
+      case 'migration':
+        return SoundId.MIGRATION;
+      case 'levelUp':
+        return SoundId.LEVEL_UP;
+      case 'buildDone':
+        return SoundId.BUILD_DONE;
+      case 'requestNew':
+        return SoundId.REQUEST_NEW;
+      case 'requestDone':
+        return SoundId.REQUEST_DONE;
+      default:
+        return null;
+    }
   }
 
   pointer.setTileClickHandler((tile, button) => {
+    // 브라우저는 사용자 입력이 있기 전에는 오디오를 켜 주지 않는다.
+    audio.unlock();
+
     if (button !== 'primary') {
-      report(game.placeAt(tile));
+      const placed = game.placeAt(tile);
+      if (placed.ok) audio.play(SoundId.PLACE);
+      report(placed, tile);
       return;
     }
 
     // 건축 모드에서는 좌클릭이 배치 확정이다.
-    report(game.buildMode ? game.buildAt(tile) : game.actAt(tile));
+    report(game.buildMode ? game.buildAt(tile) : game.actAt(tile), tile);
   });
   pointer.attach();
 
@@ -142,14 +211,19 @@ function bootstrap(): void {
   });
   // Space는 커서가 올라간 칸에 주 행동을 한다 — 마우스 없이도 채집이 되게.
   keyboard.setActionHandler(() => {
+    audio.unlock();
     const target = pointer.hovered;
-    if (target) report(game.buildMode ? game.buildAt(target) : game.actAt(target));
+    if (target) report(game.buildMode ? game.buildAt(target) : game.actAt(target), target);
   });
   keyboard.bind('KeyE', () => {
+    audio.unlock();
     const moved = game.depositAll();
     if (moved.size === 0) {
       toasts.show(game.nearStorage ? '예치할 자원이 없습니다' : '창고 옆으로 가세요', 'bad');
+      audio.play(SoundId.DENY);
+      return;
     }
+    audio.play(SoundId.DEPOSIT);
   });
   /** 건축 모드를 켜고 끈다. 켤 때는 첫 번째 블루프린트를 고른다. */
   function toggleBuildMode(): void {
@@ -162,19 +236,38 @@ function bootstrap(): void {
     if (first) game.selectBlueprint(first.id);
   }
 
-  keyboard.bind('KeyB', toggleBuildMode);
-  bar.setModeHandler(toggleBuildMode);
+  keyboard.bind('KeyB', () => {
+    audio.unlock();
+    toggleBuildMode();
+  });
+  bar.setModeHandler(() => {
+    audio.unlock();
+    toggleBuildMode();
+  });
+
+  saveMenu.setVolumeHandler(() => {
+    audio.unlock();
+    audio.cycleVolume();
+    settingsStore.save({ volumeStep: audio.volumeStep });
+  });
   keyboard.bind('Escape', () => game.selectBlueprint(null));
   keyboard.bind('KeyX', () => {
     const target = pointer.hovered;
     if (!target) return;
 
     const result = game.demolishAt(target);
-    if (result.ok) toasts.show('철거 — 자재 절반을 돌려받았습니다', 'neutral');
-    else report(result);
+    if (result.ok) {
+      toasts.show('철거 — 자재 절반을 돌려받았습니다', 'neutral');
+      audio.play(SoundId.DEMOLISH);
+      effects.burst(target.x, target.y, Math.max(0, terrain.columnHeight(target.x, target.y) - 1), '#c9b592', 8);
+    } else report(result, target);
   });
   keyboard.bind('KeyR', () => {
-    if (!game.fulfillRequest()) toasts.show('낼 수 있는 요청이 없습니다', 'bad');
+    audio.unlock();
+    if (!game.fulfillRequest()) {
+      toasts.show('낼 수 있는 요청이 없습니다', 'bad');
+      audio.play(SoundId.DENY);
+    }
   });
   keyboard.attach();
 
@@ -254,10 +347,16 @@ function bootstrap(): void {
 
         game.update(stepMs);
         toasts.update(stepMs);
+        effects.update(stepMs);
+        audio.update(stepMs);
 
         session.tick(stepMs, () => game.toSave());
 
-        for (const notice of game.drainNotices()) toasts.show(notice.message, notice.tone);
+        for (const notice of game.drainNotices()) {
+          toasts.show(notice.message, notice.tone);
+          const sound = soundForCue(notice.cue);
+          if (sound) audio.play(sound);
+        }
 
         // 드래그로 시야를 옮기는 동안에는 추적을 멈춘다.
         if (pointer.dragging) followPlayer = false;
@@ -275,6 +374,8 @@ function bootstrap(): void {
         const hovered = pointer.hovered;
         // 건축 먼지처럼 시간에 따라 움직이는 연출을 위해 시뮬레이션 시각을 넘긴다.
         const stats = world.render(hovered, game.entities(), game.ghost(hovered), state.elapsedMs);
+        // 파편과 글자는 지형·오브젝트를 모두 그린 뒤에 얹는다.
+        effects.draw(surface.context, camera);
 
         overlay.update(
           frameTimeMs,
@@ -319,7 +420,10 @@ function bootstrap(): void {
           game.buildMode,
         );
 
-        saveMenu.update(session.status, frameTimeMs);
+        saveMenu.update(
+          { ...session.status, volumeStep: audio.volumeStep, volumeSteps: VOLUME_STEPS.length },
+          frameTimeMs,
+        );
 
         bar.update({
           inventory: game.inventory,

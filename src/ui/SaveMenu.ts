@@ -6,6 +6,10 @@ export interface SaveMenuState {
   lastSavedAt: number | null;
   /** 마지막 저장이 실패했다면 그 이유. */
   failure: 'quota' | 'unavailable' | null;
+  /** 현재 볼륨 단계 번호. */
+  volumeStep: number;
+  /** 볼륨 단계 개수. */
+  volumeSteps: number;
 }
 
 /**
@@ -28,6 +32,7 @@ export class SaveMenu {
   private readonly saveButton: HTMLElement;
   private readonly loadButton: HTMLElement;
   private readonly resetButton: HTMLElement;
+  private readonly volumeButton: HTMLElement;
 
   /** "새로 시작" 확인 대기 남은 시간(ms). 0이면 대기 중이 아니다. */
   private confirmRemainingMs = 0;
@@ -38,6 +43,10 @@ export class SaveMenu {
   private onSave: (() => void) | null = null;
   private onLoad: (() => void) | null = null;
   private onReset: (() => void) | null = null;
+  private onVolume: (() => void) | null = null;
+
+  /** 마지막으로 그린 볼륨 문구. */
+  private lastVolumeText = '';
 
   /**
    * @param root 메뉴 컨테이너.
@@ -51,9 +60,11 @@ export class SaveMenu {
     this.saveButton = this.makeButton('저장', () => this.onSave?.());
     this.loadButton = this.makeButton('되돌리기', () => this.onLoad?.());
     this.resetButton = this.makeButton('새로 시작', () => this.handleReset());
+    this.volumeButton = this.makeButton('소리', () => this.onVolume?.());
 
     const buttons = document.createElement('div');
     buttons.className = 'save__buttons';
+    buttons.appendChild(this.volumeButton);
     buttons.appendChild(this.saveButton);
     buttons.appendChild(this.loadButton);
     buttons.appendChild(this.resetButton);
@@ -74,6 +85,15 @@ export class SaveMenu {
   }
 
   /**
+   * 볼륨 버튼 콜백을 등록한다.
+   *
+   * @param handler 콜백.
+   */
+  setVolumeHandler(handler: () => void): void {
+    this.onVolume = handler;
+  }
+
+  /**
    * 표시를 갱신한다.
    *
    * @param state 표시할 상태.
@@ -87,6 +107,13 @@ export class SaveMenu {
         this.resetButton.textContent = '새로 시작';
         this.resetButton.classList.remove('save__button--danger');
       }
+    }
+
+    const volumeText = describeVolume(state.volumeStep, state.volumeSteps);
+    if (volumeText !== this.lastVolumeText) {
+      this.lastVolumeText = volumeText;
+      this.volumeButton.textContent = volumeText;
+      this.volumeButton.classList.toggle('save__button--off', state.volumeStep === 0);
     }
 
     const status = describeStatus(state);
@@ -127,6 +154,24 @@ export class SaveMenu {
 
     return button;
   }
+}
+
+/**
+ * 볼륨 단계를 문구로 만든다.
+ *
+ * 슬라이더 대신 단계를 돌리는 버튼이라, 지금 어느 단계인지 글자로 보여야 한다.
+ *
+ * @param step 단계 번호.
+ * @param steps 단계 개수.
+ * @returns 표시 문구.
+ */
+function describeVolume(step: number, steps: number): string {
+  if (step <= 0) return '소리 끔';
+
+  const filled = '●'.repeat(step);
+  const empty = '○'.repeat(Math.max(0, steps - 1 - step));
+
+  return `소리 ${filled}${empty}`;
 }
 
 /**

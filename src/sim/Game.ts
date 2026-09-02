@@ -32,6 +32,25 @@ import { Population, type Migration } from './Population';
 import { RequestBoard, type RequestCompletion } from './Requests';
 import { ResourceField } from './ResourceField';
 
+/** UI로 알릴 사건의 종류. 문구·소리·연출을 고르는 데 쓴다. */
+export type NoticeCue =
+  | 'migration'
+  | 'levelUp'
+  | 'unlock'
+  | 'requestNew'
+  | 'requestDone'
+  | 'buildDone';
+
+/** UI로 알릴 사건 하나. */
+export interface Notice {
+  /** 표시 문구. */
+  message: string;
+  /** 강조 색. */
+  tone: 'neutral' | 'good' | 'bad';
+  /** 사건 종류. 소리와 연출을 고르는 데 쓴다. */
+  cue?: NoticeCue;
+}
+
 /** 행동이 거절된 이유. UI 안내 문구로 옮긴다. */
 export type ActionFailure =
   /** 이동·휘두르기 중이라 새 행동을 받을 수 없다. */
@@ -108,8 +127,11 @@ export class Game {
    *
    * 게임 규칙과 알림 표시를 분리하기 위해, `Game`은 사건을 쌓아 두고 UI가
    * 꺼내 가게 한다. 이렇게 두면 규칙을 단위 테스트로 검증할 때 DOM이 필요 없다.
+   *
+   * `cue`는 "무슨 일인가"를 값으로 알린다. UI가 그것을 문구·소리·연출 어디에 쓸지
+   * 정한다 — 규칙이 소리를 알 필요는 없다.
    */
-  private readonly pendingNotices: Array<{ message: string; tone: 'neutral' | 'good' | 'bad' }> = [];
+  private readonly pendingNotices: Array<Notice> = [];
 
   /** 건축 모드에서 고른 블루프린트. 건축 모드가 아니면 null. */
   private selectedBlueprint: Blueprint | null = null;
@@ -169,6 +191,11 @@ export class Game {
 
     for (const building of this.buildings.update(stepMs)) {
       this.onBuildingCompleted(building);
+      this.pendingNotices.push({
+        message: `${blueprintById(building.blueprintId).label} 완공`,
+        tone: 'good',
+        cue: 'buildDone',
+      });
     }
 
     for (const migration of this.population.update(stepMs)) {
@@ -177,7 +204,7 @@ export class Game {
 
     const board = this.requests.update(stepMs);
     for (const request of board.created) {
-      this.pendingNotices.push({ message: requestMessage(request), tone: 'neutral' });
+      this.pendingNotices.push({ message: requestMessage(request), tone: 'neutral', cue: 'requestNew' });
     }
     for (const completion of board.completed) {
       this.onRequestCompleted(completion);
@@ -231,11 +258,11 @@ export class Game {
    * @param level 도달한 레벨.
    */
   private applyUnlocks(level: number): void {
-    this.pendingNotices.push({ message: `마을 레벨 ${level} 달성`, tone: 'good' });
+    this.pendingNotices.push({ message: `마을 레벨 ${level} 달성`, tone: 'good', cue: 'levelUp' });
 
     for (const unlock of unlocksAtLevel(level)) {
       if (unlock.kind === 'tool') this.player.upgradeTool(unlock.tool, unlock.tier);
-      this.pendingNotices.push({ message: `해금: ${describeUnlock(unlock)}`, tone: 'good' });
+      this.pendingNotices.push({ message: `해금: ${describeUnlock(unlock)}`, tone: 'good', cue: 'unlock' });
     }
   }
 
@@ -244,7 +271,7 @@ export class Game {
    *
    * @returns 이번에 표시할 알림 목록.
    */
-  drainNotices(): Array<{ message: string; tone: 'neutral' | 'good' | 'bad' }> {
+  drainNotices(): Notice[] {
     return this.pendingNotices.splice(0, this.pendingNotices.length);
   }
 
@@ -294,7 +321,7 @@ export class Game {
    */
   private onMigration(migration: Migration): void {
     // 기획서 5.4: 대사 없이 알림만 표시한다.
-    this.pendingNotices.push({ message: '새 주민이 이주했습니다', tone: 'good' });
+    this.pendingNotices.push({ message: '새 주민이 이주했습니다', tone: 'good', cue: 'migration' });
     void migration;
   }
 
@@ -308,6 +335,7 @@ export class Game {
     this.pendingNotices.push({
       message: `요청 완료 (+${completion.reward})`,
       tone: 'good',
+      cue: 'requestDone',
     });
   }
 
