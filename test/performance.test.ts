@@ -4,6 +4,10 @@ import { gridToWorld } from '../src/core/coordinates';
 import { Terrain } from '../src/core/Terrain';
 import { Camera } from '../src/render/Camera';
 import { WorldRenderer, type Entity } from '../src/render/WorldRenderer';
+import { BlueprintId, blueprintById } from '../src/core/blueprints';
+import { MAX_VILLAGE_LEVEL } from '../src/core/village';
+import { Game } from '../src/sim/Game';
+import { ResourceField } from '../src/sim/ResourceField';
 
 /**
  * 아무것도 하지 않는 Canvas 2D 대역.
@@ -35,6 +39,10 @@ class NullContext {
   ellipse(): void {}
   /** 원호를 그린다. */
   arc(): void {}
+  /** 상태를 저장한다. */
+  save(): void {}
+  /** 상태를 되돌린다. */
+  restore(): void {}
 }
 
 /**
@@ -148,5 +156,93 @@ describe('렌더 성능', () => {
     const frameMs = measure(() => renderer.render(null), 60);
 
     expect(frameMs).toBeLessThan(12);
+  });
+});
+
+describe('후반 규모 예산', () => {
+  /**
+   * 마을 레벨 20 언저리의 마을을 만든다.
+   *
+   * 브라우저에서 실제로 재 보니 건물 47채·주민 53명·몬스터 5마리·오브젝트 347개에서
+   * 60fps가 나왔다(2026-09-02). 그 규모를 테스트로 고정해, 나중에 시스템이 늘어도
+   * 예산을 넘기지 않는지 확인한다.
+   *
+   * @param size 정사각 맵의 한 변 길이.
+   */
+  function lateGame(size = 32) {
+    const terrain = new Terrain(size, size);
+    for (let y = 0; y < size; y += 1) {
+      for (let x = 0; x < size; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+
+    const game = new Game(terrain, new ResourceField(terrain, { seed: 7 }));
+    game.setWorldSeed(7);
+    game.setVillageLevel(MAX_VILLAGE_LEVEL);
+
+    // 집을 격자로 채운다. 문 앞 규칙(ADR 0018) 때문에 한 칸씩 띄운다.
+    const cottage = blueprintById(BlueprintId.COTTAGE);
+    const manor = blueprintById(BlueprintId.MANOR);
+    let placed = 0;
+    for (let y = 1; y < size - 3 && placed < 80; y += 3) {
+      for (let x = 1; x < size - 3 && placed < 80; x += 3) {
+        if (game.buildings.place(placed % 4 === 3 ? manor : cottage, x, y, game.resources, true)) {
+          placed += 1;
+        }
+      }
+    }
+
+    // 주민이 들어오도록 시간을 흘린다.
+    for (let step = 0; step < 12_000; step += 1) game.update(1000 / 60);
+
+    return game;
+  }
+
+  it('후반 마을의 시뮬레이션 스텝이 프레임 예산의 일부만 쓴다', () => {
+    const game = lateGame();
+    // 자원 노드가 자리를 막으므로 채워지는 수는 지형에 달렸다. 후반 규모면 충분하다.
+    expect(game.buildings.completedCount).toBeGreaterThan(20);
+    expect(game.population.count).toBeGreaterThan(20);
+
+    // 예열.
+    for (let step = 0; step < 300; step += 1) game.update(1000 / 60);
+
+    const start = performance.now();
+    const steps = 600;
+    for (let step = 0; step < steps; step += 1) game.update(1000 / 60);
+    const stepMs = (performance.now() - start) / steps;
+
+    // 브라우저 실측은 0.016ms였다. 예산의 4분의 1(4ms)을 넘으면 무언가 잘못된 것이다.
+    expect(stepMs).toBeLessThan(4);
+  });
+
+  it('후반 마을의 오브젝트를 프레임 예산 안에 그린다', () => {
+    const game = lateGame();
+    const entities = game.entities();
+    expect(entities.length).toBeGreaterThan(100);
+
+    const { renderer } = setup(game.terrain, 0.6);
+    const frameMs = measure(
+      () => renderer.render(null, game.entities(), null, 0, null, game.atmosphere()),
+      60,
+    );
+
+    // 렌더러 자신의 몫이다. 실제 래스터라이즈는 브라우저가 한다.
+    expect(frameMs).toBeLessThan(8);
+  });
+
+  it('밤과 어둠을 얹어도 그리는 양이 폭발하지 않는다', () => {
+    const game = lateGame();
+    // 밤으로 옮긴다. 색조와 빛이 함께 얹힌다.
+    const dayMs = 4 * 60_000;
+    for (let step = 0; step < (dayMs * 0.6) / (1000 / 60); step += 1) game.update(1000 / 60);
+
+    const { renderer } = setup(game.terrain, 0.6);
+    const atmosphere = game.atmosphere();
+    const frameMs = measure(
+      () => renderer.render(null, game.entities(), null, 0, null, atmosphere),
+      60,
+    );
+
+    expect(frameMs).toBeLessThan(8);
   });
 });
