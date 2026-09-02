@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { HintId, controlHint, currentObjective, hintText, pickHint, type GuidanceState } from '../src/core/guidance';
+import {
+  ALL_CONTROLS,
+  HintId,
+  controlHint,
+  currentObjective,
+  hintText,
+  pickHint,
+  type GuidanceState,
+} from '../src/core/guidance';
 
 /**
  * 기본 상태를 만든다.
@@ -132,8 +140,44 @@ describe('조작 안내', () => {
     expect(hint).not.toContain('X: 철거');
   });
 
-  it('자원을 들면 예치 키가 나타난다', () => {
-    expect(controlHint(state({ carried: 2 }))).toContain('E: 창고');
+  it('창고 옆에서 자원을 들면 예치 키가 나타난다', () => {
+    expect(controlHint(state({ carried: 2, nearStorage: true }))).toContain('E: 창고');
+  });
+
+  it('한 줄에 담는 항목 수에 상한이 있다 — 열한 개가 늘어서면 지금 쓸 키가 묻힌다', () => {
+    const crowded = controlHint(
+      state({
+        carried: 5,
+        nearStorage: true,
+        wood: 20,
+        stone: 20,
+        buildings: 9,
+        residents: 4,
+        payableRequests: 2,
+        openJobs: 2,
+        onPortal: true,
+        raiding: true,
+        damagedBuildings: 3,
+      }),
+    );
+
+    // 도움말 안내를 빼면 네 항목이다.
+    expect(crowded.split(' · ')).toHaveLength(5);
+    expect(crowded).toContain('H: 도움말');
+  });
+
+  it('급한 것이 앞에 온다 — 침입 중에는 몬스터가 먼저다', () => {
+    const hint = controlHint(state({ raiding: true, carried: 3, nearStorage: true }));
+
+    expect(hint.startsWith('Space: 몬스터 쫓기')).toBe(true);
+  });
+
+  it('도움말에 모든 키가 모인다 — 감춘 기능은 없는 기능이 된다', () => {
+    const keys = ALL_CONTROLS.map((control) => control.keys).join(' ');
+
+    for (const key of ['WASD', '방향키', 'Space', 'Q', 'E', 'B', 'X', 'R', 'F', 'G', 'V', 'H', '[ ]']) {
+      expect(keys).toContain(key);
+    }
   });
 
   it('자재가 생기면 건축 키가 나타난다', () => {
@@ -144,8 +188,9 @@ describe('조작 안내', () => {
     expect(controlHint(state({ payableRequests: 1 }))).toContain('R: 요청');
   });
 
-  it('건물이 늘면 철거 키가 나타난다', () => {
-    expect(controlHint(state({ buildings: 3 }))).toContain('X: 철거');
+  it('철거처럼 급하지 않은 키는 도움말에서 찾는다', () => {
+    expect(controlHint(state({ buildings: 3 }))).not.toContain('X: 철거');
+    expect(ALL_CONTROLS.some((control) => control.keys === 'X')).toBe(true);
   });
 
   it('건축 모드에서는 건축 조작만 보여준다', () => {
@@ -157,13 +202,12 @@ describe('조작 안내', () => {
 });
 
 describe('설계도 선택 안내', () => {
-  it('건축 모드 안내가 실제 설계도 수를 말한다', () => {
-    // 3으로 박아 두었을 때, 다섯 종이 열린 뒤에도 "1~3"이라고 안내해
-    // 네 번째와 다섯 번째를 아무도 고르지 않았다.
-    expect(controlHint(state({ buildMode: true, blueprintCount: 5 }))).toContain('1~5: 설계도');
-  });
+  it('건축 모드 안내가 개수에 상관없는 순환 키를 알린다', () => {
+    // 예전에는 "1~5: 설계도"처럼 개수를 적었는데, 숫자 키가 아홉에서 상한에 닿았다.
+    // 순환 키는 목록이 아무리 길어져도 그대로다.
+    const hint = controlHint(state({ buildMode: true, blueprintCount: 12 }));
 
-  it('설계도가 하나뿐이면 범위로 말하지 않는다', () => {
-    expect(controlHint(state({ buildMode: true, blueprintCount: 1 }))).toContain('1: 설계도');
+    expect(hint).toContain('[ ]: 설계도');
+    expect(hint).not.toContain('1~12');
   });
 });

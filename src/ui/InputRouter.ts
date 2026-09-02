@@ -120,6 +120,9 @@ export class InputRouter {
     this.keyboard.bind('KeyG', () => this.toggleWorker());
     // 외형 바꾸기. 규칙에는 영향이 없는 꾸미기다.
     this.keyboard.bind('KeyV', () => this.cycleLook());
+    // 설계도 넘기기. 숫자 키는 아홉에서 상한에 닿는다.
+    this.keyboard.bind('BracketRight', () => this.cycleBlueprint(1));
+    this.keyboard.bind('BracketLeft', () => this.cycleBlueprint(-1));
     this.keyboard.bind('KeyR', () => this.fulfill());
 
     // 시야 조작. 마우스의 휠·드래그를 대신한다.
@@ -307,6 +310,16 @@ export class InputRouter {
     const result = this.game.toggleWorker(target);
     this.hooks.report?.(result, target);
     if (result.ok) this.hooks.play?.(SoundId.BUILD_DONE);
+  }
+
+  /**
+   * 설계도를 넘긴다. 건축 모드가 아니면 켜면서 첫 설계도를 고른다.
+   *
+   * @param step 넘길 방향.
+   */
+  private cycleBlueprint(step: number): void {
+    this.hooks.unlock?.();
+    this.game.cycleBlueprint(step);
   }
 
   /** 겨냥한 건물의 외형을 바꾼다. */

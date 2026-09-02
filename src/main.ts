@@ -24,6 +24,7 @@ import { SaveStore } from './sim/SaveStore';
 import { BuildPanel } from './ui/BuildPanel';
 import { DebugOverlay } from './ui/DebugOverlay';
 import { InventoryBar } from './ui/InventoryBar';
+import { HelpPanel } from './ui/HelpPanel';
 import { InputRouter } from './ui/InputRouter';
 import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
@@ -91,6 +92,7 @@ function bootstrap(): void {
   const bar = new InventoryBar(requireElement('bar'), game.inventory.slotCount);
   const panel = new BuildPanel(requireElement('panel'));
   const saveMenu = new SaveMenu(requireElement('save'));
+  const help = new HelpPanel(requireElement('help'));
 
   const settingsStore = new SettingsStore();
   const audio = new AudioPlayer();
@@ -236,6 +238,8 @@ function bootstrap(): void {
     },
   });
   router.bind();
+  // 조작 안내 한 줄에 담지 못한 키들이 여기 모인다.
+  keyboard.bind('KeyH', () => help.toggle());
   bar.setModeHandler(() => router.toggleBuildMode());
   keyboard.attach();
 

@@ -240,7 +240,11 @@ body {
   min-width: 240px;
   padding: 5px 8px;
   border-radius: 5px;
-  background: rgba(0, 0, 0, 0.5);
+  /*
+   * 예전에는 0.5였는데, 화면에서 보니 몬스터가 HUD 뒤를 지날 때 글자와 겹쳐 읽기
+   * 어려웠다. 배경을 진하게 해 글자를 지킨다.
+   */
+  background: rgba(6, 8, 12, 0.82);
   color: #e6e8eb;
   pointer-events: none;
   user-select: none;
@@ -375,4 +379,56 @@ body {
 /* 소리를 끈 상태는 버튼을 흐리게 해 한눈에 알린다. */
 .save__button--off {
   color: #6e7681;
+}
+
+/*
+ * 조작 도움말.
+ *
+ * 안내 한 줄이 상황에 맞는 서너 개만 보여주므로, 나머지 키는 여기에서 찾는다.
+ * 기획서 7절이 대사창을 배제하므로 모달이 아니라 화면 왼쪽에 붙는 목록이다.
+ */
+.help {
+  position: absolute;
+  left: 12px;
+  bottom: 44px;
+  display: none;
+  max-width: 340px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 6px;
+  background: rgba(8, 10, 14, 0.92);
+  color: #c9d1d9;
+  font-size: 12px;
+  line-height: 1.6;
+  pointer-events: none;
+}
+
+.help--open {
+  display: block;
+}
+
+.help__title {
+  margin-bottom: 6px;
+  color: #f0c674;
+  font-weight: 600;
+}
+
+.help__row {
+  display: flex;
+  gap: 8px;
+}
+
+.help__keys {
+  flex: 0 0 116px;
+  color: #9ecbff;
+}
+
+.help__what {
+  flex: 1;
+  color: #b6c2cf;
+}
+
+/* 자재가 모자란 설계도는 이름만으로도 알 수 있게 한다. */
+.panel__name--short {
+  color: #e0a3a3;
 }

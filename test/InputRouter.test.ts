@@ -225,6 +225,40 @@ describe('키보드만으로 플레이', () => {
     expect(game.buildMode).toBe(false);
   });
 
+  it('[ ]로 설계도를 순환한다 — 숫자 키는 아홉에서 상한에 닿는다', () => {
+    const { game, press, step } = setup();
+    game.setVillageLevel(5);
+
+    press('BracketRight');
+    step();
+    const first = game.blueprint?.id;
+    expect(first).toBeDefined();
+
+    press('BracketRight');
+    step();
+    expect(game.blueprint?.id).not.toBe(first);
+
+    press('BracketLeft');
+    step();
+    expect(game.blueprint?.id).toBe(first);
+  });
+
+  it('설계도 순환은 목록 끝에서 처음으로 돌아온다', () => {
+    const { game, press, step } = setup();
+    game.setVillageLevel(5);
+    const count = game.availableBlueprints.length;
+
+    press('BracketRight');
+    step();
+    const first = game.blueprint?.id;
+    for (let i = 0; i < count; i += 1) {
+      press('BracketRight');
+      step();
+    }
+
+    expect(game.blueprint?.id).toBe(first);
+  });
+
   it('숫자 키가 해금된 설계도를 끝까지 고른다', () => {
     // 이 테스트가 없어서 창고(4번)와 큰 집(5번)을 아무도 고를 수 없었다.
     const { game, press, step } = setup();

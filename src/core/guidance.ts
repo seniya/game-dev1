@@ -173,25 +173,48 @@ export function currentObjective(state: GuidanceState): string {
  * @returns 조작 안내 문구.
  */
 export function controlHint(state: GuidanceState): string {
-  // 설계도 개수는 마을 레벨에 따라 늘어난다. 문구에 3을 박아 두면 늘어난 뒤에
-  // 안내가 거짓말을 한다 — 실제로 그렇게 어긋나 있었다.
   if (state.buildMode) {
-    const picker = state.blueprintCount > 1 ? `1~${state.blueprintCount}` : '1';
-    return `${picker}: 설계도 · 방향키: 부지 · Space/좌클릭: 배치 · B/Esc: 닫기`;
+    return '[ ]: 설계도 · 방향키: 부지 · Space: 배치 · B/Esc: 닫기';
   }
 
-  const parts = ['WASD: 걷기', '방향키: 겨냥', 'Space/좌클릭: 채집·파기', '1~3: 도구'];
+  // 상황에 따라 **가장 급한 것부터** 담고 앞에서 몇 개만 보여준다. 로드맵 03이 시스템을
+  // 늘리며 이 줄이 열한 항목까지 길어졌고, 화면에서 보니 지금 쓸 키가 그 안에 묻혔다.
+  const parts: string[] = [];
 
-  if (state.carried > 0) parts.push('Q: 쌓기', 'E: 창고 예치');
-  if (state.wood > 0 || state.stone > 0) parts.push('B: 건축');
-  if (state.payableRequests > 0) parts.push('R: 요청 납품');
-  if (state.buildings >= 3) parts.push('X: 철거');
-  if (state.onPortal) parts.push('F: 이동');
-  if (state.openJobs > 0) parts.push('G: 일터 배정');
   if (state.raiding) parts.push('Space: 몬스터 쫓기');
   if (state.damagedBuildings > 0) parts.push('Space: 수리');
+  if (state.onPortal) parts.push('F: 이동');
+  if (state.payableRequests > 0) parts.push('R: 요청 납품');
+  if (state.openJobs > 0 && state.residents > 0) parts.push('G: 일터 배정');
+  if (state.carried > 0 && state.nearStorage) parts.push('E: 창고 예치');
 
-  parts.push('+/-: 확대');
+  // 늘 쓰는 것은 뒤에 둔다. 위의 상황 항목이 없을 때 자리를 채운다.
+  parts.push('WASD: 걷기', '방향키: 겨냥', 'Space: 채집·파기');
+  if (state.wood > 0 || state.stone > 0) parts.push('B: 건축');
 
-  return parts.join(' · ');
+  return `${parts.slice(0, HINT_LIMIT).join(' · ')} · H: 도움말`;
 }
+
+/** 조작 안내 한 줄에 담는 최대 항목 수. */
+const HINT_LIMIT = 4;
+
+/** 도움말에 넣을 전체 조작 목록. 한 줄에 다 넣을 수 없는 것들이 여기 모인다. */
+export const ALL_CONTROLS: ReadonlyArray<{ keys: string; what: string }> = [
+  { keys: 'WASD', what: '걷기' },
+  { keys: '방향키', what: '겨냥 — 행동할 칸을 고른다' },
+  { keys: 'Space / 좌클릭', what: '겨냥한 칸에 행동(채집·파기·수리·몬스터 쫓기, 건축 모드에서는 배치)' },
+  { keys: 'Q / 우클릭', what: '블록 쌓기' },
+  { keys: '1~9', what: '도구 · 건축 모드에서는 설계도' },
+  { keys: '[ ]', what: '건축 모드에서 설계도 넘기기' },
+  { keys: 'E', what: '창고에 예치' },
+  { keys: 'B', what: '건축 모드 켜고 끄기' },
+  { keys: 'Esc', what: '건축 모드 끄기' },
+  { keys: 'X', what: '건물 철거(자재 절반 회수)' },
+  { keys: 'R', what: '주민 요청 납품' },
+  { keys: 'F', what: '통로에서 동굴·지상 이동' },
+  { keys: 'G', what: '일터에 주민 배정·해제' },
+  { keys: 'V', what: '건물 지붕 색 바꾸기' },
+  { keys: '+ -', what: '확대·축소' },
+  { keys: 'C', what: '카메라를 플레이어에게 되돌리기' },
+  { keys: 'H', what: '이 도움말 열고 닫기' },
+];

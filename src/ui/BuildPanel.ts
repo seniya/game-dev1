@@ -62,13 +62,16 @@ export class BuildPanel {
     title.textContent = '건축 (B: 닫기)';
     this.root.appendChild(title);
 
+    // 자재는 **고른 설계도만** 펼친다. 아홉 종이 모두 자재까지 늘어놓으면 패널이
+    // 화면 오른쪽 절반을 덮었다 — 화면에서 보고 줄인 것이다(로드맵 04 Phase 3).
+
     for (const [index, row] of rows.entries()) {
       this.root.appendChild(this.renderRow(row, index));
     }
 
     const hint = document.createElement('div');
     hint.className = 'panel__hint';
-    hint.textContent = '좌클릭: 배치';
+    hint.textContent = '[ ]: 넘기기 · Space: 배치';
     this.root.appendChild(hint);
   }
 
@@ -86,8 +89,14 @@ export class BuildPanel {
 
     const name = document.createElement('span');
     name.className = 'panel__name';
-    name.textContent = `${index + 1}. ${row.blueprint.label} ${row.blueprint.width}×${row.blueprint.depth}`;
+    // 자재가 모자란 설계도는 이름 옆에 표시만 남긴다. 무엇이 모자란지는 고르면 보인다.
+    const short = row.missing.length > 0 && !row.selected ? ' ·' : '';
+    name.textContent =
+      `${index + 1}. ${row.blueprint.label} ${row.blueprint.width}×${row.blueprint.depth}${short}`;
+    if (row.missing.length > 0) name.classList.add('panel__name--short');
     element.appendChild(name);
+
+    if (!row.selected) return element;
 
     for (const requirement of row.blueprint.materials) {
       const short = row.missing.find((entry) => entry.item === requirement.item);

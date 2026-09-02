@@ -711,13 +711,16 @@ function paintPlanks(
  * @returns 스프라이트.
  */
 function makePawn(hue: number): Sprite {
-  const unit = TILE_HEIGHT;
+  const isBigger = hue < 0;
+  // 플레이어는 주민보다 조금 크게 그린다. 화면에서 보니 겨냥 커서보다 작아
+  // 어두운 동굴과 밤에는 자기 캐릭터를 찾기 어려웠다.
+  const unit = TILE_HEIGHT * (isBigger ? 1.15 : 1);
   const width = unit * 0.9;
   const height = unit * 1.5;
   const surface = createSurface(width, height)!;
   const { ctx } = surface;
 
-  const isPlayer = hue < 0;
+  const isPlayer = isBigger;
   const body = isPlayer ? '#4a86c8' : `hsl(${hue}, 45%, 62%)`;
   const bodyDark = isPlayer ? '#35699e' : `hsl(${hue}, 40%, 48%)`;
   const head = isPlayer ? '#20303f' : `hsl(${hue}, 25%, 30%)`;

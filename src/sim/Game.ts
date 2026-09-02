@@ -1251,6 +1251,30 @@ export class Game {
   }
 
   /**
+   * 설계도를 목록에서 다음(또는 이전) 것으로 넘긴다.
+   *
+   * 숫자 키만으로 고르던 시절에는 **설계도가 아홉 종을 넘으면 고를 수 없었다** —
+   * 실제로 아홉에서 딱 찼다. 순환이 있으면 목록이 아무리 길어져도 닿는다.
+   *
+   * @param step 넘길 방향. 1이면 다음, -1이면 이전.
+   * @returns 고른 설계도. 목록이 비었으면 null.
+   */
+  cycleBlueprint(step: number): Blueprint | null {
+    const list = this.availableBlueprints;
+    if (list.length === 0) return null;
+
+    const current = this.selectedBlueprint
+      ? list.findIndex((blueprint) => blueprint.id === this.selectedBlueprint!.id)
+      : -1;
+
+    const size = list.length;
+    const next = current < 0 ? (step > 0 ? 0 : size - 1) : (current + step + size) % size;
+    this.selectedBlueprint = list[next]!;
+
+    return this.selectedBlueprint;
+  }
+
+  /**
    * 고른 블루프린트를 커서 위치에 착공한다.
    *
    * 확정 즉시 자재를 소모하고, 짧은 건축 시간이 지나면 완공된다(기획서 5.3).
