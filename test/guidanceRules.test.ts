@@ -34,6 +34,7 @@ function state(overrides: Partial<GuidanceState> = {}): GuidanceState {
     openJobs: 0,
     raiding: false,
     damagedBuildings: 0,
+    buildableSpots: 0,
     hasDeposited: false,
     ...overrides,
   };
@@ -59,8 +60,21 @@ describe('지금 할 일', () => {
     expect(currentObjective(state({ wood: 12, stone: 4 }))).toContain('B를 눌러');
   });
 
-  it('건축 모드에서는 놓으라고 안내한다', () => {
-    expect(currentObjective(state({ wood: 12, stone: 4, buildMode: true }))).toContain('놓으세요');
+  it('건축 모드에서 놓을 자리가 있으면 표시를 보라고 한다', () => {
+    const objective = currentObjective(
+      state({ wood: 12, stone: 4, buildMode: true, buildableSpots: 12 }),
+    );
+
+    expect(objective).toContain('놓으세요');
+    expect(objective).toContain('표시');
+  });
+
+  it('놓을 자리가 없으면 무엇을 해야 하는지 알린다 — "왜 안 되지"가 반복된다', () => {
+    const objective = currentObjective(
+      state({ wood: 12, stone: 4, buildMode: true, buildableSpots: 0 }),
+    );
+
+    expect(objective).toContain('삽');
   });
 
   it('집을 지으면 이주를 기다리라고 한다', () => {

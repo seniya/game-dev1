@@ -214,6 +214,8 @@ describe('게임 안의 시각', () => {
       openJobs: 0,
       raiding: false,
       damagedBuildings: 0,
+      buildableSpots: 0,
+    buildableSpots: 0,
       hasDeposited: false,
     } satisfies GuidanceState;
 

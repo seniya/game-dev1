@@ -102,6 +102,18 @@ export interface ZoneOverlay {
    * @param y 그리드 y.
    */
   locked(x: number, y: number): boolean;
+
+  /**
+   * 그 칸에 지금 고른 설계도를 놓을 수 있는지 확인한다.
+   *
+   * 건축 모드에서만 넘어온다. 놓을 자리는 많은데 **어디가 되는지 보이지 않아** 커서를
+   * 하나씩 밀어 보며 붉은 고스트가 사라지기를 기다려야 했다 — 시작 반경 3칸 안에도
+   * 20~34곳이 있는데도 그랬다(로드맵 05 Phase 2의 실측).
+   *
+   * @param x 그리드 x.
+   * @param y 그리드 y.
+   */
+  buildable?(x: number, y: number): boolean;
 }
 
 /** 건축 모드의 반투명 미리보기. */
@@ -318,6 +330,11 @@ export class WorldRenderer {
         stats.drawnColumns += 1;
 
         if (zones) this.drawZoneMark(zones, x, y, screen, halfWidth, halfHeight);
+
+        // 놓을 수 있는 자리 표시. 고스트보다 먼저 그려 커서가 그 위에 얹히게 한다.
+        if (zones?.buildable?.(x, y)) {
+          this.drawBuildableMark(screen, halfWidth, halfHeight);
+        }
 
         // 하이라이트는 이 열을 그린 직후에 얹는다. 앞쪽 열은 나중에 그려지므로
         // 가려야 할 부분을 정상적으로 덮는다.
@@ -892,6 +909,31 @@ export class WorldRenderer {
    * @param zoom 확대율.
    * @param entity 건물 오브젝트.
    */
+  /**
+   * 놓을 수 있는 자리를 옅게 표시한다.
+   *
+   * 알려 주는 것까지가 안내이고, 자동으로 놓아 주는 것은 게임을 없애는 일이다 —
+   * 그래서 자리만 보여주고 고르는 것은 사람에게 맡긴다.
+   *
+   * @param screen 칸 윗면 중심.
+   * @param halfWidth 마름모 반폭.
+   * @param halfHeight 마름모 반높이.
+   */
+  private drawBuildableMark(
+    screen: { x: number; y: number },
+    halfWidth: number,
+    halfHeight: number,
+  ): void {
+    const ctx = this.ctx;
+    const shrink = 0.42;
+
+    ctx.save();
+    this.traceDiamond(screen.x, screen.y, halfWidth * shrink, halfHeight * shrink);
+    ctx.fillStyle = 'rgba(150, 220, 160, 0.35)';
+    ctx.fill();
+    ctx.restore();
+  }
+
   /**
    * 네 점을 잇는 사각형을 채운다. 벽면을 그리는 데 쓴다.
    *

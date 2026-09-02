@@ -172,6 +172,14 @@ const MAX_NIGHT_DARKNESS = 0.45;
  */
 const HOME_VISIT_BLOCK_MS = 30_000;
 
+/**
+ * 놓을 수 있는 자리를 표시할 반경(타일).
+ *
+ * 커서가 닿는 범위(여섯 칸, ADR 0012)보다 조금 넓게 둔다 — 표시가 화면에서 끊기지 않고
+ * 이어져 보여야 "이 근처에 놓을 수 있다"로 읽힌다.
+ */
+const BUILDABLE_RADIUS = 8;
+
 /** 수정 등대 한 채가 밤에 넓혀 주는 반경(타일). */
 const BEACON_LIGHT_RADIUS = 2;
 
@@ -805,6 +813,7 @@ export class Game {
       raiding: this.inVillage && this.raid.active,
       // 수리는 마을에서만 할 수 있다. 동굴에서 안내가 뜨면 할 수 없는 일을 시키는 셈이다.
       damagedBuildings: this.inVillage ? this.buildings.damagedCount : 0,
+      buildableSpots: this.buildMode ? this.buildableSpots().size : 0,
       hasDeposited: this.guidance.hasDeposited,
     };
   }
@@ -1279,6 +1288,40 @@ export class Game {
       valid: check.ok && this.missingMaterials(this.selectedBlueprint).length === 0,
       label: this.selectedBlueprint.label,
     };
+  }
+
+  /**
+   * 지금 고른 설계도를 놓을 수 있는 칸들을 모은다.
+   *
+   * 플레이어 주변만 본다 — 맵 전체를 훑으면 화면 밖까지 계산하게 되고, 커서가 닿는
+   * 범위도 여섯 칸이다(ADR 0012).
+   *
+   * @param radius 살펴볼 반경(타일).
+   * @returns 놓을 수 있는 칸의 키(`y * width + x`) 집합.
+   */
+  buildableSpots(radius = BUILDABLE_RADIUS): Set<number> {
+    const spots = new Set<number>();
+    if (!this.selectedBlueprint || !this.inVillage) return spots;
+
+    const terrain = this.terrain;
+    const at = this.player.position;
+
+    for (let dy = -radius; dy <= radius; dy += 1) {
+      for (let dx = -radius; dx <= radius; dx += 1) {
+        const origin = this.placementOrigin(this.selectedBlueprint, {
+          x: at.x + dx,
+          y: at.y + dy,
+        });
+        if (!terrain.contains(origin.x, origin.y)) continue;
+        if (!this.buildings.canPlace(this.selectedBlueprint, origin.x, origin.y, this.resources).ok) {
+          continue;
+        }
+
+        spots.add((at.y + dy) * terrain.width + (at.x + dx));
+      }
+    }
+
+    return spots;
   }
 
   /**

@@ -10,7 +10,7 @@ import { zoneAt, zoneLabel } from './core/zones';
 import { ResourceField } from './sim/ResourceField';
 import { CanvasRenderer } from './render/CanvasRenderer';
 import { Camera, boundsForMap } from './render/Camera';
-import { WorldRenderer } from './render/WorldRenderer';
+import { WorldRenderer, type ZoneOverlay } from './render/WorldRenderer';
 import { createSpriteSet } from './render/sprites';
 import { GameLoop } from './sim/GameLoop';
 import { GameState } from './sim/GameState';
@@ -320,6 +320,24 @@ function bootstrap(): void {
     if (document.visibilityState === 'hidden') saveNow(false);
   });
 
+  /**
+   * 지형에 얹을 표시를 만든다.
+   *
+   * 건축 모드에서만 놓을 수 있는 자리를 함께 넘긴다. 매 프레임 다시 세지만 반경이
+   * 좁아(플레이어 주변 여덟 칸) 값이 싸다.
+   *
+   * @returns 렌더러에 넘길 표시.
+   */
+  function buildOverlay(): ZoneOverlay {
+    const locked = (x: number, y: number): boolean => game.isZoneLocked(x, y);
+    if (!game.buildMode) return { locked };
+
+    const spots = game.buildableSpots();
+    const width = game.terrain.width;
+
+    return { locked, buildable: (x, y) => spots.has(y * width + x) };
+  }
+
   const loop = new GameLoop(
     {
       update: (stepMs) => {
@@ -377,7 +395,7 @@ function bootstrap(): void {
           game.entities(),
           game.ghost(hovered),
           state.elapsedMs,
-          { locked: (x, y) => game.isZoneLocked(x, y) },
+          buildOverlay(),
           game.atmosphere(),
         );
         // 파편과 글자는 지형·오브젝트를 모두 그린 뒤에 얹는다.

@@ -70,7 +70,7 @@ export function describeFailure(reason: ActionFailure, placement?: PlacementFail
 function describePlacement(placement?: PlacementFailure): string {
   switch (placement) {
     case 'notFlat':
-      return '평탄한 땅이 아닙니다 — 파거나 쌓아 고르세요';
+      return '평탄한 땅이 아닙니다 — 삽을 들고 Space로 파거나 Q로 흙을 쌓으세요';
     case 'nodeInWay':
       return '나무나 광맥이 자리를 막고 있습니다';
     case 'overlaps':

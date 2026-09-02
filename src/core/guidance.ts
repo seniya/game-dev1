@@ -42,6 +42,12 @@ export interface GuidanceState {
   raiding: boolean;
   /** 손상된 건물 수. */
   damagedBuildings: number;
+  /**
+   * 건축 모드에서 지금 놓을 수 있는 자리 수.
+   *
+   * 자리가 없으면 "왜 안 되지"가 반복된다. 무엇을 해야 하는지 알려야 한다.
+   */
+  buildableSpots: number;
   /** 지금 고를 수 있는 블루프린트 수. 숫자 키 안내에 쓴다. */
   blueprintCount: number;
   /** 창고에 한 번이라도 예치했는지. */
@@ -150,7 +156,11 @@ export function currentObjective(state: GuidanceState): string {
     if (state.stone < needStone) {
       return `${itemLabel(ItemType.STONE)}을 모으세요 (${state.stone}/${needStone})`;
     }
-    return state.buildMode ? '평탄한 땅에 집을 놓으세요' : 'B를 눌러 집을 지으세요';
+    if (!state.buildMode) return 'B를 눌러 집을 지으세요';
+
+    return state.buildableSpots > 0
+      ? '초록 표시가 있는 자리에 집을 놓으세요'
+      : '평탄한 자리가 없습니다 — 삽으로 파거나 흙을 쌓아 고르세요';
   }
 
   // 침입 중에는 다른 목표가 의미가 없다. 오늘 밤을 넘기는 것이 할 일이다.
