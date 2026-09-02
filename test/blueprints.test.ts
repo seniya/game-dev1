@@ -9,8 +9,8 @@ import {
 import { ItemType } from '../src/core/items';
 
 describe('블루프린트 정의', () => {
-  it('MVP 5종에 대장간을 더해 갖는다', () => {
-    expect(BLUEPRINTS).toHaveLength(6);
+  it('MVP 5종에 대장간과 채석장을 더해 갖는다', () => {
+    expect(BLUEPRINTS).toHaveLength(7);
     expect(BLUEPRINTS.map((blueprint) => blueprint.id).sort()).toEqual(
       [
         BlueprintId.COTTAGE,
@@ -19,6 +19,7 @@ describe('블루프린트 정의', () => {
         BlueprintId.WELL,
         BlueprintId.WORKBENCH,
         BlueprintId.FORGE,
+        BlueprintId.QUARRY,
       ].sort(),
     );
   });

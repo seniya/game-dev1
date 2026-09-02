@@ -15,7 +15,8 @@ import {
   phaseAt,
   timeOfDay,
 } from '../core/daycycle';
-import { ItemType, blockToItem, itemToBlock } from '../core/items';
+import { ItemType, blockToItem, itemLabel, itemToBlock } from '../core/items';
+import { SLOTS_PER_WORKPLACE, isWorkplace, jobDefinition, jobForWorkplace } from '../core/jobs';
 import { MapId, isVillageMap, mapLabel, mapSeed } from '../core/maps';
 import { canInteract, walkableNeighbors, type TilePos } from '../core/movement';
 import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
@@ -50,6 +51,8 @@ import { ResourceField } from './ResourceField';
 
 /** UI로 알릴 사건의 종류. 문구·소리·연출을 고르는 데 쓴다. */
 export type NoticeCue =
+  /** 주민이 일터에 배정되거나 풀렸다. */
+  | 'job'
   /** 다른 맵으로 이동했다. */
   | 'travel'
   | 'migration'
@@ -71,6 +74,12 @@ export interface Notice {
 
 /** 행동이 거절된 이유. UI 안내 문구로 옮긴다. */
 export type ActionFailure =
+  /** 일터가 아닌 건물이다. */
+  | 'noWorkplace'
+  /** 일터의 자리가 찼다. */
+  | 'jobFull'
+  /** 배정할 주민이 없다. */
+  | 'noWorker'
   /** 마을이 없는 맵에서는 할 수 없는 일이다(건축·철거). */
   | 'notVillage'
   /** 통로 위에 서 있지 않다. */
@@ -200,6 +209,14 @@ export class Game {
 
   /** 지형·자원 생성에 쓴 시드. 저장에 함께 담아 재현과 디버깅에 쓴다. */
   private seed = 0;
+
+  /**
+   * 주민별 생산 진행도(ms).
+   *
+   * 저장하지 않는다 — 한 번 만드는 데 걸리는 시간의 일부일 뿐이라, 잃어도 손해가
+   * 자원 한 개 미만이다. 저장 형식을 늘릴 값이 아니다.
+   */
+  private readonly jobProgressMs = new Map<number, number>();
 
   /** 쌓기에 쓸 아이템의 우선순위. 흙을 먼저 쓰고 없으면 돌을 쓴다. */
   private readonly placePriority: readonly ItemType[] = [ItemType.DIRT, ItemType.STONE];
@@ -413,9 +430,13 @@ export class Game {
       });
     }
 
-    for (const migration of this.population.update(stepMs)) {
+    // 낮에만 일한다. 밤에는 집으로 돌아간다(기획서 5.4의 "정해진 시간대").
+    const workTime = this.dayPhase === DayPhase.DAY;
+    for (const migration of this.population.update(stepMs, workTime)) {
       this.onMigration(migration);
     }
+
+    if (workTime) this.produce(stepMs);
 
     const board = this.requests.update(stepMs);
     for (const request of board.created) {
@@ -429,6 +450,97 @@ export class Game {
 
     const hint = this.guidance.update(stepMs, this.guidanceState());
     if (hint) this.pendingNotices.push({ message: hint, tone: 'neutral' });
+  }
+
+  /**
+   * 배정된 주민들이 자원을 만든다.
+   *
+   * 만들어진 것은 **창고로 간다.** 인벤토리로 보내면 플레이어가 어디에 있든 짐이 늘어
+   * 채집을 방해한다. 창고가 가득 차면 그 몫은 그냥 나오지 않는다 — 넘치는 자원을
+   * 어딘가에 쌓아 두면 그것을 비우는 일이 또 하나의 잡일이 된다.
+   *
+   * @param stepMs 스텝 길이(ms).
+   */
+  private produce(stepMs: number): void {
+    for (const npc of this.population.all) {
+      const buildingId = npc.jobBuildingId;
+      if (buildingId === null) continue;
+
+      const building = this.buildings.buildingById(buildingId);
+      if (!building || building.buildRemainingMs > 0) continue;
+
+      const job = jobForWorkplace(building.blueprintId);
+      if (!job) continue;
+
+      const definition = jobDefinition(job);
+      const progress = (this.jobProgressMs.get(npc.id) ?? 0) + stepMs;
+      if (progress < definition.intervalMs) {
+        this.jobProgressMs.set(npc.id, progress);
+        continue;
+      }
+
+      // 남는 시간은 다음 몫으로 넘긴다. 프레임 길이에 생산량이 좌우되지 않게 한다.
+      this.jobProgressMs.set(npc.id, progress - definition.intervalMs);
+
+      const added = this.storage.add(definition.produces, definition.amount);
+      if (added > 0) {
+        this.pendingNotices.push({
+          message: `${definition.label}가 ${itemLabel(definition.produces)} ${added}개를 냈습니다`,
+          tone: 'neutral',
+        });
+      }
+    }
+  }
+
+  /** 일터 자리 현황. HUD 표시에 쓴다. */
+  get jobSlots(): { assigned: number; total: number } {
+    let total = 0;
+    for (const building of this.buildings.all) {
+      if (building.buildRemainingMs > 0) continue;
+      if (isWorkplace(building.blueprintId)) total += SLOTS_PER_WORKPLACE;
+    }
+
+    return { assigned: this.population.employed, total };
+  }
+
+  /**
+   * 대상 칸의 일터에 주민을 배정하거나 뺀다.
+   *
+   * 한 키로 배정과 해제를 모두 처리한다 — 자리가 비어 있으면 넣고, 차 있으면 뺀다.
+   * 일터 하나에 자리가 하나뿐이라 이 방식으로 모호함이 생기지 않는다.
+   *
+   * @param target 대상 칸.
+   * @returns 행동 결과.
+   */
+  toggleWorker(target: TilePos): ActionResult {
+    if (!this.inVillage) return { ok: false, reason: 'notVillage' };
+
+    const building = this.buildings.buildingAt(target.x, target.y);
+    if (!building) return { ok: false, reason: 'noBuilding' };
+    if (!isWorkplace(building.blueprintId)) return { ok: false, reason: 'noWorkplace' };
+    if (building.buildRemainingMs > 0) return { ok: false, reason: 'noBuilding' };
+
+    const job = jobForWorkplace(building.blueprintId)!;
+    const label = jobDefinition(job).label;
+
+    const working = this.population.workersAt(building.id);
+    if (working.length > 0) {
+      const removed = this.population.unassign(building.id);
+      if (removed) this.jobProgressMs.delete(removed.id);
+      this.pendingNotices.push({ message: `${label}를 그만두었습니다`, tone: 'neutral', cue: 'job' });
+
+      return { ok: true };
+    }
+
+    if (this.population.idleWorkers.length === 0) return { ok: false, reason: 'noWorker' };
+
+    const assigned = this.population.assign(building);
+    if (!assigned) return { ok: false, reason: 'jobFull' };
+
+    this.jobProgressMs.set(assigned.id, 0);
+    this.pendingNotices.push({ message: `주민이 ${label}가 되었습니다`, tone: 'good', cue: 'job' });
+
+    return { ok: true };
   }
 
   /**
@@ -453,6 +565,7 @@ export class Game {
       blueprintCount: this.availableBlueprints.length,
       onPortal: this.onPortal,
       night: this.isNight,
+      openJobs: Math.max(0, this.jobSlots.total - this.jobSlots.assigned),
       hasDeposited: this.guidance.hasDeposited,
     };
   }
@@ -1005,6 +1118,8 @@ export class Game {
     }
 
     this.buildings.remove(building.id);
+    // 없어진 일터에 묶인 배정을 푼다. 그러지 않으면 주민이 빈 자리로 출근한다.
+    this.population.releaseWorkplace(building.id);
 
     // 절반 환불. 인벤토리를 먼저 채우고 남으면 창고로 보낸다.
     const refunded: Array<{ item: ItemType; amount: number }> = [];

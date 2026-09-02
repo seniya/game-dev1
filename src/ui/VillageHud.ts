@@ -22,6 +22,10 @@ export interface VillageHudState {
   clock: string;
   /** 시간대 이름("낮"). */
   phase: string;
+  /** 일터에 배정된 주민 수. */
+  jobsAssigned: number;
+  /** 일터 자리 총합. 0이면 표시하지 않는다. */
+  jobsTotal: number;
 }
 
 /**
@@ -106,7 +110,8 @@ export class VillageHud {
       this.fillElement.style.width = `${percent}%`;
     }
 
-    const clock = `${state.day}일차 ${state.clock} · ${state.phase}`;
+    const jobs = state.jobsTotal > 0 ? ` · 일자리 ${state.jobsAssigned}/${state.jobsTotal}` : '';
+    const clock = `${state.day}일차 ${state.clock} · ${state.phase}${jobs}`;
     if (clock !== this.lastClock) {
       this.lastClock = clock;
       this.clockElement.textContent = clock;

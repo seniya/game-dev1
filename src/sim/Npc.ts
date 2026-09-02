@@ -42,6 +42,17 @@ export class Npc {
   /** 스프라이트 색을 가르는 색상값(0~359). */
   readonly hue: number;
 
+  /** 일터로 삼은 건물 번호. 배정되지 않았으면 null. */
+  private jobId: number | null = null;
+
+  /**
+   * 지금 머무는 기준점.
+   *
+   * 낮에 일터가 있으면 일터 앞, 그 밖에는 집 앞이다. 배회 반경은 이 점을 중심으로
+   * 잡는다 — "정해진 시간대에 배회한다"(기획서 5.4)를 경로 탐색 없이 표현하는 방법이다.
+   */
+  private anchorTile: TilePos;
+
   /** 현재 서 있는 칸. */
   private tile: TilePos;
   /** 진행 중인 이동. 없으면 null. */
@@ -60,9 +71,41 @@ export class Npc {
     this.id = id;
     this.homeBuildingId = homeBuildingId;
     this.homeTile = { x: homeTile.x, y: homeTile.y };
+    this.anchorTile = { x: homeTile.x, y: homeTile.y };
     this.tile = { x: homeTile.x, y: homeTile.y };
     this.hue = Math.floor(hashNoise(id, 17, 991) * 360);
     this.idleRemainingMs = this.pickIdleTime();
+  }
+
+  /** 일터 건물 번호. 배정되지 않았으면 null. */
+  get jobBuildingId(): number | null {
+    return this.jobId;
+  }
+
+  /**
+   * 일터를 배정하거나 해제한다.
+   *
+   * @param buildingId 일터 건물 번호. null이면 해제한다.
+   */
+  setJob(buildingId: number | null): void {
+    this.jobId = buildingId;
+  }
+
+  /** 지금 머무는 기준점. */
+  get anchor(): TilePos {
+    return { x: this.anchorTile.x, y: this.anchorTile.y };
+  }
+
+  /**
+   * 머무는 기준점을 바꾼다. 낮에는 일터, 밤에는 집이다.
+   *
+   * 순간이동시키지 않는다 — 기준점만 옮기면 주민이 **걸어서** 그쪽으로 모인다.
+   * 배회가 곧 출퇴근이 되는 셈이라 새 이동 로직이 필요 없다.
+   *
+   * @param tile 새 기준점.
+   */
+  setAnchor(tile: TilePos): void {
+    this.anchorTile = { x: tile.x, y: tile.y };
   }
 
   /** 현재 서 있는 칸(정수). */
@@ -120,14 +163,21 @@ export class Npc {
    * @param terrain 지형.
    */
   private startWander(terrain: Terrain): void {
-    const candidates = walkableNeighbors(terrain, this.tile).filter(
-      (tile) => this.distanceFromHome(tile) <= WANDER_RADIUS,
-    );
-
-    if (candidates.length === 0) {
+    const neighbors = walkableNeighbors(terrain, this.tile);
+    if (neighbors.length === 0) {
       this.idleRemainingMs = this.pickIdleTime();
       return;
     }
+
+    const here = this.distanceFromAnchor(this.tile);
+
+    // 기준점에서 멀어져 있으면(출퇴근 중) 가까워지는 칸만 후보로 둔다. 경로 탐색은
+    // 하지 않으므로 막히면 제자리에 머물 뿐, 곤란해지지 않는다.
+    const homeward = here > WANDER_RADIUS
+      ? neighbors.filter((tile) => this.distanceFromAnchor(tile) < here)
+      : neighbors.filter((tile) => this.distanceFromAnchor(tile) <= WANDER_RADIUS);
+
+    const candidates = homeward.length > 0 ? homeward : neighbors;
 
     const pick = Math.floor(this.roll() * candidates.length);
     this.movement = {
@@ -138,13 +188,13 @@ export class Npc {
   }
 
   /**
-   * 집에서의 거리를 구한다.
+   * 기준점에서의 거리를 구한다.
    *
    * @param tile 대상 칸.
    * @returns 맨해튼 거리.
    */
-  private distanceFromHome(tile: TilePos): number {
-    return Math.abs(tile.x - this.homeTile.x) + Math.abs(tile.y - this.homeTile.y);
+  private distanceFromAnchor(tile: TilePos): number {
+    return Math.abs(tile.x - this.anchorTile.x) + Math.abs(tile.y - this.anchorTile.y);
   }
 
   /**

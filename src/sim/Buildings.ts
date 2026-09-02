@@ -100,6 +100,20 @@ export class Buildings {
   }
 
   /**
+   * 번호로 건물을 찾는다.
+   *
+   * @param id 건물 번호.
+   * @returns 건물. 없으면 undefined.
+   */
+  buildingById(id: number): Building | undefined {
+    for (const building of this.all) {
+      if (building.id === id) return building;
+    }
+
+    return undefined;
+  }
+
+  /**
    * 그 칸을 점유한 건물을 돌려준다.
    *
    * @param x 그리드 x.

@@ -35,6 +35,12 @@ export function describeFailure(reason: ActionFailure, placement?: PlacementFail
       return '통로 위에 서서 F를 누르세요';
     case 'mapLocked':
       return '아직 들어갈 수 없습니다';
+    case 'noWorkplace':
+      return '일터가 아닙니다 — 작업대·채석장·대장간에 배정할 수 있습니다';
+    case 'jobFull':
+      return '이미 일하는 주민이 있습니다';
+    case 'noWorker':
+      return '일할 주민이 없습니다';
     case 'blocked':
       return '여기에는 놓을 수 없습니다';
     case 'noBlueprint':

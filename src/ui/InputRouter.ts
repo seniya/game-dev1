@@ -116,6 +116,8 @@ export class InputRouter {
     this.keyboard.bind('KeyX', () => this.demolish());
     // 맵 이동. 통로 위에 서서 누른다.
     this.keyboard.bind('KeyF', () => this.travel());
+    // 일터 배정. 겨냥한 건물에 주민을 넣거나 뺀다.
+    this.keyboard.bind('KeyG', () => this.toggleWorker());
     this.keyboard.bind('KeyR', () => this.fulfill());
 
     // 시야 조작. 마우스의 휠·드래그를 대신한다.
@@ -291,6 +293,18 @@ export class InputRouter {
       this.cursor.faceTowards(1, 0);
       this.hooks.follow?.();
     }
+  }
+
+  /** 겨냥한 일터에 주민을 배정하거나 뺀다. */
+  private toggleWorker(): void {
+    this.hooks.unlock?.();
+
+    const target = this.target;
+    if (!target) return;
+
+    const result = this.game.toggleWorker(target);
+    this.hooks.report?.(result, target);
+    if (result.ok) this.hooks.play?.(SoundId.BUILD_DONE);
   }
 
   /** 낼 수 있는 요청을 낸다. */

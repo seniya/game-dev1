@@ -211,6 +211,7 @@ describe('게임 안의 시각', () => {
       blueprintCount: 3,
       onPortal: false,
       night: true,
+      openJobs: 0,
       hasDeposited: false,
     } satisfies GuidanceState;
 

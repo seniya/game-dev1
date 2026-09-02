@@ -36,6 +36,8 @@ export interface GuidanceState {
   onPortal: boolean;
   /** 지금이 밤인지. 첫 밤에 한 번만 알린다. */
   night: boolean;
+  /** 비어 있는 일터 자리 수. 배정 안내에 쓴다. */
+  openJobs: number;
   /** 지금 고를 수 있는 블루프린트 수. 숫자 키 안내에 쓴다. */
   blueprintCount: number;
   /** 창고에 한 번이라도 예치했는지. */
@@ -54,6 +56,8 @@ export const HintId = {
   DEMOLISH: 'demolish',
   /** 첫 밤이 왔을 때 — 시야가 좁아지는 이유를 알린다. */
   NIGHT: 'night',
+  /** 일터가 비었을 때 — 주민을 배정할 수 있음을 알린다. */
+  JOB: 'job',
 } as const;
 
 /** 힌트 종류 값. */
@@ -66,6 +70,7 @@ const HINT_TEXT: Readonly<Record<HintId, string>> = {
   [HintId.REQUEST]: '자재가 있으면 R로 주민 요청을 냅니다',
   [HintId.DEMOLISH]: 'X로 건물을 철거하면 자재 절반이 돌아옵니다',
   [HintId.NIGHT]: '밤에는 시야가 좁아집니다 — 아침이 오면 다시 넓어집니다',
+  [HintId.JOB]: 'G로 일터에 주민을 배정하면 낮 동안 자원을 냅니다',
 };
 
 /**
@@ -92,6 +97,8 @@ export function pickHint(state: GuidanceState, seen: ReadonlySet<HintId>): HintI
   if (!seen.has(HintId.DEMOLISH) && state.buildings >= 3) return HintId.DEMOLISH;
   // 첫 밤은 화면이 눈에 띄게 달라지는 순간이다. 왜 달라졌는지 한 번은 알려야 한다.
   if (!seen.has(HintId.NIGHT) && state.night) return HintId.NIGHT;
+  // 일터를 지었는데 아무도 없으면 배정할 수 있다는 것을 모르고 지나칠 수 있다.
+  if (!seen.has(HintId.JOB) && state.openJobs > 0 && state.residents > 0) return HintId.JOB;
 
   return null;
 }
@@ -168,6 +175,7 @@ export function controlHint(state: GuidanceState): string {
   if (state.payableRequests > 0) parts.push('R: 요청 납품');
   if (state.buildings >= 3) parts.push('X: 철거');
   if (state.onPortal) parts.push('F: 이동');
+  if (state.openJobs > 0) parts.push('G: 일터 배정');
 
   parts.push('+/-: 확대');
 

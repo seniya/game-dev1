@@ -538,6 +538,7 @@ const BUILDING_LOOK: Readonly<
   well: { roof: '#7a6a55', roofDark: '#615343', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.8, door: false },
   workbench: { roof: '#8a6f47', roofDark: '#6f5939', wallX: '#b39566', wallY: '#957b54', height: 0.7, door: false },
   forge: { roof: '#c26a3a', roofDark: '#9c5330', wallX: '#6f6a68', wallY: '#575250', height: 1.3, door: true },
+  quarry: { roof: '#7f8892', roofDark: '#666e77', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9, door: false },
 };
 
 /**

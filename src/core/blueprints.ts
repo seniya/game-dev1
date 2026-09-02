@@ -9,6 +9,8 @@ export const BlueprintId = {
   MANOR: 'manor',
   /** 대장간. 동굴의 수정을 써서 짓는다. */
   FORGE: 'forge',
+  /** 채석장. 채석공이 돌을 내는 일터다. */
+  QUARRY: 'quarry',
   /** 창고. 마을 저장 공간을 늘린다. */
   WAREHOUSE: 'warehouse',
   /** 우물. 주민 요청 대상이 되는 시설이다. */
@@ -124,6 +126,21 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     ],
     unlockLevel: 3,
     housing: 2,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.QUARRY,
+    label: '채석장',
+    style: 'quarry',
+    width: 2,
+    depth: 2,
+    materials: [
+      { item: ItemType.WOOD, amount: 10 },
+      { item: ItemType.STONE, amount: 12 },
+    ],
+    // 일터가 열리는 첫 자리다. 작업대(레벨 1)만으로는 목재밖에 나오지 않는다.
+    unlockLevel: 4,
+    housing: 0,
     storageSlots: 0,
   },
   {

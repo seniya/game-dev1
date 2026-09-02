@@ -52,7 +52,14 @@ export type Entity =
   | { kind: 'building'; x: number; y: number; z: number; width: number; depth: number; style: BuildingStyle; progress: number };
 
 /** 건물 외형 종류. 블루프린트가 이 값으로 자기 모습을 지정한다. */
-export type BuildingStyle = 'house' | 'bigHouse' | 'warehouse' | 'well' | 'workbench' | 'forge';
+export type BuildingStyle =
+  | 'house'
+  | 'bigHouse'
+  | 'warehouse'
+  | 'well'
+  | 'workbench'
+  | 'forge'
+  | 'quarry';
 
 /**
  * 지형 위에 얹는 구역 표시.
@@ -1125,6 +1132,7 @@ const BUILDING_STYLE: Readonly<
   // 대장간은 어두운 벽과 달아오른 지붕으로 둔다 — 마을에서 한눈에 구분돼야
   // 동굴에 다녀온 보람이 보인다.
   forge: { roof: '#c26a3a', wallX: '#6f6a68', wallY: '#575250', height: 1.3 },
+  quarry: { roof: '#7f8892', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9 },
 };
 
 /**

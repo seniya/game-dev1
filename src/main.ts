@@ -393,6 +393,8 @@ function bootstrap(): void {
           day: game.dayCount,
           clock: clockLabel(game.timeOfDay),
           phase: phaseLabel(game.dayPhase),
+          jobsAssigned: game.jobSlots.assigned,
+          jobsTotal: game.jobSlots.total,
         });
 
         // 조작 안내는 상황에 맞는 것만 보여준다. 모든 키를 늘 늘어놓으면 지금 쓸 키가 묻힌다.

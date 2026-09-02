@@ -3,6 +3,7 @@ import { type TilePos, canStand } from '../core/movement';
 import type { Terrain } from '../core/Terrain';
 import type { NpcSave } from '../core/save';
 import type { Buildings, Building } from './Buildings';
+import { SLOTS_PER_WORKPLACE, isWorkplace } from '../core/jobs';
 import { Npc } from './Npc';
 
 /** 이주 결과. */
@@ -84,6 +85,9 @@ export class Population {
         homeY: npc.homeTile.y,
         x: npc.position.x,
         y: npc.position.y,
+        // 배정은 사용자의 선택이므로 저장한다. 예전 저장에는 없고, 없으면
+        // "일하지 않는다"로 읽히는 것이 맞는 해석이라 형식 버전은 올리지 않는다.
+        ...(npc.jobBuildingId === null ? {} : { jobBuildingId: npc.jobBuildingId }),
       })),
       nextId: this.nextId,
     };
@@ -112,6 +116,11 @@ export class Population {
 
       const npc = new Npc(entry.id, entry.homeBuildingId, { x: entry.homeX, y: entry.homeY });
       npc.placeAt({ x: entry.x, y: entry.y });
+      // 없어진 건물을 가리키는 배정은 버린다 — 저장과 마을이 어긋난 상태를 만들지 않는다.
+      if (typeof entry.jobBuildingId === 'number') {
+        const workplace = population.workplaceById(entry.jobBuildingId);
+        if (workplace) npc.setJob(entry.jobBuildingId);
+      }
       population.npcs.push(npc);
     }
 
@@ -124,9 +133,12 @@ export class Population {
    * 한 스텝 진행한다.
    *
    * @param stepMs 스텝 길이(ms).
+   * @param workTime 지금이 일하는 시간대인지. 낮이면 배정된 주민이 일터로 간다.
    * @returns 이번 스텝에 일어난 이주 목록.
    */
-  update(stepMs: number): Migration[] {
+  update(stepMs: number, workTime = false): Migration[] {
+    this.syncAnchors(workTime);
+
     for (const npc of this.npcs) npc.update(stepMs, this.terrain);
 
     if (!this.hasVacancy) {
@@ -142,6 +154,124 @@ export class Population {
     const migration = this.moveIn();
 
     return migration ? [migration] : [];
+  }
+
+  /**
+   * 주민들이 머물 기준점을 시간대에 맞춘다.
+   *
+   * 낮에는 배정된 일터 앞, 그 밖에는 집 앞이다. 순간이동이 아니라 기준점만 옮기므로
+   * 주민이 걸어서 오간다 — 출퇴근이 배회 로직 위에 그대로 얹힌다.
+   *
+   * @param workTime 지금이 일하는 시간대인지.
+   */
+  private syncAnchors(workTime: boolean): void {
+    for (const npc of this.npcs) {
+      const job = workTime ? npc.jobBuildingId : null;
+      const workplace = job === null ? null : this.workplaceById(job);
+      const doorstep = workplace ? this.findDoorstep(workplace) : null;
+
+      npc.setAnchor(doorstep ?? npc.homeTile);
+    }
+  }
+
+  /**
+   * 일터로 쓸 수 있는 완공 건물을 번호로 찾는다.
+   *
+   * @param buildingId 건물 번호.
+   * @returns 건물. 없거나 일터가 아니면 null.
+   */
+  private workplaceById(buildingId: number): Building | null {
+    for (const building of this.buildings.all) {
+      if (building.id !== buildingId) continue;
+      if (building.buildRemainingMs > 0) return null;
+
+      return isWorkplace(building.blueprintId) ? building : null;
+    }
+
+    return null;
+  }
+
+  /**
+   * 그 일터에 배정된 주민들.
+   *
+   * @param buildingId 건물 번호.
+   * @returns 배정된 주민 목록.
+   */
+  workersAt(buildingId: number): Npc[] {
+    return this.npcs.filter((npc) => npc.jobBuildingId === buildingId);
+  }
+
+  /** 지금 어디에도 배정되지 않은 주민들. */
+  get idleWorkers(): Npc[] {
+    return this.npcs.filter((npc) => npc.jobBuildingId === null);
+  }
+
+  /** 배정된 주민 수. */
+  get employed(): number {
+    return this.npcs.filter((npc) => npc.jobBuildingId !== null).length;
+  }
+
+  /**
+   * 그 일터에 주민 한 명을 배정한다.
+   *
+   * 누구를 배정할지는 고르게 하지 않는다 — 주민이 마흔 명까지 늘어나는데(측정값)
+   * 그중 하나를 지목하게 하면 목록 UI가 필요하고, 이 게임의 UI 원칙(대사창 없음,
+   * 토스트와 아이콘)과 맞지 않는다. **가장 가까운 놀고 있는 주민**이 간다.
+   *
+   * @param building 일터 건물.
+   * @returns 배정된 주민. 자리가 없거나 놀고 있는 주민이 없으면 null.
+   */
+  assign(building: Building): Npc | null {
+    if (!isWorkplace(building.blueprintId)) return null;
+    if (building.buildRemainingMs > 0) return null;
+    if (this.workersAt(building.id).length >= SLOTS_PER_WORKPLACE) return null;
+
+    let best: Npc | null = null;
+    let bestDistance = Number.POSITIVE_INFINITY;
+    for (const npc of this.idleWorkers) {
+      const distance =
+        Math.abs(npc.position.x - building.x) + Math.abs(npc.position.y - building.y);
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = npc;
+      }
+    }
+
+    if (!best) return null;
+
+    best.setJob(building.id);
+
+    return best;
+  }
+
+  /**
+   * 그 일터에서 주민 한 명을 뺀다.
+   *
+   * @param buildingId 건물 번호.
+   * @returns 빠진 주민. 배정된 주민이 없으면 null.
+   */
+  unassign(buildingId: number): Npc | null {
+    const worker = this.workersAt(buildingId)[0];
+    if (!worker) return null;
+
+    worker.setJob(null);
+    worker.setAnchor(worker.homeTile);
+
+    return worker;
+  }
+
+  /**
+   * 없어진 건물에 묶인 배정을 푼다. 철거 뒤에 부른다.
+   *
+   * @param buildingId 없어진 건물 번호.
+   */
+  releaseWorkplace(buildingId: number): void {
+    for (const npc of this.npcs) {
+      if (npc.jobBuildingId !== buildingId) continue;
+
+      npc.setJob(null);
+      npc.setAnchor(npc.homeTile);
+    }
   }
 
   /**

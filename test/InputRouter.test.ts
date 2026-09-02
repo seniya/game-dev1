@@ -304,6 +304,21 @@ describe('키보드만으로 플레이', () => {
     expect(reports.some((result) => !result.ok && result.reason === 'notPortal')).toBe(true);
   });
 
+  it('G는 일터가 아니면 이유를 알린다 — 배정도 키보드로 한다', () => {
+    const { game, press, step, reports } = setup();
+    const storage = game.startingStorage;
+    game.player.placeAt(storage.x + 1, storage.y);
+    // 커서를 창고 쪽으로 돌린다.
+    press('ArrowLeft');
+    press('ArrowLeft');
+    step();
+
+    press('KeyG');
+    step();
+
+    expect(reports.some((result) => !result.ok && result.reason === 'noWorkplace')).toBe(true);
+  });
+
   it('R은 낼 요청이 없으면 알린다', () => {
     const { press, step, toasts } = setup();
 
