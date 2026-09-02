@@ -66,7 +66,9 @@ export type Unlock =
   /** 이동이 빨라진다. 값은 배수다. */
   | { kind: 'speed'; multiplier: number }
   /** 채집이 빨라진다. 값은 배수다. */
-  | { kind: 'harvest'; multiplier: number };
+  | { kind: 'harvest'; multiplier: number }
+  /** 건물 외형이 하나 늘어난다. 규칙에는 영향이 없다. */
+  | { kind: 'look'; label: string };
 
 /**
  * 레벨별 해금 목록(블루프린트는 `BLUEPRINTS`의 `unlockLevel`에서 파생한다).
@@ -80,7 +82,10 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
     { kind: 'tool', tool: ToolKind.AXE, tier: ToolTier.MID },
     { kind: 'tool', tool: ToolKind.SHOVEL, tier: ToolTier.MID },
   ],
-  3: [{ kind: 'tool', tool: ToolKind.PICKAXE, tier: ToolTier.MID }],
+  3: [
+    { kind: 'tool', tool: ToolKind.PICKAXE, tier: ToolTier.MID },
+    { kind: 'look', label: '푸른 지붕' },
+  ],
   4: [
     { kind: 'tool', tool: ToolKind.AXE, tier: ToolTier.HIGH },
     { kind: 'tool', tool: ToolKind.SHOVEL, tier: ToolTier.HIGH },
@@ -94,12 +99,13 @@ const LEVEL_UNLOCKS: Readonly<Record<number, readonly Unlock[]>> = {
 
   // 레벨 6부터는 새 콘텐츠 대신 **편의**를 연다. 로드맵 02는 완성도를 다루는 단계이고,
   // 새 자원·건물·지역은 로드맵 03의 영역이다. 자세한 근거는 ADR 0011에 있다.
-  6: [{ kind: 'inventory', slots: 2 }],
+  6: [{ kind: 'inventory', slots: 2 }, { kind: 'look', label: '초록 지붕' }],
   7: [{ kind: 'speed', multiplier: 1.2 }],
   8: [{ kind: 'storage', slots: 8 }],
   9: [
     { kind: 'inventory', slots: 2 },
     { kind: 'harvest', multiplier: 1.25 },
+    { kind: 'look', label: '황금 지붕' },
   ],
   10: [{ kind: 'speed', multiplier: 1.15 }],
 };
@@ -301,6 +307,7 @@ export function describeUnlock(unlock: Unlock): string {
     return `${tierLabels[unlock.tier]} ${toolLabels[unlock.tool]}`;
   }
   if (unlock.kind === 'map') return `${mapLabel(unlock.map)} 개방`;
+  if (unlock.kind === 'look') return `${unlock.label} (V로 교체)`;
   if (unlock.kind === 'inventory') return `인벤토리 슬롯 +${unlock.slots}`;
   if (unlock.kind === 'storage') return `창고 슬롯 +${unlock.slots}`;
   if (unlock.kind === 'speed') return `이동 속도 +${Math.round((unlock.multiplier - 1) * 100)}%`;

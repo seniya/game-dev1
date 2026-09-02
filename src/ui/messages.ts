@@ -41,6 +41,11 @@ export function describeFailure(reason: ActionFailure, placement?: PlacementFail
       return '이미 일하는 주민이 있습니다';
     case 'noWorker':
       return '일할 주민이 없습니다';
+    case 'noLook':
+      return '아직 바꿀 외형이 없습니다 — 마을 레벨을 올리세요';
+    case 'notDamaged':
+      // 성한 건물에 대고 눌렀을 때다. 알리면 시끄럽기만 하다.
+      return null;
     case 'blocked':
       return '여기에는 놓을 수 없습니다';
     case 'noBlueprint':

@@ -1,4 +1,5 @@
 import { BlueprintId, blueprintById, buildDurationMs, type Blueprint } from '../core/blueprints';
+import { lookById } from '../core/looks';
 import { DAMAGE_LIMIT } from '../core/monsters';
 import { isAdjacent, type TilePos } from '../core/movement';
 import type { BuildingSave } from '../core/save';
@@ -23,6 +24,12 @@ export interface Building {
    * 사라지지 않는다** — 되돌릴 수 없는 손실은 캐주얼 성격과 어긋난다.
    */
   damage: number;
+  /**
+   * 외형 번호(기획서 5.3의 외형 슬롯).
+   *
+   * 규칙에는 아무 영향이 없다 — 보기 위한 값이다.
+   */
+  look: number;
 }
 
 /** 배치가 거절된 이유. */
@@ -112,6 +119,22 @@ export class Buildings {
     if (building.damage >= DAMAGE_LIMIT) return false;
 
     building.damage += 1;
+
+    return true;
+  }
+
+  /**
+   * 건물의 외형을 바꾼다.
+   *
+   * @param id 건물 번호.
+   * @param look 새 외형 번호.
+   * @returns 바뀌었으면 true.
+   */
+  setLook(id: number, look: number): boolean {
+    const building = this.buildings.get(id);
+    if (!building || building.look === look) return false;
+
+    building.look = look;
 
     return true;
   }
@@ -287,6 +310,7 @@ export class Buildings {
       y,
       buildRemainingMs: instant ? 0 : buildDurationMs(blueprint),
       damage: 0,
+      look: 0,
     };
     this.nextId += 1;
 
@@ -318,6 +342,7 @@ export class Buildings {
         buildRemainingMs: building.buildRemainingMs,
         // 성한 건물에는 담지 않는다. 선택적 필드라 예전 저장도 그대로 읽힌다.
         ...(building.damage > 0 ? { damage: building.damage } : {}),
+        ...(building.look > 0 ? { look: building.look } : {}),
       });
     }
 
@@ -360,6 +385,8 @@ export class Buildings {
         buildRemainingMs: Math.max(0, entry.buildRemainingMs ?? 0),
         // 범위를 벗어난 손상값은 잘라 낸다. 손상된 저장이 규칙을 넘지 않게 한다.
         damage: Math.max(0, Math.min(DAMAGE_LIMIT, Math.floor(entry.damage ?? 0))),
+        // 없는 외형 번호는 기본으로 떨어뜨린다.
+        look: lookById(Math.floor(entry.look ?? 0)).id,
       };
 
       buildings.buildings.set(building.id, building);

@@ -1,5 +1,6 @@
 import { BlockType } from '../core/blocks';
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH } from '../core/coordinates';
+import { lookById } from '../core/looks';
 import type { BuildingStyle } from './WorldRenderer';
 
 /**
@@ -67,7 +68,7 @@ export interface SpriteSet {
    * @param width 가로 칸수.
    * @param depth 세로 칸수.
    */
-  building(style: BuildingStyle, width: number, depth: number): Sprite;
+  building(style: BuildingStyle, width: number, depth: number, look?: number): Sprite;
   /**
    * 캐릭터. 기준점은 발이 놓인 칸의 윗면 중심이다.
    *
@@ -118,8 +119,9 @@ export function createSpriteSet(): SpriteSet | null {
     sideY: (block) => memo(`sy:${block}`, () => makeSide(block, false)),
     tree: (stage) => memo(`tree:${stage}`, () => makeTree(stage)),
     oreVein: (iron, stage) => memo(`ore:${iron}:${stage}`, () => makeOreVein(iron, stage)),
-    building: (style, width, depth) =>
-      memo(`b:${style}:${width}:${depth}`, () => makeBuilding(style, width, depth)),
+    // 캐시 키에 외형을 넣지 않으면 같은 종류의 건물이 모두 마지막 외형으로 그려진다.
+    building: (style, width, depth, look = 0) =>
+      memo(`b:${style}:${width}:${depth}:${look}`, () => makeBuilding(style, width, depth, look)),
     // 색상은 30도 단위로 묶는다. 주민마다 캔버스를 만들면 수가 늘수록 메모리가 는다.
     pawn: (hue) => memo(`pawn:${quantizeHue(hue)}`, () => makePawn(quantizeHue(hue))),
   };
@@ -546,13 +548,22 @@ const BUILDING_LOOK: Readonly<
 /**
  * 건물 스프라이트를 만든다.
  *
- * @param style 외형.
+ * @param style 건물 종류.
  * @param width 가로 칸수.
  * @param depth 세로 칸수.
  * @returns 스프라이트.
  */
-function makeBuilding(style: BuildingStyle, width: number, depth: number): Sprite {
-  const look = BUILDING_LOOK[style];
+function makeBuilding(
+  style: BuildingStyle,
+  width: number,
+  depth: number,
+  variantId = 0,
+): Sprite {
+  const base = BUILDING_LOOK[style];
+  const variant = lookById(variantId);
+  const look = variant.roof && variant.roofDark
+    ? { ...base, roof: variant.roof, roofDark: variant.roofDark }
+    : base;
   const halfW = (TILE_WIDTH / 2) * (width + depth) * 0.5;
   const halfH = (TILE_HEIGHT / 2) * (width + depth) * 0.5;
   const body = TILE_HEIGHT * look.height;

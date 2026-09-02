@@ -75,6 +75,8 @@ export interface BuildingSave {
    * 그것이 맞는 해석이다.
    */
   damage?: number;
+  /** 외형 번호. **선택적 필드다.** 없으면 기본 외형으로 읽힌다. */
+  look?: number;
 }
 
 /** 저장된 주민 하나. */

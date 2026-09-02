@@ -1,5 +1,6 @@
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH, gridToWorld } from '../core/coordinates';
 import { darkColor, darknessAt } from '../core/light';
+import { lookById } from '../core/looks';
 import { BlockType, blockInfo } from '../core/blocks';
 import type { Terrain } from '../core/Terrain';
 import type { Camera } from './Camera';
@@ -60,6 +61,8 @@ export type Entity =
       progress: number;
       /** 손상됐는지. 손상된 건물은 표시로 알린다. */
       damaged?: boolean;
+      /** 외형 번호. 지붕 색을 바꾼다. */
+      look?: number;
     }
   /** 밤에 몰려온 몬스터. */
   | { kind: 'monster'; x: number; y: number; z: number; health: number };
@@ -694,7 +697,7 @@ export class WorldRenderer {
       case 'building':
         if (entity.progress >= 1) {
           this.drawSprite(
-            sprites.building(entity.style, entity.width, entity.depth),
+            sprites.building(entity.style, entity.width, entity.depth, entity.look ?? 0),
             screen.x + ((entity.width - 1) - (entity.depth - 1)) * (TILE_WIDTH / 4) * zoom,
             screen.y + ((entity.width - 1) + (entity.depth - 1)) * (TILE_HEIGHT / 4) * zoom,
             zoom,
@@ -973,7 +976,10 @@ export class WorldRenderer {
     zoom: number,
     entity: Extract<Entity, { kind: 'building' }>,
   ): void {
-    const style = BUILDING_STYLE[entity.style];
+    const base = BUILDING_STYLE[entity.style];
+    // 외형은 지붕 색만 바꾼다. 벽까지 바꾸면 건물 종류를 알아보기 어려워진다.
+    const variant = lookById(entity.look ?? 0);
+    const style = variant.roof ? { ...base, roof: variant.roof } : base;
     const halfW = (TILE_WIDTH / 2) * zoom;
     const halfH = (TILE_HEIGHT / 2) * zoom;
     const done = entity.progress >= 1;

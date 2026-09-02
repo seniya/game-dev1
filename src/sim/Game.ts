@@ -17,6 +17,7 @@ import {
 } from '../core/daycycle';
 import { ItemType, blockToItem, itemLabel, itemToBlock } from '../core/items';
 import { SLOTS_PER_WORKPLACE, isWorkplace, jobDefinition, jobForWorkplace } from '../core/jobs';
+import { lookById, nextLook, unlockedLooks } from '../core/looks';
 import { DEFEAT_REWARD } from '../core/monsters';
 import { MapId, isVillageMap, mapLabel, mapSeed } from '../core/maps';
 import { canInteract, walkableNeighbors, type TilePos } from '../core/movement';
@@ -80,6 +81,8 @@ export interface Notice {
 
 /** 행동이 거절된 이유. UI 안내 문구로 옮긴다. */
 export type ActionFailure =
+  /** 바꿀 외형이 아직 없다. */
+  | 'noLook'
   /** 고칠 것이 없다(성한 건물이다). */
   | 'notDamaged'
   /** 일터가 아닌 건물이다. */
@@ -264,6 +267,7 @@ export class Game {
           y: start.y,
           buildRemainingMs: 0,
           damage: 0,
+          look: 0,
         })
       : placeStartingStorage(this.buildings, surfaceResources, terrain, start);
 
@@ -565,6 +569,32 @@ export class Game {
       message: `${blueprint.label}을(를) 고쳤습니다`,
       tone: 'good',
       cue: 'buildDone',
+    });
+
+    return { ok: true, building };
+  }
+
+  /**
+   * 겨냥한 건물의 외형을 다음 것으로 바꾼다.
+   *
+   * 규칙에는 아무 영향이 없다(기획서 5.3의 외형 슬롯). 열린 외형이 하나뿐이면 바꿀 것이
+   * 없다고 알린다 — 아무 일도 안 일어나면 키가 고장 난 것처럼 보인다.
+   *
+   * @param target 대상 칸.
+   * @returns 행동 결과.
+   */
+  cycleLook(target: TilePos): ActionResult {
+    if (!this.inVillage) return { ok: false, reason: 'notVillage' };
+
+    const building = this.buildings.buildingAt(target.x, target.y);
+    if (!building) return { ok: false, reason: 'noBuilding' };
+    if (unlockedLooks(this.level).length <= 1) return { ok: false, reason: 'noLook' };
+
+    const next = nextLook(building.look, this.level);
+    this.buildings.setLook(building.id, next);
+    this.pendingNotices.push({
+      message: `${blueprintById(building.blueprintId).label} — ${lookById(next).label}`,
+      tone: 'neutral',
     });
 
     return { ok: true, building };
@@ -1625,6 +1655,7 @@ export class Game {
         style: blueprint.style,
         progress: this.buildings.progressOf(building),
         damaged: building.damage > 0,
+        look: building.look,
       });
     }
 
