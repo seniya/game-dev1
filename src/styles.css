@@ -285,7 +285,11 @@ body {
 /* 상단 미완료 요청 목록. 마을 표시 아래에 놓는다. */
 .requests {
   position: fixed;
-  top: 96px;
+  /*
+   * 상단 HUD 아래에 붙인다. 96px일 때는 "지금 할 일" 줄과 겹쳐 글자가 서로 먹혔다 —
+   * HUD에 시각·일자리·손상 표시가 붙으면서 높이가 늘어난 탓이다(화면에서 확인).
+   */
+  top: 132px;
   left: 10px;
   display: flex;
   flex-wrap: wrap;
