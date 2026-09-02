@@ -3,6 +3,8 @@ import { BlockType } from '../src/core/blocks';
 import { BlueprintId } from '../src/core/blueprints';
 import { ItemType } from '../src/core/items';
 import { Terrain } from '../src/core/Terrain';
+import { MapId } from '../src/core/maps';
+import type { ActionResult } from '../src/sim/Game';
 import { Game } from '../src/sim/Game';
 import { ResourceField } from '../src/sim/ResourceField';
 import { InputRouter } from '../src/ui/InputRouter';
@@ -33,7 +35,9 @@ function setup(size = 11) {
 
   const toasts: string[] = [];
   const zooms: number[] = [];
+  const reports: ActionResult[] = [];
   const router = new InputRouter(game, keyboard, {
+    report: (result) => reports.push(result),
     toast: (message) => toasts.push(message),
     zoomBy: (factor) => zooms.push(factor),
   });
@@ -79,7 +83,7 @@ function setup(size = 11) {
     }
   }
 
-  return { game, terrain, router, target, step, press, aimTo, toasts, zooms };
+  return { game, terrain, router, target, step, press, aimTo, toasts, zooms, reports };
 }
 
 /**
@@ -273,6 +277,28 @@ describe('키보드만으로 플레이', () => {
     target.keyUp('KeyS');
 
     expect(router.cursor.keyboardOffset).toEqual({ dx: -3, dy: -3 });
+  });
+
+  it('F로 동굴에 들어갔다 나온다 — 맵 이동도 키보드로 된다', () => {
+    const { game, press, step } = setup();
+    game.player.placeAt(game.portal.x, game.portal.y);
+
+    press('KeyF');
+    step();
+    expect(game.currentMap).toBe(MapId.CAVE);
+
+    press('KeyF');
+    step();
+    expect(game.currentMap).toBe(MapId.SURFACE);
+  });
+
+  it('통로 위가 아니면 F가 이유를 알린다', () => {
+    const { press, step, reports } = setup();
+
+    press('KeyF');
+    step();
+
+    expect(reports.some((result) => !result.ok && result.reason === 'notPortal')).toBe(true);
   });
 
   it('R은 낼 요청이 없으면 알린다', () => {

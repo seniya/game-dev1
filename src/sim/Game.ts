@@ -7,9 +7,11 @@ import {
   type Blueprint,
 } from '../core/blueprints';
 import { ItemType, blockToItem, itemToBlock } from '../core/items';
-import { canInteract, type TilePos } from '../core/movement';
+import { MapId, isVillageMap, mapLabel, mapSeed } from '../core/maps';
+import { canInteract, walkableNeighbors, type TilePos } from '../core/movement';
 import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
 import { Terrain } from '../core/Terrain';
+import { generateCave } from '../core/terrainGen';
 import { canDigBlock, tierSpeedMultiplier } from '../core/tools';
 import { requestMessage, type VillageRequest } from '../core/requests';
 import { SAVE_VERSION, isSaveData, type SaveData } from '../core/save';
@@ -25,7 +27,7 @@ import {
   villageScore,
   MAX_VILLAGE_LEVEL,
 } from '../core/village';
-import { zoneAt } from '../core/zones';
+import { distanceFromCenter, zoneAt } from '../core/zones';
 import type { Entity, GhostPreview } from '../render/WorldRenderer';
 import { Buildings, type Building, type PlacementFailure } from './Buildings';
 import { Player } from './Player';
@@ -37,6 +39,8 @@ import { ResourceField } from './ResourceField';
 
 /** UI로 알릴 사건의 종류. 문구·소리·연출을 고르는 데 쓴다. */
 export type NoticeCue =
+  /** 다른 맵으로 이동했다. */
+  | 'travel'
   | 'migration'
   | 'levelUp'
   | 'unlock'
@@ -56,6 +60,10 @@ export interface Notice {
 
 /** 행동이 거절된 이유. UI 안내 문구로 옮긴다. */
 export type ActionFailure =
+  /** 마을이 없는 맵에서는 할 수 없는 일이다(건축·철거). */
+  | 'notVillage'
+  /** 통로 위에 서 있지 않다. */
+  | 'notPortal'
   /** 이동·휘두르기 중이라 새 행동을 받을 수 없다. */
   | 'busy'
   /** 대상이 인접 칸이 아니다. */
@@ -105,13 +113,31 @@ export type ActionResult =
  * 적용한다. DOM과 렌더링을 전혀 모르므로 단위 테스트가 가능하다 — 조작 규칙이
  * 늘어날수록 이 분리의 이득이 커진다.
  */
+/** 맵 하나가 들고 있는 것. */
+interface WorldMapState {
+  /** 그 맵의 지형. */
+  terrain: Terrain;
+  /** 그 맵의 자원 노드. */
+  resources: ResourceField;
+  /** 반대편 맵으로 통하는 칸. */
+  portal: TilePos;
+}
+
 export class Game {
-  /** 지형. */
-  readonly terrain: Terrain;
+  /**
+   * 다녀온 맵들.
+   *
+   * 지상은 처음부터 있고, 동굴은 **처음 들어갈 때 시드에서 만들어진다.** 미리 만들지
+   * 않는 이유는 두 가지다 — 가 보지 않은 맵을 들고 있을 이유가 없고, 단위 테스트가
+   * 작은 지형 하나만으로 게임을 세울 수 있어야 한다.
+   */
+  private readonly maps = new Map<MapId, WorldMapState>();
+
+  /** 지금 있는 맵. */
+  private current: MapId = MapId.SURFACE;
+
   /** 플레이어. */
   readonly player: Player;
-  /** 자원 노드. */
-  readonly resources: ResourceField;
   /** 플레이어 인벤토리. */
   readonly inventory = new Inventory();
   /** 마을 공용 창고. 슬롯과 스택 상한이 인벤토리보다 넉넉하다. */
@@ -166,10 +192,14 @@ export class Game {
    *   곧바로 갈아 끼울 것이기 때문이다.
    */
   constructor(terrain: Terrain, resources?: ResourceField, options: { restoring?: boolean } = {}) {
-    this.terrain = terrain;
-    this.resources = resources ?? new ResourceField(terrain);
+    const surfaceResources = resources ?? new ResourceField(terrain);
+    this.maps.set(MapId.SURFACE, {
+      terrain,
+      resources: surfaceResources,
+      portal: findPortalTile(terrain, surfaceResources),
+    });
 
-    const start = findStartTile(terrain, this.resources);
+    const start = findStartTile(terrain, surfaceResources);
     this.player = new Player(start.x, start.y);
 
     this.buildings = new Buildings(terrain);
@@ -178,10 +208,93 @@ export class Game {
     // 첫 채집부터 인벤토리가 막혀 루프가 시작되지 않는다.
     this.startingStorage = options.restoring
       ? ({ id: 0, blueprintId: BlueprintId.WAREHOUSE, x: start.x, y: start.y, buildRemainingMs: 0 })
-      : placeStartingStorage(this.buildings, this.resources, terrain, start);
+      : placeStartingStorage(this.buildings, surfaceResources, terrain, start);
 
     this.population = new Population(terrain, this.buildings);
     this.requests = new RequestBoard(this.buildings, this.population);
+  }
+
+  /**
+   * 맵 상태를 가져온다. 동굴은 처음 물을 때 만들어진다.
+   *
+   * @param id 맵 종류.
+   * @returns 그 맵의 상태.
+   */
+  private mapState(id: MapId): WorldMapState {
+    const existing = this.maps.get(id);
+    if (existing) return existing;
+
+    const surface = this.maps.get(MapId.SURFACE)!;
+    const terrain = generateCave(surface.terrain.width, surface.terrain.height, {
+      seed: mapSeed(this.seed, id),
+    });
+    // 동굴의 자원은 로드맵 03 Phase 3이 채운다. 지금은 구조만 연다.
+    const resources = new ResourceField(terrain, { densityScale: 0 });
+    const created: WorldMapState = { terrain, resources, portal: findCaveExit(terrain) };
+
+    this.maps.set(id, created);
+
+    return created;
+  }
+
+  /** 지금 있는 맵의 지형. */
+  get terrain(): Terrain {
+    return this.maps.get(this.current)!.terrain;
+  }
+
+  /** 지금 있는 맵의 자원 노드. */
+  get resources(): ResourceField {
+    return this.maps.get(this.current)!.resources;
+  }
+
+  /** 지금 있는 맵. */
+  get currentMap(): MapId {
+    return this.current;
+  }
+
+  /** 지금 맵에 마을이 있는지. 건축·철거·예치가 여기에 달려 있다. */
+  get inVillage(): boolean {
+    return isVillageMap(this.current);
+  }
+
+  /** 지금 맵의 통로 칸. 반대편 맵으로 이어진다. */
+  get portal(): TilePos {
+    return this.maps.get(this.current)!.portal;
+  }
+
+  /** 통로 위에 서 있는지. 안내 문구에 쓴다. */
+  get onPortal(): boolean {
+    const at = this.player.position;
+    const portal = this.portal;
+
+    return at.x === portal.x && at.y === portal.y;
+  }
+
+  /**
+   * 통로를 타고 반대편 맵으로 간다.
+   *
+   * 도착 지점은 그쪽 맵의 통로 칸이다 — 나오면 들어간 자리에 서 있게 된다.
+   * 떠난 맵의 지형과 노드는 그대로 남아 있고(`maps`가 들고 있다), 마을의 시간도
+   * 계속 흐른다. 동굴에 있는 동안 마을이 멈추면 주민과 요청이 얼어붙는다.
+   *
+   * @returns 행동 결과.
+   */
+  travel(): ActionResult {
+    if (!this.onPortal) return { ok: false, reason: 'notPortal' };
+
+    const destination = this.current === MapId.SURFACE ? MapId.CAVE : MapId.SURFACE;
+    const arrival = this.mapState(destination);
+
+    this.current = destination;
+    this.player.placeAt(arrival.portal.x, arrival.portal.y);
+
+    this.pendingNotices.push({
+      message: `${mapLabel(destination)}으로 이동했습니다`,
+      tone: 'neutral',
+      cue: 'travel',
+    });
+
+    return { ok: true };
   }
 
   /**
@@ -192,7 +305,10 @@ export class Game {
   update(stepMs: number): void {
     this.elapsed += stepMs;
     this.player.update(stepMs);
-    this.resources.update(stepMs);
+
+    // 떠나 있는 맵도 함께 흐른다. 그러지 않으면 동굴에 다녀오는 동안 지상의
+    // 나무가 자라지 않아, 오래 있을수록 손해가 되는 이상한 규칙이 생긴다.
+    for (const map of this.maps.values()) map.resources.update(stepMs);
 
     for (const building of this.buildings.update(stepMs)) {
       this.onBuildingCompleted(building);
@@ -241,6 +357,7 @@ export class Game {
       goalLevel: this.goalLevel,
       buildMode: this.buildMode,
       blueprintCount: this.availableBlueprints.length,
+      onPortal: this.onPortal,
       hasDeposited: this.guidance.hasDeposited,
     };
   }
@@ -434,8 +551,13 @@ export class Game {
       version: SAVE_VERSION,
       savedAt: Date.now(),
       seed: this.seed,
-      terrain: this.terrain.toSave(),
-      nodes: this.resources.toSave(),
+      // 다녀온 맵만 담는다. 가 보지 않은 맵은 시드에서 다시 만들어진다.
+      maps: [...this.maps.entries()].map(([id, map]) => ({
+        id,
+        terrain: map.terrain.toSave(),
+        nodes: map.resources.toSave(),
+      })),
+      currentMap: this.current,
       player: this.player.toSave(),
       inventory: this.inventory.toSave(),
       storage: this.storage.toSave(),
@@ -468,10 +590,14 @@ export class Game {
   static fromSave(data: unknown): Game | null {
     if (!isSaveData(data)) return null;
 
-    const terrain = Terrain.fromSave(data.terrain);
+    // 마을은 지상에 있으므로 지상 지형이 없으면 되살릴 것이 없다.
+    const surfaceSave = data.maps.find((map) => map.id === MapId.SURFACE);
+    if (!surfaceSave) return null;
+
+    const terrain = Terrain.fromSave(surfaceSave.terrain);
     if (!terrain) return null;
 
-    const resources = ResourceField.fromSave(terrain, data.nodes);
+    const resources = ResourceField.fromSave(terrain, surfaceSave.nodes);
     const player = Player.fromSave(data.player);
     const inventory = Inventory.fromSave(data.inventory);
     const storage = Inventory.fromSave(data.storage);
@@ -510,8 +636,35 @@ export class Game {
       timerMs: data.requestTimerMs,
     });
     game.guidance.restore(data.seenHints, data.hasDeposited);
+    game.restoreMaps(data);
 
     return game;
+  }
+
+  /**
+   * 지상 말고 다녀왔던 맵들을 되살리고, 있던 자리로 돌려놓는다.
+   *
+   * 지형은 저장값으로 되살리지만 **통로 위치는 다시 계산한다** — 지형에서 파생되는
+   * 값이므로 저장하면 저장과 파생이 어긋날 수 있다(로드맵 02 Phase 1의 원칙).
+   *
+   * @param data 저장 데이터.
+   */
+  private restoreMaps(data: SaveData): void {
+    for (const saved of data.maps) {
+      if (saved.id === MapId.SURFACE) continue;
+
+      const terrain = Terrain.fromSave(saved.terrain);
+      if (!terrain) continue;
+
+      this.maps.set(saved.id, {
+        terrain,
+        resources: ResourceField.fromSave(terrain, saved.nodes),
+        portal: findCaveExit(terrain),
+      });
+    }
+
+    // 저장된 맵에 있을 때만 그 맵으로 돌아간다. 없으면 지상에서 시작한다.
+    if (this.maps.has(data.currentMap)) this.current = data.currentMap;
   }
 
   /**
@@ -662,7 +815,7 @@ export class Game {
    * @returns 미리보기. 건축 모드가 아니거나 커서가 없으면 null.
    */
   ghost(hovered: TilePos | null): GhostPreview | null {
-    if (!this.selectedBlueprint || !hovered) return null;
+    if (!this.selectedBlueprint || !hovered || !this.inVillage) return null;
 
     const origin = this.placementOrigin(this.selectedBlueprint, hovered);
     const check = this.buildings.canPlace(
@@ -690,6 +843,8 @@ export class Game {
    * @returns 잠겨 있으면 true.
    */
   isZoneLocked(x: number, y: number): boolean {
+    // 구역은 마을 중심에서의 거리로 나뉜다(ADR 0005). 동굴에는 마을 중심이 없다.
+    if (!this.inVillage) return false;
     if (!this.terrain.contains(x, y)) return false;
 
     return !isZoneUnlocked(zoneAt(this.terrain, x, y), this.level);
@@ -704,6 +859,9 @@ export class Game {
    * @returns 행동 결과.
    */
   buildAt(hovered: TilePos): ActionResult {
+    // 마을은 지상에 있다. 동굴에 집을 지으면 주민도 요청도 갈 곳이 어긋난다.
+    if (!this.inVillage) return { ok: false, reason: 'notVillage' };
+
     const blueprint = this.selectedBlueprint;
     if (!blueprint) return { ok: false, reason: 'noBlueprint' };
 
@@ -738,6 +896,8 @@ export class Game {
    * @returns 행동 결과. 성공하면 돌려준 자재를 gained에 담지 않고 refunded로 알린다.
    */
   demolishAt(target: TilePos): ActionResult & { refunded?: Array<{ item: ItemType; amount: number }> } {
+    if (!this.inVillage) return { ok: false, reason: 'notVillage' };
+
     const building = this.buildings.buildingAt(target.x, target.y);
     if (!building) return { ok: false, reason: 'noBuilding' };
 
@@ -837,7 +997,7 @@ export class Game {
 
     // 아직 열리지 않은 구역에서는 채집만 막는다. 이동을 막으면 벽이 필요하고
     // 그 벽이 지형 변형(파기·쌓기)과 충돌한다 — 구역 잠금은 규칙이지 지형이 아니다.
-    if (!isZoneUnlocked(zoneAt(this.terrain, target.x, target.y), this.level)) {
+    if (this.inVillage && !isZoneUnlocked(zoneAt(this.terrain, target.x, target.y), this.level)) {
       return { ok: false, reason: 'zoneLocked' };
     }
 
@@ -952,11 +1112,17 @@ export class Game {
    * @returns 점유돼 있으면 true.
    */
   isOccupied(target: TilePos): boolean {
+    // 건물은 지상에만 있다. 동굴에서 같은 좌표를 점유로 보면 파지도 쌓지도 못하는
+    // 칸이 이유 없이 생긴다.
+    if (!this.inVillage) return false;
+
     return this.buildings.isOccupied(target.x, target.y);
   }
 
   /** 지금 창고에 손이 닿는지 여부. 완공된 창고에 인접해야 한다. */
   get nearStorage(): boolean {
+    if (!this.inVillage) return false;
+
     return this.buildings.adjacentCompleted(this.player.position, BlueprintId.WAREHOUSE) !== undefined;
   }
 
@@ -1078,7 +1244,17 @@ export class Game {
       }
     }
 
-    for (const building of this.buildings.all) {
+    // 통로는 어느 맵에서나 보여야 한다. 보이지 않으면 나가는 길을 찾을 수 없다.
+    const portal = this.portal;
+    this.entityBuffer.push({
+      kind: 'portal',
+      x: portal.x,
+      y: portal.y,
+      z: Math.max(0, this.terrain.columnHeight(portal.x, portal.y) - 1),
+      inward: this.inVillage,
+    });
+
+    for (const building of this.inVillage ? this.buildings.all : []) {
       const blueprint = blueprintById(building.blueprintId);
       this.entityBuffer.push({
         kind: 'building',
@@ -1092,7 +1268,7 @@ export class Game {
       });
     }
 
-    for (const npc of this.population.all) {
+    for (const npc of this.inVillage ? this.population.all : []) {
       const npcPose = npc.pose(this.terrain);
       this.entityBuffer.push({
         kind: 'npc',
@@ -1116,7 +1292,12 @@ export class Game {
    * @returns 설명 문자열. 아무것도 없으면 null.
    */
   describeTile(target: TilePos): string | null {
-    const building = this.buildings.buildingAt(target.x, target.y);
+    const portal = this.portal;
+    if (target.x === portal.x && target.y === portal.y) {
+      return this.inVillage ? '동굴 입구' : '지상으로 나가는 길';
+    }
+
+    const building = this.inVillage ? this.buildings.buildingAt(target.x, target.y) : undefined;
     if (building) {
       const label = blueprintById(building.blueprintId).label;
       if (building.buildRemainingMs > 0) {
@@ -1171,6 +1352,81 @@ function findStartTile(terrain: Terrain, resources: ResourceField): TilePos {
   }
 
   return center;
+}
+
+/**
+ * 동굴로 통하는 칸을 고른다.
+ *
+ * **마을에서 가장 먼 곳**을 고른다. 기획서 5.2가 "초원 → 숲 → 산악 → 동굴" 순으로
+ * 상위 자원이 나온다고 했고, 구역이 마을 중심에서의 거리로 나뉘어 있으므로(ADR 0005)
+ * 가장 먼 칸은 곧 산악이다 — 별도 규칙 없이 동굴 입구가 제자리에 놓인다.
+ *
+ * 같은 거리의 칸이 여럿이면 먼저 만난 칸을 쓴다. 훑는 순서가 고정이라 결과도 고정이다.
+ *
+ * @param terrain 지형.
+ * @param resources 자원 노드(나무나 광맥 위에 입구를 두지 않는다).
+ * @returns 통로 칸.
+ */
+function findPortalTile(terrain: Terrain, resources: ResourceField): TilePos {
+  let best: TilePos = { x: 0, y: 0 };
+  let bestDistance = -1;
+  let bestOpenness = -1;
+
+  for (let y = 0; y < terrain.height; y += 1) {
+    for (let x = 0; x < terrain.width; x += 1) {
+      if (terrain.columnHeight(x, y) < 1) continue;
+      if (resources.isBlocked(x, y)) continue;
+
+      const distance = distanceFromCenter(terrain, x, y);
+      if (distance < bestDistance) continue;
+
+      // 같은 거리라면 **걸어 들어갈 길이 많은 칸**을 고른다. 맵 구석은 이웃이 둘뿐이라
+      // 입구로는 답답하고, 지형에 따라 아예 닿지 못하는 자리가 될 수도 있다.
+      const openness = walkableNeighbors(terrain, { x, y }).length;
+      if (distance > bestDistance || openness > bestOpenness) {
+        bestDistance = distance;
+        bestOpenness = openness;
+        best = { x, y };
+      }
+    }
+  }
+
+  return best;
+}
+
+/**
+ * 동굴에서 지상으로 통하는 칸을 고른다.
+ *
+ * 동굴은 벽이 꽉 찬 암반이고 파낸 자리만 높이 1이다(`generateCave`). 그러므로
+ * **바닥 높이인 칸 중 중앙에 가장 가까운 것**이 출구로 알맞다 — 방 한가운데에
+ * 놓여 사방으로 길이 열린다.
+ *
+ * @param terrain 동굴 지형.
+ * @returns 출구 칸.
+ */
+function findCaveExit(terrain: Terrain): TilePos {
+  const center = {
+    x: Math.floor((terrain.width - 1) / 2),
+    y: Math.floor((terrain.height - 1) / 2),
+  };
+
+  let best: TilePos = center;
+  let bestDistance = Number.POSITIVE_INFINITY;
+
+  for (let y = 0; y < terrain.height; y += 1) {
+    for (let x = 0; x < terrain.width; x += 1) {
+      // 벽(꽉 찬 기둥)이 아니라 파낸 바닥이어야 설 수 있다.
+      if (terrain.columnHeight(x, y) !== 1) continue;
+
+      const distance = Math.max(Math.abs(x - center.x), Math.abs(y - center.y));
+      if (distance < bestDistance) {
+        bestDistance = distance;
+        best = { x, y };
+      }
+    }
+  }
+
+  return best;
 }
 
 /**

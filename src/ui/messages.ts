@@ -29,6 +29,10 @@ export function describeFailure(reason: ActionFailure, placement?: PlacementFail
       return '인벤토리가 가득 찼습니다 (E로 창고에 예치)';
     case 'zoneLocked':
       return '아직 열리지 않은 구역입니다';
+    case 'notVillage':
+      return '마을에서만 할 수 있습니다 — 지상으로 나가세요';
+    case 'notPortal':
+      return '통로 위에 서서 F를 누르세요';
     case 'blocked':
       return '여기에는 놓을 수 없습니다';
     case 'noBlueprint':

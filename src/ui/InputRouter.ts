@@ -114,6 +114,8 @@ export class InputRouter {
       this.game.selectBlueprint(null);
     });
     this.keyboard.bind('KeyX', () => this.demolish());
+    // 맵 이동. 통로 위에 서서 누른다.
+    this.keyboard.bind('KeyF', () => this.travel());
     this.keyboard.bind('KeyR', () => this.fulfill());
 
     // 시야 조작. 마우스의 휠·드래그를 대신한다.
@@ -274,6 +276,21 @@ export class InputRouter {
     this.hooks.toast?.('철거 — 자재 절반을 돌려받았습니다', 'neutral');
     this.hooks.play?.(SoundId.DEMOLISH);
     this.hooks.burst?.(target.x, target.y, '#c9b592', 8);
+  }
+
+  /** 통로를 타고 반대편 맵으로 간다. */
+  private travel(): void {
+    this.hooks.unlock?.();
+
+    const result = this.game.travel();
+    this.hooks.report?.(result);
+    if (result.ok) {
+      this.hooks.play?.(SoundId.MIGRATION);
+      // 새 맵에서는 곧바로 앞을 보게 한다. 커서가 옛 오프셋을 유지하면
+      // 도착하자마자 벽 너머를 겨냥하고 있을 수 있다.
+      this.cursor.faceTowards(1, 0);
+      this.hooks.follow?.();
+    }
   }
 
   /** 낼 수 있는 요청을 낸다. */

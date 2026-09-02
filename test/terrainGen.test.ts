@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { BlockType } from '../src/core/blocks';
 import { MAX_LAYERS } from '../src/core/coordinates';
 import { hashNoise } from '../src/core/random';
-import { generateTerrain } from '../src/core/terrainGen';
+import { generateCave, generateTerrain } from '../src/core/terrainGen';
 
 describe('hashNoise', () => {
   it('항상 0 이상 1 미만이다', () => {
@@ -151,5 +151,92 @@ describe('generateTerrain', () => {
         expect(terrain.columnHeight(x, y)).toBe(MAX_LAYERS);
       }
     }
+  });
+});
+
+describe('동굴 생성', () => {
+  /** 확인에 쓰는 기본 동굴. */
+  function makeCave(seed = 5) {
+    return generateCave(24, 24, { seed });
+  }
+
+  it('같은 시드는 같은 동굴을 만든다', () => {
+    expect(makeCave().toSave().heights).toBe(makeCave().toSave().heights);
+  });
+
+  it('시드가 다르면 다른 동굴이 나온다', () => {
+    expect(makeCave(1).toSave().heights).not.toBe(makeCave(2).toSave().heights);
+  });
+
+  it('가장자리는 벽으로 남는다 — 맵 경계가 곧 동굴 벽이다', () => {
+    const cave = makeCave();
+
+    for (let x = 0; x < cave.width; x += 1) {
+      expect(cave.columnHeight(x, 0)).toBe(MAX_LAYERS);
+      expect(cave.columnHeight(x, cave.height - 1)).toBe(MAX_LAYERS);
+    }
+  });
+
+  it('벽은 꽉 찬 기둥이고 바닥은 한 칸이다 — 등반 한계가 벽을 막는다', () => {
+    const cave = makeCave();
+
+    for (let y = 0; y < cave.height; y += 1) {
+      for (let x = 0; x < cave.width; x += 1) {
+        const height = cave.columnHeight(x, y);
+        expect(height === 1 || height === MAX_LAYERS).toBe(true);
+      }
+    }
+  });
+
+  it('파낸 자리가 서로 이어져 있다 — 닿을 수 없는 방이 생기면 안 된다', () => {
+    const cave = makeCave();
+
+    const floors: Array<{ x: number; y: number }> = [];
+    for (let y = 0; y < cave.height; y += 1) {
+      for (let x = 0; x < cave.width; x += 1) {
+        if (cave.columnHeight(x, y) === 1) floors.push({ x, y });
+      }
+    }
+    expect(floors.length).toBeGreaterThan(0);
+
+    // 첫 바닥 칸에서 너비 우선 탐색으로 퍼진다.
+    const seen = new Set<string>([`${floors[0]!.x},${floors[0]!.y}`]);
+    const queue = [floors[0]!];
+    while (queue.length > 0) {
+      const at = queue.shift()!;
+      for (const step of [
+        { dx: 1, dy: 0 },
+        { dx: -1, dy: 0 },
+        { dx: 0, dy: 1 },
+        { dx: 0, dy: -1 },
+      ]) {
+        const next = { x: at.x + step.dx, y: at.y + step.dy };
+        const key = `${next.x},${next.y}`;
+        if (seen.has(key)) continue;
+        if (!cave.contains(next.x, next.y)) continue;
+        if (cave.columnHeight(next.x, next.y) !== 1) continue;
+        seen.add(key);
+        queue.push(next);
+      }
+    }
+
+    expect(seen.size).toBe(floors.length);
+  });
+
+  it('방 수를 줄이면 파낸 칸도 줄어든다', () => {
+    const small = generateCave(24, 24, { seed: 5, roomCount: 1 });
+    const large = generateCave(24, 24, { seed: 5, roomCount: 8 });
+
+    const count = (terrain: ReturnType<typeof generateCave>) => {
+      let floors = 0;
+      for (let y = 0; y < terrain.height; y += 1) {
+        for (let x = 0; x < terrain.width; x += 1) {
+          if (terrain.columnHeight(x, y) === 1) floors += 1;
+        }
+      }
+      return floors;
+    };
+
+    expect(count(small)).toBeLessThan(count(large));
   });
 });

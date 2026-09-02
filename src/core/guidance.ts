@@ -32,6 +32,8 @@ export interface GuidanceState {
   goalLevel: number;
   /** 건축 모드인지. */
   buildMode: boolean;
+  /** 지금 통로 위에 서 있는지. 맵 이동 안내에 쓴다. */
+  onPortal: boolean;
   /** 지금 고를 수 있는 블루프린트 수. 숫자 키 안내에 쓴다. */
   blueprintCount: number;
   /** 창고에 한 번이라도 예치했는지. */
@@ -158,6 +160,7 @@ export function controlHint(state: GuidanceState): string {
   if (state.wood > 0 || state.stone > 0) parts.push('B: 건축');
   if (state.payableRequests > 0) parts.push('R: 요청 납품');
   if (state.buildings >= 3) parts.push('X: 철거');
+  if (state.onPortal) parts.push('F: 이동');
 
   parts.push('+/-: 확대');
 

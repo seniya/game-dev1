@@ -86,7 +86,6 @@ function bootstrap(): void {
   const loadFailed = loaded.ok ? restored === null : loaded.reason === 'corrupt';
 
   const game = restored ?? createNewGame();
-  const terrain = game.terrain;
   const bar = new InventoryBar(requireElement('bar'), game.inventory.slotCount);
   const panel = new BuildPanel(requireElement('panel'));
   const saveMenu = new SaveMenu(requireElement('save'));
@@ -104,8 +103,8 @@ function bootstrap(): void {
   camera.setViewport(surface.size.width, surface.size.height);
   camera.setZoom(INITIAL_ZOOM);
   // 맵 밖으로 한없이 나가면 검은 화면만 남고 되돌아올 단서가 없다.
-  camera.setBounds(boundsForMap(terrain.width, terrain.height));
-  const world = new WorldRenderer(surface.context, camera, terrain);
+  camera.setBounds(boundsForMap(game.terrain.width, game.terrain.height));
+  const world = new WorldRenderer(surface.context, camera, game.terrain);
   // 스프라이트를 만들 수 없는 환경이면 null이 오고, 렌더러는 도형으로 그린다.
   world.setSprites(createSpriteSet());
 
@@ -115,8 +114,9 @@ function bootstrap(): void {
   camera.lookAt(startWorld.x, startWorld.y);
 
   // 지형 높이를 아는 피커를 넘겨 언덕 윗면을 정확히 집어내게 한다.
+  // 피킹은 "지금 있는 맵"의 지형을 본다. 맵이 바뀌면 이 함수가 곧바로 새 지형을 쓴다.
   const pointer = new PointerControls(canvas, camera, (worldX, worldY) =>
-    pickSurfaceTile(terrain, worldX, worldY),
+    pickSurfaceTile(game.terrain, worldX, worldY),
   );
   /**
    * 행동 결과를 보고 소리·연출·안내를 낸다.
@@ -138,7 +138,7 @@ function bootstrap(): void {
     }
 
     const spot = target ?? game.player.position;
-    const z = Math.max(0, terrain.columnHeight(spot.x, spot.y) - 1);
+    const z = Math.max(0, game.terrain.columnHeight(spot.x, spot.y) - 1);
 
     if (result.node !== undefined) {
       audio.play(result.node === 'tree' ? SoundId.CHOP : SoundId.DIG_STONE);
@@ -211,6 +211,9 @@ function bootstrap(): void {
    */
   let followPlayer = true;
 
+  /** 화면이 지금 그리고 있는 맵. 이 값이 실제 맵과 어긋나면 지형을 갈아 끼운다. */
+  let shownMap = game.currentMap;
+
   // 키 입력을 게임 행동으로 옮기는 곳은 여기 하나다. 겨냥 커서도 여기 있다.
   const router = new InputRouter(game, keyboard, {
     unlock: () => audio.unlock(),
@@ -218,7 +221,7 @@ function bootstrap(): void {
     toast: (message, tone) => toasts.show(message, tone),
     play: (sound) => audio.play(sound),
     burst: (x, y, color, count) => {
-      effects.burst(x, y, Math.max(0, terrain.columnHeight(x, y) - 1), color, count);
+      effects.burst(x, y, Math.max(0, game.terrain.columnHeight(x, y) - 1), color, count);
     },
     // 키보드 줌은 화면 가운데를 고정한다. 마우스 휠과 달리 기준으로 삼을 커서가 없다.
     zoomBy: (factor) => camera.zoomAt(surface.size.width / 2, surface.size.height / 2, factor),
@@ -303,6 +306,15 @@ function bootstrap(): void {
         // 걷기·겨냥·연속 채집은 키 이벤트가 아니라 눌린 상태를 보고 고정 간격으로 처리한다.
         router.update(stepMs, pointer.heldTile);
 
+        // 맵이 바뀌었으면 렌더러와 카메라가 새 지형을 따라간다.
+        if (game.currentMap !== shownMap) {
+          shownMap = game.currentMap;
+          world.setTerrain(game.terrain);
+          camera.setBounds(boundsForMap(game.terrain.width, game.terrain.height));
+          const arrival = gridToWorld(game.player.position.x, game.player.position.y, 0);
+          camera.lookAt(arrival.x, arrival.y);
+        }
+
         game.update(stepMs);
         toasts.update(stepMs);
         effects.update(stepMs);
@@ -320,7 +332,7 @@ function bootstrap(): void {
         if (pointer.dragging) followPlayer = false;
 
         if (followPlayer) {
-          const pose = game.player.pose(terrain);
+          const pose = game.player.pose(game.terrain);
           const target = gridToWorld(pose.x, pose.y, pose.z);
           camera.moveToward(target.x, target.y, CAMERA_FOLLOW_FACTOR);
         }
@@ -343,14 +355,18 @@ function bootstrap(): void {
           frameTimeMs,
           {
             hovered,
-            hoveredHeight: hovered ? terrain.columnHeight(hovered.x, hovered.y) : 0,
-            hoveredSurface: hovered ? terrain.surfaceBlock(hovered.x, hovered.y) : BlockType.EMPTY,
+            hoveredHeight: hovered ? game.terrain.columnHeight(hovered.x, hovered.y) : 0,
+            hoveredSurface: hovered
+              ? game.terrain.surfaceBlock(hovered.x, hovered.y)
+              : BlockType.EMPTY,
             drawnColumns: stats.drawnColumns,
             drawnWalls: stats.drawnWalls,
             zoom: camera.zoom,
             playerTile: game.player.position,
             tool: game.player.tool,
-            zone: hovered ? zoneAt(terrain, hovered.x, hovered.y) : zoneAt(terrain, 0, 0),
+            zone: hovered
+              ? zoneAt(game.terrain, hovered.x, hovered.y)
+              : zoneAt(game.terrain, 0, 0),
             target: hovered ? game.describeTile(hovered) : null,
           },
           game.inventory,

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MapId } from '../src/core/maps';
 import { SAVE_VERSION, type SaveData } from '../src/core/save';
 import { BlockType } from '../src/core/blocks';
 import { Inventory } from '../src/core/Inventory';
@@ -53,8 +54,8 @@ function sampleSave(): SaveData {
     version: SAVE_VERSION,
     savedAt: 0,
     seed: 1,
-    terrain: terrain.toSave(),
-    nodes: [],
+    maps: [{ id: MapId.SURFACE, terrain: terrain.toSave(), nodes: [] }],
+    currentMap: MapId.SURFACE,
     player: { x: 0, y: 0, tools: [{ kind: ToolKind.SHOVEL, tier: ToolTier.BASIC }], selectedSlot: 0 },
     inventory: new Inventory().toSave(),
     storage: new Inventory().toSave(),

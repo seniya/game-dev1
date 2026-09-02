@@ -245,7 +245,7 @@ describe('Game 저장 거절', () => {
 
   it('지형이 손상되면 거절한다', () => {
     const data = makeGame().toSave();
-    data.terrain.heights = 'AAAA';
+    data.maps[0]!.terrain.heights = 'AAAA';
 
     expect(Game.fromSave(data)).toBeNull();
   });

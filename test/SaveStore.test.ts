@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { MapId } from '../src/core/maps';
 import { SAVE_VERSION } from '../src/core/save';
 import { BlockType } from '../src/core/blocks';
 import { Inventory } from '../src/core/Inventory';
@@ -67,8 +68,8 @@ function sampleSave() {
     version: SAVE_VERSION,
     savedAt: 1_700_000_000_000,
     seed: 7,
-    terrain: terrain.toSave(),
-    nodes: [],
+    maps: [{ id: MapId.SURFACE, terrain: terrain.toSave(), nodes: [] }],
+    currentMap: MapId.SURFACE,
     player: { x: 1, y: 1, tools: [{ kind: ToolKind.SHOVEL, tier: ToolTier.BASIC }], selectedSlot: 0 },
     inventory: new Inventory().toSave(),
     storage: new Inventory().toSave(),

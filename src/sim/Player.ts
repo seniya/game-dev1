@@ -107,6 +107,22 @@ export class Player {
   }
 
   /**
+   * 플레이어를 다른 칸에 세운다.
+   *
+   * 걷기가 아니라 **자리를 옮기는 것**이다. 맵 이동처럼 인접 판정과 등반 한계가
+   * 의미를 잃는 경우에만 쓴다. 진행 중이던 이동과 휘두르기는 취소한다 —
+   * 다른 맵에서 시작된 동작을 이어 갈 이유가 없다.
+   *
+   * @param x 그리드 x.
+   * @param y 그리드 y.
+   */
+  placeAt(x: number, y: number): void {
+    this.tile = { x, y };
+    this.movement = null;
+    this.swingRemainingMs = 0;
+  }
+
+  /**
    * 이동 속도 배수를 설정한다.
    *
    * @param multiplier 배수. 1 이상만 받는다.

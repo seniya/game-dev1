@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { SAVE_VERSION, decodeBytes, encodeBytes, isSaveData } from '../src/core/save';
+import { MapId } from '../src/core/maps';
+import { SAVE_VERSION, decodeBytes, encodeBytes, isSaveData, migrateSave, type SaveData } from '../src/core/save';
 import { BlockType } from '../src/core/blocks';
 import { ItemType } from '../src/core/items';
 import { Terrain } from '../src/core/Terrain';
@@ -69,8 +70,8 @@ describe('isSaveData', () => {
       version: SAVE_VERSION,
       savedAt: Date.now(),
       seed: 1,
-      terrain: terrain.toSave(),
-      nodes: [],
+      maps: [{ id: MapId.SURFACE, terrain: terrain.toSave(), nodes: [] }],
+      currentMap: MapId.SURFACE,
       player: { x: 1, y: 1, tools: [{ kind: ToolKind.SHOVEL, tier: ToolTier.BASIC }], selectedSlot: 0 },
       inventory: new Inventory().toSave(),
       storage: new Inventory().toSave(),
@@ -104,7 +105,7 @@ describe('isSaveData', () => {
   });
 
   it('필수 필드가 빠지면 거절한다', () => {
-    for (const field of ['terrain', 'player', 'inventory', 'storage', 'nodes', 'buildings']) {
+    for (const field of ['maps', 'currentMap', 'player', 'inventory', 'storage', 'buildings']) {
       const data = validSave() as Record<string, unknown>;
       delete data[field];
       expect(isSaveData(data)).toBe(false);
@@ -113,8 +114,27 @@ describe('isSaveData', () => {
 
   it('지형 크기가 이상하면 거절한다', () => {
     const data = validSave();
-    expect(isSaveData({ ...data, terrain: { ...data.terrain, width: 0 } })).toBe(false);
-    expect(isSaveData({ ...data, terrain: { ...data.terrain, height: 1.5 } })).toBe(false);
+    const surface = data.maps[0]!;
+
+    expect(
+      isSaveData({ ...data, maps: [{ ...surface, terrain: { ...surface.terrain, width: 0 } }] }),
+    ).toBe(false);
+    expect(
+      isSaveData({ ...data, maps: [{ ...surface, terrain: { ...surface.terrain, height: 1.5 } }] }),
+    ).toBe(false);
+  });
+
+  it('맵이 없거나 알 수 없는 맵이면 거절한다', () => {
+    const data = validSave();
+
+    expect(isSaveData({ ...data, maps: [] })).toBe(false);
+    expect(isSaveData({ ...data, currentMap: 'sky' })).toBe(false);
+  });
+
+  it('지금 있는 맵이 저장에 없으면 거절한다 — 되살릴 지형이 없다', () => {
+    const data = validSave();
+
+    expect(isSaveData({ ...data, currentMap: MapId.CAVE })).toBe(false);
   });
 
   it('도구가 없는 플레이어는 거절한다', () => {
@@ -232,5 +252,76 @@ describe('Inventory 저장', () => {
     data.slots[0] = { item: ItemType.WOOD, count: 99 };
 
     expect(Inventory.fromSave(data)!.count(ItemType.WOOD)).toBe(5);
+  });
+});
+
+describe('저장 마이그레이션', () => {
+  /** v1 형식(맵 하나) 저장을 만든다. */
+  function version1Save() {
+    const terrain = new Terrain(4, 4);
+    for (let y = 0; y < 4; y += 1) {
+      for (let x = 0; x < 4; x += 1) terrain.fillColumn(x, y, 2, BlockType.DIRT);
+    }
+
+    return {
+      version: 1,
+      savedAt: 0,
+      seed: 7,
+      terrain: terrain.toSave(),
+      nodes: [],
+      player: { x: 1, y: 1, tools: [{ kind: ToolKind.SHOVEL, tier: ToolTier.BASIC }], selectedSlot: 0 },
+      inventory: new Inventory().toSave(),
+      storage: new Inventory().toSave(),
+      buildings: [],
+      nextBuildingId: 1,
+      npcs: [],
+      nextNpcId: 1,
+      requests: [],
+      nextRequestId: 1,
+      completedRequests: 0,
+      requestTimerMs: 0,
+      level: 1,
+      experience: 0,
+      elapsedMs: 0,
+    };
+  }
+
+  it('v1 저장을 거절하지 않고 옮긴다 — 형식이 바뀔 때마다 마을이 사라지면 안 된다', () => {
+    const migrated = migrateSave(version1Save());
+
+    expect(isSaveData(migrated)).toBe(true);
+  });
+
+  it('v1의 지형이 지상 맵이 된다', () => {
+    const before = version1Save();
+    const migrated = migrateSave(before) as SaveData;
+
+    expect(migrated.maps).toHaveLength(1);
+    expect(migrated.maps[0]?.id).toBe(MapId.SURFACE);
+    expect(migrated.maps[0]?.terrain.heights).toBe(before.terrain.heights);
+    expect(migrated.currentMap).toBe(MapId.SURFACE);
+  });
+
+  it('마을 상태는 그대로 옮겨진다', () => {
+    const before = version1Save();
+    before.level = 4;
+    before.experience = 33;
+    const migrated = migrateSave(before) as SaveData;
+
+    expect(migrated.level).toBe(4);
+    expect(migrated.experience).toBe(33);
+    expect(migrated.seed).toBe(7);
+  });
+
+  it('지금 형식은 건드리지 않는다', () => {
+    const current = { version: SAVE_VERSION, maps: [] };
+
+    expect(migrateSave(current)).toBe(current);
+  });
+
+  it('지형이 없는 v1은 옮기지 않는다 — 옮길 수 없는 저장은 검증에서 걸린다', () => {
+    const broken = { version: 1, terrain: null };
+
+    expect(isSaveData(migrateSave(broken))).toBe(false);
   });
 });

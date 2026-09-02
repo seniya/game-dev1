@@ -1,4 +1,4 @@
-import { isSaveData, type SaveData } from '../core/save';
+import { migrateSave, isSaveData, type SaveData } from '../core/save';
 
 /** 저장을 담아 두는 곳. 브라우저에서는 localStorage다. */
 export interface StorageBackend {
@@ -121,9 +121,12 @@ export class SaveStore {
       return { ok: false, reason: 'corrupt' };
     }
 
-    if (!isSaveData(parsed)) return { ok: false, reason: 'corrupt' };
+    // 예전 형식이면 지금 형식으로 옮긴 뒤에 검사한다. 형식이 바뀔 때마다 거절하면
+    // 그때마다 사용자의 마을이 사라진다(ADR 0008 개정).
+    const migrated = migrateSave(parsed);
+    if (!isSaveData(migrated)) return { ok: false, reason: 'corrupt' };
 
-    return { ok: true, data: parsed };
+    return { ok: true, data: migrated };
   }
 
   /** 저장을 지운다. "새로 시작"에서만 호출한다. */

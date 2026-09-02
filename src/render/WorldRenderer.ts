@@ -23,6 +23,8 @@ export type Entity =
   | { kind: 'tree'; x: number; y: number; z: number; damage: number }
   | { kind: 'oreVein'; x: number; y: number; z: number; damage: number; iron: boolean }
   | { kind: 'npc'; x: number; y: number; z: number; hue: number }
+  /** 다른 맵으로 통하는 칸. `inward`면 들어가는 입구, 아니면 나가는 출구다. */
+  | { kind: 'portal'; x: number; y: number; z: number; inward: boolean }
   | { kind: 'building'; x: number; y: number; z: number; width: number; depth: number; style: BuildingStyle; progress: number };
 
 /** 건물 외형 종류. 블루프린트가 이 값으로 자기 모습을 지정한다. */
@@ -106,7 +108,7 @@ const DUST_COUNT = 7;
 export class WorldRenderer {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly camera: Camera;
-  private readonly terrain: Terrain;
+  private terrain: Terrain;
 
   /** 오브젝트 정렬용 내부 버퍼. 프레임마다 새 배열을 만들지 않으려고 재사용한다. */
   private readonly entityBuffer: Entity[] = [];
@@ -130,6 +132,18 @@ export class WorldRenderer {
   constructor(ctx: CanvasRenderingContext2D, camera: Camera, terrain: Terrain) {
     this.ctx = ctx;
     this.camera = camera;
+    this.terrain = terrain;
+  }
+
+  /**
+   * 그릴 지형을 바꾼다. 맵을 옮길 때 부른다.
+   *
+   * 렌더러가 지형을 생성자에서만 받던 시절에는 맵이 하나뿐이었다. 맵이 늘어난
+   * 지금은 "지금 있는 맵"을 따라가야 한다.
+   *
+   * @param terrain 새로 그릴 지형.
+   */
+  setTerrain(terrain: Terrain): void {
     this.terrain = terrain;
   }
 
@@ -493,6 +507,9 @@ export class WorldRenderer {
       case 'oreVein':
         this.drawOreVein(screen, zoom, entity.damage, entity.iron);
         break;
+      case 'portal':
+        this.drawPortal(screen, zoom, entity.inward);
+        break;
       case 'building':
         this.drawBuilding(screen, zoom, entity);
         break;
@@ -530,6 +547,10 @@ export class WorldRenderer {
           screen.y,
           zoom,
         );
+        break;
+      // 통로는 지형에 뚫린 구멍이라 스프라이트를 따로 두지 않는다. 도형이 곧 최종 모습이다.
+      case 'portal':
+        this.drawPortal(screen, zoom, entity.inward);
         break;
       case 'building':
         if (entity.progress >= 1) {
@@ -716,6 +737,32 @@ export class WorldRenderer {
    * @param zoom 확대율.
    * @param entity 건물 오브젝트.
    */
+  /**
+   * 맵 사이를 잇는 통로를 그린다.
+   *
+   * 지면에 뚫린 어두운 구멍이다. 들어가는 입구(지상)와 나가는 출구(동굴)를 테두리
+   * 색으로 구분한다 — 나가는 길은 밝아야 동굴 어둠 속에서 눈에 띈다.
+   *
+   * @param screen 칸 윗면 중심의 화면 좌표.
+   * @param zoom 확대율.
+   * @param inward 들어가는 입구인지 여부.
+   */
+  private drawPortal(screen: { x: number; y: number }, zoom: number, inward: boolean): void {
+    const ctx = this.ctx;
+    const radiusX = (TILE_WIDTH / 2) * 0.62 * zoom;
+    const radiusY = (TILE_HEIGHT / 2) * 0.62 * zoom;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(screen.x, screen.y, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#12151b';
+    ctx.fill();
+    ctx.lineWidth = Math.max(1, 2 * zoom);
+    ctx.strokeStyle = inward ? '#6b5b45' : '#f0c674';
+    ctx.stroke();
+    ctx.restore();
+  }
+
   private drawBuilding(
     screen: { x: number; y: number },
     zoom: number,

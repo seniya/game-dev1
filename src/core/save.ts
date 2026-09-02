@@ -1,6 +1,7 @@
 import type { BlockType } from './blocks';
 import type { BlueprintId } from './blueprints';
 import type { ItemType } from './items';
+import { MapId, isMapId } from './maps';
 import type { NodeKind } from './resourceNodes';
 import type { ToolKind, ToolTier } from './tools';
 
@@ -9,9 +10,12 @@ import type { ToolKind, ToolTier } from './tools';
  *
  * 블록 타입과 아이템 타입이 숫자·문자열 리터럴이라 값이 바뀌면 예전 저장이 **조용히**
  * 잘못 읽힌다. 버전이 다르면 읽지 않는다는 규칙을 첫 저장부터 넣어 그런 상황을 막는다.
- * 형식을 바꿀 때는 이 값을 올리고, 필요하면 마이그레이션을 붙인다.
+ *
+ * **2 — 맵이 여럿이 됐다.** 지형 한 벌(`terrain`/`nodes`)이 맵 배열(`maps`)로 바뀌었다.
+ * 버전이 다르다고 거절하면 마을이 통째로 날아가므로 v1은 마이그레이션한다
+ * (`migrateSave`, ADR 0008 개정).
  */
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 /** 저장된 지형. */
 export interface TerrainSave {
@@ -83,6 +87,21 @@ export type RequestSave =
   | { kind: 'deliver'; id: number; npcId: number; item: ItemType; amount: number }
   | { kind: 'facility'; id: number; npcId: number; blueprintId: BlueprintId };
 
+/**
+ * 저장된 맵 하나.
+ *
+ * 지형과 노드를 통째로 담는다. 배치는 시드에서 재현되지만 **파고 쌓은 변경분**은
+ * 재현되지 않으므로 결과를 담아야 한다.
+ */
+export interface MapSave {
+  /** 맵 종류. */
+  id: MapId;
+  /** 지형. */
+  terrain: TerrainSave;
+  /** 자원 노드. */
+  nodes: NodeSave[];
+}
+
 /** 저장 데이터 전체. */
 export interface SaveData {
   /** 저장 형식 버전. */
@@ -91,10 +110,14 @@ export interface SaveData {
   savedAt: number;
   /** 지형·자원 생성에 쓴 시드. 재현과 디버깅용이다. */
   seed: number;
-  /** 지형. */
-  terrain: TerrainSave;
-  /** 자원 노드. 배치까지 통째로 담는다 — 생성 규칙이 바뀌어도 저장이 어긋나지 않는다. */
-  nodes: NodeSave[];
+  /**
+   * 다녀온 맵들. 한 번도 가지 않은 맵은 담기지 않고, 갈 때 시드에서 만들어진다.
+   *
+   * 자원 노드는 배치까지 통째로 담는다 — 생성 규칙이 바뀌어도 저장이 어긋나지 않는다.
+   */
+  maps: MapSave[];
+  /** 지금 있는 맵. */
+  currentMap: MapId;
   /** 플레이어. */
   player: PlayerSave;
   /** 인벤토리. */
@@ -215,8 +238,11 @@ export function isSaveData(value: unknown): value is SaveData {
 
   const data = value as Partial<SaveData>;
   if (data.version !== SAVE_VERSION) return false;
-  if (!isTerrainSave(data.terrain)) return false;
-  if (!Array.isArray(data.nodes)) return false;
+  if (!isMapId(data.currentMap)) return false;
+  if (!Array.isArray(data.maps) || data.maps.length === 0) return false;
+  if (!data.maps.every(isMapSave)) return false;
+  // 지금 있는 맵이 저장에 없으면 되살릴 지형이 없다.
+  if (!data.maps.some((map) => map.id === data.currentMap)) return false;
   if (!isPlayerSave(data.player)) return false;
   if (!isInventorySave(data.inventory) || !isInventorySave(data.storage)) return false;
   if (!Array.isArray(data.buildings) || !Array.isArray(data.npcs)) return false;
@@ -224,6 +250,19 @@ export function isSaveData(value: unknown): value is SaveData {
   if (!Number.isFinite(data.level) || !Number.isFinite(data.experience)) return false;
 
   return true;
+}
+
+/**
+ * 맵 저장이 온전한지 확인한다.
+ *
+ * @param value 검사할 값.
+ */
+function isMapSave(value: unknown): value is MapSave {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const map = value as Partial<MapSave>;
+
+  return isMapId(map.id) && isTerrainSave(map.terrain) && Array.isArray(map.nodes);
 }
 
 /**
@@ -291,4 +330,37 @@ function isInventorySave(value: unknown): value is InventorySave {
  */
 export function isKnownBlock(value: number, maxType: number): value is BlockType {
   return Number.isInteger(value) && value >= 0 && value <= maxType;
+}
+
+/**
+ * 예전 형식의 저장을 지금 형식으로 옮긴다.
+ *
+ * ADR 0008은 "버전이 다르면 읽지 않는다"로 시작했다. 그 규칙은 형식이 한 번도 바뀌지
+ * 않는 동안에는 비용이 없었지만, 로드맵 03은 형식을 여러 번 바꾼다. 매번 거절하면
+ * 플레이어의 마을이 그때마다 사라진다.
+ *
+ * **없어진 값을 시드에서 재현하거나 안전한 기본값으로 채울 수 있으면 옮긴다.**
+ * v1 → v2가 정확히 그 경우다. v1은 맵이 하나뿐이었으므로 그 지형이 지상이고,
+ * 동굴은 아직 가 보지 않은 것으로 두면 된다 — 갈 때 시드에서 만들어진다.
+ *
+ * @param value 읽어 들인 값.
+ * @returns 지금 형식의 값. 옮길 수 없으면 받은 값을 그대로 돌려준다(검증에서 걸린다).
+ */
+export function migrateSave(value: unknown): unknown {
+  if (typeof value !== 'object' || value === null) return value;
+
+  const data = value as Record<string, unknown>;
+  if (data.version !== 1) return value;
+
+  const terrain = data.terrain;
+  if (!isTerrainSave(terrain)) return value;
+
+  const { terrain: _terrain, nodes, ...rest } = data;
+
+  return {
+    ...rest,
+    version: 2,
+    maps: [{ id: MapId.SURFACE, terrain, nodes: Array.isArray(nodes) ? nodes : [] }],
+    currentMap: MapId.SURFACE,
+  };
 }
