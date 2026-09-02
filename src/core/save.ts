@@ -137,6 +137,23 @@ export interface RaidSave {
   monsters: Array<{ id: number; x: number; y: number; health: number }>;
 }
 
+/**
+ * 저장된 플레이 기록.
+ *
+ * **선택적 필드다.** 없으면 아직 아무 기록이 없는 것으로 읽힌다. 담기는 것은 시각과
+ * 횟수뿐이며 개인을 식별할 것은 없다(로드맵 05 Phase 3).
+ */
+export interface JournalSave {
+  /** 이정표별 처음 도달한 시각(ms). */
+  milestones: Record<string, number>;
+  /** 레벨별 처음 도달한 시각(ms). */
+  levels: Record<string, number>;
+  /** 거절 사유별 횟수. */
+  denials: Record<string, number>;
+  /** 플레이한 시간(ms). */
+  playedMs: number;
+}
+
 /** 저장 데이터 전체. */
 export interface SaveData {
   /** 저장 형식 버전. */
@@ -193,6 +210,8 @@ export interface SaveData {
   hasDeposited?: boolean;
   /** 진행 중인 밤 침입. 선택적 필드다. */
   raid?: RaidSave;
+  /** 플레이 기록. 선택적 필드다. */
+  journal?: JournalSave;
 }
 
 /** base64 인코딩에 쓰는 문자표. */

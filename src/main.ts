@@ -26,6 +26,7 @@ import { DebugOverlay } from './ui/DebugOverlay';
 import { InventoryBar } from './ui/InventoryBar';
 import { HelpPanel } from './ui/HelpPanel';
 import { InputRouter } from './ui/InputRouter';
+import { JournalPanel } from './ui/JournalPanel';
 import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
 import { describeFailure } from './ui/messages';
@@ -93,6 +94,7 @@ function bootstrap(): void {
   const panel = new BuildPanel(requireElement('panel'));
   const saveMenu = new SaveMenu(requireElement('save'));
   const help = new HelpPanel(requireElement('help'));
+  const journalPanel = new JournalPanel(requireElement('journal'));
 
   const settingsStore = new SettingsStore();
   const audio = new AudioPlayer();
@@ -288,6 +290,33 @@ function bootstrap(): void {
       );
     }
   }
+
+  // 소리 켜고 끄기. 로드맵 03에서 입력 연결을 InputRouter로 옮기며 이 줄이 함께
+  // 지워졌고, 그때부터 소리 버튼이 아무 일도 하지 않고 있었다 — 화면에서 잡지 못한
+  // 종류의 결함이라 기록해 둔다.
+  saveMenu.setVolumeHandler(() => {
+    audio.unlock();
+    audio.cycleVolume();
+    settingsStore.save({ volumeStep: audio.volumeStep });
+  });
+
+  // 기록은 브라우저 밖으로 저절로 나가지 않는다. 사람이 눌러 복사할 때만 나간다.
+  saveMenu.setJournalHandler(() => {
+    const text = game.journal.summary;
+    // 화면에 먼저 띄운다. 클립보드가 막혀도 눈으로 읽고 직접 고를 수 있어야 한다.
+    journalPanel.show(text);
+
+    const clipboard = navigator.clipboard;
+    if (!clipboard?.writeText) {
+      toasts.show('기록을 화면에 띄웠습니다 — 직접 선택해 복사하세요', 'neutral');
+      return;
+    }
+
+    clipboard.writeText(text).then(
+      () => toasts.show('플레이 기록을 복사했습니다', 'good'),
+      () => toasts.show('기록을 화면에 띄웠습니다 — 직접 선택해 복사하세요', 'neutral'),
+    );
+  });
 
   saveMenu.setHandlers({
     save: () => saveNow(true),

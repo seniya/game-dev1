@@ -33,6 +33,7 @@ export class SaveMenu {
   private readonly loadButton: HTMLElement;
   private readonly resetButton: HTMLElement;
   private readonly volumeButton: HTMLElement;
+  private readonly journalButton: HTMLElement;
 
   /** "새로 시작" 확인 대기 남은 시간(ms). 0이면 대기 중이 아니다. */
   private confirmRemainingMs = 0;
@@ -44,6 +45,7 @@ export class SaveMenu {
   private onLoad: (() => void) | null = null;
   private onReset: (() => void) | null = null;
   private onVolume: (() => void) | null = null;
+  private onCopyJournal: (() => void) | null = null;
 
   /** 마지막으로 그린 볼륨 문구. */
   private lastVolumeText = '';
@@ -61,10 +63,14 @@ export class SaveMenu {
     this.loadButton = this.makeButton('되돌리기', () => this.onLoad?.());
     this.resetButton = this.makeButton('새로 시작', () => this.handleReset());
     this.volumeButton = this.makeButton('소리', () => this.onVolume?.());
+    // 플레이 기록을 한 덩이 글로 복사한다. 남에게 건넨 뒤 "어디서 막혔는지"를 아는
+    // 유일한 길이다(로드맵 05 Phase 3).
+    this.journalButton = this.makeButton('기록 복사', () => this.onCopyJournal?.());
 
     const buttons = document.createElement('div');
     buttons.className = 'save__buttons';
     buttons.appendChild(this.volumeButton);
+    buttons.appendChild(this.journalButton);
     buttons.appendChild(this.saveButton);
     buttons.appendChild(this.loadButton);
     buttons.appendChild(this.resetButton);
@@ -91,6 +97,15 @@ export class SaveMenu {
    */
   setVolumeHandler(handler: () => void): void {
     this.onVolume = handler;
+  }
+
+  /**
+   * 기록 복사 콜백을 등록한다.
+   *
+   * @param handler 콜백.
+   */
+  setJournalHandler(handler: () => void): void {
+    this.onCopyJournal = handler;
   }
 
   /**

@@ -16,6 +16,7 @@ import {
   timeOfDay,
 } from '../core/daycycle';
 import { ItemType, blockToItem, itemLabel, itemToBlock } from '../core/items';
+import { Milestone } from '../core/journal';
 import { isWorkplace, jobDefinition, jobForWorkplace } from '../core/jobs';
 import { lookById, nextLook, unlockedLooks } from '../core/looks';
 import { DEFEAT_REWARD } from '../core/monsters';
@@ -52,6 +53,7 @@ import { Guidance } from './Guidance';
 import type { GuidanceState } from '../core/guidance';
 import { Population, type Migration } from './Population';
 import { RequestBoard, type RequestCompletion } from './Requests';
+import { Journal } from './Journal';
 import { Raid } from './Raid';
 import { ResourceField } from './ResourceField';
 
@@ -228,6 +230,13 @@ export class Game {
 
   /** 밤의 침입. */
   readonly raid: Raid;
+
+  /**
+   * 플레이 기록.
+   *
+   * 다른 사람에게 건넨 뒤 "어디서 막혔는가"를 알 유일한 길이다(로드맵 05 Phase 3).
+   */
+  readonly journal = new Journal();
 
   /**
    * 이번 프레임에 UI로 알릴 사건들.
@@ -456,6 +465,7 @@ export class Game {
 
     this.current = destination;
     this.player.placeAt(arrival.portal.x, arrival.portal.y);
+    if (destination === MapId.CAVE) this.journal.mark(Milestone.FIRST_CAVE, this.elapsed);
 
     this.pendingNotices.push({
       message: `${mapLabel(destination)}으로 이동했습니다`,
@@ -473,6 +483,7 @@ export class Game {
    */
   update(stepMs: number): void {
     this.elapsed += stepMs;
+    this.journal.advance(stepMs);
     this.player.update(stepMs);
 
     // 떠나 있는 맵도 함께 흐른다. 그러지 않으면 동굴에 다녀오는 동안 지상의
@@ -532,6 +543,7 @@ export class Game {
     });
 
     if (events.started > 0) {
+      this.journal.mark(Milestone.FIRST_RAID, this.elapsed);
       this.pendingNotices.push({
         message: `몬스터 ${events.started}마리가 마을로 옵니다`,
         tone: 'bad',
@@ -612,6 +624,7 @@ export class Game {
     for (const requirement of cost) this.consume(requirement.item, requirement.amount);
 
     this.buildings.repairBuilding(building.id);
+    this.journal.mark(Milestone.FIRST_REPAIR, this.elapsed);
     this.pendingNotices.push({
       message: `${blueprint.label}을(를) 고쳤습니다`,
       tone: 'good',
@@ -782,6 +795,7 @@ export class Game {
     if (!assigned) return { ok: false, reason: 'jobFull' };
 
     this.jobProgressMs.set(assigned.id, 0);
+    this.journal.mark(Milestone.FIRST_JOB, this.elapsed);
     this.pendingNotices.push({ message: `주민이 ${label}가 되었습니다`, tone: 'good', cue: 'job' });
 
     return { ok: true };
@@ -864,6 +878,7 @@ export class Game {
    */
   private applyUnlocks(level: number): void {
     this.pendingNotices.push({ message: `마을 레벨 ${level} 달성`, tone: 'good', cue: 'levelUp' });
+    this.journal.markLevel(level, this.elapsed);
 
     for (const unlock of unlocksAtLevel(level)) {
       this.applyUnlock(unlock);
@@ -955,6 +970,7 @@ export class Game {
    * @param migration 이주 결과.
    */
   private onMigration(migration: Migration): void {
+    this.journal.mark(Milestone.FIRST_RESIDENT, this.elapsed);
     // 기획서 5.4: 대사 없이 알림만 표시한다.
     this.pendingNotices.push({ message: '새 주민이 이주했습니다', tone: 'good', cue: 'migration' });
     void migration;
@@ -966,6 +982,7 @@ export class Game {
    * @param completion 완료 결과.
    */
   private onRequestCompleted(completion: RequestCompletion): void {
+    this.journal.mark(Milestone.FIRST_REQUEST, this.elapsed);
     this.villageExperience += completion.reward;
     this.pendingNotices.push({
       message: `요청 완료 (+${completion.reward})`,
@@ -1029,6 +1046,7 @@ export class Game {
       experience: this.villageExperience,
       elapsedMs: this.elapsed,
       raid: this.raid.toSave(),
+      journal: this.journal.toSave(),
       seenHints: this.guidance.seenHints,
       hasDeposited: this.guidance.hasDeposited,
     };
@@ -1094,6 +1112,7 @@ export class Game {
     });
     game.guidance.restore(data.seenHints, data.hasDeposited);
     game.raid.restore(data.raid);
+    game.journal.restore(data.journal);
     game.restoreMaps(data);
 
     return game;
@@ -1291,6 +1310,21 @@ export class Game {
   }
 
   /**
+   * 행동 결과를 기록에 남기고 그대로 돌려준다.
+   *
+   * 거절은 "어디서 멈췄는가"를 가장 잘 말해 준다. 행동 진입점만 감싸므로 안에서
+   * 여러 단계를 거치는 행동도 한 번만 센다.
+   *
+   * @param result 행동 결과.
+   * @returns 받은 결과 그대로.
+   */
+  private noted<T extends ActionResult>(result: T): T {
+    if (!result.ok) this.journal.deny(result.reason);
+
+    return result;
+  }
+
+  /**
    * 지금 고른 설계도를 놓을 수 있는 칸들을 모은다.
    *
    * 플레이어 주변만 본다 — 맵 전체를 훑으면 화면 밖까지 계산하게 되고, 커서가 닿는
@@ -1373,16 +1407,20 @@ export class Game {
    */
   buildAt(hovered: TilePos): ActionResult {
     // 마을은 지상에 있다. 동굴에 집을 지으면 주민도 요청도 갈 곳이 어긋난다.
-    if (!this.inVillage) return { ok: false, reason: 'notVillage' };
+    if (!this.inVillage) return this.noted({ ok: false, reason: 'notVillage' });
 
     const blueprint = this.selectedBlueprint;
-    if (!blueprint) return { ok: false, reason: 'noBlueprint' };
+    if (!blueprint) return this.noted({ ok: false, reason: 'noBlueprint' });
 
     const origin = this.placementOrigin(blueprint, hovered);
     const check = this.buildings.canPlace(blueprint, origin.x, origin.y, this.resources);
-    if (!check.ok) return { ok: false, reason: 'badPlacement', placement: check.reason };
+    if (!check.ok) {
+      return this.noted({ ok: false, reason: 'badPlacement', placement: check.reason });
+    }
 
-    if (this.missingMaterials(blueprint).length > 0) return { ok: false, reason: 'noMaterial' };
+    if (this.missingMaterials(blueprint).length > 0) {
+      return this.noted({ ok: false, reason: 'noMaterial' });
+    }
 
     // 자재를 먼저 소모한다. 배치는 이미 판정을 통과했으므로 실패하지 않는다.
     for (const requirement of blueprint.materials) {
@@ -1390,7 +1428,9 @@ export class Game {
     }
 
     const building = this.buildings.place(blueprint, origin.x, origin.y, this.resources);
-    if (!building) return { ok: false, reason: 'blocked' };
+    if (!building) return this.noted({ ok: false, reason: 'blocked' });
+
+    this.journal.mark(Milestone.FIRST_BUILD, this.elapsed);
 
     return { ok: true, building };
   }
@@ -1495,14 +1535,19 @@ export class Game {
   actAt(target: TilePos): ActionResult {
     // 눈앞의 것부터 다룬다: 몬스터 → 고칠 건물 → 자원 → 지형.
     const struck = this.strikeAt(target);
-    if (struck) return struck;
+    if (struck) return this.noted(struck);
 
     const building = this.inVillage ? this.buildings.buildingAt(target.x, target.y) : undefined;
     if (building && building.damage > 0) return this.repairAt(target);
 
-    if (this.resources.isBlocked(target.x, target.y)) return this.harvestAt(target);
+    const result = this.resources.isBlocked(target.x, target.y)
+      ? this.harvestAt(target)
+      : this.digAt(target);
 
-    return this.digAt(target);
+    // 첫 채집은 루프의 시작이다. 여기에 닿지 못하면 게임이 시작조차 되지 않은 것이다.
+    if (result.ok && result.gained) this.journal.mark(Milestone.FIRST_HARVEST, this.elapsed);
+
+    return this.noted(result);
   }
 
   /**
@@ -1670,7 +1715,10 @@ export class Game {
       if (sent > 0) moved.set(ItemType.DIRT, sent);
     }
 
-    if (moved.size > 0) this.guidance.markDeposited();
+    if (moved.size > 0) {
+      this.guidance.markDeposited();
+      this.journal.mark(Milestone.FIRST_DEPOSIT, this.elapsed);
+    }
 
     return moved;
   }
