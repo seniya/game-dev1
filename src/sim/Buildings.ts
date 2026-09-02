@@ -1,5 +1,6 @@
 import { BlueprintId, blueprintById, buildDurationMs, type Blueprint } from '../core/blueprints';
 import { isAdjacent, type TilePos } from '../core/movement';
+import type { BuildingSave } from '../core/save';
 import type { Terrain } from '../core/Terrain';
 
 /** 배치된 건물 하나. */
@@ -234,6 +235,77 @@ export class Buildings {
     }
 
     return building;
+  }
+
+  /**
+   * 저장용 표현으로 바꾼다. 점유 맵은 담지 않는다 — 건물 목록에서 파생되는 값이라
+   * 함께 저장하면 둘이 어긋난 저장을 만들 수 있다.
+   *
+   * @returns 저장 데이터와 다음 번호.
+   */
+  toSave(): { buildings: BuildingSave[]; nextId: number } {
+    const saved: BuildingSave[] = [];
+
+    for (const building of this.buildings.values()) {
+      saved.push({
+        id: building.id,
+        blueprintId: building.blueprintId,
+        x: building.x,
+        y: building.y,
+        buildRemainingMs: building.buildRemainingMs,
+      });
+    }
+
+    return { buildings: saved, nextId: this.nextId };
+  }
+
+  /**
+   * 저장에서 건물을 되살린다. 점유 맵은 목록으로 다시 만든다.
+   *
+   * 배치 판정을 다시 돌리지 않는다 — 저장 시점에 이미 통과한 배치이고, 판정 규칙이
+   * 바뀌면 멀쩡한 마을의 건물이 사라져 버린다.
+   *
+   * @param terrain 지형.
+   * @param saved 저장된 건물 목록.
+   * @param nextId 다음에 부여할 번호.
+   * @returns 되살린 건물 모음.
+   */
+  static fromSave(terrain: Terrain, saved: readonly BuildingSave[], nextId: number): Buildings {
+    const buildings = new Buildings(terrain);
+
+    for (const entry of saved) {
+      if (!Number.isInteger(entry.id) || !Number.isInteger(entry.x) || !Number.isInteger(entry.y)) {
+        continue;
+      }
+      if (typeof entry.blueprintId !== 'string') continue;
+
+      let blueprint;
+      try {
+        blueprint = blueprintById(entry.blueprintId);
+      } catch {
+        // 없어진 블루프린트를 가리키는 저장은 그 건물만 버린다.
+        continue;
+      }
+
+      const building: Building = {
+        id: entry.id,
+        blueprintId: entry.blueprintId,
+        x: entry.x,
+        y: entry.y,
+        buildRemainingMs: Math.max(0, entry.buildRemainingMs ?? 0),
+      };
+
+      buildings.buildings.set(building.id, building);
+      for (let dy = 0; dy < blueprint.depth; dy += 1) {
+        for (let dx = 0; dx < blueprint.width; dx += 1) {
+          buildings.occupancy.set(buildings.key(building.x + dx, building.y + dy), building.id);
+        }
+      }
+    }
+
+    buildings.nextId = Math.max(nextId, ...[...buildings.buildings.keys()].map((id) => id + 1), 1);
+
+    return buildings;
   }
 
   /**

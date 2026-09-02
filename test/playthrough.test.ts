@@ -47,12 +47,18 @@ interface PlaythroughResult {
  *
  * @param seed 지형·자원 시드.
  * @param goalLevel 목표 레벨.
+ * @param saveEveryActions 이 행동 수마다 저장하고 다시 불러온다. 0이면 하지 않는다.
  * @returns 플레이 결과.
  */
-function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughResult {
-  const terrain = generateTerrain(32, 32, { seed });
-  const resources = new ResourceField(terrain, { seed });
-  const game = new Game(terrain, resources);
+function playToLevel(
+  seed: number,
+  goalLevel = MAX_VILLAGE_LEVEL,
+  saveEveryActions = 0,
+): PlaythroughResult {
+  const startTerrain = generateTerrain(32, 32, { seed });
+  // 저장/불러오기를 끼워 넣으면 게임 객체 자체가 교체되므로 재대입이 가능해야 한다.
+  let game = new Game(startTerrain, new ResourceField(startTerrain, { seed }));
+  game.setWorldSeed(seed);
 
   let elapsedMs = 0;
   let harvested = 0;
@@ -102,7 +108,7 @@ function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughRe
         break;
       }
 
-      for (const next of walkableNeighbors(terrain, current)) {
+      for (const next of walkableNeighbors(game.terrain, current)) {
         const key = `${next.x},${next.y}`;
         if (cameFrom.has(key)) continue;
         cameFrom.set(key, `${current.x},${current.y}`);
@@ -124,7 +130,7 @@ function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughRe
     }
 
     const [nx, ny] = cursor.split(',').map(Number) as [number, number];
-    if (!canWalk(terrain, start, { x: nx, y: ny })) return false;
+    if (!canWalk(game.terrain, start, { x: nx, y: ny })) return false;
 
     waitIdle();
     if (!game.movePlayer(nx - start.x, ny - start.y)) return false;
@@ -175,7 +181,7 @@ function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughRe
           if (Math.max(Math.abs(dx), Math.abs(dy)) !== radius) continue;
 
           const spot = { x: center.x + dx, y: center.y + dy };
-          if (!game.buildings.canPlace(blueprint, spot.x, spot.y, resources).ok) continue;
+          if (!game.buildings.canPlace(blueprint, spot.x, spot.y, game.resources).ok) continue;
 
           // 플레이어를 건물 안에 갇히게 하지 않는다.
           const player = game.player.position;
@@ -206,7 +212,7 @@ function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughRe
     let best: TilePos | null = null;
     let bestCost = Number.POSITIVE_INFINITY;
 
-    for (const node of resources.all) {
+    for (const node of game.resources.all) {
       if (node.durability <= 0) continue;
 
       const distance = Math.abs(node.x - player.x) + Math.abs(node.y - player.y);
@@ -229,7 +235,7 @@ function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughRe
    * @param target 노드 좌표.
    */
   const equipFor = (target: TilePos): void => {
-    const node = resources.nodeAt(target.x, target.y);
+    const node = game.resources.nodeAt(target.x, target.y);
     if (!node) return;
 
     game.player.selectTool(node.kind === 'tree' ? 2 : 1);
@@ -238,6 +244,14 @@ function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughRe
   for (let action = 0; action < MAX_ACTIONS; action += 1) {
     if (game.villageLevel >= goalLevel) break;
     if (elapsedMs >= TIME_BUDGET_MS) break;
+
+    // 저장을 끼워 넣어도 플레이가 이어지는지 확인한다. 실제 플레이에서 자동 저장이
+    // 30초마다 돌고 사용자가 언제든 새로고침할 수 있으므로, 이 경로가 막히면 안 된다.
+    if (saveEveryActions > 0 && action > 0 && action % saveEveryActions === 0) {
+      const restored = Game.fromSave(JSON.parse(JSON.stringify(game.toSave())));
+      if (!restored) throw new Error(`행동 ${action}에서 저장을 되살리지 못했다`);
+      game = restored;
+    }
 
     // 1. 낼 수 있는 요청은 즉시 낸다. 점수 효율이 가장 좋다.
     if (game.fulfillRequest()) continue;
@@ -301,8 +315,8 @@ function playToLevel(seed: number, goalLevel = MAX_VILLAGE_LEVEL): PlaythroughRe
     }
     if (!result.ok && (result.reason === 'zoneLocked' || result.reason === 'wrongTool')) {
       // 캘 수 없는 노드는 내구도를 0으로 만들지 못하므로 다른 노드를 고르게 한다.
-      resources.nodeAt(target.x, target.y)!.respawnRemainingMs = 5_000;
-      resources.nodeAt(target.x, target.y)!.durability = 0;
+      game.resources.nodeAt(target.x, target.y)!.respawnRemainingMs = 5_000;
+      game.resources.nodeAt(target.x, target.y)!.durability = 0;
     }
   }
 
@@ -339,5 +353,27 @@ describe('통과 플레이', () => {
 
       expect(result.level).toBe(MAX_VILLAGE_LEVEL);
     }
+  });
+});
+
+describe('저장을 끼운 통과 플레이', () => {
+  it('중간에 저장하고 불러와도 레벨 5까지 도달한다', () => {
+    const result = playToLevel(20260901, MAX_VILLAGE_LEVEL, 40);
+
+    console.log(
+      `저장 왕복 포함: 레벨 ${result.level} · ${(result.elapsedMs / 60000).toFixed(1)}분 · ` +
+        `건물 ${result.buildings} · 주민 ${result.residents}`,
+    );
+
+    expect(result.level).toBe(MAX_VILLAGE_LEVEL);
+  });
+
+  it('잦은 저장에도 진행이 뒤로 가지 않는다', () => {
+    const plain = playToLevel(7);
+    const withSaves = playToLevel(7, MAX_VILLAGE_LEVEL, 15);
+
+    expect(withSaves.level).toBe(plain.level);
+    // 저장 왕복은 시뮬레이션 시간을 늘리지 않는다. 오차는 봇의 판단 차이 정도여야 한다.
+    expect(withSaves.elapsedMs).toBeLessThan(plain.elapsedMs * 2 + 60_000);
   });
 });

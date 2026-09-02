@@ -7,6 +7,7 @@ import {
 } from '../core/requests';
 import { hashNoise } from '../core/random';
 import type { ItemType } from '../core/items';
+import type { RequestSave } from '../core/save';
 import type { Buildings } from './Buildings';
 import type { Population } from './Population';
 
@@ -85,6 +86,81 @@ export class RequestBoard {
   /** 지금까지 완료한 요청 수. */
   get completedCount(): number {
     return this.completed;
+  }
+
+  /**
+   * 저장용 표현으로 바꾼다.
+   *
+   * @returns 저장 데이터.
+   */
+  toSave(): { requests: RequestSave[]; nextId: number; completed: number; timerMs: number } {
+    return {
+      requests: this.active.map((request) =>
+        request.kind === RequestKind.DELIVER
+          ? {
+              kind: 'deliver',
+              id: request.id,
+              npcId: request.npcId,
+              item: request.item,
+              amount: request.amount,
+            }
+          : {
+              kind: 'facility',
+              id: request.id,
+              npcId: request.npcId,
+              blueprintId: request.blueprintId,
+            },
+      ),
+      nextId: this.nextId,
+      completed: this.completed,
+      timerMs: this.timerMs,
+    };
+  }
+
+  /**
+   * 저장에서 요청 게시판 상태를 되살린다.
+   *
+   * 게시판은 건물·주민 참조를 갖고 있어 새로 만들어야 하므로, 생성자로 만든 인스턴스에
+   * 저장값을 채워 넣는 방식을 쓴다.
+   *
+   * @param saved 저장 데이터.
+   */
+  restore(saved: {
+    requests: readonly RequestSave[];
+    nextId: number;
+    completed: number;
+    timerMs: number;
+  }): void {
+    this.active.length = 0;
+
+    for (const entry of saved.requests) {
+      if (!Number.isInteger(entry.id)) continue;
+
+      if (entry.kind === 'deliver') {
+        if (typeof entry.item !== 'string') continue;
+        if (!Number.isInteger(entry.amount) || entry.amount < 1) continue;
+        this.active.push({
+          kind: RequestKind.DELIVER,
+          id: entry.id,
+          npcId: entry.npcId,
+          item: entry.item,
+          amount: entry.amount,
+        });
+        continue;
+      }
+
+      if (typeof entry.blueprintId !== 'string') continue;
+      this.active.push({
+        kind: RequestKind.FACILITY,
+        id: entry.id,
+        npcId: entry.npcId,
+        blueprintId: entry.blueprintId,
+      });
+    }
+
+    this.nextId = Math.max(saved.nextId ?? 1, ...this.active.map((request) => request.id + 1), 1);
+    this.completed = Math.max(0, Math.floor(saved.completed ?? 0));
+    this.timerMs = Number.isFinite(saved.timerMs) ? saved.timerMs : this.intervalMs;
   }
 
   /**

@@ -12,6 +12,7 @@ import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
 import { Terrain } from '../core/Terrain';
 import { canDigBlock, tierSpeedMultiplier } from '../core/tools';
 import { requestMessage, type VillageRequest } from '../core/requests';
+import { SAVE_VERSION, isSaveData, type SaveData } from '../core/save';
 import {
   describeUnlock,
   isZoneUnlocked,
@@ -95,7 +96,7 @@ export class Game {
   readonly storage = new Inventory({ slotCount: 24, stackLimit: 99 });
   /** 마을 건물. */
   readonly buildings: Buildings;
-  /** 시작 시점에 놓인 창고 건물. */
+  /** 시작 시점에 놓인 창고 건물. 저장에서 되살릴 때는 저장된 창고로 대체된다. */
   readonly startingStorage: Building;
   /** 마을 주민. */
   readonly population: Population;
@@ -119,6 +120,12 @@ export class Game {
   /** 요청 완료로 누적된 마을 경험치. Phase 8의 레벨 산정에 쓴다. */
   private villageExperience = 0;
 
+  /** 시뮬레이션 누적 시간(ms). 저장과 연출 시각에 쓴다. */
+  private elapsed = 0;
+
+  /** 지형·자원 생성에 쓴 시드. 저장에 함께 담아 재현과 디버깅에 쓴다. */
+  private seed = 0;
+
   /** 쌓기에 쓸 아이템의 우선순위. 흙을 먼저 쓰고 없으면 돌을 쓴다. */
   private readonly placePriority: readonly ItemType[] = [ItemType.DIRT, ItemType.STONE];
 
@@ -128,8 +135,10 @@ export class Game {
   /**
    * @param terrain 지형.
    * @param resources 자원 노드. 생략하면 시드 1로 배치한다.
+   * @param options `restoring`이면 시작 창고를 세우지 않는다 — 저장에서 되살리는 중이라
+   *   곧바로 갈아 끼울 것이기 때문이다.
    */
-  constructor(terrain: Terrain, resources?: ResourceField) {
+  constructor(terrain: Terrain, resources?: ResourceField, options: { restoring?: boolean } = {}) {
     this.terrain = terrain;
     this.resources = resources ?? new ResourceField(terrain);
 
@@ -140,7 +149,9 @@ export class Game {
 
     // 시작 창고를 마을 중심에 즉시 완공 상태로 세운다. 저장할 곳이 없으면
     // 첫 채집부터 인벤토리가 막혀 루프가 시작되지 않는다.
-    this.startingStorage = placeStartingStorage(this.buildings, this.resources, terrain, start);
+    this.startingStorage = options.restoring
+      ? ({ id: 0, blueprintId: BlueprintId.WAREHOUSE, x: start.x, y: start.y, buildRemainingMs: 0 })
+      : placeStartingStorage(this.buildings, this.resources, terrain, start);
 
     this.population = new Population(terrain, this.buildings);
     this.requests = new RequestBoard(this.buildings, this.population);
@@ -152,6 +163,7 @@ export class Game {
    * @param stepMs 스텝 길이(ms).
    */
   update(stepMs: number): void {
+    this.elapsed += stepMs;
     this.player.update(stepMs);
     this.resources.update(stepMs);
 
@@ -297,6 +309,164 @@ export class Game {
       message: `요청 완료 (+${completion.reward})`,
       tone: 'good',
     });
+  }
+
+  /** 시뮬레이션 누적 시간(ms). */
+  get elapsedMs(): number {
+    return this.elapsed;
+  }
+
+  /** 지형·자원 생성에 쓴 시드. */
+  get worldSeed(): number {
+    return this.seed;
+  }
+
+  /**
+   * 시드를 기록한다. 생성 직후 한 번만 부른다.
+   *
+   * @param seed 시드.
+   */
+  setWorldSeed(seed: number): void {
+    this.seed = seed;
+  }
+
+  /**
+   * 지금 상태를 저장 데이터로 만든다.
+   *
+   * @returns 저장 데이터.
+   */
+  toSave(): SaveData {
+    const buildings = this.buildings.toSave();
+    const npcs = this.population.toSave();
+    const requests = this.requests.toSave();
+
+    return {
+      version: SAVE_VERSION,
+      savedAt: Date.now(),
+      seed: this.seed,
+      terrain: this.terrain.toSave(),
+      nodes: this.resources.toSave(),
+      player: this.player.toSave(),
+      inventory: this.inventory.toSave(),
+      storage: this.storage.toSave(),
+      buildings: buildings.buildings,
+      nextBuildingId: buildings.nextId,
+      npcs: npcs.npcs,
+      nextNpcId: npcs.nextId,
+      requests: requests.requests,
+      nextRequestId: requests.nextId,
+      completedRequests: requests.completed,
+      requestTimerMs: requests.timerMs,
+      level: this.level,
+      experience: this.villageExperience,
+      elapsedMs: this.elapsed,
+    };
+  }
+
+  /**
+   * 저장에서 게임을 되살린다.
+   *
+   * "상태를 그대로 되살리는 것"이 아니라 **저장값으로 객체를 다시 조립하는 것**이다.
+   * 점유 맵처럼 다른 값에서 파생되는 자료구조는 저장하지 않고 조립 과정에서 다시 만든다 —
+   * 파생값을 저장하면 원본과 어긋난 저장이 생길 수 있다.
+   *
+   * @param data 저장 데이터.
+   * @returns 되살린 게임. 읽을 수 없으면 null.
+   */
+  static fromSave(data: unknown): Game | null {
+    if (!isSaveData(data)) return null;
+
+    const terrain = Terrain.fromSave(data.terrain);
+    if (!terrain) return null;
+
+    const resources = ResourceField.fromSave(terrain, data.nodes);
+    const player = Player.fromSave(data.player);
+    const inventory = Inventory.fromSave(data.inventory);
+    const storage = Inventory.fromSave(data.storage);
+    if (!player || !inventory || !storage) return null;
+
+    const buildings = Buildings.fromSave(terrain, data.buildings, data.nextBuildingId);
+
+    // 창고가 하나도 없으면 저장이 손상된 것이다. 저장할 곳이 없으면 진행이 막힌다.
+    let startingStorage: Building | null = null;
+    for (const building of buildings.all) {
+      if (blueprintById(building.blueprintId).storageSlots > 0) {
+        startingStorage = building;
+        break;
+      }
+    }
+    if (!startingStorage) return null;
+
+    const game = new Game(terrain, resources, { restoring: true });
+    game.seed = Number.isFinite(data.seed) ? data.seed : 0;
+    game.assignRestored({
+      player,
+      inventory,
+      storage,
+      buildings,
+      startingStorage,
+      npcs: data.npcs,
+      nextNpcId: data.nextNpcId,
+      level: Math.max(1, Math.floor(data.level)),
+      experience: Math.max(0, Math.floor(data.experience)),
+      elapsedMs: Number.isFinite(data.elapsedMs) ? data.elapsedMs : 0,
+    });
+    game.requests.restore({
+      requests: data.requests,
+      nextId: data.nextRequestId,
+      completed: data.completedRequests,
+      timerMs: data.requestTimerMs,
+    });
+
+    return game;
+  }
+
+  /**
+   * 되살린 부품들을 게임에 끼워 넣는다.
+   *
+   * 생성자가 만든 기본 부품을 갈아 끼우는 자리다. 필드가 `readonly`인 것들은 저장 복원에서만
+   * 바뀌므로, 이 한 곳에 모아 두고 다른 경로에서는 손대지 않는다.
+   *
+   * @param parts 되살린 부품들.
+   */
+  private assignRestored(parts: {
+    player: Player;
+    inventory: Inventory;
+    storage: Inventory;
+    buildings: Buildings;
+    startingStorage: Building;
+    npcs: SaveData['npcs'];
+    nextNpcId: number;
+    level: number;
+    experience: number;
+    elapsedMs: number;
+  }): void {
+    const mutable = this as {
+      player: Player;
+      inventory: Inventory;
+      storage: Inventory;
+      buildings: Buildings;
+      startingStorage: Building;
+      population: Population;
+      requests: RequestBoard;
+    };
+
+    mutable.player = parts.player;
+    mutable.inventory = parts.inventory;
+    mutable.storage = parts.storage;
+    mutable.buildings = parts.buildings;
+    mutable.startingStorage = parts.startingStorage;
+    mutable.population = Population.fromSave(
+      this.terrain,
+      parts.buildings,
+      parts.npcs,
+      parts.nextNpcId,
+    );
+    mutable.requests = new RequestBoard(parts.buildings, mutable.population);
+
+    this.level = parts.level;
+    this.villageExperience = parts.experience;
+    this.elapsed = parts.elapsedMs;
   }
 
   /** 현재 마을 레벨. */

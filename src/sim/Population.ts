@@ -1,6 +1,7 @@
 import { blueprintById } from '../core/blueprints';
 import { type TilePos, canStand } from '../core/movement';
 import type { Terrain } from '../core/Terrain';
+import type { NpcSave } from '../core/save';
 import type { Buildings, Building } from './Buildings';
 import { Npc } from './Npc';
 
@@ -64,6 +65,59 @@ export class Population {
   /** 지금 이주할 자리가 있는지 여부. */
   get hasVacancy(): boolean {
     return this.npcs.length < this.housingCapacity;
+  }
+
+  /**
+   * 저장용 표현으로 바꾼다.
+   *
+   * 배회 중인 이동은 담지 않는다. 불러온 순간 각자 서 있다가 다시 걷기 시작하는 편이
+   * 자연스럽고, 중간 상태를 되살릴 이유가 없다.
+   *
+   * @returns 저장 데이터와 다음 번호.
+   */
+  toSave(): { npcs: NpcSave[]; nextId: number } {
+    return {
+      npcs: this.npcs.map((npc) => ({
+        id: npc.id,
+        homeBuildingId: npc.homeBuildingId,
+        homeX: npc.homeTile.x,
+        homeY: npc.homeTile.y,
+        x: npc.position.x,
+        y: npc.position.y,
+      })),
+      nextId: this.nextId,
+    };
+  }
+
+  /**
+   * 저장에서 주민을 되살린다.
+   *
+   * @param terrain 지형.
+   * @param buildings 마을 건물.
+   * @param saved 저장된 주민 목록.
+   * @param nextId 다음에 부여할 번호.
+   * @returns 되살린 주민 집단.
+   */
+  static fromSave(
+    terrain: Terrain,
+    buildings: Buildings,
+    saved: readonly NpcSave[],
+    nextId: number,
+  ): Population {
+    const population = new Population(terrain, buildings);
+
+    for (const entry of saved) {
+      if (!Number.isInteger(entry.id)) continue;
+      if (!Number.isInteger(entry.x) || !Number.isInteger(entry.y)) continue;
+
+      const npc = new Npc(entry.id, entry.homeBuildingId, { x: entry.homeX, y: entry.homeY });
+      npc.placeAt({ x: entry.x, y: entry.y });
+      population.npcs.push(npc);
+    }
+
+    population.nextId = Math.max(nextId, ...population.npcs.map((npc) => npc.id + 1), 1);
+
+    return population;
   }
 
   /**

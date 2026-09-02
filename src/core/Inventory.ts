@@ -1,4 +1,5 @@
 import { ITEM_ORDER, type ItemType } from './items';
+import type { InventorySave } from './save';
 
 /** 슬롯 하나의 내용. 비어 있으면 null이다. */
 export interface InventorySlot {
@@ -252,6 +253,47 @@ export class Inventory {
     this.changeCount += 1;
 
     return true;
+  }
+
+  /**
+   * 저장용 표현으로 바꾼다.
+   *
+   * @returns 저장 데이터.
+   */
+  toSave(): InventorySave {
+    return {
+      slotCount: this.slots.length,
+      stackLimit: this.stackLimit,
+      slots: this.slots.map((slot) => (slot ? { item: slot.item, count: slot.count } : null)),
+    };
+  }
+
+  /**
+   * 저장에서 저장소를 되살린다.
+   *
+   * 슬롯 내용이 상한을 넘거나 개수가 이상하면 그 슬롯만 버린다 — 저장 전체를 거절할
+   * 만큼 중대한 손상은 아니고, 아이템 몇 개보다 이어서 플레이하는 편이 낫다.
+   *
+   * @param data 저장 데이터.
+   * @returns 되살린 저장소. 읽을 수 없으면 null.
+   */
+  static fromSave(data: InventorySave): Inventory | null {
+    if (!Number.isInteger(data.slotCount) || data.slotCount < 1) return null;
+    if (!Number.isInteger(data.stackLimit) || data.stackLimit < 1) return null;
+    if (!Array.isArray(data.slots)) return null;
+
+    const inventory = new Inventory({ slotCount: data.slotCount, stackLimit: data.stackLimit });
+
+    for (let i = 0; i < Math.min(data.slots.length, data.slotCount); i += 1) {
+      const slot = data.slots[i];
+      if (!slot) continue;
+      if (typeof slot.item !== 'string') continue;
+      if (!Number.isInteger(slot.count) || slot.count < 1) continue;
+
+      inventory.slots[i] = { item: slot.item, count: Math.min(slot.count, data.stackLimit) };
+    }
+
+    return inventory;
   }
 
   /** 담긴 아이템 종류 목록. 슬롯 순서를 따르며 중복은 제거한다. */

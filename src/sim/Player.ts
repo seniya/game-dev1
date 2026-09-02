@@ -1,4 +1,5 @@
 import { canWalk, type TilePos } from '../core/movement';
+import type { PlayerSave } from '../core/save';
 import type { Terrain } from '../core/Terrain';
 import { ToolKind, ToolTier, type Tool } from '../core/tools';
 
@@ -172,6 +173,45 @@ export class Player {
         this.movement = null;
       }
     }
+  }
+
+  /**
+   * 저장용 표현으로 바꾼다.
+   *
+   * 이동·휘두르기 같은 진행 중 상태는 담지 않는다. 불러온 순간 가만히 서 있는 것이
+   * 자연스럽고, 중간 상태를 되살리면 저장 시점의 애매한 프레임이 그대로 재현된다.
+   *
+   * @returns 저장 데이터.
+   */
+  toSave(): PlayerSave {
+    return {
+      x: this.tile.x,
+      y: this.tile.y,
+      tools: this.tools.map((tool) => ({ kind: tool.kind, tier: tool.tier })),
+      selectedSlot: this.toolIndex,
+    };
+  }
+
+  /**
+   * 저장에서 플레이어를 되살린다.
+   *
+   * @param data 저장 데이터.
+   * @returns 되살린 플레이어. 읽을 수 없으면 null.
+   */
+  static fromSave(data: PlayerSave): Player | null {
+    if (!Number.isInteger(data.x) || !Number.isInteger(data.y)) return null;
+    if (!Array.isArray(data.tools) || data.tools.length === 0) return null;
+
+    const player = new Player(data.x, data.y);
+
+    for (const saved of data.tools) {
+      if (typeof saved.kind !== 'string') continue;
+      if (!Number.isInteger(saved.tier)) continue;
+      player.upgradeTool(saved.kind, saved.tier);
+    }
+    player.selectTool(data.selectedSlot);
+
+    return player;
   }
 
   /**

@@ -115,10 +115,64 @@ body {
   border: 1px solid rgba(126, 231, 135, 0.5);
 }
 
-/* 건축 모드 블루프린트 목록. 오른쪽 위에 붙인다. */
+/* 저장 메뉴. 오른쪽 위 첫 줄. */
+.save {
+  position: fixed;
+  top: 8px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.save__status {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  color: #8b949e;
+  font-size: 11px;
+}
+
+.save__status--bad {
+  color: #ff7b72;
+}
+
+.save__buttons {
+  display: flex;
+  gap: 4px;
+}
+
+/* 버튼만 클릭을 받는다. */
+.save__button {
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #c9d1d9;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.save__button:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+/* 되돌릴 수 없는 조작은 한 번 더 확인받는다. */
+.save__button--danger {
+  border-color: rgba(255, 123, 114, 0.7);
+  background: rgba(255, 123, 114, 0.18);
+  color: #ff7b72;
+}
+
+/* 건축 모드 블루프린트 목록. 저장 메뉴 아래에 붙인다. */
 .panel {
   position: fixed;
-  top: 40px;
+  top: 76px;
   right: 12px;
   min-width: 220px;
   padding: 8px 10px;

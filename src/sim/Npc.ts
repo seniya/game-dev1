@@ -76,6 +76,19 @@ export class Npc {
   }
 
   /**
+   * 위치를 직접 지정한다. 저장에서 되살릴 때 쓴다.
+   *
+   * 진행 중인 이동은 취소한다 — 되살린 주민이 저장 시점의 이동을 이어서 하는 것보다
+   * 제자리에서 다시 시작하는 편이 자연스럽다.
+   *
+   * @param tile 설 칸.
+   */
+  placeAt(tile: TilePos): void {
+    this.tile = { x: tile.x, y: tile.y };
+    this.movement = null;
+  }
+
+  /**
    * 한 스텝 진행한다.
    *
    * @param stepMs 스텝 길이(ms).

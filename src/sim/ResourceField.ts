@@ -5,6 +5,7 @@ import type { Terrain } from '../core/Terrain';
 import { tierSpeedMultiplier, type Tool } from '../core/tools';
 import { Zone, zoneAt } from '../core/zones';
 import type { ItemType } from '../core/items';
+import type { NodeSave } from '../core/save';
 
 /** 맵에 놓인 자원 노드 하나. */
 export interface ResourceNode {
@@ -82,6 +83,55 @@ export class ResourceField {
   /** 모든 노드. 렌더링과 테스트에서 훑는다. */
   get all(): Iterable<ResourceNode> {
     return this.nodes.values();
+  }
+
+  /**
+   * 저장용 표현으로 바꾼다.
+   *
+   * 배치까지 통째로 담는다. 시드로 재현할 수도 있지만, 그러면 생성 규칙을 손대는 순간
+   * 예전 저장의 노드 위치가 조용히 달라진다.
+   *
+   * @returns 저장 데이터.
+   */
+  toSave(): NodeSave[] {
+    const saved: NodeSave[] = [];
+
+    for (const node of this.nodes.values()) {
+      saved.push({
+        x: node.x,
+        y: node.y,
+        kind: node.kind,
+        durability: node.durability,
+        respawnRemainingMs: node.respawnRemainingMs,
+      });
+    }
+
+    return saved;
+  }
+
+  /**
+   * 저장에서 자원 노드를 되살린다.
+   *
+   * @param terrain 지형.
+   * @param saved 저장된 노드 목록.
+   * @returns 되살린 자원 노드.
+   */
+  static fromSave(terrain: Terrain, saved: readonly NodeSave[]): ResourceField {
+    const field = new ResourceField(terrain, { densityScale: 0 });
+
+    for (const entry of saved) {
+      if (!Number.isInteger(entry.x) || !Number.isInteger(entry.y)) continue;
+      if (typeof entry.kind !== 'string') continue;
+      if (!field.addNode(entry.x, entry.y, entry.kind)) continue;
+
+      const node = field.nodeAt(entry.x, entry.y)!;
+      node.durability = Number.isFinite(entry.durability) ? entry.durability : node.durability;
+      node.respawnRemainingMs = Number.isFinite(entry.respawnRemainingMs)
+        ? entry.respawnRemainingMs
+        : 0;
+    }
+
+    return field;
   }
 
   /**

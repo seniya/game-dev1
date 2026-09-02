@@ -1,5 +1,6 @@
 import { MAX_LAYERS } from './coordinates';
 import { BlockType, isPlaceable } from './blocks';
+import { decodeBytes, encodeBytes, type TerrainSave } from './save';
 
 /**
  * 높이맵 기반 복셀 지형.
@@ -49,6 +50,52 @@ export class Terrain {
   /** 한 열에 쌓을 수 있는 최대 블록 수. 기획서 5.1의 깊이 제한. */
   static get maxColumnHeight(): number {
     return MAX_LAYERS;
+  }
+
+  /**
+   * 저장용 표현으로 바꾼다.
+   *
+   * 두 배열이 저장의 대부분을 차지하므로 base64로 담는다.
+   *
+   * @returns 저장 데이터.
+   */
+  toSave(): TerrainSave {
+    return {
+      width: this.width,
+      height: this.height,
+      heights: encodeBytes(this.heights),
+      types: encodeBytes(this.types),
+    };
+  }
+
+  /**
+   * 저장에서 지형을 되살린다.
+   *
+   * 배열 길이가 크기와 맞지 않으면 손상으로 보고 null을 돌려준다 — 잘못된 지형으로
+   * 게임을 시작하면 그 뒤의 모든 판정이 조용히 어긋난다.
+   *
+   * @param data 저장 데이터.
+   * @returns 되살린 지형. 읽을 수 없으면 null.
+   */
+  static fromSave(data: TerrainSave): Terrain | null {
+    if (!Number.isInteger(data.width) || !Number.isInteger(data.height)) return null;
+    if (data.width < 1 || data.height < 1) return null;
+
+    const columns = data.width * data.height;
+    const heights = decodeBytes(data.heights, columns);
+    const types = decodeBytes(data.types, columns * MAX_LAYERS);
+    if (!heights || !types) return null;
+
+    // 열 높이가 상한을 넘으면 이후 렌더링과 판정이 배열 밖을 읽는다.
+    for (const height of heights) {
+      if (height > MAX_LAYERS) return null;
+    }
+
+    const terrain = new Terrain(data.width, data.height);
+    terrain.heights.set(heights);
+    terrain.types.set(types);
+
+    return terrain;
   }
 
   /** 전체 열 개수. */

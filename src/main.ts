@@ -11,6 +11,8 @@ import { WorldRenderer } from './render/WorldRenderer';
 import { GameLoop } from './sim/GameLoop';
 import { GameState } from './sim/GameState';
 import { Game } from './sim/Game';
+import { SaveSession } from './sim/SaveSession';
+import { SaveStore } from './sim/SaveStore';
 import { BuildPanel } from './ui/BuildPanel';
 import { DebugOverlay } from './ui/DebugOverlay';
 import { InventoryBar } from './ui/InventoryBar';
@@ -18,6 +20,7 @@ import { KeyboardControls } from './ui/KeyboardControls';
 import { PointerControls } from './ui/PointerControls';
 import { describeFailure } from './ui/messages';
 import { RequestList } from './ui/RequestList';
+import { SaveMenu } from './ui/SaveMenu';
 import { Toasts } from './ui/Toasts';
 import { VillageHud } from './ui/VillageHud';
 
@@ -36,6 +39,9 @@ const INITIAL_ZOOM = 1;
  * 값이 크면 딱딱하게 따라붙고, 작으면 뒤늦게 끌려온다.
  */
 const CAMERA_FOLLOW_FACTOR = 0.12;
+
+/** 자동 저장 간격(게임 시간, ms). */
+const AUTOSAVE_INTERVAL_MS = 30_000;
 
 /**
  * 필수 DOM 엘리먼트를 찾아온다. 없으면 조용히 넘기지 않고 즉시 실패시킨다 —
@@ -64,11 +70,19 @@ function bootstrap(): void {
   );
   const state = new GameState();
 
-  const terrain = generateTerrain(MAP_WIDTH, MAP_HEIGHT, { seed: TERRAIN_SEED });
-  const resources = new ResourceField(terrain, { seed: TERRAIN_SEED });
-  const game = new Game(terrain, resources);
+  const store = new SaveStore();
+
+  // 저장이 있으면 이어서 시작한다. 손상된 저장은 지우지 않고 새 게임으로 떨어진다 —
+  // 사용자의 마을이 담긴 유일한 사본일 수 있다.
+  const loaded = store.load();
+  const restored = loaded.ok ? Game.fromSave(loaded.data) : null;
+  const loadFailed = loaded.ok ? restored === null : loaded.reason === 'corrupt';
+
+  const game = restored ?? createNewGame();
+  const terrain = game.terrain;
   const bar = new InventoryBar(requireElement('bar'), game.inventory.slotCount);
   const panel = new BuildPanel(requireElement('panel'));
+  const saveMenu = new SaveMenu(requireElement('save'));
   const toasts = new Toasts(requireElement('toasts'));
   const requestList = new RequestList(requireElement('requests'));
   const villageHud = new VillageHud(requireElement('village'));
@@ -169,6 +183,63 @@ function bootstrap(): void {
    */
   let followPlayer = true;
 
+  const session = new SaveSession(store, {
+    intervalMs: AUTOSAVE_INTERVAL_MS,
+    lastSavedAt: loaded.ok ? loaded.data.savedAt : null,
+  });
+
+  /**
+   * 지금 상태를 저장하고 결과를 알린다.
+   *
+   * @param announce 결과를 토스트로 알릴지 여부. 자동 저장은 조용히 지나간다.
+   */
+  function saveNow(announce: boolean): void {
+    const result = session.save(() => game.toSave());
+
+    if (result.ok) {
+      if (announce) toasts.show('저장했습니다', 'good');
+      return;
+    }
+
+    if (announce) {
+      toasts.show(
+        result.reason === 'quota' ? '저장 공간이 부족합니다' : '브라우저 저장소를 쓸 수 없습니다',
+        'bad',
+      );
+    }
+  }
+
+  saveMenu.setHandlers({
+    save: () => saveNow(true),
+    // 되돌리기와 새로 시작은 세계를 통째로 다시 만드는 일이라 페이지를 다시 연다.
+    // 부분 재조립보다 확실하고, 저장에서 시작하는 경로를 한 곳으로 모은다.
+    //
+    // 다시 열기 전에 저장을 멈추는 것이 중요하다. 그러지 않으면 탭이 닫히며 현재 상태가
+    // 한 번 더 저장돼, 방금 지우거나 되돌린 것이 즉시 취소된다.
+    load: () => {
+      if (!store.hasSave) {
+        toasts.show('되돌릴 저장이 없습니다', 'bad');
+        return;
+      }
+      session.suspend();
+      location.reload();
+    },
+    reset: () => {
+      session.suspend();
+      store.clear();
+      location.reload();
+    },
+  });
+
+  if (loadFailed) toasts.show('저장을 읽을 수 없어 새로 시작합니다', 'bad');
+  else if (restored) toasts.show('이어서 시작합니다', 'good');
+
+  // 탭을 닫거나 가릴 때 마지막 상태를 남긴다. 새로고침으로 잃는 일이 없어야 한다.
+  window.addEventListener('pagehide', () => saveNow(false));
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') saveNow(false);
+  });
+
   const loop = new GameLoop(
     {
       update: (stepMs) => {
@@ -180,6 +251,9 @@ function bootstrap(): void {
 
         game.update(stepMs);
         toasts.update(stepMs);
+
+        session.tick(stepMs, () => game.toSave());
+
         for (const notice of game.drainNotices()) toasts.show(notice.message, notice.tone);
 
         // 드래그로 시야를 옮기는 동안에는 추적을 멈춘다.
@@ -242,6 +316,8 @@ function bootstrap(): void {
           game.buildMode,
         );
 
+        saveMenu.update(session.status, frameTimeMs);
+
         bar.update({
           inventory: game.inventory,
           storage: game.storage,
@@ -257,6 +333,20 @@ function bootstrap(): void {
   );
 
   loop.start();
+}
+
+/**
+ * 새 게임을 만든다. 저장이 없거나 읽을 수 없을 때 쓴다.
+ *
+ * @returns 새 게임.
+ */
+function createNewGame(): Game {
+  const terrain = generateTerrain(MAP_WIDTH, MAP_HEIGHT, { seed: TERRAIN_SEED });
+  const resources = new ResourceField(terrain, { seed: TERRAIN_SEED });
+  const game = new Game(terrain, resources);
+  game.setWorldSeed(TERRAIN_SEED);
+
+  return game;
 }
 
 bootstrap();
