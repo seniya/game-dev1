@@ -68,6 +68,13 @@ export interface BuildingSave {
   y: number;
   /** 건축 남은 시간(ms). 0이면 완공. */
   buildRemainingMs: number;
+  /**
+   * 받은 손상.
+   *
+   * **선택적 필드다.** 없으면 성한 건물로 읽힌다 — 몬스터가 없던 시절의 저장에 대해
+   * 그것이 맞는 해석이다.
+   */
+  damage?: number;
 }
 
 /** 저장된 주민 하나. */
@@ -107,6 +114,18 @@ export interface MapSave {
   terrain: TerrainSave;
   /** 자원 노드. */
   nodes: NodeSave[];
+}
+
+/**
+ * 저장된 밤 침입.
+ *
+ * **선택적 필드다.** 없으면 "아직 아무도 오지 않았다"로 읽힌다.
+ */
+export interface RaidSave {
+  /** 마지막으로 침입이 일어난 날. */
+  lastRaidDay: number;
+  /** 지금 마을에 있는 몬스터들. */
+  monsters: Array<{ id: number; x: number; y: number; health: number }>;
 }
 
 /** 저장 데이터 전체. */
@@ -163,6 +182,8 @@ export interface SaveData {
   seenHints?: string[];
   /** 창고에 한 번이라도 예치했는지. 선택적 필드다. */
   hasDeposited?: boolean;
+  /** 진행 중인 밤 침입. 선택적 필드다. */
+  raid?: RaidSave;
 }
 
 /** base64 인코딩에 쓰는 문자표. */

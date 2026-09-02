@@ -181,6 +181,10 @@ function bootstrap(): void {
         return SoundId.REQUEST_NEW;
       case 'requestDone':
         return SoundId.REQUEST_DONE;
+      case 'raid':
+        return SoundId.RAID;
+      case 'damage':
+        return SoundId.DAMAGE;
       default:
         return null;
     }

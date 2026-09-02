@@ -49,7 +49,20 @@ export type Entity =
   | { kind: 'npc'; x: number; y: number; z: number; hue: number }
   /** 다른 맵으로 통하는 칸. `inward`면 들어가는 입구, 아니면 나가는 출구다. */
   | { kind: 'portal'; x: number; y: number; z: number; inward: boolean }
-  | { kind: 'building'; x: number; y: number; z: number; width: number; depth: number; style: BuildingStyle; progress: number };
+  | {
+      kind: 'building';
+      x: number;
+      y: number;
+      z: number;
+      width: number;
+      depth: number;
+      style: BuildingStyle;
+      progress: number;
+      /** 손상됐는지. 손상된 건물은 표시로 알린다. */
+      damaged?: boolean;
+    }
+  /** 밤에 몰려온 몬스터. */
+  | { kind: 'monster'; x: number; y: number; z: number; health: number };
 
 /** 건물 외형 종류. 블루프린트가 이 값으로 자기 모습을 지정한다. */
 export type BuildingStyle =
@@ -59,7 +72,9 @@ export type BuildingStyle =
   | 'well'
   | 'workbench'
   | 'forge'
-  | 'quarry';
+  | 'quarry'
+  | 'fence'
+  | 'watchtower';
 
 /**
  * 지형 위에 얹는 구역 표시.
@@ -626,8 +641,12 @@ export class WorldRenderer {
       case 'portal':
         this.drawPortal(screen, zoom, entity.inward);
         break;
+      case 'monster':
+        this.drawMonster(screen, zoom, entity.health);
+        break;
       case 'building':
         this.drawBuilding(screen, zoom, entity);
+        if (entity.damaged) this.drawDamageMark(screen, zoom, entity);
         break;
     }
   }
@@ -668,6 +687,10 @@ export class WorldRenderer {
       case 'portal':
         this.drawPortal(screen, zoom, entity.inward);
         break;
+      // 몬스터는 체력에 따라 모습이 바뀌므로 캐시하지 않는다.
+      case 'monster':
+        this.drawMonster(screen, zoom, entity.health);
+        break;
       case 'building':
         if (entity.progress >= 1) {
           this.drawSprite(
@@ -676,6 +699,7 @@ export class WorldRenderer {
             screen.y + ((entity.width - 1) + (entity.depth - 1)) * (TILE_HEIGHT / 4) * zoom,
             zoom,
           );
+          if (entity.damaged) this.drawDamageMark(screen, zoom, entity);
           break;
         }
         this.drawBuilding(screen, zoom, entity);
@@ -853,6 +877,71 @@ export class WorldRenderer {
    * @param zoom 확대율.
    * @param entity 건물 오브젝트.
    */
+  /**
+   * 손상된 건물 위에 표식을 얹는다.
+   *
+   * 손상은 기능이 멈춘 상태이므로 **한눈에 보여야 한다.** 지붕 위 붉은 삼각형 하나로
+   * 알린다 — 대사창도 창도 없이 알려야 하는 값이다(기획서 7절).
+   *
+   * @param screen 기준점의 화면 좌표.
+   * @param zoom 확대율.
+   * @param entity 건물 오브젝트.
+   */
+  private drawDamageMark(
+    screen: { x: number; y: number },
+    zoom: number,
+    entity: { width: number; depth: number },
+  ): void {
+    const ctx = this.ctx;
+    const centerX = screen.x + ((entity.width - 1) - (entity.depth - 1)) * (TILE_WIDTH / 4) * zoom;
+    const top = screen.y - TILE_HEIGHT * 1.8 * zoom;
+    const size = TILE_HEIGHT * 0.5 * zoom;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(centerX, top - size);
+    ctx.lineTo(centerX + size * 0.9, top + size * 0.6);
+    ctx.lineTo(centerX - size * 0.9, top + size * 0.6);
+    ctx.closePath();
+    ctx.fillStyle = '#e05a4a';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /**
+   * 몬스터를 그린다.
+   *
+   * 주민(밝은 말)과 한눈에 구분돼야 하므로 어두운 몸에 붉은 눈을 준다. 남은 체력만큼
+   * 몸이 커 보이게 해, 몇 대 더 때려야 하는지가 보인다.
+   *
+   * @param screen 칸 윗면 중심의 화면 좌표.
+   * @param zoom 확대율.
+   * @param health 남은 체력.
+   */
+  private drawMonster(screen: { x: number; y: number }, zoom: number, health: number): void {
+    const ctx = this.ctx;
+    const scale = 0.6 + Math.max(0, health) * 0.12;
+    const radiusX = (TILE_WIDTH / 2) * 0.42 * scale * zoom;
+    const radiusY = TILE_HEIGHT * 0.7 * scale * zoom;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(screen.x, screen.y - radiusY * 0.5, radiusX, radiusY, 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#3b2b45';
+    ctx.fill();
+    ctx.strokeStyle = '#1b1320';
+    ctx.lineWidth = Math.max(1, zoom);
+    ctx.stroke();
+
+    // 눈. 어두운 화면에서도 보이는 붉은 점 둘.
+    ctx.beginPath();
+    ctx.ellipse(screen.x - radiusX * 0.35, screen.y - radiusY * 0.9, Math.max(1, 1.6 * zoom), Math.max(1, 1.6 * zoom), 0, 0, Math.PI * 2);
+    ctx.ellipse(screen.x + radiusX * 0.35, screen.y - radiusY * 0.9, Math.max(1, 1.6 * zoom), Math.max(1, 1.6 * zoom), 0, 0, Math.PI * 2);
+    ctx.fillStyle = '#e05a4a';
+    ctx.fill();
+    ctx.restore();
+  }
+
   /**
    * 맵 사이를 잇는 통로를 그린다.
    *
@@ -1133,6 +1222,8 @@ const BUILDING_STYLE: Readonly<
   // 동굴에 다녀온 보람이 보인다.
   forge: { roof: '#c26a3a', wallX: '#6f6a68', wallY: '#575250', height: 1.3 },
   quarry: { roof: '#7f8892', wallX: '#9aa0a6', wallY: '#7e848a', height: 0.9 },
+  fence: { roof: '#8a6f47', wallX: '#a4835a', wallY: '#87694a', height: 0.5 },
+  watchtower: { roof: '#6b7f5f', wallX: '#c0ab86', wallY: '#9d8b6c', height: 2.4 },
 };
 
 /**

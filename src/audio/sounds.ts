@@ -33,6 +33,10 @@ export const SoundId = {
   DEPOSIT: 'deposit',
   /** 행동이 거절됨. */
   DENY: 'deny',
+  /** 밤 침입 시작. */
+  RAID: 'raid',
+  /** 건물이 손상됨. */
+  DAMAGE: 'damage',
 } as const;
 
 /** 소리 종류 값. */
@@ -121,4 +125,15 @@ export const SOUND_RECIPES: Readonly<Record<SoundId, SoundRecipe>> = {
   },
   [SoundId.DEPOSIT]: { source: 'tone', wave: 'sine', notes: [523], noteMs: 120, gain: 0.18 },
   [SoundId.DENY]: { source: 'tone', wave: 'sawtooth', notes: [160], noteMs: 140, gain: 0.16, lowpass: 900 },
+  // 밤 침입은 낮은 두 음으로 알린다. 다른 알림음이 모두 상행이라 하행이면 곧바로 구분된다.
+  [SoundId.RAID]: {
+    source: 'tone',
+    wave: 'sawtooth',
+    notes: [220, 165],
+    noteMs: 220,
+    gain: 0.22,
+    sequential: true,
+  },
+  // 건물이 맞는 소리. 철거보다 짧고 둔하다.
+  [SoundId.DAMAGE]: { source: 'noise', notes: [1], noteMs: 200, gain: 0.38, lowpass: 600, decay: 9 },
 };

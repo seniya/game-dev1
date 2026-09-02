@@ -17,6 +17,7 @@ import {
 } from '../core/daycycle';
 import { ItemType, blockToItem, itemLabel, itemToBlock } from '../core/items';
 import { SLOTS_PER_WORKPLACE, isWorkplace, jobDefinition, jobForWorkplace } from '../core/jobs';
+import { DEFEAT_REWARD } from '../core/monsters';
 import { MapId, isVillageMap, mapLabel, mapSeed } from '../core/maps';
 import { canInteract, walkableNeighbors, type TilePos } from '../core/movement';
 import { nodeDefinition, type NodeKind } from '../core/resourceNodes';
@@ -47,10 +48,15 @@ import { Guidance } from './Guidance';
 import type { GuidanceState } from '../core/guidance';
 import { Population, type Migration } from './Population';
 import { RequestBoard, type RequestCompletion } from './Requests';
+import { Raid } from './Raid';
 import { ResourceField } from './ResourceField';
 
 /** UI로 알릴 사건의 종류. 문구·소리·연출을 고르는 데 쓴다. */
 export type NoticeCue =
+  /** 몬스터가 몰려왔다. */
+  | 'raid'
+  /** 건물이 손상됐다. */
+  | 'damage'
   /** 주민이 일터에 배정되거나 풀렸다. */
   | 'job'
   /** 다른 맵으로 이동했다. */
@@ -74,6 +80,8 @@ export interface Notice {
 
 /** 행동이 거절된 이유. UI 안내 문구로 옮긴다. */
 export type ActionFailure =
+  /** 고칠 것이 없다(성한 건물이다). */
+  | 'notDamaged'
   /** 일터가 아닌 건물이다. */
   | 'noWorkplace'
   /** 일터의 자리가 찼다. */
@@ -184,6 +192,9 @@ export class Game {
   /** 첫 플레이 안내. */
   readonly guidance = new Guidance();
 
+  /** 밤의 침입. */
+  readonly raid: Raid;
+
   /**
    * 이번 프레임에 UI로 알릴 사건들.
    *
@@ -246,11 +257,19 @@ export class Game {
     // 시작 창고를 마을 중심에 즉시 완공 상태로 세운다. 저장할 곳이 없으면
     // 첫 채집부터 인벤토리가 막혀 루프가 시작되지 않는다.
     this.startingStorage = options.restoring
-      ? ({ id: 0, blueprintId: BlueprintId.WAREHOUSE, x: start.x, y: start.y, buildRemainingMs: 0 })
+      ? ({
+          id: 0,
+          blueprintId: BlueprintId.WAREHOUSE,
+          x: start.x,
+          y: start.y,
+          buildRemainingMs: 0,
+          damage: 0,
+        })
       : placeStartingStorage(this.buildings, surfaceResources, terrain, start);
 
     this.population = new Population(terrain, this.buildings);
     this.requests = new RequestBoard(this.buildings, this.population);
+    this.raid = new Raid(terrain, this.buildings);
   }
 
   /**
@@ -438,6 +457,8 @@ export class Game {
 
     if (workTime) this.produce(stepMs);
 
+    this.updateRaid(stepMs);
+
     const board = this.requests.update(stepMs);
     for (const request of board.created) {
       this.pendingNotices.push({ message: requestMessage(request), tone: 'neutral', cue: 'requestNew' });
@@ -450,6 +471,125 @@ export class Game {
 
     const hint = this.guidance.update(stepMs, this.guidanceState());
     if (hint) this.pendingNotices.push({ message: hint, tone: 'neutral' });
+  }
+
+  /**
+   * 밤의 침입을 진행하고 결과를 알린다.
+   *
+   * 침입은 **지상의 일**이다. 동굴에 있는 동안에도 마을에서 벌어지므로 계속 돌린다 —
+   * 자리를 비운 사이에 마을이 상하는 것이 이 시스템의 긴장이다.
+   *
+   * @param stepMs 스텝 길이(ms).
+   */
+  private updateRaid(stepMs: number): void {
+    const events = this.raid.update(stepMs, {
+      night: this.isNight,
+      day: this.dayCount,
+      level: this.level,
+      seed: this.seed,
+    });
+
+    if (events.started > 0) {
+      this.pendingNotices.push({
+        message: `몬스터 ${events.started}마리가 마을로 옵니다`,
+        tone: 'bad',
+        cue: 'raid',
+      });
+    }
+
+    for (const building of events.damaged) {
+      this.pendingNotices.push({
+        message: `${blueprintById(building.blueprintId).label}이(가) 손상됐습니다`,
+        tone: 'bad',
+        cue: 'damage',
+      });
+    }
+
+    if (events.defeated > 0) this.rewardDefeat(events.defeated);
+
+    if (events.ended) {
+      this.pendingNotices.push({ message: '해가 떠 몬스터가 물러갔습니다', tone: 'good' });
+    }
+  }
+
+  /**
+   * 몬스터를 물리친 보상을 준다.
+   *
+   * 보상은 마을 경험치다. 자원을 주면 채집보다 사냥이 나은 순간이 생기고,
+   * 그러면 이 게임이 방어 게임이 된다.
+   *
+   * @param count 물리친 마릿수.
+   */
+  private rewardDefeat(count: number): void {
+    this.villageExperience += DEFEAT_REWARD * count;
+    this.pendingNotices.push({
+      message: `몬스터 ${count}마리를 쫓아냈습니다 (+${DEFEAT_REWARD * count})`,
+      tone: 'good',
+      cue: 'requestDone',
+    });
+    this.syncVillageLevel();
+  }
+
+  /**
+   * 손상된 건물을 고친다.
+   *
+   * 자재는 원래 필요량의 4분의 1(올림)이다. 공짜면 손상이 아무것도 아니게 되고,
+   * 전액이면 다시 짓는 편이 나아 수리라는 선택지가 사라진다.
+   *
+   * @param target 대상 칸.
+   * @returns 행동 결과.
+   */
+  repairAt(target: TilePos): ActionResult {
+    if (!this.inVillage) return { ok: false, reason: 'notVillage' };
+
+    const building = this.buildings.buildingAt(target.x, target.y);
+    if (!building) return { ok: false, reason: 'noBuilding' };
+    if (building.damage <= 0) return { ok: false, reason: 'notDamaged' };
+
+    const blueprint = blueprintById(building.blueprintId);
+    const cost = blueprint.materials.map((material) => ({
+      item: material.item,
+      amount: Math.max(1, Math.ceil(material.amount / 4)),
+    }));
+
+    for (const requirement of cost) {
+      if (this.totalHeld(requirement.item) < requirement.amount) {
+        return { ok: false, reason: 'noMaterial' };
+      }
+    }
+
+    for (const requirement of cost) this.consume(requirement.item, requirement.amount);
+
+    this.buildings.repairBuilding(building.id);
+    this.pendingNotices.push({
+      message: `${blueprint.label}을(를) 고쳤습니다`,
+      tone: 'good',
+      cue: 'buildDone',
+    });
+
+    return { ok: true, building };
+  }
+
+  /**
+   * 겨냥한 칸의 몬스터를 때린다.
+   *
+   * @param target 대상 칸.
+   * @returns 행동 결과. 몬스터가 없으면 null.
+   */
+  private strikeAt(target: TilePos): ActionResult | null {
+    if (!this.raid.occupies(target)) return null;
+    if (!this.player.idle) return { ok: false, reason: 'busy' };
+    if (!canInteract(this.terrain, this.player.position, target)) {
+      return { ok: false, reason: 'notAdjacent' };
+    }
+
+    const result = this.raid.hitAt(target);
+    if (!result) return null;
+
+    this.player.trySwing();
+    if (result.defeated) this.rewardDefeat(1);
+
+    return { ok: true };
   }
 
   /**
@@ -467,7 +607,8 @@ export class Game {
       if (buildingId === null) continue;
 
       const building = this.buildings.buildingById(buildingId);
-      if (!building || building.buildRemainingMs > 0) continue;
+      // 손상된 일터는 생산을 멈춘다. 고칠 이유가 그것이다.
+      if (!building || building.buildRemainingMs > 0 || building.damage > 0) continue;
 
       const job = jobForWorkplace(building.blueprintId);
       if (!job) continue;
@@ -566,6 +707,8 @@ export class Game {
       onPortal: this.onPortal,
       night: this.isNight,
       openJobs: Math.max(0, this.jobSlots.total - this.jobSlots.assigned),
+      raiding: this.inVillage && this.raid.active,
+      damagedBuildings: this.buildings.damagedCount,
       hasDeposited: this.guidance.hasDeposited,
     };
   }
@@ -780,6 +923,7 @@ export class Game {
       level: this.level,
       experience: this.villageExperience,
       elapsedMs: this.elapsed,
+      raid: this.raid.toSave(),
       seenHints: this.guidance.seenHints,
       hasDeposited: this.guidance.hasDeposited,
     };
@@ -844,6 +988,7 @@ export class Game {
       timerMs: data.requestTimerMs,
     });
     game.guidance.restore(data.seenHints, data.hasDeposited);
+    game.raid.restore(data.raid);
     game.restoreMaps(data);
 
     return game;
@@ -1185,6 +1330,13 @@ export class Game {
    * @returns 행동 결과.
    */
   actAt(target: TilePos): ActionResult {
+    // 눈앞의 것부터 다룬다: 몬스터 → 고칠 건물 → 자원 → 지형.
+    const struck = this.strikeAt(target);
+    if (struck) return struck;
+
+    const building = this.inVillage ? this.buildings.buildingAt(target.x, target.y) : undefined;
+    if (building && building.damage > 0) return this.repairAt(target);
+
     if (this.resources.isBlocked(target.x, target.y)) return this.harvestAt(target);
 
     return this.digAt(target);
@@ -1472,6 +1624,17 @@ export class Game {
         depth: blueprint.depth,
         style: blueprint.style,
         progress: this.buildings.progressOf(building),
+        damaged: building.damage > 0,
+      });
+    }
+
+    for (const monster of this.inVillage ? this.raid.monsters : []) {
+      this.entityBuffer.push({
+        kind: 'monster',
+        x: monster.x,
+        y: monster.y,
+        z: Math.max(0, this.terrain.columnHeight(monster.x, monster.y) - 1),
+        health: monster.health,
       });
     }
 
@@ -1499,6 +1662,8 @@ export class Game {
    * @returns 설명 문자열. 아무것도 없으면 null.
    */
   describeTile(target: TilePos): string | null {
+    if (this.inVillage && this.raid.occupies(target)) return '몬스터';
+
     const portal = this.portal;
     if (target.x === portal.x && target.y === portal.y) {
       return this.inVillage ? '동굴 입구' : '지상으로 나가는 길';

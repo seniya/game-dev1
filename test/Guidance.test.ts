@@ -25,6 +25,8 @@ function state(overrides: Partial<GuidanceState> = {}): GuidanceState {
     onPortal: false,
     night: false,
     openJobs: 0,
+    raiding: false,
+    damagedBuildings: 0,
     hasDeposited: false,
     ...overrides,
   };

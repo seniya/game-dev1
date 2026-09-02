@@ -38,6 +38,10 @@ export interface GuidanceState {
   night: boolean;
   /** 비어 있는 일터 자리 수. 배정 안내에 쓴다. */
   openJobs: number;
+  /** 지금 몬스터가 마을에 있는지. */
+  raiding: boolean;
+  /** 손상된 건물 수. */
+  damagedBuildings: number;
   /** 지금 고를 수 있는 블루프린트 수. 숫자 키 안내에 쓴다. */
   blueprintCount: number;
   /** 창고에 한 번이라도 예치했는지. */
@@ -58,6 +62,8 @@ export const HintId = {
   NIGHT: 'night',
   /** 일터가 비었을 때 — 주민을 배정할 수 있음을 알린다. */
   JOB: 'job',
+  /** 첫 침입이 왔을 때 — 쫓는 법과 고치는 법을 알린다. */
+  RAID: 'raid',
 } as const;
 
 /** 힌트 종류 값. */
@@ -71,6 +77,7 @@ const HINT_TEXT: Readonly<Record<HintId, string>> = {
   [HintId.DEMOLISH]: 'X로 건물을 철거하면 자재 절반이 돌아옵니다',
   [HintId.NIGHT]: '밤에는 시야가 좁아집니다 — 아침이 오면 다시 넓어집니다',
   [HintId.JOB]: 'G로 일터에 주민을 배정하면 낮 동안 자원을 냅니다',
+  [HintId.RAID]: '몬스터는 Space로 쫓습니다 — 손상된 건물도 Space로 고칩니다',
 };
 
 /**
@@ -99,6 +106,8 @@ export function pickHint(state: GuidanceState, seen: ReadonlySet<HintId>): HintI
   if (!seen.has(HintId.NIGHT) && state.night) return HintId.NIGHT;
   // 일터를 지었는데 아무도 없으면 배정할 수 있다는 것을 모르고 지나칠 수 있다.
   if (!seen.has(HintId.JOB) && state.openJobs > 0 && state.residents > 0) return HintId.JOB;
+  // 첫 침입은 놀랄 만한 사건이다. 무엇을 하면 되는지 그 자리에서 알려야 한다.
+  if (!seen.has(HintId.RAID) && state.raiding) return HintId.RAID;
 
   return null;
 }
@@ -144,6 +153,9 @@ export function currentObjective(state: GuidanceState): string {
     return state.buildMode ? '평탄한 땅에 집을 놓으세요' : 'B를 눌러 집을 지으세요';
   }
 
+  // 침입 중에는 다른 목표가 의미가 없다. 오늘 밤을 넘기는 것이 할 일이다.
+  if (state.raiding) return '몬스터를 쫓으세요 (Space)';
+  if (state.damagedBuildings > 0) return '손상된 건물을 고치세요 (Space)';
   if (state.residents === 0) return '주민이 이주하기를 기다리세요';
   if (state.payableRequests > 0) return 'R로 주민 요청을 내세요';
   if (state.carried > 0 && !state.nearStorage) return '창고로 돌아가 자원을 맡기세요';
@@ -176,6 +188,8 @@ export function controlHint(state: GuidanceState): string {
   if (state.buildings >= 3) parts.push('X: 철거');
   if (state.onPortal) parts.push('F: 이동');
   if (state.openJobs > 0) parts.push('G: 일터 배정');
+  if (state.raiding) parts.push('Space: 몬스터 쫓기');
+  if (state.damagedBuildings > 0) parts.push('Space: 수리');
 
   parts.push('+/-: 확대');
 

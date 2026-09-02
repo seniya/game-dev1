@@ -11,6 +11,10 @@ export const BlueprintId = {
   FORGE: 'forge',
   /** 채석장. 채석공이 돌을 내는 일터다. */
   QUARRY: 'quarry',
+  /** 울타리. 몬스터의 길을 막는다. */
+  FENCE: 'fence',
+  /** 망루. 가까이 온 몬스터를 스스로 쫓는다. */
+  WATCHTOWER: 'watchtower',
   /** 창고. 마을 저장 공간을 늘린다. */
   WAREHOUSE: 'warehouse',
   /** 우물. 주민 요청 대상이 되는 시설이다. */
@@ -126,6 +130,33 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     ],
     unlockLevel: 3,
     housing: 2,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.FENCE,
+    label: '울타리',
+    style: 'fence',
+    width: 1,
+    depth: 1,
+    materials: [{ item: ItemType.WOOD, amount: 3 }],
+    // 침입이 시작되는 레벨과 같다. 막을 것이 없는데 울타리부터 열리면 쓸모를 모른다.
+    unlockLevel: 4,
+    housing: 0,
+    storageSlots: 0,
+  },
+  {
+    id: BlueprintId.WATCHTOWER,
+    label: '망루',
+    style: 'watchtower',
+    width: 2,
+    depth: 2,
+    materials: [
+      { item: ItemType.WOOD, amount: 8 },
+      { item: ItemType.STONE, amount: 10 },
+      { item: ItemType.IRON_ORE, amount: 2 },
+    ],
+    unlockLevel: 4,
+    housing: 0,
     storageSlots: 0,
   },
   {

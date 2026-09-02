@@ -212,6 +212,8 @@ describe('게임 안의 시각', () => {
       onPortal: false,
       night: true,
       openJobs: 0,
+      raiding: false,
+      damagedBuildings: 0,
       hasDeposited: false,
     } satisfies GuidanceState;
 

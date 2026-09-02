@@ -1,4 +1,5 @@
 import { BlueprintId, blueprintById, buildDurationMs, type Blueprint } from '../core/blueprints';
+import { DAMAGE_LIMIT } from '../core/monsters';
 import { isAdjacent, type TilePos } from '../core/movement';
 import type { BuildingSave } from '../core/save';
 import type { Terrain } from '../core/Terrain';
@@ -15,6 +16,13 @@ export interface Building {
   readonly y: number;
   /** 건축 남은 시간(ms). 0이면 완공이다. */
   buildRemainingMs: number;
+  /**
+   * 받은 손상(0~`DAMAGE_LIMIT`).
+   *
+   * 몬스터는 건물을 부수지 않고 손상시킨다(ADR 0017). 손상된 건물은 **기능이 멈추지만
+   * 사라지지 않는다** — 되돌릴 수 없는 손실은 캐주얼 성격과 어긋난다.
+   */
+  damage: number;
 }
 
 /** 배치가 거절된 이유. */
@@ -74,13 +82,53 @@ export class Buildings {
     return this.buildings.size;
   }
 
-  /** 완공된 건물 수. */
+  /** 완공됐고 손상되지 않은 건물 수. */
   get completedCount(): number {
     let done = 0;
     for (const building of this.buildings.values()) {
-      if (building.buildRemainingMs <= 0) done += 1;
+      if (isFunctional(building)) done += 1;
     }
     return done;
+  }
+
+  /** 손상된 건물 수. HUD 표시와 안내에 쓴다. */
+  get damagedCount(): number {
+    let damaged = 0;
+    for (const building of this.buildings.values()) {
+      if (building.buildRemainingMs <= 0 && building.damage > 0) damaged += 1;
+    }
+    return damaged;
+  }
+
+  /**
+   * 건물에 손상을 준다.
+   *
+   * @param id 건물 번호.
+   * @returns 손상이 늘었으면 true. 이미 한계까지 부서졌거나 없는 건물이면 false.
+   */
+  damageBuilding(id: number): boolean {
+    const building = this.buildings.get(id);
+    if (!building || building.buildRemainingMs > 0) return false;
+    if (building.damage >= DAMAGE_LIMIT) return false;
+
+    building.damage += 1;
+
+    return true;
+  }
+
+  /**
+   * 건물을 고친다.
+   *
+   * @param id 건물 번호.
+   * @returns 고쳤으면 true. 성한 건물이면 false.
+   */
+  repairBuilding(id: number): boolean {
+    const building = this.buildings.get(id);
+    if (!building || building.damage <= 0) return false;
+
+    building.damage = 0;
+
+    return true;
   }
 
   /** 모든 건물. */
@@ -135,7 +183,7 @@ export class Buildings {
    */
   hasCompleted(blueprintId: BlueprintId): boolean {
     for (const building of this.buildings.values()) {
-      if (building.blueprintId === blueprintId && building.buildRemainingMs <= 0) return true;
+      if (building.blueprintId === blueprintId && isFunctional(building)) return true;
     }
 
     return false;
@@ -153,7 +201,7 @@ export class Buildings {
     const types = new Set<BlueprintId>();
 
     for (const building of this.buildings.values()) {
-      if (building.buildRemainingMs > 0) continue;
+      if (!isFunctional(building)) continue;
 
       const blueprint = blueprintById(building.blueprintId);
       if (filter && !filter(blueprint)) continue;
@@ -173,7 +221,7 @@ export class Buildings {
   sumCompleted(pick: (blueprint: Blueprint) => number): number {
     let total = 0;
     for (const building of this.buildings.values()) {
-      if (building.buildRemainingMs > 0) continue;
+      if (!isFunctional(building)) continue;
       total += pick(blueprintById(building.blueprintId));
     }
 
@@ -238,6 +286,7 @@ export class Buildings {
       x,
       y,
       buildRemainingMs: instant ? 0 : buildDurationMs(blueprint),
+      damage: 0,
     };
     this.nextId += 1;
 
@@ -267,6 +316,8 @@ export class Buildings {
         x: building.x,
         y: building.y,
         buildRemainingMs: building.buildRemainingMs,
+        // 성한 건물에는 담지 않는다. 선택적 필드라 예전 저장도 그대로 읽힌다.
+        ...(building.damage > 0 ? { damage: building.damage } : {}),
       });
     }
 
@@ -307,6 +358,8 @@ export class Buildings {
         x: entry.x,
         y: entry.y,
         buildRemainingMs: Math.max(0, entry.buildRemainingMs ?? 0),
+        // 범위를 벗어난 손상값은 잘라 낸다. 손상된 저장이 규칙을 넘지 않게 한다.
+        damage: Math.max(0, Math.min(DAMAGE_LIMIT, Math.floor(entry.damage ?? 0))),
       };
 
       buildings.buildings.set(building.id, building);
@@ -389,7 +442,7 @@ export class Buildings {
    */
   adjacentCompleted(from: TilePos, blueprintId?: BlueprintId): Building | undefined {
     for (const building of this.buildings.values()) {
-      if (building.buildRemainingMs > 0) continue;
+      if (!isFunctional(building)) continue;
       if (blueprintId !== undefined && building.blueprintId !== blueprintId) continue;
 
       const blueprint = blueprintById(building.blueprintId);
@@ -413,4 +466,18 @@ export class Buildings {
   private key(x: number, y: number): number {
     return y * this.terrain.width + x;
   }
+}
+
+/**
+ * 건물이 제 기능을 하는지 확인한다.
+ *
+ * 완공됐고 손상되지 않아야 한다. 손상된 집에는 새 주민이 들어오지 않고, 손상된 일터는
+ * 생산을 멈추며, 손상된 시설은 마을 점수에 들어가지 않는다 — **고칠 이유**가 그것이다.
+ * 이미 살고 있는 주민을 내보내지는 않는다. 그것은 벌칙이지 불편이 아니다.
+ *
+ * @param building 대상 건물.
+ * @returns 기능하면 true.
+ */
+export function isFunctional(building: Building): boolean {
+  return building.buildRemainingMs <= 0 && building.damage <= 0;
 }
