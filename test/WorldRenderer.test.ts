@@ -528,6 +528,17 @@ describe('WorldRenderer 오브젝트', () => {
     expect(ctx.paths.length).toBeGreaterThan(before);
   });
 
+  it('플레이어에게만 밤에도 읽히는 청록색 위치 고리를 그린다', () => {
+    const { ctx, renderer } = setup(flat(4, 1));
+
+    renderer.render(null, [
+      { kind: 'player', x: 1, y: 1, z: 0, swing: 0 },
+      { kind: 'npc', x: 2, y: 1, z: 0, hue: 40 },
+    ]);
+
+    expect(ctx.dots.some((dot) => dot.fillStyle === '#3caee8')).toBe(true);
+  });
+
   it('오브젝트는 자기 칸의 지형 뒤에 오는 열보다 먼저, 앞에 오는 열보다 나중에 그려진다', () => {
     const terrain = flat(5, 1);
     const { ctx, camera, renderer } = setup(terrain);

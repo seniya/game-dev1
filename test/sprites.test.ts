@@ -17,6 +17,11 @@ class ImageRecordingContext {
   lineWidth = 1;
   globalAlpha = 1;
 
+  /** 상태 저장. 플레이어 위치 고리의 투명도를 격리할 때 쓴다. */
+  save(): void {}
+  /** 상태 복원. 플레이어 위치 고리 뒤에 다른 오브젝트가 영향을 받지 않게 한다. */
+  restore(): void {}
+
   /** 경로를 시작한다. */
   beginPath(): void {}
   /** 시작점을 옮긴다. */

@@ -660,6 +660,7 @@ export class WorldRenderer {
         //
         // 크기를 1 → 1.15로 키웠다. 화면에서 보니 겨냥 커서보다 작아, 어두운 동굴과
         // 밤에는 자기 캐릭터를 찾기 어려웠다.
+        this.drawPlayerMarker(screen, zoom);
         this.drawPawn(screen, zoom, '#4a86c8', '#20303f', entity.swing, 1.15, entity.stride ?? 0, entity.facing ?? DEFAULT_ACTOR_FACING);
         break;
       case 'npc':
@@ -699,6 +700,7 @@ export class WorldRenderer {
 
     switch (entity.kind) {
       case 'player':
+        this.drawPlayerMarker(screen, zoom);
         this.drawSprite(sprites.pawn(-1, entity.stride, entity.facing), screen.x, screen.y, zoom);
         if (entity.swing > 0) this.drawSwing(screen, zoom, entity.swing);
         break;
@@ -875,6 +877,33 @@ export class WorldRenderer {
     this.ctx.beginPath();
     this.ctx.arc(topX, topY - canopyRadius * 0.5, canopyRadius, 0, Math.PI * 2);
     this.ctx.fill();
+  }
+
+  /**
+   * 플레이어 발밑에 위치 고리를 그린다.
+   *
+   * 밤·동굴·주민 밀집에서는 파란 몸통만으로 플레이어를 찾는 데 한 박자 걸렸다. 고리는
+   * 플레이어에게만 주고, 오브젝트보다 먼저 그려 발을 가리거나 주민 표식처럼 늘어나지 않게
+   * 한다. 커서의 노란 마름모와 색·형태가 달라 현재 위치와 행동 대상도 혼동하지 않는다.
+   *
+   * @param screen 발이 놓인 칸의 윗면 중심.
+   * @param zoom 현재 확대율.
+   */
+  private drawPlayerMarker(screen: { x: number; y: number }, zoom: number): void {
+    const radiusX = TILE_WIDTH * 0.27 * zoom;
+    const radiusY = TILE_HEIGHT * 0.15 * zoom;
+
+    this.ctx.save();
+    this.ctx.globalAlpha = 0.28;
+    this.ctx.fillStyle = '#3caee8';
+    this.ctx.beginPath();
+    this.ctx.ellipse(screen.x, screen.y, radiusX, radiusY, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.globalAlpha = 0.92;
+    this.ctx.strokeStyle = '#a8e8ff';
+    this.ctx.lineWidth = Math.max(1, 1.4 * zoom);
+    this.ctx.stroke();
+    this.ctx.restore();
   }
 
   /**
