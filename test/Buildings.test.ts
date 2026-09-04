@@ -97,7 +97,7 @@ describe('Buildings 배치 판정', () => {
     const buildings = new Buildings(flat(8));
     buildings.place(cottage, 2, 2, noNodes);
 
-    expect(buildings.canPlace(cottage, 4, 2, noNodes)).toEqual({ ok: true });
+    expect(buildings.canPlace(cottage, 2 + cottage.width, 2, noNodes)).toEqual({ ok: true });
   });
 
   it('쌓아서 평탄하게 만들면 배치가 가능해진다', () => {
@@ -106,9 +106,12 @@ describe('Buildings 배치 판정', () => {
     const buildings = new Buildings(terrain);
     expect(buildings.canPlace(cottage, 2, 2, noNodes).ok).toBe(false);
 
-    terrain.place(2, 2, BlockType.DIRT);
-    terrain.place(2, 3, BlockType.DIRT);
-    terrain.place(3, 2, BlockType.DIRT);
+    for (let dy = 0; dy < cottage.depth; dy += 1) {
+      for (let dx = 0; dx < cottage.width; dx += 1) {
+        if (dx === 1 && dy === 1) continue;
+        terrain.place(2 + dx, 2 + dy, BlockType.DIRT);
+      }
+    }
 
     expect(buildings.canPlace(cottage, 2, 2, noNodes)).toEqual({ ok: true });
   });
@@ -120,16 +123,29 @@ describe('Buildings 배치', () => {
     const building = buildings.place(cottage, 2, 2, noNodes);
 
     expect(building).not.toBeNull();
-    for (const [x, y] of [
-      [2, 2],
-      [3, 2],
-      [2, 3],
-      [3, 3],
-    ] as const) {
-      expect(buildings.isOccupied(x, y)).toBe(true);
-      expect(buildings.buildingAt(x, y)?.id).toBe(building!.id);
+    for (let dy = 0; dy < cottage.depth; dy += 1) {
+      for (let dx = 0; dx < cottage.width; dx += 1) {
+        expect(buildings.isOccupied(2 + dx, 2 + dy)).toBe(true);
+        expect(buildings.buildingAt(2 + dx, 2 + dy)?.id).toBe(building!.id);
+      }
     }
-    expect(buildings.isOccupied(4, 2)).toBe(false);
+    expect(buildings.isOccupied(2 + cottage.width, 2)).toBe(false);
+  });
+
+  it('새 건물은 풋프린트를 저장하고, 크기 없는 과거 저장은 이전 풋프린트를 유지한다', () => {
+    const terrain = flat(10);
+    const fresh = new Buildings(terrain);
+    fresh.place(cottage, 1, 1, noNodes, true);
+
+    const savedFresh = fresh.toSave().buildings[0]!;
+    expect(savedFresh.width).toBe(cottage.width);
+    expect(savedFresh.depth).toBe(cottage.depth);
+
+    const restored = Buildings.fromSave(terrain, [
+      { id: 2, blueprintId: BlueprintId.COTTAGE, x: 5, y: 5, buildRemainingMs: 0 },
+    ], 3);
+    expect(restored.buildingById(2)).toMatchObject({ width: 2, depth: 2 });
+    expect(restored.isOccupied(7, 5)).toBe(false);
   });
 
   it('배치할 수 없는 자리면 null이고 점유도 남기지 않는다', () => {
@@ -266,11 +282,10 @@ describe('문 앞 규칙', () => {
     const well = blueprintById(BlueprintId.WELL);
     const fence = blueprintById(BlueprintId.FENCE);
 
-    // 1×1 우물을 놓고 사방을 울타리로 둘러싼다. 마지막 한 칸이 거절돼야 한다.
+    // 우물 점유 영역을 울타리로 둘러싼다. 마지막 한 칸이 거절돼야 한다.
     buildings.place(well, 4, 4, noNodes, true);
-    expect(buildings.place(fence, 3, 4, noNodes, true)).not.toBeNull();
-    expect(buildings.place(fence, 5, 4, noNodes, true)).not.toBeNull();
-    expect(buildings.place(fence, 4, 3, noNodes, true)).not.toBeNull();
+    const perimeter = [{ x: 3, y: 4 }, { x: 5, y: 4 }, { x: 4, y: 3 }];
+    for (const tile of perimeter) expect(buildings.place(fence, tile.x, tile.y, noNodes, true)).not.toBeNull();
 
     const check = buildings.canPlace(fence, 4, 5, noNodes);
 

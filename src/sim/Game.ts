@@ -305,6 +305,8 @@ export class Game {
           blueprintId: BlueprintId.WAREHOUSE,
           x: start.x,
           y: start.y,
+          width: 1,
+          depth: 1,
           buildRemainingMs: 0,
           damage: 0,
           look: 0,
@@ -1839,8 +1841,8 @@ export class Game {
         x: building.x,
         y: building.y,
         z: Math.max(0, this.terrain.columnHeight(building.x, building.y) - 1),
-        width: blueprint.width,
-        depth: blueprint.depth,
+        width: building.width,
+        depth: building.depth,
         style: blueprint.style,
         progress: this.buildings.progressOf(building),
         damaged: building.damage > 0,
@@ -1968,13 +1970,11 @@ function findStartTile(terrain: Terrain, resources: ResourceField): TilePos {
  * @returns 닿았으면 true.
  */
 function atWorkplace(at: TilePos, building: Building): boolean {
-  const blueprint = blueprintById(building.blueprintId);
-
   return (
     at.x >= building.x - 1 &&
-    at.x <= building.x + blueprint.width &&
+    at.x <= building.x + building.width &&
     at.y >= building.y - 1 &&
-    at.y <= building.y + blueprint.depth
+    at.y <= building.y + building.depth
   );
 }
 

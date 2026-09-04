@@ -7,6 +7,7 @@ import { BlockType } from './core/blocks';
 import { itemColor, itemLabel } from './core/items';
 import { mapLabel } from './core/maps';
 import { zoneAt, zoneLabel } from './core/zones';
+import { VILLAGE_MAP_HEIGHT, VILLAGE_MAP_WIDTH } from './core/worldConfig';
 import { ResourceField } from './sim/ResourceField';
 import { CanvasRenderer } from './render/CanvasRenderer';
 import { Camera, boundsForMap } from './render/Camera';
@@ -36,14 +37,11 @@ import { Toasts } from './ui/Toasts';
 import { VillageHud } from './ui/VillageHud';
 
 /** 맵 크기(타일). */
-const MAP_WIDTH = 32;
-const MAP_HEIGHT = 32;
-
 /** 지형 생성 시드. 고정해 두면 실행마다 같은 맵이 나와 확인이 쉽다. */
 const TERRAIN_SEED = 20260901;
 
 /** 시작 확대율. */
-const INITIAL_ZOOM = 1;
+const INITIAL_ZOOM = 1.15;
 
 /**
  * 카메라가 한 스텝에 플레이어 쪽으로 좁히는 거리 비율.
@@ -538,7 +536,7 @@ function bootstrap(): void {
  * @returns 새 게임.
  */
 function createNewGame(): Game {
-  const terrain = generateTerrain(MAP_WIDTH, MAP_HEIGHT, { seed: TERRAIN_SEED });
+  const terrain = generateTerrain(VILLAGE_MAP_WIDTH, VILLAGE_MAP_HEIGHT, { seed: TERRAIN_SEED });
   const resources = new ResourceField(terrain, { seed: TERRAIN_SEED });
   const game = new Game(terrain, resources);
   game.setWorldSeed(TERRAIN_SEED);

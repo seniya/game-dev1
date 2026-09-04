@@ -15,6 +15,10 @@ export interface Building {
   readonly x: number;
   /** 점유 영역 좌상단 그리드 y. */
   readonly y: number;
+  /** 배치 당시 점유 영역 가로 칸수. 저장 호환을 위해 블루프린트와 분리한다. */
+  readonly width: number;
+  /** 배치 당시 점유 영역 세로 칸수. 저장 호환을 위해 블루프린트와 분리한다. */
+  readonly depth: number;
   /** 건축 남은 시간(ms). 0이면 완공이다. */
   buildRemainingMs: number;
   /**
@@ -352,16 +356,14 @@ export class Buildings {
     building: Building,
     covered: (x: number, y: number) => boolean,
   ): boolean {
-    const blueprint = blueprintById(building.blueprintId);
-
-    for (let dy = -1; dy <= blueprint.depth; dy += 1) {
-      for (let dx = -1; dx <= blueprint.width; dx += 1) {
-        const inside = dx >= 0 && dy >= 0 && dx < blueprint.width && dy < blueprint.depth;
+    for (let dy = -1; dy <= building.depth; dy += 1) {
+      for (let dx = -1; dx <= building.width; dx += 1) {
+        const inside = dx >= 0 && dy >= 0 && dx < building.width && dy < building.depth;
         if (inside) continue;
 
         // 모서리(대각선)는 문 앞이 아니다. 4방향 규약(ADR 0004)을 따른다.
         const straight =
-          (dx === -1 || dx === blueprint.width) === !(dy === -1 || dy === blueprint.depth);
+          (dx === -1 || dx === building.width) === !(dy === -1 || dy === building.depth);
         if (!straight) continue;
 
         const tx = building.x + dx;
@@ -403,6 +405,8 @@ export class Buildings {
       blueprintId: blueprint.id,
       x,
       y,
+      width: blueprint.width,
+      depth: blueprint.depth,
       buildRemainingMs: instant ? 0 : buildDurationMs(blueprint),
       damage: 0,
       look: 0,
@@ -410,8 +414,8 @@ export class Buildings {
     this.nextId += 1;
 
     this.buildings.set(building.id, building);
-    for (let dy = 0; dy < blueprint.depth; dy += 1) {
-      for (let dx = 0; dx < blueprint.width; dx += 1) {
+    for (let dy = 0; dy < building.depth; dy += 1) {
+      for (let dx = 0; dx < building.width; dx += 1) {
         this.occupancy.set(this.key(x + dx, y + dy), building.id);
       }
     }
@@ -434,6 +438,8 @@ export class Buildings {
         blueprintId: building.blueprintId,
         x: building.x,
         y: building.y,
+        width: building.width,
+        depth: building.depth,
         buildRemainingMs: building.buildRemainingMs,
         // 성한 건물에는 담지 않는다. 선택적 필드라 예전 저장도 그대로 읽힌다.
         ...(building.damage > 0 ? { damage: building.damage } : {}),
@@ -477,6 +483,8 @@ export class Buildings {
         blueprintId: entry.blueprintId,
         x: entry.x,
         y: entry.y,
+        width: validFootprint(entry.width, blueprint.legacyWidth ?? blueprint.width),
+        depth: validFootprint(entry.depth, blueprint.legacyDepth ?? blueprint.depth),
         buildRemainingMs: Math.max(0, entry.buildRemainingMs ?? 0),
         // 범위를 벗어난 손상값은 잘라 낸다. 손상된 저장이 규칙을 넘지 않게 한다.
         damage: Math.max(0, Math.min(DAMAGE_LIMIT, Math.floor(entry.damage ?? 0))),
@@ -485,8 +493,8 @@ export class Buildings {
       };
 
       buildings.buildings.set(building.id, building);
-      for (let dy = 0; dy < blueprint.depth; dy += 1) {
-        for (let dx = 0; dx < blueprint.width; dx += 1) {
+      for (let dy = 0; dy < building.depth; dy += 1) {
+        for (let dx = 0; dx < building.width; dx += 1) {
           buildings.occupancy.set(buildings.key(building.x + dx, building.y + dy), building.id);
         }
       }
@@ -509,9 +517,8 @@ export class Buildings {
     const building = this.buildings.get(id);
     if (!building) return null;
 
-    const blueprint = blueprintById(building.blueprintId);
-    for (let dy = 0; dy < blueprint.depth; dy += 1) {
-      for (let dx = 0; dx < blueprint.width; dx += 1) {
+    for (let dy = 0; dy < building.depth; dy += 1) {
+      for (let dx = 0; dx < building.width; dx += 1) {
         this.occupancy.delete(this.key(building.x + dx, building.y + dy));
       }
     }
@@ -567,9 +574,8 @@ export class Buildings {
       if (!isFunctional(building)) continue;
       if (blueprintId !== undefined && building.blueprintId !== blueprintId) continue;
 
-      const blueprint = blueprintById(building.blueprintId);
-      for (let dy = 0; dy < blueprint.depth; dy += 1) {
-        for (let dx = 0; dx < blueprint.width; dx += 1) {
+      for (let dy = 0; dy < building.depth; dy += 1) {
+        for (let dx = 0; dx < building.width; dx += 1) {
           if (isAdjacent(from, { x: building.x + dx, y: building.y + dy })) return building;
         }
       }
@@ -588,6 +594,19 @@ export class Buildings {
   private key(x: number, y: number): number {
     return y * this.terrain.width + x;
   }
+}
+
+/**
+ * 저장에 든 건물 크기를 검증하고, 없거나 잘못됐으면 호환용 기본 크기로 돌린다.
+ *
+ * @param saved 저장된 크기.
+ * @param fallback 해당 설계도의 과거 크기.
+ * @returns 점유에 안전한 양의 정수 크기.
+ */
+function validFootprint(saved: unknown, fallback: number): number {
+  if (typeof saved === 'number' && Number.isInteger(saved) && saved > 0) return saved;
+
+  return fallback;
 }
 
 /**

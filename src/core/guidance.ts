@@ -184,7 +184,7 @@ export function currentObjective(state: GuidanceState): string {
  */
 export function controlHint(state: GuidanceState): string {
   if (state.buildMode) {
-    return '[ ]: 설계도 · 방향키: 부지 · Space: 배치 · B/Esc: 닫기';
+    return '[ ]: 설계도 · IJKL: 부지 · Space: 배치 · B/Esc: 닫기';
   }
 
   // 상황에 따라 **가장 급한 것부터** 담고 앞에서 몇 개만 보여준다. 로드맵 03이 시스템을
@@ -199,7 +199,7 @@ export function controlHint(state: GuidanceState): string {
   if (state.carried > 0 && state.nearStorage) parts.push('E: 창고 예치');
 
   // 늘 쓰는 것은 뒤에 둔다. 위의 상황 항목이 없을 때 자리를 채운다.
-  parts.push('WASD: 걷기', '방향키: 겨냥', 'Space: 채집·파기');
+  parts.push('방향키/WASD: 걷기', 'IJKL: 겨냥', 'Space: 채집·파기');
   if (state.wood > 0 || state.stone > 0) parts.push('B: 건축');
 
   return `${parts.slice(0, HINT_LIMIT).join(' · ')} · H: 도움말`;
@@ -210,8 +210,8 @@ const HINT_LIMIT = 4;
 
 /** 도움말에 넣을 전체 조작 목록. 한 줄에 다 넣을 수 없는 것들이 여기 모인다. */
 export const ALL_CONTROLS: ReadonlyArray<{ keys: string; what: string }> = [
-  { keys: 'WASD', what: '걷기' },
-  { keys: '방향키', what: '겨냥 — 행동할 칸을 고른다' },
+  { keys: '방향키 / WASD', what: '걷기' },
+  { keys: 'IJKL', what: '겨냥 — 행동할 칸을 고른다' },
   { keys: 'Space / 좌클릭', what: '겨냥한 칸에 행동(채집·파기·수리·몬스터 쫓기, 건축 모드에서는 배치)' },
   { keys: 'Q / 우클릭', what: '블록 쌓기' },
   { keys: '1~9', what: '도구 · 건축 모드에서는 설계도' },

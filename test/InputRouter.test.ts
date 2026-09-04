@@ -68,18 +68,18 @@ function setup(size = 11) {
   }
 
   /**
-   * 커서를 목표 오프셋으로 옮긴다. 방향키만 쓴다.
+   * 커서를 목표 오프셋으로 옮긴다. IJKL만 쓴다.
    *
    * @param dx 목표 x 오프셋.
    * @param dy 목표 y 오프셋.
    */
   function aimTo(dx: number, dy: number): void {
     for (let guard = 0; guard < 40 && router.cursor.keyboardOffset.dx !== dx; guard += 1) {
-      press(router.cursor.keyboardOffset.dx < dx ? 'ArrowRight' : 'ArrowLeft');
+      press(router.cursor.keyboardOffset.dx < dx ? 'KeyL' : 'KeyJ');
       step();
     }
     for (let guard = 0; guard < 40 && router.cursor.keyboardOffset.dy !== dy; guard += 1) {
-      press(router.cursor.keyboardOffset.dy < dy ? 'ArrowDown' : 'ArrowUp');
+      press(router.cursor.keyboardOffset.dy < dy ? 'KeyK' : 'KeyI');
       step();
     }
   }
@@ -114,11 +114,11 @@ function freeNeighborOffset(game: Game): { dx: number; dy: number } {
 }
 
 describe('키보드 겨냥', () => {
-  it('방향키로 겨냥한 칸이 바뀐다', () => {
+  it('IJKL로 겨냥한 칸이 바뀐다', () => {
     const { router, game, press, step } = setup();
     const before = router.target;
 
-    press('ArrowUp');
+    press('KeyI');
     step();
 
     expect(router.target).not.toEqual(before);
@@ -132,9 +132,9 @@ describe('키보드 겨냥', () => {
     const { router, target, step } = setup();
 
     // 뒤쪽을 겨냥해 두고 앞으로 걷는다.
-    target.keyDown('ArrowLeft');
+    target.keyDown('KeyJ');
     step(20);
-    target.keyUp('ArrowLeft');
+    target.keyUp('KeyJ');
 
     target.keyDown('KeyS');
     step(30);
@@ -149,6 +149,19 @@ describe('키보드 겨냥', () => {
     router.setPointerTile({ x: 0, y: 0 });
 
     expect(router.target).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe('방향키 이동', () => {
+  it('방향키를 누르면 WASD와 마찬가지로 플레이어가 걷는다', () => {
+    const { game, target, step } = setup();
+    const before = game.player.position;
+
+    target.keyDown('ArrowRight');
+    step(12);
+    target.keyUp('ArrowRight');
+
+    expect(game.player.position).toEqual({ x: before.x + 1, y: before.y });
   });
 });
 
@@ -343,8 +356,8 @@ describe('키보드만으로 플레이', () => {
     const storage = game.startingStorage;
     game.player.placeAt(storage.x + 1, storage.y);
     // 커서를 창고 쪽으로 돌린다.
-    press('ArrowLeft');
-    press('ArrowLeft');
+    press('KeyJ');
+    press('KeyJ');
     step();
 
     press('KeyG');

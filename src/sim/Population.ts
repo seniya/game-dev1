@@ -370,12 +370,10 @@ export class Population {
    * @returns 집 앞 칸. 없으면 null.
    */
   private findDoorstep(building: Building): TilePos | null {
-    const blueprint = blueprintById(building.blueprintId);
-
-    for (let dy = -1; dy <= blueprint.depth; dy += 1) {
-      for (let dx = -1; dx <= blueprint.width; dx += 1) {
+    for (let dy = -1; dy <= building.depth; dy += 1) {
+      for (let dx = -1; dx <= building.width; dx += 1) {
         // 점유 영역 내부는 건물이 차지하고 있다.
-        const inside = dx >= 0 && dx < blueprint.width && dy >= 0 && dy < blueprint.depth;
+        const inside = dx >= 0 && dx < building.width && dy >= 0 && dy < building.depth;
         if (inside) continue;
 
         const tile = { x: building.x + dx, y: building.y + dy };
@@ -400,10 +398,8 @@ export class Population {
  * @returns 안쪽 칸.
  */
 function interiorTile(building: Building): TilePos {
-  const blueprint = blueprintById(building.blueprintId);
-
   return {
-    x: building.x + Math.floor(blueprint.width / 2),
-    y: building.y + Math.floor(blueprint.depth / 2),
+    x: building.x + Math.floor(building.width / 2),
+    y: building.y + Math.floor(building.depth / 2),
   };
 }

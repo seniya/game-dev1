@@ -66,6 +66,10 @@ export interface BuildingSave {
   blueprintId: BlueprintId;
   x: number;
   y: number;
+  /** 배치 당시 가로 크기. 없으면 예전 블루프린트 크기로 읽는다. */
+  width?: number;
+  /** 배치 당시 세로 크기. 없으면 예전 블루프린트 크기로 읽는다. */
+  depth?: number;
   /** 건축 남은 시간(ms). 0이면 완공. */
   buildRemainingMs: number;
   /**

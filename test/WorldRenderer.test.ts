@@ -528,6 +528,21 @@ describe('WorldRenderer 오브젝트', () => {
     expect(ctx.paths.length).toBeGreaterThan(before);
   });
 
+  it('스프라이트가 없는 경우에도 우물·대장간·수정 등대의 역할 소품을 그린다', () => {
+    const { ctx, renderer } = setup(flat(8, 1));
+
+    renderer.render(null, [
+      { kind: 'building', x: 1, y: 1, z: 0, width: 2, depth: 2, style: 'well', progress: 1 },
+      { kind: 'building', x: 3, y: 3, z: 0, width: 3, depth: 2, style: 'forge', progress: 1 },
+      { kind: 'building', x: 5, y: 5, z: 0, width: 2, depth: 2, style: 'beacon', progress: 1 },
+    ]);
+
+    const colors = new Set([...ctx.dots.map((dot) => dot.fillStyle), ...ctx.paths.map((path) => path.fillStyle)]);
+    expect(colors).toContain('#4d9ac2');
+    expect(colors).toContain('#f0a14b');
+    expect(colors).toContain('#b9aaff');
+  });
+
   it('플레이어에게만 밤에도 읽히는 청록색 위치 고리를 그린다', () => {
     const { ctx, renderer } = setup(flat(4, 1));
 

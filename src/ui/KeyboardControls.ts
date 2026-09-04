@@ -13,28 +13,31 @@ export interface MoveIntent {
  * 이상 정확한 대각 매핑은 불가능하다. 여기서는 **그리드 축에 직접** 매핑해
  * 조작과 결과가 1:1로 대응하게 한다 — 어느 키가 어느 축인지 화면 안내로 알린다.
  *
- * 예전에는 방향키도 걷기였다. 지금은 방향키가 **겨냥**이다(`KEY_AIM`) —
- * 마우스 없이 대상을 고를 방법이 필요했고, 새 키를 만드는 것보다 이미 있는
- * 중복 매핑을 쓰는 편이 외울 것을 늘리지 않는다(ADR 0012).
+ * 방향키도 WASD와 함께 걷는다. 처음 게임을 잡은 사람이 가장 먼저 누르는 키를
+ * 이동에 쓰고, 키보드 겨냥은 `IJKL`로 분리한다(ADR 0023).
  */
 const KEY_MOVES: Readonly<Record<string, MoveIntent>> = {
   KeyD: { dx: 1, dy: 0 },
   KeyA: { dx: -1, dy: 0 },
   KeyS: { dx: 0, dy: 1 },
   KeyW: { dx: 0, dy: -1 },
+  ArrowRight: { dx: 1, dy: 0 },
+  ArrowLeft: { dx: -1, dy: 0 },
+  ArrowDown: { dx: 0, dy: 1 },
+  ArrowUp: { dx: 0, dy: -1 },
 };
 
 /**
  * 겨냥 키 → 커서 델타 표. 걷기와 같은 그리드 축 규약을 쓴다.
  *
- * 왼손(WASD)이 걷고 오른손(방향키)이 겨냥한다. 마우스가 있으면 마우스가 겨냥을
- * 가져가고, 방향키를 누르면 다시 키보드가 가져간다.
+ * WASD·방향키가 걷고 IJKL이 겨냥한다. 마우스가 있으면 마우스가 겨냥을 가져가고,
+ * IJKL을 누르면 다시 키보드가 가져간다.
  */
 const KEY_AIM: Readonly<Record<string, MoveIntent>> = {
-  ArrowRight: { dx: 1, dy: 0 },
-  ArrowLeft: { dx: -1, dy: 0 },
-  ArrowDown: { dx: 0, dy: 1 },
-  ArrowUp: { dx: 0, dy: -1 },
+  KeyL: { dx: 1, dy: 0 },
+  KeyJ: { dx: -1, dy: 0 },
+  KeyK: { dx: 0, dy: 1 },
+  KeyI: { dx: 0, dy: -1 },
 };
 
 /**

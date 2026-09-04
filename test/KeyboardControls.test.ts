@@ -29,26 +29,26 @@ describe('KeyboardControls 이동', () => {
     expect(controls.moveIntent).toEqual({ dx: 0, dy: -1 });
   });
 
-  it('방향키는 걷지 않고 겨냥한다 — 마우스 없이 대상을 고르는 유일한 길이다', () => {
+  it('방향키와 WASD 모두 걷는다', () => {
     const { target, controls } = setup();
 
     target.keyDown('ArrowUp');
 
-    expect(controls.moveIntent).toBeNull();
-    expect(controls.aimIntent).toEqual({ dx: 0, dy: -1 });
+    expect(controls.moveIntent).toEqual({ dx: 0, dy: -1 });
+    expect(controls.aimIntent).toBeNull();
 
     target.keyUp('ArrowUp');
-    expect(controls.aimIntent).toBeNull();
+    expect(controls.moveIntent).toBeNull();
   });
 
   it('겨냥도 마지막에 누른 방향을 쓴다', () => {
     const { target, controls } = setup();
 
-    target.keyDown('ArrowRight');
-    target.keyDown('ArrowDown');
+    target.keyDown('KeyL');
+    target.keyDown('KeyK');
     expect(controls.aimIntent).toEqual({ dx: 0, dy: 1 });
 
-    target.keyUp('ArrowDown');
+    target.keyUp('KeyK');
     expect(controls.aimIntent).toEqual({ dx: 1, dy: 0 });
   });
 
@@ -103,6 +103,7 @@ describe('KeyboardControls 이동', () => {
     const { target } = setup();
 
     expect(target.keyDown('ArrowDown')).toBe(true);
+    expect(target.keyDown('KeyI')).toBe(true);
     expect(target.keyDown('Space')).toBe(true);
     expect(target.keyDown('Digit1')).toBe(true);
     expect(target.keyDown('KeyQ')).toBe(false);

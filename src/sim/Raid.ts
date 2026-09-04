@@ -10,7 +10,7 @@ import {
 import { hashNoise } from '../core/random';
 import type { RaidSave } from '../core/save';
 import type { Terrain } from '../core/Terrain';
-import { BlueprintId, blueprintById } from '../core/blueprints';
+import { BlueprintId } from '../core/blueprints';
 import { isFunctional, type Building, type Buildings } from './Buildings';
 
 /** 침입한 몬스터 한 마리. */
@@ -451,11 +451,9 @@ export class Raid {
    * @returns 중심 칸.
    */
   private buildingCenter(building: Building): TilePos {
-    const blueprint = blueprintById(building.blueprintId);
-
     return {
-      x: building.x + Math.floor((blueprint.width - 1) / 2),
-      y: building.y + Math.floor((blueprint.depth - 1) / 2),
+      x: building.x + Math.floor((building.width - 1) / 2),
+      y: building.y + Math.floor((building.depth - 1) / 2),
     };
   }
 
@@ -467,16 +465,14 @@ export class Raid {
    * @returns 옆에 있으면 true.
    */
   private isBeside(monster: Monster, building: Building): boolean {
-    const blueprint = blueprintById(building.blueprintId);
-
-    for (let dy = -1; dy <= blueprint.depth; dy += 1) {
-      for (let dx = -1; dx <= blueprint.width; dx += 1) {
-        const inside = dx >= 0 && dy >= 0 && dx < blueprint.width && dy < blueprint.depth;
+    for (let dy = -1; dy <= building.depth; dy += 1) {
+      for (let dx = -1; dx <= building.width; dx += 1) {
+        const inside = dx >= 0 && dy >= 0 && dx < building.width && dy < building.depth;
         if (inside) continue;
 
         if (monster.x === building.x + dx && monster.y === building.y + dy) {
           // 대각선은 인접으로 보지 않는다(ADR 0004의 4방향 규약).
-          const straight = dx === -1 || dx === blueprint.width ? dy >= 0 && dy < blueprint.depth : true;
+          const straight = dx === -1 || dx === building.width ? dy >= 0 && dy < building.depth : true;
           if (straight) return true;
         }
       }

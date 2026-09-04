@@ -1191,9 +1191,103 @@ export class WorldRenderer {
       done ? base.wallY : 'rgba(120, 104, 80, 0.4)',
     );
 
+    if (done) this.drawBuildingAccent(entity.style, baseX, baseY, footHalfW, footHalfH, bodyHeight);
+
     if (!done) {
       this.drawDust(baseX, baseY, footHalfW, footHalfH);
       this.drawBuildProgress(baseX, baseY - bodyHeight - footHalfH, footHalfW, entity.progress);
+    }
+  }
+
+  /**
+   * 스프라이트를 만들 수 없는 환경에서 건물 역할을 읽히게 하는 소품을 그린다.
+   *
+   * 브라우저 스프라이트와 똑같은 세부 그림은 아니어도, 우물의 물·창고의 상자·대장간의
+   * 불처럼 핵심 단서는 도형 폴백에도 남겨 헤드리스와 저사양 환경의 외형을 비우지 않는다.
+   *
+   * @param style 건물 종류.
+   * @param x 바닥 중심 x.
+   * @param y 바닥 중심 y.
+   * @param halfWidth 바닥 반폭.
+   * @param halfHeight 바닥 반높이.
+   * @param bodyHeight 벽 높이.
+   */
+  private drawBuildingAccent(
+    style: BuildingStyle,
+    x: number,
+    y: number,
+    halfWidth: number,
+    halfHeight: number,
+    bodyHeight: number,
+  ): void {
+    const unit = Math.max(3, Math.min(halfWidth * 0.24, halfHeight, TILE_HEIGHT));
+    const ctx = this.ctx;
+
+    switch (style) {
+      case 'house':
+      case 'bigHouse':
+        ctx.fillStyle = '#6ca8c7';
+        ctx.fillRect(x - unit * 0.8, y - bodyHeight * 0.55, unit * 0.5, unit * 0.36);
+        ctx.fillRect(x + unit * 0.25, y - bodyHeight * 0.55, unit * 0.5, unit * 0.36);
+        break;
+      case 'warehouse':
+        ctx.fillStyle = '#8d5f36';
+        ctx.fillRect(x - unit, y, unit * 0.7, unit * 0.55);
+        ctx.fillRect(x - unit * 0.16, y + unit * 0.16, unit * 0.7, unit * 0.55);
+        break;
+      case 'well':
+        ctx.fillStyle = '#4d9ac2';
+        ctx.beginPath();
+        ctx.ellipse(x, y, unit * 0.85, unit * 0.4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'workbench':
+        ctx.fillStyle = '#704a2b';
+        ctx.fillRect(x - unit, y - unit * 0.16, unit * 2, unit * 0.32);
+        break;
+      case 'forge':
+        ctx.fillStyle = '#f0a14b';
+        ctx.beginPath();
+        ctx.arc(x, y, unit * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+        break;
+      case 'quarry':
+        ctx.fillStyle = '#b5bbc0';
+        for (let i = -1; i <= 1; i += 1) {
+          ctx.beginPath();
+          ctx.arc(x + i * unit * 0.52, y, unit * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      case 'fence':
+        ctx.strokeStyle = '#6f4e30';
+        ctx.lineWidth = Math.max(1, unit * 0.12);
+        ctx.beginPath();
+        ctx.moveTo(x - unit * 0.55, y + unit * 0.35);
+        ctx.lineTo(x - unit * 0.55, y - unit * 0.65);
+        ctx.moveTo(x + unit * 0.55, y + unit * 0.35);
+        ctx.lineTo(x + unit * 0.55, y - unit * 0.65);
+        ctx.stroke();
+        break;
+      case 'watchtower':
+        ctx.fillStyle = '#c8524d';
+        ctx.beginPath();
+        ctx.moveTo(x, y - bodyHeight - unit * 0.75);
+        ctx.lineTo(x + unit * 0.8, y - bodyHeight - unit * 0.45);
+        ctx.lineTo(x, y - bodyHeight - unit * 0.16);
+        ctx.closePath();
+        ctx.fill();
+        break;
+      case 'beacon':
+        ctx.fillStyle = '#b9aaff';
+        ctx.beginPath();
+        ctx.moveTo(x, y - bodyHeight - unit * 0.8);
+        ctx.lineTo(x + unit * 0.42, y - bodyHeight);
+        ctx.lineTo(x, y - bodyHeight + unit * 0.48);
+        ctx.lineTo(x - unit * 0.42, y - bodyHeight);
+        ctx.closePath();
+        ctx.fill();
+        break;
     }
   }
 

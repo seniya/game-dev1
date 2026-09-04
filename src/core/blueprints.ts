@@ -48,6 +48,10 @@ export interface Blueprint {
   readonly width: number;
   /** 바닥 면적 세로 칸수. */
   readonly depth: number;
+  /** 이전 저장을 읽을 때 쓸 가로 크기. 없으면 현재 크기를 쓴다. */
+  readonly legacyWidth?: number;
+  /** 이전 저장을 읽을 때 쓸 세로 크기. 없으면 현재 크기를 쓴다. */
+  readonly legacyDepth?: number;
   /** 필요 자재 목록. */
   readonly materials: readonly MaterialRequirement[];
   /** 이 블루프린트가 해금되는 마을 레벨. */
@@ -79,6 +83,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'house',
     width: 2,
     depth: 2,
+    legacyWidth: 2,
+    legacyDepth: 2,
     materials: [
       { item: ItemType.WOOD, amount: 12 },
       { item: ItemType.STONE, amount: 4 },
@@ -93,6 +99,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'well',
     width: 1,
     depth: 1,
+    legacyWidth: 1,
+    legacyDepth: 1,
     materials: [{ item: ItemType.STONE, amount: 10 }],
     unlockLevel: 1,
     housing: 0,
@@ -104,6 +112,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'workbench',
     width: 1,
     depth: 1,
+    legacyWidth: 1,
+    legacyDepth: 1,
     materials: [
       { item: ItemType.WOOD, amount: 6 },
       { item: ItemType.STONE, amount: 2 },
@@ -118,6 +128,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'warehouse',
     width: 2,
     depth: 2,
+    legacyWidth: 2,
+    legacyDepth: 2,
     materials: [
       { item: ItemType.WOOD, amount: 10 },
       { item: ItemType.STONE, amount: 6 },
@@ -132,6 +144,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'bigHouse',
     width: 3,
     depth: 2,
+    legacyWidth: 3,
+    legacyDepth: 2,
     materials: [
       { item: ItemType.WOOD, amount: 20 },
       { item: ItemType.STONE, amount: 10 },
@@ -160,6 +174,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'watchtower',
     width: 2,
     depth: 2,
+    legacyWidth: 2,
+    legacyDepth: 2,
     materials: [
       { item: ItemType.WOOD, amount: 8 },
       { item: ItemType.STONE, amount: 10 },
@@ -175,6 +191,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'beacon',
     width: 1,
     depth: 1,
+    legacyWidth: 1,
+    legacyDepth: 1,
     materials: [
       { item: ItemType.STONE, amount: 12 },
       { item: ItemType.CRYSTAL, amount: 4 },
@@ -191,6 +209,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'quarry',
     width: 2,
     depth: 2,
+    legacyWidth: 2,
+    legacyDepth: 2,
     materials: [
       { item: ItemType.WOOD, amount: 10 },
       { item: ItemType.STONE, amount: 12 },
@@ -206,6 +226,8 @@ export const BLUEPRINTS: readonly Blueprint[] = [
     style: 'forge',
     width: 2,
     depth: 2,
+    legacyWidth: 2,
+    legacyDepth: 2,
     materials: [
       { item: ItemType.STONE, amount: 14 },
       { item: ItemType.IRON_ORE, amount: 6 },
