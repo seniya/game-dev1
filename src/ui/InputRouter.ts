@@ -192,7 +192,7 @@ export class InputRouter {
   private updateHarvest(heldTile: TilePos | null): void {
     if (this.game.buildMode || !this.game.player.idle) return;
 
-    const held = heldTile ?? (this.keyboard.actionHeld ? this.target : null);
+    const held = heldTile ?? (this.keyboard.actionHeld ? this.actionTarget() : null);
     if (!held) return;
 
     // 행동을 먼저 하고 결과를 넘긴다. `hooks.report?.(game.actAt(...))`처럼 쓰면
@@ -220,11 +220,33 @@ export class InputRouter {
   private act(): void {
     this.hooks.unlock?.();
 
-    const target = this.target;
+    const target = this.actionTarget();
     if (!target) return;
 
     const result = this.game.buildMode ? this.game.buildAt(target) : this.game.actAt(target);
     this.hooks.report?.(result, target);
+  }
+
+  /**
+   * 지금 Space가 행동할 칸을 고른다.
+   *
+   * 이동 키를 누른 손짓은 "그쪽 앞을 행동한다"는 뜻이다. 커서가 이전 대상이나 먼
+   * 건축 부지에 남아 있어도 일반 채집·수리·전투는 이동 방향 인접 칸을 우선한다.
+   * 건축 모드는 부지를 멀리 고르는 흐름이므로 기존 커서를 그대로 쓴다(ADR 0024).
+   *
+   * @returns 행동 대상. 커서도 대상도 없으면 null.
+   */
+  private actionTarget(): TilePos | null {
+    const intent = this.keyboard.moveIntent;
+    if (!this.game.buildMode && intent) {
+      const position = this.game.player.position;
+      const x = position.x + intent.dx;
+      const y = position.y + intent.dy;
+
+      return this.game.terrain.contains(x, y) ? { x, y } : null;
+    }
+
+    return this.target;
   }
 
   /** 겨냥한 칸에 들고 있는 블록을 쌓는다. */

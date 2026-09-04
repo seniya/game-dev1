@@ -163,6 +163,48 @@ describe('방향키 이동', () => {
 
     expect(game.player.position).toEqual({ x: before.x + 1, y: before.y });
   });
+
+  it('이동 키를 누른 Space는 먼 커서 대신 그 방향 앞 칸에 행동한다', () => {
+    const { game, terrain, target, aimTo, press, step } = setup();
+    const position = game.player.position;
+    const offset = freeNeighborOffset(game);
+    const front = { x: position.x + offset.dx, y: position.y + offset.dy };
+    const behind = { x: position.x - offset.dx, y: position.y - offset.dy };
+    const frontHeight = terrain.columnHeight(front.x, front.y);
+    const behindHeight = terrain.columnHeight(behind.x, behind.y);
+    const moveKey = offset.dx > 0 ? 'ArrowRight' : offset.dx < 0 ? 'ArrowLeft' : offset.dy > 0 ? 'ArrowDown' : 'ArrowUp';
+
+    // 커서를 반대쪽으로 멀리 옮겨도, 이동 키+Space는 앞 칸을 쓴다.
+    aimTo(-offset.dx * 3, -offset.dy * 3);
+    target.keyDown(moveKey);
+    press('Space');
+    target.keyUp('ArrowRight');
+    step(20);
+
+    expect(terrain.columnHeight(front.x, front.y)).toBe(frontHeight - 1);
+    expect(terrain.columnHeight(behind.x, behind.y)).toBe(behindHeight);
+  });
+
+  it('건축 모드에서는 이동 키를 눌러도 멀리 고른 부지를 유지한다', () => {
+    const { game, router, target, press, step } = setup();
+    game.storage.add(ItemType.WOOD, 20);
+    game.storage.add(ItemType.STONE, 10);
+    press('KeyB');
+    press('KeyJ');
+    press('KeyJ');
+    press('KeyJ');
+    press('KeyI');
+    press('KeyI');
+    press('KeyI');
+    const aimed = router.target!;
+
+    target.keyDown('ArrowRight');
+    press('Space');
+    target.keyUp('ArrowRight');
+    step();
+
+    expect(game.buildings.buildingAt(aimed.x, aimed.y)).toBeDefined();
+  });
 });
 
 describe('키보드만으로 플레이', () => {

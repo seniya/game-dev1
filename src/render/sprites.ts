@@ -727,6 +727,7 @@ function paintBuildingDetails(
   switch (style) {
     case 'house':
     case 'bigHouse': {
+      paintHouseInterior(ctx, style, cx, cy, unit);
       ctx.fillStyle = '#6ca8c7';
       const count = style === 'bigHouse' ? 3 : 2;
       for (let i = 0; i < count; i += 1) {
@@ -811,6 +812,57 @@ function paintBuildingDetails(
       ctx.closePath();
       ctx.fill();
       break;
+  }
+}
+
+/**
+ * 지붕 없는 집 안에 생활 소품을 그린다.
+ *
+ * 주민이 밤에 집 안에 머물러도 빈 바닥만 보이면 "사는 곳"으로 읽히지 않는다. 소품은
+ * 바닥 가운데보다 약간 뒤쪽에 놓아 앞을 지나는 주민의 발을 가리지 않는다.
+ *
+ * @param ctx 스프라이트를 그릴 캔버스 컨텍스트.
+ * @param style 작은 집 또는 큰 집 외형.
+ * @param cx 바닥 중심 x.
+ * @param cy 바닥 중심 y.
+ * @param unit 소품 크기의 기준 단위.
+ */
+function paintHouseInterior(
+  ctx: CanvasRenderingContext2D,
+  style: 'house' | 'bigHouse',
+  cx: number,
+  cy: number,
+  unit: number,
+): void {
+  // 러그. 바닥색과 확실히 달라 주민이 머무는 공간의 중심을 만든다.
+  ctx.fillStyle = style === 'house' ? '#c55f55' : '#b76774';
+  ctx.beginPath();
+  ctx.ellipse(cx + unit * 0.22, cy + unit * 0.18, unit * 0.82, unit * 0.36, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 침대와 베개. 작은 집은 하나, 큰 집은 양쪽에 하나씩 두어 수용 인원과 자연스럽게 맞춘다.
+  /** 침대 프레임과 베개를 한 생활 구역에 그린다. */
+  const paintBed = (x: number, y: number): void => {
+    ctx.fillStyle = '#8b6547';
+    ctx.fillRect(x, y, unit * 1.15, unit * 0.56);
+    ctx.fillStyle = '#efe1cf';
+    ctx.fillRect(x + unit * 0.12, y + unit * 0.08, unit * 0.34, unit * 0.22);
+  };
+  paintBed(cx - unit * 1.22, cy - unit * 0.1);
+  if (style === 'bigHouse') paintBed(cx + unit * 0.25, cy - unit * 0.56);
+
+  // 식탁. 큰 집은 난로도 더해 두 생활 구역이 하나의 큰 빈 공간처럼 보이지 않게 한다.
+  ctx.fillStyle = '#6f4d31';
+  ctx.beginPath();
+  ctx.ellipse(cx + unit * 0.82, cy + unit * 0.32, unit * 0.36, unit * 0.22, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (style === 'bigHouse') {
+    ctx.fillStyle = '#5b514c';
+    ctx.fillRect(cx - unit * 0.2, cy - unit * 1.1, unit * 0.48, unit * 0.54);
+    ctx.fillStyle = '#f1a552';
+    ctx.beginPath();
+    ctx.arc(cx + unit * 0.04, cy - unit * 0.83, unit * 0.15, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
 

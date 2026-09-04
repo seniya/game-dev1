@@ -199,8 +199,7 @@ export function controlHint(state: GuidanceState): string {
   if (state.carried > 0 && state.nearStorage) parts.push('E: 창고 예치');
 
   // 늘 쓰는 것은 뒤에 둔다. 위의 상황 항목이 없을 때 자리를 채운다.
-  parts.push('방향키/WASD: 걷기', 'IJKL: 겨냥', 'Space: 채집·파기');
-  if (state.wood > 0 || state.stone > 0) parts.push('B: 건축');
+  parts.push('방향키/WASD + Space: 앞 행동', 'IJKL: 정밀 겨냥', 'B: 건축');
 
   return `${parts.slice(0, HINT_LIMIT).join(' · ')} · H: 도움말`;
 }
@@ -210,8 +209,8 @@ const HINT_LIMIT = 4;
 
 /** 도움말에 넣을 전체 조작 목록. 한 줄에 다 넣을 수 없는 것들이 여기 모인다. */
 export const ALL_CONTROLS: ReadonlyArray<{ keys: string; what: string }> = [
-  { keys: '방향키 / WASD', what: '걷기' },
-  { keys: 'IJKL', what: '겨냥 — 행동할 칸을 고른다' },
+  { keys: '방향키 / WASD + Space', what: '걷고, 누른 방향 앞 칸에 행동' },
+  { keys: 'IJKL', what: '정밀 겨냥·건축 부지 고르기' },
   { keys: 'Space / 좌클릭', what: '겨냥한 칸에 행동(채집·파기·수리·몬스터 쫓기, 건축 모드에서는 배치)' },
   { keys: 'Q / 우클릭', what: '블록 쌓기' },
   { keys: '1~9', what: '도구 · 건축 모드에서는 설계도' },

@@ -543,6 +543,20 @@ describe('WorldRenderer 오브젝트', () => {
     expect(colors).toContain('#b9aaff');
   });
 
+  it('스프라이트가 없는 경우에도 집 안에 침대와 러그를 그린다', () => {
+    const { ctx, renderer } = setup(flat(6, 1));
+
+    renderer.render(null, [
+      { kind: 'building', x: 2, y: 2, z: 0, width: 2, depth: 2, style: 'house', progress: 1 },
+    ]);
+
+    const colors = new Set(ctx.rects.map((rect) => rect.fillStyle));
+    expect(colors).toContain('#c55f55');
+    expect(colors).toContain('#8b6547');
+    expect(colors).toContain('#efe1cf');
+    expect(colors).toContain('#6f4d31');
+  });
+
   it('플레이어에게만 밤에도 읽히는 청록색 위치 고리를 그린다', () => {
     const { ctx, renderer } = setup(flat(4, 1));
 

@@ -1229,6 +1229,22 @@ export class WorldRenderer {
         ctx.fillStyle = '#6ca8c7';
         ctx.fillRect(x - unit * 0.8, y - bodyHeight * 0.55, unit * 0.5, unit * 0.36);
         ctx.fillRect(x + unit * 0.25, y - bodyHeight * 0.55, unit * 0.5, unit * 0.36);
+        ctx.fillStyle = style === 'house' ? '#c55f55' : '#b76774';
+        ctx.fillRect(x - unit * 0.48, y + unit * 0.05, unit * 1.1, unit * 0.42);
+        ctx.fillStyle = '#8b6547';
+        ctx.fillRect(x - unit * 1.12, y - unit * 0.22, unit * 0.88, unit * 0.48);
+        ctx.fillStyle = '#efe1cf';
+        ctx.fillRect(x - unit, y - unit * 0.14, unit * 0.26, unit * 0.16);
+        ctx.fillStyle = '#6f4d31';
+        ctx.fillRect(x + unit * 0.48, y + unit * 0.16, unit * 0.42, unit * 0.24);
+        if (style === 'bigHouse') {
+          ctx.fillStyle = '#8b6547';
+          ctx.fillRect(x + unit * 0.08, y - unit * 0.58, unit * 0.74, unit * 0.38);
+          ctx.fillStyle = '#efe1cf';
+          ctx.fillRect(x + unit * 0.18, y - unit * 0.51, unit * 0.22, unit * 0.13);
+          ctx.fillStyle = '#5b514c';
+          ctx.fillRect(x + unit * 0.52, y - unit * 0.9, unit * 0.38, unit * 0.48);
+        }
         break;
       case 'warehouse':
         ctx.fillStyle = '#8d5f36';
