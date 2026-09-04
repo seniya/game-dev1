@@ -1866,11 +1866,21 @@ export class Game {
         y: npcPose.y,
         z: npcPose.z,
         hue: npc.hue,
+        facing: npcPose.facing,
+        stride: npcPose.stride,
       });
     }
 
     const pose = this.player.pose(this.terrain);
-    this.entityBuffer.push({ kind: 'player', x: pose.x, y: pose.y, z: pose.z, swing: pose.swing });
+    this.entityBuffer.push({
+      kind: 'player',
+      x: pose.x,
+      y: pose.y,
+      z: pose.z,
+      swing: pose.swing,
+      facing: pose.facing,
+      stride: pose.stride,
+    });
 
     return this.entityBuffer;
   }

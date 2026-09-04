@@ -139,6 +139,25 @@ describe('Npc 배회', () => {
     expect(Number.isInteger(pose.x) && Number.isInteger(pose.y)).toBe(false);
   });
 
+  it('주민도 가감속 곡선과 이동 방향을 렌더 포즈로 넘긴다', () => {
+    const terrain = flat(12);
+    const npc = new Npc(18, 1, { x: 6, y: 6 });
+
+    for (let i = 0; i < 400 && !npc.moving; i += 1) npc.update(1000 / 60, terrain);
+    expect(npc.moving).toBe(true);
+
+    const from = npc.position;
+    npc.update(NPC_MOVE_DURATION_MS * 0.25, terrain);
+    const pose = npc.pose(terrain);
+    const distance = Math.abs(pose.x - from.x) + Math.abs(pose.y - from.y);
+
+    // 선형이라면 0.25칸이다. 주민도 플레이어와 같은 곡선으로 걸어간다.
+    expect(distance).toBeGreaterThan(0);
+    expect(distance).toBeLessThan(0.25);
+    expect(pose.stride).toBeCloseTo(0.25, 6);
+    expect(['east', 'west', 'south', 'north']).toContain(pose.facing);
+  });
+
   it('언덕 위에서는 발 높이가 반영된다', () => {
     const terrain = flat(9);
     const npc = new Npc(9, 1, { x: 4, y: 4 });

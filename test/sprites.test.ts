@@ -74,7 +74,7 @@ function fakeSpriteSet(): SpriteSet {
     tree: (stage) => fakeSprite(`tree:${stage}`),
     oreVein: (ore, stage) => fakeSprite(`ore:${ore}:${stage}`),
     building: (style, width, depth) => fakeSprite(`b:${style}:${width}x${depth}`),
-    pawn: (hue) => fakeSprite(`pawn:${hue}`),
+    pawn: (hue, stride = 0, facing = 'south') => fakeSprite(`pawn:${hue}:${stride}:${facing}`),
   };
 }
 
@@ -209,8 +209,8 @@ describe('WorldRenderer 오브젝트 스프라이트', () => {
     renderer.render(null, entities);
 
     const ids = ctx.images.map((image) => image.id);
-    expect(ids).toContain('pawn:-1');
-    expect(ids).toContain('pawn:200');
+    expect(ids).toContain('pawn:-1:0:south');
+    expect(ids).toContain('pawn:200:0:south');
     expect(ids).toContain('tree:0');
     expect(ids).toContain('ore:iron:0');
     expect(ids).toContain('b:house:2x2');
@@ -265,6 +265,15 @@ describe('WorldRenderer 오브젝트 스프라이트', () => {
 
     renderer.render(null, [{ kind: 'player', x: 1, y: 1, z: 0, swing: 0.5 }]);
 
-    expect(ctx.images.some((image) => image.id === 'pawn:-1')).toBe(true);
+    expect(ctx.images.some((image) => image.id === 'pawn:-1:0:south')).toBe(true);
+  });
+
+  it('걷는 캐릭터는 진행도와 방향이 담긴 스프라이트를 고른다', () => {
+    const { ctx, renderer } = setup(6, 1);
+    renderer.setSprites(fakeSpriteSet());
+
+    renderer.render(null, [{ kind: 'player', x: 1, y: 1, z: 0, swing: 0, stride: 0.5, facing: 'west' }]);
+
+    expect(ctx.images.some((image) => image.id === 'pawn:-1:0.5:west')).toBe(true);
   });
 });

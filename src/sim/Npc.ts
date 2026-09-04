@@ -1,4 +1,5 @@
 import { hashNoise } from '../core/random';
+import { DEFAULT_ACTOR_FACING, easeWalk, facingFromDelta, type ActorFacing } from '../core/actorMotion';
 import { walkableNeighbors, type TilePos } from '../core/movement';
 import type { Terrain } from '../core/Terrain';
 
@@ -37,6 +38,10 @@ export interface NpcPose {
   y: number;
   /** 발이 놓인 높이(소수 가능). */
   z: number;
+  /** 마지막으로 이동한 방향. 정지 중에도 마지막 방향을 유지한다. */
+  facing: ActorFacing;
+  /** 한 걸음 안에서의 선형 진행도. 정지 중이면 0이다. */
+  stride: number;
 }
 
 /**
@@ -82,6 +87,8 @@ export class Npc {
   private idleRemainingMs: number;
   /** 무작위 뽑기 횟수. 시드에 섞어 같은 값이 반복되지 않게 한다. */
   private rollCount = 0;
+  /** 마지막으로 이동한 방향. */
+  private facing: ActorFacing = DEFAULT_ACTOR_FACING;
 
   /**
    * @param id 고유 번호.
@@ -215,9 +222,11 @@ export class Npc {
     const candidates = homeward.length > 0 ? homeward : neighbors;
 
     const pick = Math.floor(this.roll() * candidates.length);
+    const to = candidates[Math.min(pick, candidates.length - 1)]!;
+    this.facing = facingFromDelta(to.x - this.tile.x, to.y - this.tile.y, this.facing);
     this.movement = {
       from: this.tile,
-      to: candidates[Math.min(pick, candidates.length - 1)]!,
+      to,
       elapsedMs: 0,
     };
   }
@@ -267,11 +276,14 @@ export class Npc {
         x: this.tile.x,
         y: this.tile.y,
         z: Math.max(0, terrain.columnHeight(this.tile.x, this.tile.y) - 1),
+        facing: this.facing,
+        stride: 0,
       };
     }
 
     const { from, to, elapsedMs } = this.movement;
-    const progress = Math.min(1, elapsedMs / NPC_MOVE_DURATION_MS);
+    const stride = Math.min(1, elapsedMs / NPC_MOVE_DURATION_MS);
+    const progress = easeWalk(stride);
     const fromZ = Math.max(0, terrain.columnHeight(from.x, from.y) - 1);
     const toZ = Math.max(0, terrain.columnHeight(to.x, to.y) - 1);
 
@@ -279,6 +291,8 @@ export class Npc {
       x: from.x + (to.x - from.x) * progress,
       y: from.y + (to.y - from.y) * progress,
       z: fromZ + (toZ - fromZ) * progress,
+      facing: this.facing,
+      stride,
     };
   }
 }

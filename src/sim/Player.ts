@@ -1,4 +1,5 @@
 import { canWalk, type TilePos } from '../core/movement';
+import { DEFAULT_ACTOR_FACING, easeWalk, facingFromDelta, type ActorFacing } from '../core/actorMotion';
 import type { PlayerSave } from '../core/save';
 import type { Terrain } from '../core/Terrain';
 import { ToolKind, ToolTier, type Tool } from '../core/tools';
@@ -29,6 +30,10 @@ export interface PlayerPose {
   z: number;
   /** 도구를 휘두르는 중인지. 0~1 진행도. 휘두르지 않으면 0. */
   swing: number;
+  /** 마지막으로 이동한 방향. 정지 중에도 마지막 방향을 유지한다. */
+  facing: ActorFacing;
+  /** 한 걸음 안에서의 선형 진행도. 정지 중이면 0이다. */
+  stride: number;
 }
 
 /**
@@ -45,6 +50,8 @@ export class Player {
   private movement: Movement | null = null;
   /** 휘두르기 남은 시간(ms). 0이면 휘두르지 않는 상태. */
   private swingRemainingMs = 0;
+  /** 마지막으로 이동한 방향. 렌더링에서 머리와 앞팔 위치를 정한다. */
+  private facing: ActorFacing = DEFAULT_ACTOR_FACING;
 
   /** 보유 도구 슬롯. 기획서 5.2의 도끼/곡괭이/삽. */
   private readonly tools: Tool[] = [
@@ -177,6 +184,7 @@ export class Player {
     const to = { x: this.tile.x + dx, y: this.tile.y + dy };
     if (!canWalk(terrain, this.tile, to)) return false;
 
+    this.facing = facingFromDelta(dx, dy, this.facing);
     this.movement = { from: this.tile, to, elapsedMs: 0 };
     return true;
   }
@@ -300,11 +308,14 @@ export class Player {
         y: this.tile.y,
         z: Math.max(0, terrain.columnHeight(this.tile.x, this.tile.y) - 1),
         swing,
+        facing: this.facing,
+        stride: 0,
       };
     }
 
     const { from, to, elapsedMs } = this.movement;
-    const progress = Math.min(1, elapsedMs / this.moveDurationMs);
+    const stride = Math.min(1, elapsedMs / this.moveDurationMs);
+    const progress = easeWalk(stride);
 
     const fromZ = Math.max(0, terrain.columnHeight(from.x, from.y) - 1);
     const toZ = Math.max(0, terrain.columnHeight(to.x, to.y) - 1);
@@ -314,6 +325,8 @@ export class Player {
       y: from.y + (to.y - from.y) * progress,
       z: fromZ + (toZ - fromZ) * progress,
       swing,
+      facing: this.facing,
+      stride,
     };
   }
 }

@@ -5,6 +5,7 @@ import { BlockType, blockInfo } from '../core/blocks';
 import type { Terrain } from '../core/Terrain';
 import type { Camera } from './Camera';
 import { DAMAGE_STAGES, type Sprite, type SpriteSet } from './sprites';
+import { DEFAULT_ACTOR_FACING, type ActorFacing } from '../core/actorMotion';
 
 /**
  * 화면 전체에 얹는 분위기.
@@ -44,10 +45,10 @@ export interface TileRef {
  * 그리면 언덕 뒤에 있어야 할 오브젝트가 언덕 위로 올라온다.
  */
 export type Entity =
-  | { kind: 'player'; x: number; y: number; z: number; swing: number }
+  | { kind: 'player'; x: number; y: number; z: number; swing: number; facing?: ActorFacing; stride?: number }
   | { kind: 'tree'; x: number; y: number; z: number; damage: number }
   | { kind: 'oreVein'; x: number; y: number; z: number; damage: number; ore: OreKind }
-  | { kind: 'npc'; x: number; y: number; z: number; hue: number }
+  | { kind: 'npc'; x: number; y: number; z: number; hue: number; facing?: ActorFacing; stride?: number }
   /** 다른 맵으로 통하는 칸. `inward`면 들어가는 입구, 아니면 나가는 출구다. */
   | { kind: 'portal'; x: number; y: number; z: number; inward: boolean }
   | {
@@ -659,10 +660,10 @@ export class WorldRenderer {
         //
         // 크기를 1 → 1.15로 키웠다. 화면에서 보니 겨냥 커서보다 작아, 어두운 동굴과
         // 밤에는 자기 캐릭터를 찾기 어려웠다.
-        this.drawPawn(screen, zoom, '#4a86c8', '#20303f', entity.swing, 1.15);
+        this.drawPawn(screen, zoom, '#4a86c8', '#20303f', entity.swing, 1.15, entity.stride ?? 0, entity.facing ?? DEFAULT_ACTOR_FACING);
         break;
       case 'npc':
-        this.drawPawn(screen, zoom, `hsl(${entity.hue}, 45%, 72%)`, '#2f3542', 0, 0.85);
+        this.drawPawn(screen, zoom, `hsl(${entity.hue}, 45%, 72%)`, '#2f3542', 0, 0.85, entity.stride ?? 0, entity.facing ?? DEFAULT_ACTOR_FACING);
         break;
       case 'tree':
         this.drawTree(screen, zoom, entity.damage);
@@ -698,11 +699,11 @@ export class WorldRenderer {
 
     switch (entity.kind) {
       case 'player':
-        this.drawSprite(sprites.pawn(-1), screen.x, screen.y, zoom);
+        this.drawSprite(sprites.pawn(-1, entity.stride, entity.facing), screen.x, screen.y, zoom);
         if (entity.swing > 0) this.drawSwing(screen, zoom, entity.swing);
         break;
       case 'npc':
-        this.drawSprite(sprites.pawn(entity.hue), screen.x, screen.y, zoom);
+        this.drawSprite(sprites.pawn(entity.hue, entity.stride, entity.facing), screen.x, screen.y, zoom);
         break;
       case 'tree':
         this.drawSprite(sprites.tree(this.damageStage(entity.damage)), screen.x, screen.y, zoom);
@@ -770,6 +771,8 @@ export class WorldRenderer {
    * @param headColor 머리 색.
    * @param swing 휘두르기 진행도(0~1). 0이면 팔을 내린 상태.
    * @param scale 크기 배수. NPC는 플레이어보다 조금 작다.
+   * @param stride 한 걸음 안의 진행도. 도형 폴백에서도 다리 포즈를 맞춘다.
+   * @param facing 바라보는 방향. 앞팔과 머리 위치를 정한다.
    */
   private drawPawn(
     screen: { x: number; y: number },
@@ -778,6 +781,8 @@ export class WorldRenderer {
     headColor: string,
     swing: number,
     scale: number,
+    stride: number,
+    facing: ActorFacing,
   ): void {
     const unit = TILE_HEIGHT * zoom * scale;
     const bodyWidth = unit * 0.42;
@@ -790,19 +795,33 @@ export class WorldRenderer {
     this.ctx.ellipse(screen.x, screen.y, bodyWidth * 0.8, bodyWidth * 0.4, 0, 0, Math.PI * 2);
     this.ctx.fill();
 
-    const bodyTop = screen.y - bodyHeight;
+    const bob = Math.sin(stride * Math.PI) * unit * 0.075;
+    const bodyBottom = screen.y - bob;
+    const bodyTop = bodyBottom - bodyHeight;
+    const step = Math.sin(stride * Math.PI * 2) * unit * 0.13;
+
+    this.ctx.strokeStyle = headColor;
+    this.ctx.lineWidth = Math.max(1, unit * 0.11);
+    this.ctx.beginPath();
+    this.ctx.moveTo(screen.x - bodyWidth * 0.16, bodyBottom - unit * 0.04);
+    this.ctx.lineTo(screen.x - bodyWidth * 0.18 - step, screen.y);
+    this.ctx.moveTo(screen.x + bodyWidth * 0.16, bodyBottom - unit * 0.04);
+    this.ctx.lineTo(screen.x + bodyWidth * 0.18 + step, screen.y);
+    this.ctx.stroke();
+
     this.ctx.fillStyle = bodyColor;
     this.ctx.beginPath();
-    this.ctx.moveTo(screen.x - bodyWidth / 2, screen.y);
+    this.ctx.moveTo(screen.x - bodyWidth / 2, bodyBottom);
     this.ctx.lineTo(screen.x - bodyWidth / 2, bodyTop);
     this.ctx.lineTo(screen.x + bodyWidth / 2, bodyTop);
-    this.ctx.lineTo(screen.x + bodyWidth / 2, screen.y);
+    this.ctx.lineTo(screen.x + bodyWidth / 2, bodyBottom);
     this.ctx.closePath();
     this.ctx.fill();
 
     this.ctx.fillStyle = headColor;
     this.ctx.beginPath();
-    this.ctx.arc(screen.x, bodyTop - headRadius * 0.8, headRadius, 0, Math.PI * 2);
+    const faceOffset = facing === 'east' ? headRadius * 0.35 : facing === 'west' ? -headRadius * 0.35 : 0;
+    this.ctx.arc(screen.x + faceOffset, bodyTop - headRadius * 0.8, headRadius, 0, Math.PI * 2);
     this.ctx.fill();
 
     // 휘두르는 동안 도구를 나타내는 선을 앞으로 뻗는다.

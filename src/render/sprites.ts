@@ -1,6 +1,7 @@
 import { BlockType } from '../core/blocks';
 import { LAYER_HEIGHT, TILE_HEIGHT, TILE_WIDTH } from '../core/coordinates';
 import { lookById } from '../core/looks';
+import { DEFAULT_ACTOR_FACING, quantizeStride, type ActorFacing } from '../core/actorMotion';
 import type { BuildingStyle, OreKind } from './WorldRenderer';
 
 /**
@@ -74,7 +75,7 @@ export interface SpriteSet {
    *
    * @param hue 색상값(0~359). 플레이어는 고정 색을 쓰려면 -1을 넘긴다.
    */
-  pawn(hue: number): Sprite;
+  pawn(hue: number, stride?: number, facing?: ActorFacing): Sprite;
 }
 
 /** 2D 컨텍스트를 가진 오프스크린 캔버스. */
@@ -123,7 +124,12 @@ export function createSpriteSet(): SpriteSet | null {
     building: (style, width, depth, look = 0) =>
       memo(`b:${style}:${width}:${depth}:${look}`, () => makeBuilding(style, width, depth, look)),
     // 색상은 30도 단위로 묶는다. 주민마다 캔버스를 만들면 수가 늘수록 메모리가 는다.
-    pawn: (hue) => memo(`pawn:${quantizeHue(hue)}`, () => makePawn(quantizeHue(hue))),
+    pawn: (hue, stride = 0, facing = DEFAULT_ACTOR_FACING) => {
+      const color = quantizeHue(hue);
+      const frame = quantizeStride(stride);
+
+      return memo(`pawn:${color}:${frame}:${facing}`, () => makePawn(color, frame, facing));
+    },
   };
 }
 
@@ -727,9 +733,11 @@ function paintPlanks(
  * 캐릭터 스프라이트를 만든다.
  *
  * @param hue 색상값. -1이면 플레이어 색을 쓴다.
+ * @param stride 한 걸음 안의 진행도(0~1). 다리와 팔 포즈를 정한다.
+ * @param facing 캐릭터가 바라보는 방향. 얼굴과 앞팔 위치를 정한다.
  * @returns 스프라이트.
  */
-function makePawn(hue: number): Sprite {
+function makePawn(hue: number, stride: number, facing: ActorFacing): Sprite {
   const isBigger = hue < 0;
   // 플레이어는 주민보다 조금 크게 그린다. 화면에서 보니 겨냥 커서보다 작아
   // 어두운 동굴과 밤에는 자기 캐릭터를 찾기 어려웠다.
@@ -742,7 +750,9 @@ function makePawn(hue: number): Sprite {
   const isPlayer = isBigger;
   const body = isPlayer ? '#4a86c8' : `hsl(${hue}, 45%, 62%)`;
   const bodyDark = isPlayer ? '#35699e' : `hsl(${hue}, 40%, 48%)`;
-  const head = isPlayer ? '#20303f' : `hsl(${hue}, 25%, 30%)`;
+  const pants = isPlayer ? '#263c57' : `hsl(${hue}, 26%, 35%)`;
+  const skin = isPlayer ? '#f0bd93' : `hsl(${hue}, 34%, 72%)`;
+  const hair = isPlayer ? '#20303f' : `hsl(${hue}, 24%, 27%)`;
 
   const cx = width / 2;
   const feet = height - 2;
@@ -753,18 +763,42 @@ function makePawn(hue: number): Sprite {
   ctx.ellipse(cx, feet, unit * 0.3, unit * 0.13, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  const bodyWidth = unit * 0.42;
+  const bodyWidth = unit * 0.44;
   const bodyHeight = unit * 0.72;
-  const bodyTop = feet - bodyHeight;
+  const bob = Math.sin(stride * Math.PI) * unit * 0.075;
+  const bodyBottom = feet - bob;
+  const bodyTop = bodyBottom - bodyHeight;
+  const step = Math.sin(stride * Math.PI * 2) * unit * 0.13;
+  const faceOffset = facing === 'east' ? unit * 0.08 : facing === 'west' ? -unit * 0.08 : 0;
+
+  // 다리. 발은 지면에 남기고 몸통만 한 걸음의 중간에 살짝 올라간다. 이 둘이 있어야
+  // 위치만 바뀌는 미끄러짐이 아니라 실제로 발을 옮기는 모습으로 읽힌다.
+  ctx.strokeStyle = pants;
+  ctx.lineCap = 'round';
+  ctx.lineWidth = unit * 0.12;
+  ctx.beginPath();
+  ctx.moveTo(cx - bodyWidth * 0.16, bodyBottom - unit * 0.05);
+  ctx.lineTo(cx - bodyWidth * 0.18 - step, feet - unit * 0.03);
+  ctx.moveTo(cx + bodyWidth * 0.16, bodyBottom - unit * 0.05);
+  ctx.lineTo(cx + bodyWidth * 0.18 + step, feet - unit * 0.03);
+  ctx.stroke();
+
+  // 뒷팔. 몸통보다 먼저 그려야 팔이 등에 붙은 것처럼 보인다.
+  ctx.strokeStyle = bodyDark;
+  ctx.lineWidth = unit * 0.105;
+  ctx.beginPath();
+  ctx.moveTo(cx - bodyWidth * 0.46, bodyTop + bodyHeight * 0.32);
+  ctx.lineTo(cx - bodyWidth * 0.56 + step * 0.45, bodyTop + bodyHeight * 0.72);
+  ctx.stroke();
 
   // 몸통. 어깨가 둥근 형태로 그린다.
   ctx.fillStyle = body;
   ctx.beginPath();
-  ctx.moveTo(cx - bodyWidth / 2, feet);
+  ctx.moveTo(cx - bodyWidth / 2, bodyBottom);
   ctx.lineTo(cx - bodyWidth / 2, bodyTop + bodyWidth * 0.3);
   ctx.quadraticCurveTo(cx - bodyWidth / 2, bodyTop, cx, bodyTop);
   ctx.quadraticCurveTo(cx + bodyWidth / 2, bodyTop, cx + bodyWidth / 2, bodyTop + bodyWidth * 0.3);
-  ctx.lineTo(cx + bodyWidth / 2, feet);
+  ctx.lineTo(cx + bodyWidth / 2, bodyBottom);
   ctx.closePath();
   ctx.fill();
 
@@ -772,25 +806,42 @@ function makePawn(hue: number): Sprite {
   ctx.fillStyle = bodyDark;
   ctx.globalAlpha = 0.45;
   ctx.beginPath();
-  ctx.moveTo(cx + bodyWidth * 0.12, feet);
+  ctx.moveTo(cx + bodyWidth * 0.12, bodyBottom);
   ctx.lineTo(cx + bodyWidth * 0.12, bodyTop + bodyWidth * 0.2);
   ctx.lineTo(cx + bodyWidth / 2, bodyTop + bodyWidth * 0.3);
-  ctx.lineTo(cx + bodyWidth / 2, feet);
+  ctx.lineTo(cx + bodyWidth / 2, bodyBottom);
   ctx.closePath();
   ctx.fill();
   ctx.globalAlpha = 1;
 
-  // 머리.
-  const headRadius = unit * 0.22;
-  ctx.fillStyle = head;
+  // 앞팔. 방향에 따라 눈에 더 보이는 쪽을 앞에 둬서 이동 방향을 읽게 한다.
+  const armSide = facing === 'west' ? -1 : 1;
+  ctx.strokeStyle = body;
+  ctx.lineWidth = unit * 0.11;
   ctx.beginPath();
-  ctx.arc(cx, bodyTop - headRadius * 0.75, headRadius, 0, Math.PI * 2);
+  ctx.moveTo(cx + armSide * bodyWidth * 0.44, bodyTop + bodyHeight * 0.3);
+  ctx.lineTo(cx + armSide * (bodyWidth * 0.56 + step * 0.45), bodyTop + bodyHeight * 0.7);
+  ctx.stroke();
+
+  // 머리와 머리카락. 기존의 어두운 원 하나 대신 피부와 머리카락을 나눠 사람의 얼굴로 읽힌다.
+  const headRadius = unit * 0.22;
+  const headX = cx + faceOffset;
+  const headY = bodyTop - headRadius * 0.75;
+  ctx.fillStyle = skin;
+  ctx.beginPath();
+  ctx.arc(headX, headY, headRadius, 0, Math.PI * 2);
   ctx.fill();
 
-  // 머리 highlight.
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+  ctx.fillStyle = hair;
   ctx.beginPath();
-  ctx.arc(cx - headRadius * 0.3, bodyTop - headRadius, headRadius * 0.42, 0, Math.PI * 2);
+  ctx.arc(headX, headY - headRadius * 0.26, headRadius * 0.9, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  // 얼굴의 밝은 점 하나로 앞을 알린다. 정면·북쪽은 가운데, 동서 방향은 바라보는 쪽으로 옮긴다.
+  const eyeShift = facing === 'east' ? headRadius * 0.42 : facing === 'west' ? -headRadius * 0.42 : 0;
+  ctx.fillStyle = '#2b3544';
+  ctx.beginPath();
+  ctx.arc(headX + eyeShift, headY - headRadius * 0.04, Math.max(0.8, unit * 0.035), 0, Math.PI * 2);
   ctx.fill();
 
   return { image: surface.canvas, width, height, offsetX: -cx, offsetY: -feet };

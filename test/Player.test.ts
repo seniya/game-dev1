@@ -90,6 +90,21 @@ describe('Player 이동', () => {
     expect(pose.y).toBe(2);
   });
 
+  it('걷기는 출발과 도착에서 완만해지고 진행 방향을 유지한다', () => {
+    const terrain = flat(5, 2);
+    const player = new Player(2, 2);
+    player.tryMove(terrain, 1, 0);
+
+    player.update(MOVE_DURATION_MS * 0.25);
+    const pose = player.pose(terrain);
+
+    // 선형 보간이면 2.25다. smoothstep은 걸음을 떼는 초반을 더 완만하게 만든다.
+    expect(pose.x).toBeGreaterThan(2);
+    expect(pose.x).toBeLessThan(2.25);
+    expect(pose.stride).toBeCloseTo(0.25, 6);
+    expect(pose.facing).toBe('east');
+  });
+
   it('언덕을 오를 때 발 높이도 함께 보간된다', () => {
     const terrain = flat(5, 2);
     terrain.place(3, 2, BlockType.DIRT);
