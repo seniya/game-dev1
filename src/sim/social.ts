@@ -1,3 +1,4 @@
+import { person } from './spatial';
 import { type WorldState, type NPC, type WorldEvent, type Relationship, TICKS_PER_DAY } from './types';
 import { clamp, dayOf } from './random';
 
@@ -12,7 +13,7 @@ export function eventById(w: WorldState, id: string): WorldEvent | undefined {
 export function appendEvent(w: WorldState, input: EventInput): WorldEvent {
   const e: WorldEvent = { ...input, id: `e${w.nextId++}`, tick: w.tick, participants: input.participants ?? [input.actorId, input.targetId].filter((id): id is string => !!id), data: input.data ?? {} };
   // Distant routine movement/consumption can be omitted; consequential events and all causes remain.
-  const actor = w.civilization?.detail === 'focused' && input.actorId ? w.npcs.find(n => n.id === input.actorId) : undefined;
+  const actor = w.civilization?.detail === 'focused' && input.actorId ? person(w, input.actorId) : undefined;
   const brief = w.civilization?.detail === 'focused' && actor && actor.settlementId !== w.civilization.focus && input.importance < 30 && ['arrival', 'consumption', 'storage', 'failure'].includes(input.kind);
   if (!brief) w.events.push(e);
   return e;
@@ -31,8 +32,9 @@ export function changeRelationship(w: WorldState, n: NPC, targetId: string, chan
   }
   r.interpretation = meaning;
   if (!r.evidence.includes(cause.id)) r.evidence.push(cause.id);
-  if (r.evidence.length > 12) r.evidence = [r.evidence[0], ...r.evidence.slice(-11)];
-  appendEvent(w, { kind: 'relationship', actorId: n.id, targetId, importance: 30, causeId: cause.id, description: `${n.identity.name} → ${w.npcs.find(p => p.id === targetId)?.identity.name}: ${actual.join(', ') || '관계의 기억을 갱신'}`, data: { meaning } });
+  const evidenceLimit = w.npcs.length > 400 ? 4 : 12;
+  if (r.evidence.length > evidenceLimit) r.evidence = [r.evidence[0], ...r.evidence.slice(-(evidenceLimit - 1))];
+  appendEvent(w, { kind: 'relationship', actorId: n.id, targetId, importance: 30, causeId: cause.id, description: `${n.identity.name} → ${person(w, targetId)?.identity.name}: ${actual.join(', ') || '관계의 기억을 갱신'}`, data: { meaning } });
 }
 export function remember(w: WorldState, n: NPC, event: WorldEvent, description = event.description) {
   if (event.importance < 45 || !n.alive) return;
@@ -40,7 +42,8 @@ export function remember(w: WorldState, n: NPC, event: WorldEvent, description =
   if (repeated) { repeated.repetitions++; repeated.importance = clamp(repeated.importance + 2); return; }
   const memory = { id: `m${w.nextId++}`, type: memoryType(event), description, importance: event.importance, emotionalImpact: ['theft', 'witness', 'rumor', 'default', 'scarcity', 'death'].includes(event.kind) ? -event.importance : event.importance * .6, createdAt: w.tick, relatedNpcIds: event.participants.filter(id => id !== n.id), relatedLocationIds: event.locationId ? [event.locationId] : [], sourceEventId: event.id, repetitions: 1 };
   n.memories.push(memory);
-  if (n.memories.length > 40) { n.memories.sort((a, b) => b.importance - a.importance || b.createdAt - a.createdAt); n.memories.length = 40; }
+  const memoryLimit = w.npcs.length > 400 ? 24 : 40;
+  if (n.memories.length > memoryLimit) { n.memories.sort((a, b) => b.importance - a.importance || b.createdAt - a.createdAt); n.memories.length = memoryLimit; }
   appendEvent(w, { kind: 'memory', actorId: n.id, importance: 15, causeId: event.id, description: `${n.identity.name}의 기억: ${description}` });
 }
 function memoryType(e: WorldEvent): NPC['memories'][number]['type'] {
@@ -59,7 +62,7 @@ export function gate(w: WorldState, n: NPC, e: WorldEvent) {
 export function socialEvent(w: WorldState, input: EventInput): WorldEvent {
   const e = appendEvent(w, input);
   for (const id of e.participants) {
-    const n = w.npcs.find(p => p.id === id);
+    const n = person(w, id);
     if (n) { remember(w, n, e); gate(w, n, e); }
   }
   return e;

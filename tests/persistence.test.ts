@@ -150,3 +150,25 @@ test('an abandoned initialization cannot strand another request sharing the D1 b
     assert.ok((await nextRequest.read()).state.npcs.length);
   } finally { clearTimeout(timeout); release(); await interruptedRequest; }
 });
+
+test('v3 checkpoint and queued v3 deltas upgrade atomically before the first v4 delta is stored', async () => {
+  const db = database(), store = new WorldStore(db), start = Date.now(); await store.init(start);
+  const initial = await store.read();
+  const legacy = plain(initial.state) as any; legacy.version = 3; delete legacy.urban;
+  const simulation = Simulation.load(JSON.stringify(legacy)); simulation.step();
+  const after = plain(simulation.snapshot()) as any; after.version = 3; delete after.urban;
+  await db.batch([
+    db.prepare('DELETE FROM snapshots'), db.prepare('INSERT INTO snapshots VALUES(?,?,?)').bind(initial.epoch, 0, JSON.stringify(legacy)),
+    db.prepare('UPDATE world SET revision=1 WHERE id=1'),
+    db.prepare('UPDATE world_checkpoints SET head_revision=1'),
+    db.prepare('INSERT INTO world_changes VALUES(?,?,?,?)').bind(initial.epoch, 1, 0, JSON.stringify(stateChange(legacy, after))),
+  ]);
+  const fresh = restart(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 4); assert.equal(migrated.state.tick, after.tick);
+  const changed = await send(fresh, { type: 'policy', settlementId: 'v0', taxRate: 20, priority: 'school' }, start + 2);
+  const recovered = await restart(db).read(); assert.deepEqual(recovered, changed);
+  assert.equal(recovered.state.urban.cities[0].taxRate, 20);
+  assert.equal((await db.prepare('SELECT count(*) AS n FROM world_changes').first<{n:number}>())!.n, 0, 'migration forces a checkpoint without waiting for normal budget');
+  assert.equal((await db.prepare('SELECT revision FROM world_checkpoints').first<{revision:number}>())!.revision, 2);
+  const continued = await send(restart(db), { type: 'step', ticks: 1 }, start + 3);
+  assert.deepEqual(await restart(db).read(), continued);
+});

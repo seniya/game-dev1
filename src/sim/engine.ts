@@ -1,3 +1,6 @@
+import { indexPeople, updatePerson, person, neighbours } from './spatial';
+import { initializeUrban, urbanDay, advanceFreight, industryWork, city, useTool, setPolicy } from './urban';
+import type { Service } from './urban-types';
 import { stocks, market, localBuilding, advanceJourneys, regionalDay, isTravelling } from './civilization';
 import type { MotionTrace } from './motion';
 import { lifeDay, careForChild, die } from './life';
@@ -29,6 +32,7 @@ export class Simulation {
     if (!this.state.civilization.settlements.some(v => v.id === focus)) throw new Error('관찰할 마을이 없습니다.');
     this.state.civilization.focus = focus; this.state.civilization.detail = detail;
   }
+  setPolicy(id: string, taxRate: number, priority: Service) { setPolicy(this.state, id, taxRate, priority); }
   setLLM(enabled: boolean) { this.state.llm.enabled = enabled; if (!enabled) this.state.llm.queue = []; }
   step(count = 1, motion?: MotionTrace) {
     if (!Number.isInteger(count) || count < 1 || count > 1_000_000) throw new Error('틱 수가 올바르지 않습니다.');
@@ -47,7 +51,9 @@ export class Simulation {
     const w = this.state; w.tick++;
     if (w.tick % TICKS_PER_DAY === 0) this.newDay();
     advanceJourneys(w);
-    for (const farm of w.buildings.filter(b => b.kind === 'farm')) farm.growth = Math.min(120, farm.growth + (w.weather === 'drought' ? .025 : w.weather === 'rain' ? .24 : .14) * (1 + (farm.level - 1) * .35));
+    advanceFreight(w);
+    indexPeople(w);
+    for (const farm of w.buildings.filter(b => b.kind === 'farm')) farm.growth = Math.min(120, farm.growth + (w.weather === 'drought' ? .025 : w.weather === 'rain' ? .24 : .14) * (1 + (farm.level - 1) * .35) * (city(w, farm.settlementId!)?.fertility ?? 70) / 70 * (w.urban.buildings[farm.id]?.condition ?? 100) / 100);
     for (let i = 0; i < w.npcs.length; i++) {
       const n = w.npcs[(i + w.tick) % w.npcs.length];
       if (!n.alive) continue;
@@ -56,14 +62,17 @@ export class Simulation {
       n.needs.fatigue = clamp(n.needs.fatigue + (n.currentAction?.kind === 'Sleep' ? 0 : .33));
       n.needs.social = clamp(n.needs.social - .18);
       n.needs.safety = clamp(n.needs.safety + .06);
+      const u = w.urban.citizens[n.id];
+      n.needs.fatigue = clamp(n.needs.fatigue + u.injury * .005);
       const before = n.needs.health;
       if (n.needs.hunger > 92 || n.needs.thirst > 94 || n.needs.fatigue > 98) n.needs.health = clamp(n.needs.health - .7);
       else if (n.needs.hunger < 55 && n.needs.thirst < 65 && n.needs.fatigue < 70) n.needs.health = clamp(n.needs.health + .13);
+      n.needs.health = clamp(n.needs.health - u.disease * .025 - u.injury * .012);
       if (before >= 50 && n.needs.health < 50) socialEvent(w, { kind: 'health', actorId: n.id, importance: 75, description: `${n.identity.name}의 건강이 악화되었다. 식량과 휴식이 필요하다.` });
       if (n.needs.health <= 0) {
-        die(w, n, 'needs'); continue;
+        die(w, n, u.disease > 0 || u.injury > 0 ? 'illness' : 'needs'); continue;
       }
-      if (careForChild(w, n) || isTravelling(w, n)) continue;
+      if (careForChild(w, n) || isTravelling(w, n)) { updatePerson(w, n); continue; }
       const a = n.currentAction;
       if (a && ((n.needs.hunger > 88 && n.inventory.food > 0 && a.kind !== 'Eat') || (n.needs.thirst > 90 && a.kind !== 'Drink'))) n.currentAction = undefined;
       if (!n.currentAction) {
@@ -71,6 +80,7 @@ export class Simulation {
         n.decision = { reason: decision.action.reason, candidates: decision.candidates, tick: w.tick };
       }
       this.advance(n);
+      updatePerson(w, n);
     }
     for (const loan of w.loans) {
       if (loan.status !== 'active' || w.tick < loan.due) continue;
@@ -97,6 +107,8 @@ export class Simulation {
     }
     lifeDay(w);
     regionalDay(w);
+    urbanDay(w);
+    initializeUrban(w);
     decayMemories(w);
   }
   private advance(n: NPC) {
@@ -105,7 +117,7 @@ export class Simulation {
     // Moving people invalidate the old destination; follow only while they remain nearby.
     if (['Share', 'Talk', 'Borrow', 'Repay'].includes(a.kind) || (a.kind === 'Trade' && a.targetId?.startsWith('peer:'))) {
       const targetId = a.kind === 'Repay' ? w.loans.find(l => l.id === a.targetId)?.lenderId : a.kind === 'Trade' ? a.targetId?.slice(5) : a.targetId;
-      const target = w.npcs.find(p => p.id === targetId);
+      const target = person(w, targetId);
       if (!target?.alive || distance(target.position, n.position) > 12) { this.fail(n, '대상 주민과 만나지 못했다.'); return; }
       if (distance(target.position, a.target) > 0) {
         a.target = { ...target.position }; const path = findPath(w, n.position, a.target);
@@ -126,7 +138,7 @@ export class Simulation {
   private execute(n: NPC) {
     const w = this.state, a = n.currentAction!, stock = stocks(w, n.settlementId), localMarket = market(w, n.settlementId);
     if (distance(n.position, a.target) !== 0) { this.fail(n, '목적지에 도착하지 않았다.'); return; }
-    const other = w.npcs.find(p => p.id === a.targetId && p.alive);
+    const found = person(w, a.targetId), other = found?.alive ? found : undefined;
     const simple = (kind: WorldEvent['kind'], description: string, importance = 15, data: WorldEvent['data'] = {}) => appendEvent(w, { kind, actorId: n.id, description, importance, data });
     switch (a.kind) {
       case 'Idle': n.needs.fatigue = clamp(n.needs.fatigue - 2); break;
@@ -143,17 +155,18 @@ export class Simulation {
         simple('production', `${n.identity.name}이 ${r.kind === 'food' ? '열매' : '목재'} ${amount}개를 모았다.`, 20, { resource: r.kind, amount }); break;
       }
       case 'Work': {
+        if (a.targetId?.startsWith('industry:')) { if (!industryWork(w, n)) this.fail(n, '고용·재료·임금 또는 시설 조건이 바뀌었다.'); break; }
         if (a.targetId?.includes(':')) { this.project(n); break; }
         const farm = w.buildings.find(b => b.id === a.targetId && b.kind === 'farm');
         if (!farm || farm.growth < 3) { this.fail(n, '작물이 아직 자라지 않았다.'); break; }
         n.life.skill = Math.min(100, n.life.skill + .02);
-        const amount = Math.min(4 + Math.floor(n.life.skill / 25), Math.floor(farm.growth)); farm.growth -= amount; n.inventory.food += amount;
+        const amount = Math.min(4 + Math.floor(n.life.skill / 25) + useTool(w, n), Math.floor(farm.growth)); farm.growth -= amount; n.inventory.food += amount;
         w.economy.totals.producedFood += amount;
         const harvest = simple('production', `${n.identity.name}이 농장에서 식량 ${amount}개를 수확했다.`, 25, { resource: 'food', amount, level: farm.level });
         // The market employs harvesters: one harvested unit enters its stock in exchange for a funded wage.
         const wage = Math.min(2, localMarket.coins);
         if (wage > 0) {
-          n.inventory.food--; localMarket.food++; localMarket.coins -= wage; n.wealth += wage; w.economy.totals.wages += wage;
+          n.inventory.food--; localMarket.food++; localMarket.coins -= wage; n.wealth += wage; w.urban.citizens[n.id].income += wage; w.economy.totals.wages += wage;
           appendEvent(w, { kind: 'wage', actorId: n.id, locationId: localBuilding(w, n, 'market').id, causeId: harvest.id, importance: 30, description: `${n.identity.name}이 수확 식량 1개를 시장에 납품하고 공동 시장 기금에서 임금 ${wage}코인을 받았다.`, data: { employer: 'market', amount: wage, food: 1, fundRemaining: localMarket.coins } });
         }
         break;
@@ -175,7 +188,8 @@ export class Simulation {
         if (stock.food < 1 || n.dailyTaken < 3) { this.fail(n, '절도 조건이 바뀌었다.'); break; }
         const amount = Math.min(stock.food, 2 + Math.floor(n.personality.greed / 40)); stock.food -= amount; n.inventory.food += amount; w.stats.thefts++;
         const e = socialEvent(w, { kind: 'theft', actorId: n.id, locationId: a.targetId, importance: 80, description: `${n.identity.name}이 인출 한도를 넘겨 공동 식량 ${amount}개를 몰래 가져갔다.`, data: { amount } });
-        const witnesses = w.npcs.filter(p => p.alive && p.id !== n.id && distance(p.position, n.position) <= 4);
+        const nearby = neighbours(w, n, 4).filter(p => p.alive && p.id !== n.id);
+        const witnesses = w.npcs.length > 400 ? nearby.sort((a, b) => distance(n.position, a.position) - distance(n.position, b.position)).slice(0, 12) : nearby;
         for (const witness of witnesses) {
           w.stats.conflicts++; witness.needs.safety = clamp(witness.needs.safety - 12);
           const seen = socialEvent(w, { kind: 'witness', actorId: witness.id, targetId: n.id, importance: 80, causeId: e.id, locationId: a.targetId, description: `${witness.identity.name}이 ${n.identity.name}의 식량 절도를 직접 목격했다.` });
@@ -220,10 +234,10 @@ export class Simulation {
         if (!amount) { this.fail(n, '거래 재고 또는 실제 자금이 부족하다.'); break; }
         const cost = amount * price;
         if (buying) {
-          n.wealth -= cost; n.inventory.food += amount;
-          if (seller) { seller.wealth += cost; seller.inventory.food -= amount; }
+          n.wealth -= cost; w.urban.citizens[n.id].expenses += cost; n.inventory.food += amount;
+          if (seller) { seller.wealth += cost; w.urban.citizens[seller.id].income += cost; seller.inventory.food -= amount; }
           else { localMarket.coins += cost; localMarket.food -= amount; }
-        } else { n.wealth += cost; localMarket.coins -= cost; n.inventory.wood -= amount; localMarket.wood += amount; }
+        } else { n.wealth += cost; w.urban.citizens[n.id].income += cost; localMarket.coins -= cost; n.inventory.wood -= amount; localMarket.wood += amount; }
         w.economy.totals.trades++; w.economy.totals.tradeVolume += amount;
         const e = socialEvent(w, { kind: 'trade', actorId: n.id, targetId: seller?.id, importance: seller ? 45 : 35,
           description: `${n.identity.name}이 ${seller?.identity.name ?? '공동 시장'}${buying ? '에게서' : '에'} ${buying ? '식량' : '목재'} ${amount}개를 ${cost}코인에 ${buying ? '구매' : '판매'}했다.`,

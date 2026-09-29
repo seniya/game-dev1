@@ -1,0 +1,83 @@
+{
+  "testedAt": "2026-09-29T15:05:26.339Z",
+  "runtime": "local workerd + D1, real browser requests, not production SLA",
+  "results": [
+    {
+      "action": "reset",
+      "status": 200,
+      "elapsedMs": 772,
+      "responseBytes": 3612000,
+      "population": 3000,
+      "tick": 36
+    },
+    {
+      "action": "ai-mode",
+      "status": 200,
+      "elapsedMs": 848,
+      "responseBytes": 3612000,
+      "population": 3000,
+      "tick": 36
+    },
+    {
+      "action": "step",
+      "status": 200,
+      "elapsedMs": 1968,
+      "responseBytes": 6447165,
+      "population": 3000,
+      "tick": 37
+    }
+  ],
+  "errors": [],
+  "mobileOverflow": false,
+  "boundedDay": {
+    "testedAt": "2026-09-29T15:10:57.402Z",
+    "measurements": [
+      {
+        "action": "reset",
+        "status": 200,
+        "elapsedMs": 485,
+        "responseBytes": 3826672,
+        "tick": 36,
+        "pendingTicks": 0,
+        "population": 3000
+      },
+      {
+        "action": "ai-mode",
+        "status": 200,
+        "elapsedMs": 559,
+        "responseBytes": 3826672,
+        "tick": 36,
+        "pendingTicks": 0,
+        "population": 3000
+      },
+      {
+        "action": "step",
+        "status": 200,
+        "elapsedMs": 1575,
+        "responseBytes": 7297277,
+        "tick": 37,
+        "pendingTicks": 143,
+        "population": 3000
+      },
+      {
+        "action": "sync",
+        "status": 200,
+        "elapsedMs": 1636,
+        "responseBytes": 7574607,
+        "tick": 38,
+        "pendingTicks": 142,
+        "population": 3000
+      },
+      {
+        "action": "play",
+        "status": 200,
+        "elapsedMs": 1240,
+        "responseBytes": 7497548,
+        "tick": 38,
+        "pendingTicks": 0,
+        "population": 3000
+      }
+    ],
+    "reloadedTick": 38
+  }
+}

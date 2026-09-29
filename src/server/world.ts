@@ -8,6 +8,7 @@ import type { WorldState, WorldEvent } from '../sim/types';
 export const commandSchema = z.object({
   id: z.string().uuid(), revision: z.number().int().nonnegative(),
   action: z.discriminatedUnion('type', [
+    z.object({ type: z.literal('policy'), settlementId: z.string().max(100), taxRate: z.number().int().min(0).max(30), priority: z.enum(['road', 'water', 'sanitation', 'clinic', 'school']) }).strict(),
     z.object({ type: z.literal('detail'), focus: z.string().max(100), detail: z.enum(['full', 'focused']) }).strict(),
     z.object({ type: z.literal('sync') }).strict(),
     z.object({ type: z.literal('play'), running: z.boolean() }).strict(),
@@ -18,12 +19,13 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('llm'), enabled: z.boolean() }).strict(),
     z.object({ type: z.literal('ai-mode'), mode: z.enum(['off', 'mock', 'remote', 'chrome']) }).strict(),
     z.object({ type: z.literal('dialogue'), speakerId: z.string().max(100), listenerId: z.string().max(100) }).strict(),
-    z.object({ type: z.literal('reset'), seed: z.number().int().min(0).max(4294967295), population: z.number().int().min(10).max(400).optional() }).strict(),
+    z.object({ type: z.literal('reset'), seed: z.number().int().min(0).max(4294967295), population: z.number().int().min(10).max(3000).optional() }).strict(),
     z.object({ type: z.literal('import'), save: z.string().max(10_000_000) }).strict(),
   ]),
 }).strict();
 export type Command = z.infer<typeof commandSchema>;
 export interface ClockState {
+  pendingTicks?: number;
   running: boolean; speed: 1 | 5 | 20; offline: boolean;
   clock: number; lastSeen: number; eventCount: number; socialCount: number;
   catchupTicks: number; skippedTicks: number; backupEpoch?: string;
@@ -44,6 +46,7 @@ export function compactWorld(w: WorldState): WorldState {
   const byId = new Map(w.events.map(e => [e.id, e]));
   const keep = new Set(w.events.slice(-100).map(e => e.id));
   for (const n of w.npcs) {
+    if (w.urban?.citizens[n.id]?.healthEventId) keep.add(w.urban.citizens[n.id].healthEventId!);
     if (n.life?.birthEventId) keep.add(n.life.birthEventId);
     if (n.life?.deathEventId) keep.add(n.life.deathEventId);
     n.memories.forEach(m => keep.add(m.sourceEventId));
@@ -55,6 +58,10 @@ export function compactWorld(w: WorldState): WorldState {
   }
   w.civilization?.settlements.forEach(v => { if (v.sourceEventId) keep.add(v.sourceEventId); });
   w.civilization?.journeys.forEach(j => keep.add(j.sourceEventId));
+  w.urban?.cities.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); if (c.policyEventId) keep.add(c.policyEventId); });
+  w.urban?.enterprises.forEach(e => { if (e.sourceEventId) keep.add(e.sourceEventId); });
+  w.urban?.freight.forEach(f => keep.add(f.sourceEventId));
+  w.urban?.samples.forEach(s => keep.add(s.eventId));
   w.loans.forEach(l => keep.add(l.sourceEventId));
   w.llm.queue.forEach(q => keep.add(q.eventId));
   w.economy.daily.forEach(d => keep.add(d.eventId));
@@ -76,7 +83,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   // A visible observer sends a heartbeat every two seconds. Gaps over 15 seconds are offline.
   const gap = Math.max(0, now - meta.lastSeen), offline = gap > 15_000;
   const available = meta.running && (!offline || meta.offline) ? Math.floor(Math.max(0, now - meta.clock) * meta.speed / 700) : 0;
-  const tickBudget = Math.max(8, Math.min(144, Math.floor(1728 / Math.max(12, current.state.npcs.filter(n => n.alive).length))));
+  const tickBudget = Math.max(1, Math.min(144, Math.floor(1728 / Math.max(12, current.state.npcs.filter(n => n.alive).length))));
   const ticks = Math.min(tickBudget, available);
   meta.catchupTicks = offline ? ticks : 0; meta.skippedTicks = available - ticks;
   const decisions = new DecisionCoordinator(sim, new MockLLMProvider());
@@ -84,10 +91,21 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   for (let i = 0; i < ticks; i++) { sim.step(1, motion); if (useMock && sim.pending) await decisions.drain(); }
   meta.clock = available > tickBudget || offline || !meta.running ? now : meta.clock + ticks * 700 / meta.speed;
   meta.lastSeen = now;
-  if (a.type === 'play') { meta.running = a.running; meta.clock = now; }
+  if (a.type === 'sync' && !meta.running && meta.pendingTicks) {
+    const work = Math.min(tickBudget, meta.pendingTicks);
+    for (let i = 0; i < work; i++) { sim.step(1, motion); if (useMock && sim.pending) await decisions.drain(); }
+    meta.pendingTicks -= work;
+  }
+  if (a.type === 'play') { meta.running = a.running; meta.clock = now; meta.pendingTicks = 0; }
   if (a.type === 'speed') { meta.speed = a.speed; meta.clock = now; }
   if (a.type === 'offline') meta.offline = a.enabled;
-  if (a.type === 'step') { meta.running = false; meta.clock = now; for (let i = 0; i < a.ticks; i++) { sim.step(); if (useMock && sim.pending) await decisions.drain(); } }
+  if (a.type === 'step') {
+    meta.running = false; meta.clock = now;
+    const work = Math.min(a.ticks, current.state.npcs.filter(n => n.alive).length > 400 ? tickBudget : 144);
+    meta.pendingTicks = a.ticks - work;
+    for (let i = 0; i < work; i++) { sim.step(); if (useMock && sim.pending) await decisions.drain(); }
+  }
+  if (a.type === 'policy') sim.setPolicy(a.settlementId, a.taxRate, a.priority);
   if (a.type === 'detail') sim.setDetail(a.focus, a.detail);
   if (a.type === 'experiment') sim.experiment(a.kind);
   if (a.type === 'llm' || a.type === 'ai-mode') {
@@ -109,10 +127,10 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   if (a.type === 'reset' || a.type === 'import') {
     sim = a.type === 'reset' ? new Simulation(a.seed, a.population ?? 12) : Simulation.load(a.save);
     // Cloud processing is bounded; larger local experiments remain available through the CLI.
-    if (sim.snapshot().npcs.filter(n => n.alive).length > 400) throw new Error('서버 세계는 생존 주민 400명까지 지원합니다.');
+    if (sim.snapshot().npcs.filter(n => n.alive).length > 3000) throw new Error('서버 세계는 생존 주민 3000명까지 지원합니다.');
     epoch = command.id; replaced = true; oldIds = new Set();
     meta.backupEpoch = current.epoch; meta.running = false; meta.clock = now;
-    meta.eventCount = 0; meta.socialCount = 0; meta.catchupTicks = 0; meta.skippedTicks = 0;
+    meta.pendingTicks = 0; meta.eventCount = 0; meta.socialCount = 0; meta.catchupTicks = 0; meta.skippedTicks = 0;
     // Imports never opt in to remote calls; retain the file's enabled flag for Mock compatibility.
     meta.aiMode = sim.snapshot().llm.enabled ? 'mock' : 'off'; meta.aiGeneration = command.id; delete meta.dialogue;
   }

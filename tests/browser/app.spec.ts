@@ -197,11 +197,11 @@ test('multiple settlements, focused history and family inspection survive reload
   await page.getByRole('button', { name: '관찰 실험실' }).click();
   await page.locator('#population-input').fill('100'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
   await expect(page.locator('.settlement-card')).toHaveCount(3);
-  await page.locator('[data-village="v1"]').click(); await expect(page.locator('#village-title')).toContainText('강너머');
+  await page.locator('.settlement-card[data-village="v1"]').click(); await expect(page.locator('#village-title')).toContainText('강너머');
   await page.locator('#world-detail').selectOption('focused');
   await page.getByRole('tab', { name: '생애', exact: true }).click();
-  await expect(page.locator('.family-card')).toContainText('가족과 계승');
-  await expect(page.locator('.family-card')).toContainText('12일 = 1년');
+  await expect(page.locator('.family-card').last()).toContainText('가족과 계승');
+  await expect(page.locator('.family-card').last()).toContainText('12일 = 1년');
   await page.reload(); await expect(page.locator('#world-detail')).toHaveValue('focused');
   await expect(page.locator('#village-title')).toContainText('강너머');
   await page.setViewportSize({ width: 390, height: 844 });
@@ -260,4 +260,30 @@ test('map paints intermediate positions between server updates while avoiding re
   await page.waitForTimeout(8500);
   expect(calls['/api/command']).toBeGreaterThanOrEqual(5);
   expect(calls['/api/events']).toBe(1); expect(calls['/api/ai']).toBe(1);
+});
+
+test('city atlas, district inspection, policy and citizen attributes survive local save', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/?local=1'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
+  await page.locator('#urban-overview summary').click();
+  await expect(page.locator('#urban-overview')).toContainText('곡물 → 가공식품');
+  await page.locator('#urban-layer').selectOption('jobs'); await expect(page.locator('#urban-overview')).toHaveAttribute('open', '');
+  await page.locator('#urban-district').selectOption('nw'); await expect(page.locator('.urban-buildings')).toContainText('집');
+  await page.locator('#urban-tax').fill('20'); await page.locator('#urban-priority').selectOption('school'); await page.getByRole('button', { name: '정책 적용', exact: true }).click();
+  await expect(page.locator('#events')).toContainText('세율을 20%');
+  await page.getByRole('tab', { name: '생애', exact: true }).click(); await expect(page.locator('#npc-detail')).toContainText('도시에서의 생활');
+  await page.reload(); await page.getByRole('button', { name: '일시정지', exact: true }).click(); await page.locator('#urban-overview summary').click();
+  await expect(page.locator('#urban-tax')).toHaveValue('20'); await expect(page.locator('#urban-priority')).toHaveValue('school');
+  await page.setViewportSize({ width: 390, height: 844 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  expect(errors).toEqual([]);
+});
+
+test('1000 resident city world has paginated residents and selectable regions', async ({ page }) => {
+  await page.goto('/?local=1'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
+  await page.getByRole('button', { name: '관찰 실험실' }).click(); await page.locator('#population-input').fill('1000'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
+  await expect(page.locator('#nav-population')).toHaveText('1000');
+  await page.getByRole('button', { name: '마을 주민' }).click(); await expect(page.locator('.resident-card')).toHaveCount(60);
+  await page.getByRole('button', { name: '다음 주민 목록' }).click(); await expect(page.locator('.resident-card').first()).toHaveAttribute('data-npc', 'npc60');
+  await page.getByRole('button', { name: '세계 관찰', exact: true }).click(); await page.locator('#urban-overview summary').click();
+  await expect(page.locator('.urban-atlas button')).toHaveCount(4); await page.locator('.urban-atlas button').nth(1).click(); await expect(page.locator('#village-title')).toContainText('강너머');
 });

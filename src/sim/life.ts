@@ -1,3 +1,4 @@
+import { newCitizen } from './urban';
 import { findPath } from './pathfinding';
 import { type WorldState, type NPC, YEAR_TICKS, MAX_POPULATION } from './types';
 import { appendEvent, socialEvent, relationship } from './social';
@@ -16,7 +17,9 @@ export function formFamily(w: WorldState, a: NPC, b: NPC): boolean {
   if (!a.alive || !b.alive || a.id === b.id || a.life.partnerId || b.life.partnerId || a.identity.age < 18 || b.identity.age < 18 || a.settlementId !== b.settlementId || related(w, a, b) || isTravelling(w, a) || isTravelling(w, b)) return false;
   const bond = relationship(a, b.id), reverse = relationship(b, a.id);
   if (bond.trust < 40 || reverse.trust < 40 || bond.affection < 10 || reverse.affection < 10) return false;
-  const home = [...w.buildings].sort((h, j) => w.npcs.filter(n => n.alive && n.homeId === h.id && n.id !== a.id && n.id !== b.id).length - w.npcs.filter(n => n.alive && n.homeId === j.id && n.id !== a.id && n.id !== b.id).length).find(h => h.kind === 'home' && h.settlementId === a.settlementId && w.npcs.filter(n => n.alive && n.homeId === h.id && n.id !== a.id && n.id !== b.id).length + 2 <= capacity(h));
+  const occupancy = new Map<string, number>();
+  for (const n of w.npcs) if (n.alive && n.id !== a.id && n.id !== b.id) occupancy.set(n.homeId, (occupancy.get(n.homeId) ?? 0) + 1);
+  const home = w.buildings.filter(h => h.kind === 'home' && h.settlementId === a.settlementId).sort((h, j) => (occupancy.get(h.id) ?? 0) - (occupancy.get(j.id) ?? 0)).find(h => (occupancy.get(h.id) ?? 0) + 2 <= capacity(h));
   if (!home) return false;
   a.life.partnerId = b.id; b.life.partnerId = a.id;
   a.homeId = b.homeId = home.id; a.currentAction = b.currentAction = undefined;
@@ -26,7 +29,7 @@ export function formFamily(w: WorldState, a: NPC, b: NPC): boolean {
 }
 export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
   if (!a.alive || !b.alive || a.life.partnerId !== b.id || b.life.partnerId !== a.id || a.homeId !== b.homeId || a.settlementId !== b.settlementId || [a, b].some(n => n.identity.age < 18 || n.identity.age > 45 || n.needs.health < 65 || n.needs.hunger > 60 || w.tick - n.life.lastBirth < YEAR_TICKS * 2 || isTravelling(w, n))) return;
-  if (w.npcs.filter(n => n.alive).length >= MAX_POPULATION || w.npcs.length >= 4000) return;
+  if (w.npcs.filter(n => n.alive).length >= MAX_POPULATION || w.npcs.length >= 30000) return;
   const home = w.buildings.find(h => h.id === a.homeId)!, family = w.npcs.filter(n => n.alive && n.homeId === home.id), stock = stocks(w, a.settlementId);
   if (family.length >= capacity(home) || stock.food + a.inventory.food + b.inventory.food < (family.length + 1) * 4) return;
   // Birth consumes actual food; the child starts with no minted property or currency.
@@ -41,7 +44,7 @@ export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
     occupation: a.occupation, alive: true, needs: { hunger: 10, thirst: 0, fatigue: 0, health: 100, safety: 90, social: 80 }, personality,
     inventory: { food: 0, wood: 0 }, wealth: 0, relationships: [], memories: [], goals: [], decision: { reason: '가족의 돌봄을 받으며 자란다.', candidates: [], tick: w.tick }, dailyTaken: 0, lastTalk: -100, knownRumors: []
   };
-  w.npcs.push(child); a.life.lastBirth = b.life.lastBirth = w.tick;
+  w.npcs.push(child); w.urban.citizens[child.id] = newCitizen(child); a.life.lastBirth = b.life.lastBirth = w.tick;
   const e = socialEvent(w, { kind: 'birth', actorId: child.id, participants: [child.id, a.id, b.id], locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}의 가족에 ${child.identity.name}이 태어났다.`, data: { parents: [a.id, b.id], generation: child.life.generation, consumedFood: 2 } }); child.life.birthEventId = e.id;
   for (const parent of [a, b]) { const r = relationship(parent, child.id), reverse = relationship(child, parent.id); r.family = reverse.family = true; r.trust = reverse.trust = 80; r.affection = reverse.affection = 70; r.evidence.push(e.id); reverse.evidence.push(e.id); }
   return child;
@@ -100,10 +103,12 @@ export function settleEstate(w: WorldState, n: NPC, causeId: string) {
   if (partner) delete partner.life.partnerId;
   delete n.life.partnerId;
 }
-export function die(w: WorldState, n: NPC, reason: 'age' | 'needs') {
+export function die(w: WorldState, n: NPC, reason: 'age' | 'needs' | 'illness') {
   if (!n.alive) return;
+  for (const e of w.urban.enterprises) e.workers = e.workers.filter(id => id !== n.id);
+  delete w.urban.citizens[n.id].employer;
   n.alive = false; n.needs.health = 0; n.currentAction = undefined; n.life.deathTick = w.tick; w.stats.deaths++;
-  const e = socialEvent(w, { kind: 'death', actorId: n.id, participants: [n.id, ...w.npcs.filter(p => p.alive && (p.life.parentIds.includes(n.id) || p.id === n.life.partnerId)).map(p => p.id)], importance: 100, description: `${n.identity.name}이 ${reason === 'age' ? '노화' : '생존 자원 부족'}로 ${n.identity.age}세에 세상을 떠났다.`, data: { reason, age: n.identity.age, hunger: n.needs.hunger, thirst: n.needs.thirst, fatigue: n.needs.fatigue, food: n.inventory.food, storageFood: stocks(w, n.settlementId).food, weather: w.weather } });
+  const e = socialEvent(w, { kind: 'death', actorId: n.id, causeId: reason === 'illness' ? w.urban.citizens[n.id].healthEventId : undefined, participants: [n.id, ...w.npcs.filter(p => p.alive && (p.life.parentIds.includes(n.id) || p.id === n.life.partnerId)).map(p => p.id)], importance: 100, description: `${n.identity.name}이 ${reason === 'age' ? '노화' : reason === 'illness' ? '질병·부상과 건강 악화' : '생존 자원 부족'}로 ${n.identity.age}세에 세상을 떠났다.`, data: { reason, disease: w.urban.citizens[n.id].disease, injury: w.urban.citizens[n.id].injury, age: n.identity.age, hunger: n.needs.hunger, thirst: n.needs.thirst, fatigue: n.needs.fatigue, food: n.inventory.food, storageFood: stocks(w, n.settlementId).food, weather: w.weather } });
   n.life.deathEventId = e.id; settleEstate(w, n, e.id);
 }
 export function lifeDay(w: WorldState) {

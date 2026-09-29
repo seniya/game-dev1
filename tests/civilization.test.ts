@@ -75,7 +75,7 @@ test('legacy v2 upgrades without inventing ancestry, new invalid family and tran
   const old: any = new Simulation().snapshot(); old.version = 2; delete old.civilization;
   for (const n of old.npcs) { delete n.life; delete n.settlementId; }
   for (const b of old.buildings) { delete b.ownerIds; delete b.settlementId; }
-  const restored = Simulation.load(JSON.stringify(old)); assert.equal(restored.snapshot().version, 3); assert.equal(restored.snapshot().npcs[0].life.parentIds.length, 0);
+  const restored = Simulation.load(JSON.stringify(old)); assert.equal(restored.snapshot().version, 4); assert.equal(restored.snapshot().npcs[0].life.parentIds.length, 0);
   for (const mutate of [(w: WorldState) => w.npcs[0].life.parentIds = [w.npcs[0].id], (w: WorldState) => w.npcs[0].settlementId = 'missing', (w: WorldState) => w.buildings[4].ownerIds = ['missing'], (w: WorldState) => w.civilization.settlements[0].storage.food = 1]) {
     const w = restored.snapshot(); mutate(w); assert.throws(() => valid(w));
   }

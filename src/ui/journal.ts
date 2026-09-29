@@ -10,7 +10,7 @@ function matches(e: WorldEvent, query: URLSearchParams) {
   switch (query.get('filter')) {
     case 'important': return e.importance >= 45 || e.kind === 'weather';
     case 'social': return ['share', 'talk', 'witness', 'rumor', 'relationship', 'memory', 'family', 'birth', 'coming_of_age', 'education', 'migration', 'death'].includes(e.kind);
-    case 'economy': return ['production', 'storage', 'trade', 'loan', 'repayment', 'default', 'theft', 'scarcity', 'wage', 'price', 'project', 'consumption', 'experiment', 'inheritance', 'construction', 'settlement', 'caravan', 'occupation'].includes(e.kind);
+    case 'economy': return ['production', 'storage', 'trade', 'loan', 'repayment', 'default', 'theft', 'scarcity', 'wage', 'price', 'project', 'consumption', 'experiment', 'inheritance', 'construction', 'settlement', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight'].includes(e.kind);
     default: return true;
   }
 }

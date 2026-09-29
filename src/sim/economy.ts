@@ -6,8 +6,9 @@ export const emptyFlow = (): EconomyFlow => ({ producedFood: 0, producedWood: 0,
 export function holdings(w: WorldState) {
   const regional = w.civilization?.settlements.filter(v => v.id !== 'v0').reduce((a, v) => ({ food: a.food + v.storage.food + v.market.food, wood: a.wood + v.storage.wood + v.market.wood, coins: a.coins + v.market.coins }), { food: 0, wood: 0, coins: 0 }) ?? { food: 0, wood: 0, coins: 0 };
   const transit = w.civilization?.journeys.reduce((a, j) => ({ food: a.food + j.food, coins: a.coins + j.coins }), { food: 0, coins: 0 }) ?? { food: 0, coins: 0 };
+  const urbanCoins = (w.urban?.cities.reduce((s, c) => s + c.treasury, 0) ?? 0) + (w.urban?.freight.reduce((s, f) => s + f.coins, 0) ?? 0);
   return w.npcs.reduce((a, n) => ({ food: a.food + n.inventory.food, wood: a.wood + n.inventory.wood, coins: a.coins + n.wealth }),
-    { food: w.storage.food + w.market.food + regional.food + transit.food, wood: w.storage.wood + w.market.wood + regional.wood, coins: w.market.coins + regional.coins + transit.coins });
+    { food: w.storage.food + w.market.food + regional.food + transit.food, wood: w.storage.wood + w.market.wood + regional.wood, coins: w.market.coins + regional.coins + transit.coins + urbanCoins });
 }
 export function createEconomy(w: WorldState): Economy {
   const h = holdings(w);

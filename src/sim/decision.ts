@@ -1,3 +1,6 @@
+import { neighbours } from './spatial';
+import { canProduce } from './urban';
+import { INDUSTRY_LABELS } from './urban-types';
 import { stocks, market as villageMarket, localBuilding } from './civilization';
 import { type WorldState, type NPC, type Candidate, type Action, type ActionKind } from './types';
 import { distance } from './random';
@@ -15,14 +18,17 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
   const market = localBuilding(w, n, 'market');
   const farm = w.buildings.filter(b => b.kind === 'farm' && b.settlementId === n.settlementId && b.growth >= 3).sort((a, b) => distance(a.position, n.position) - distance(b.position, n.position))[0] ?? localBuilding(w, n, 'farm');
   const well = localBuilding(w, n, 'well');
+  const urban = w.urban.citizens[n.id];
   const night = w.tick % 144 >= 126 || w.tick % 144 < 30;
+  const job = canProduce(w, n);
+  if (job) add('Work', 76 + n.personality.diligence * .25 - (w.urban.citizens[n.id]?.stress ?? 0) * .15, `${INDUSTRY_LABELS[job.e.kind]} · 임금 ${job.e.wage}코인 · 재료와 기금 확보`, job.b.position, `industry:${job.e.buildingId}`);
   add('Idle', 8, '주변을 살피며 잠시 쉰다.');
   if (n.inventory.food > 0) add('Eat', n.needs.hunger * 1.9 - 25, `배고픔 ${Math.round(n.needs.hunger)} · 소지 식량 ${n.inventory.food}`);
   add('Drink', n.needs.thirst * 1.9 - 22, `갈증 ${Math.round(n.needs.thirst)} · 우물에서 물을 마신다.`, well.position, well.id);
-  add('Sleep', n.needs.fatigue * 1.5 - 20 + (night ? 24 : 0), `피로 ${Math.round(n.needs.fatigue)}${night ? ' · 밤에는 수면을 우선한다.' : ''}`, home.position, home.id);
+  add('Sleep', n.needs.fatigue * 1.5 - 20 + (night ? 24 : 0) + urban.stress * .15 + urban.injury * .3, `피로 ${Math.round(n.needs.fatigue)}${night ? ' · 밤에는 수면을 우선한다.' : ''}`, home.position, home.id);
   if (n.inventory.food < 2 + Math.floor(n.personality.greed / 30) && stock.food > 0) {
     if (n.dailyTaken < 3) add('TakeItem', n.needs.hunger * 1.2 + n.personality.greed * .3 + (has('secure_food') ? 12 : 0), `공동 식량 ${stock.food} · 오늘 인출 ${n.dailyTaken}/3`, storage.position, storage.id);
-    else if (n.needs.hunger > 60 || n.personality.greed > 70) add('Theft', n.needs.hunger * .95 + n.personality.greed * .5 - n.personality.empathy * .4 - storage.level * 7, '인출 한도를 소진했다. 굶주림·탐욕과 타인에 대한 공감을 비교한다.', storage.position, storage.id);
+    else if (n.needs.hunger > 60 || n.personality.greed > 70) add('Theft', n.needs.hunger * .95 + n.personality.greed * .5 - n.personality.empathy * .4 - storage.level * 7 + (50 - urban.trust) * .1, '인출 한도를 소진했다. 굶주림·탐욕과 타인에 대한 공감을 비교한다.', storage.position, storage.id);
   }
   for (const r of w.resources) {
     if (distance(r.position, n.position) > 20 || r.amount < 1 || (r.kind === 'wood' && n.inventory.wood >= 8)) continue;
@@ -39,7 +45,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
   if (n.inventory.food > 3 || n.inventory.wood >= 4) add('StoreItem', 40 + n.personality.empathy * .35 + n.inventory.wood * 2 - n.personality.greed * .2, '여분의 자원을 공동 창고에 보관한다.', storage.position, storage.id);
   if (n.inventory.food < 2 && localMarket.food > 0 && n.wealth >= localMarket.foodPrice) add('Trade', n.needs.hunger * 1.1 + (n.occupation === 'merchant' ? 15 : 0), `시장 식량 가격 ${localMarket.foodPrice} · 재산 ${n.wealth}`, market.position, 'buy');
   if (n.inventory.wood >= 2 && localMarket.coins >= localMarket.woodPrice * 2) add('Trade', 38 + n.personality.greed * .45 + (has('earn_wealth') ? 15 : 0), '목재를 팔아 생활비를 마련한다.', market.position, 'sell');
-  for (const other of w.npcs) {
+  for (const other of (w.npcs.length > 400 ? neighbours(w, n, 7).sort((a, b) => distance(n.position, a.position) - distance(n.position, b.position)).slice(0, 24) : neighbours(w, n, 7))) {
     if (!other.alive || other.id === n.id) continue;
     const d = distance(n.position, other.position);
     if (d > 7) continue;

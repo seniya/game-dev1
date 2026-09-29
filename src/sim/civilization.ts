@@ -1,3 +1,4 @@
+import { initializeUrban } from './urban';
 import { type WorldState, type NPC, type Settlement, type Building, YEAR_TICKS } from './types';
 import { appendEvent } from './social';
 import { findPath } from './pathfinding';
@@ -46,19 +47,38 @@ function addVillage(w: WorldState): Settlement {
     const position = { x: x - 12 + j % 7 * 2, y: y + 8 + Math.floor(j / 7) * 2 };
     w.resources.push({ id: `r-new-${w.nextId++}`, position, kind: j % 2 ? 'wood' : 'food', amount: 8, capacity: 24 });
   }
+  initializeUrban(w);
   return v;
 }
 export function populateSettlements(w: WorldState) {
-  const count = Math.min(12, Math.ceil(w.npcs.length / 36));
+  const count = Math.min(12, Math.ceil(w.npcs.length / (w.npcs.length > 400 ? 250 : 36)));
   while (w.civilization.settlements.length < count) addVillage(w);
   if (count === 1) return;
+  if (w.npcs.length > 400) {
+    for (const v of w.civilization.settlements) {
+      const target = Math.ceil(w.npcs.length / count);
+      const occupied = new Set([...w.buildings, ...w.resources].map(b => `${b.position.x},${b.position.y}`));
+      for (const b of w.buildings.filter(b => b.kind === 'home' && b.settlementId === v.id)) b.level = 4;
+      let beds = 60, farms = 1;
+      for (let dy = -10; dy < 11; dy += 2) for (let dx = -12; dx < 11; dx += 2) {
+        if (beds >= target + 20 && farms >= Math.ceil(target / 8)) break;
+        const position = { x: v.center.x + dx, y: v.center.y + dy };
+        if (occupied.has(`${position.x},${position.y}`) || w.tiles[position.y * w.width + position.x] !== 'grass' || !findPath(w, v.center, position)) continue;
+        const kind = beds < target + 20 ? 'home' : 'farm';
+        w.buildings.push({ id: `c${w.nextId++}`, kind, name: `${v.name} ${kind === 'home' ? '공동주택' : '농장'}`, position, level: 4, growth: kind === 'farm' ? 100 : 0, settlementId: v.id, ...(kind === 'home' ? { ownerIds: [] } : {}) });
+        if (kind === 'home') beds += 10; else { farms++; w.tiles[position.y * w.width + position.x] = 'farm'; }
+        occupied.add(`${position.x},${position.y}`);
+      }
+      const stock = stocks(w, v.id), m = market(w, v.id); stock.food = target * 4; stock.wood = target; m.food = target * 2; m.coins = target * 20;
+    }
+  }
   for (const b of w.buildings) if (b.kind === 'home') b.ownerIds = [];
   w.npcs.forEach((n, i) => {
     const v = w.civilization.settlements[i % count], homes = w.buildings.filter(b => b.kind === 'home' && b.settlementId === v.id), home = homes[Math.floor(i / count) % homes.length];
     n.settlementId = v.id; n.homeId = home.id; n.position = { ...home.position }; home.ownerIds!.push(n.id);
   });
   // Initial endowments are part of opening accounts, never runtime production.
-  for (const v of w.civilization.settlements.slice(1)) { v.storage.food = 28; v.storage.wood = 12; v.market.food = 20; v.market.coins = 180; }
+  for (const v of w.civilization.settlements.slice(1).filter(() => w.npcs.length <= 400)) { v.storage.food = 28; v.storage.wood = 12; v.market.food = 20; v.market.coins = 180; }
 }
 export function isTravelling(w: WorldState, n: NPC) { return w.civilization.journeys.some(j => j.kind === 'migration' && j.npcIds.includes(n.id)); }
 export function startMigration(w: WorldState, n: NPC, to: Settlement, causeId?: string): boolean {
@@ -73,6 +93,8 @@ export function startMigration(w: WorldState, n: NPC, to: Settlement, causeId?: 
   for (const p of group) {
     const ownPath = findPath(w, p.position, home.position)!;
     w.civilization.journeys.push({ id: `j${w.nextId++}`, kind: 'migration', from: p.settlementId, to: to.id, npcIds: [p.id], path: ownPath, progress: 0, food: 0, coins: 0, homeId: home.id, sourceEventId: e.id });
+    for (const e of w.urban.enterprises) e.workers = e.workers.filter(id => id !== p.id);
+    delete w.urban.citizens[p.id].employer;
     p.currentAction = undefined; p.life.lastMove = w.tick;
   }
   return true;
@@ -116,6 +138,7 @@ export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' =
     const b: Building = { id: `c${w.nextId++}`, kind, name: `${v.name} ${kind === 'home' ? '새집' : '새 농장'}`, position: p, level: 1, growth: 0, settlementId: v.id, ownerIds: [] }; w.buildings.push(b);
     if (kind === 'farm') { delete b.ownerIds; w.tiles[p.y * w.width + p.x] = 'farm'; }
     appendEvent(w, { kind: 'construction', locationId: b.id, importance: 50, description: `${v.name}이 주거 부족에 대응하여 공동 목재 ${cost}개로 ${kind === 'home' ? capacity(b) + '인 주택' : '생산 농장'}을 지었다.`, data: { wood: cost, settlementId: v.id, capacity: kind === 'home' ? capacity(b) : 0 } });
+    initializeUrban(w);
     return b;
   }
 }

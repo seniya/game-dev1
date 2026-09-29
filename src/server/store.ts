@@ -46,7 +46,7 @@ const schema = [
 const ready = new WeakSet<object>();
 export class Conflict extends Error {}
 export class WorldStore {
-  private baseline?: { world: StoredWorld; checkpoint: Checkpoint; journalBytes: number };
+  private baseline?: { world: StoredWorld; checkpoint: Checkpoint; journalBytes: number; upgraded?: boolean };
   constructor(readonly db: D1Database) {}
   async init(now: number) {
     if (ready.has(this.db)) return;
@@ -97,7 +97,7 @@ export class WorldStore {
     }
     return statements;
   }
-  private restore(parts: { body: string }[], checkpoint: Checkpoint, changes: ChangeRow[], expected?: number): WorldState {
+  private restore(parts: { body: string }[], checkpoint: Checkpoint, changes: ChangeRow[], expected?: number, onUpgrade?: () => void): WorldState {
     if (!parts.length) throw new Error('저장된 세계가 없습니다.');
     let state = JSON.parse(parts.map(r => r.body).join('')) as WorldState, revision = checkpoint.revision;
     for (let i = 0; i < changes.length;) {
@@ -111,6 +111,7 @@ export class WorldStore {
       state = restoreChange(state, JSON.parse(body) as StateChange); revision = next;
     }
     if (expected !== undefined && revision !== expected) throw new Error('세계 체크포인트와 변경 기록의 버전이 다릅니다.');
+    if ((state.version as number) !== 4) onUpgrade?.();
     return this.upgrade(state);
   }
   async read(): Promise<StoredWorld> {
@@ -125,11 +126,12 @@ export class WorldStore {
     const checkpoint = result[2].results[0] as unknown as Checkpoint;
     if (!checkpoint) throw new Error('세계 체크포인트 정보가 없습니다.');
     const changes = result[3].results as unknown as ChangeRow[];
-    const world = { revision: row.revision, epoch: row.epoch, meta: JSON.parse(row.meta), state: this.restore(result[1].results as unknown as { body: string }[], checkpoint, changes, row.revision) };
-    this.baseline = { world: structuredClone(world), checkpoint, journalBytes: changes.reduce((n, r) => n + new TextEncoder().encode(r.body).length, 0) };
+    let upgraded = false;
+    const world = { revision: row.revision, epoch: row.epoch, meta: JSON.parse(row.meta), state: this.restore(result[1].results as unknown as { body: string }[], checkpoint, changes, row.revision, () => { upgraded = true; }) };
+    this.baseline = { world: structuredClone(world), checkpoint, upgraded, journalBytes: changes.reduce((n, r) => n + new TextEncoder().encode(r.body).length, 0) };
     return world;
   }
-  private upgrade(state: WorldState): WorldState { return state.version === 3 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
+  private upgrade(state: WorldState): WorldState { return state.version === 4 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
   async command(id: string) { return this.db.prepare('SELECT body FROM commands WHERE id=?').bind(id).first<{ body: string }>(); }
   async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string, extra: D1PreparedStatement[] = [], input?: CommandInput) {
     if (this.baseline?.world.revision !== w.revision - 1) await this.read();
@@ -138,7 +140,7 @@ export class WorldStore {
     const now = input?.at ?? Date.now(), replaced = base.world.epoch !== w.epoch;
     const body = replaced ? '' : JSON.stringify(stateChange(base.world.state, w.state));
     const bytes = new TextEncoder().encode(body).length;
-    const checkpoint = replaced || w.revision - base.checkpoint.revision >= CHECKPOINT_COMMITS || now - base.checkpoint.created >= CHECKPOINT_INTERVAL_MS || base.journalBytes + bytes >= JOURNAL_BYTE_LIMIT;
+    const checkpoint = base.upgraded || replaced || w.revision - base.checkpoint.revision >= CHECKPOINT_COMMITS || now - base.checkpoint.created >= CHECKPOINT_INTERVAL_MS || base.journalBytes + bytes >= JOURNAL_BYTE_LIMIT;
     const persistence: D1PreparedStatement[] = [];
     if (checkpoint) {
       persistence.push(this.db.prepare('DELETE FROM snapshots WHERE epoch=?').bind(w.epoch), ...this.snapshotStatements(w.epoch, w.state),

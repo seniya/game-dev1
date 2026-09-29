@@ -22,13 +22,16 @@ export class WorldMap {
   private grid = false;
   private onSelect: (id: string) => void;
   private cell = 30;
+  private district = 'all';
+  private get zoom() { return this.district === 'all' ? 1 : 2; }
+  setDistrict(value: string) { this.district = ['nw', 'ne', 'sw', 'se'].includes(value) ? value : 'all'; this.sceneKey = ''; this.motion.finish(); }
   private origin = { x: 0, y: 0 };
   private terrainBuildings = 0;
   constructor(private canvas: HTMLCanvasElement, onSelect: (id: string) => void) {
     this.onSelect = onSelect;
     canvas.addEventListener('click', event => {
       if (!this.world) return;
-      const rect = canvas.getBoundingClientRect(), x = (event.clientX - rect.left) / rect.width * 32 + this.origin.x, y = (event.clientY - rect.top) / rect.height * 24 + this.origin.y;
+      const rect = canvas.getBoundingClientRect(), x = (event.clientX - rect.left) / rect.width * (32 / this.zoom) + this.origin.x, y = (event.clientY - rect.top) / rect.height * (24 / this.zoom) + this.origin.y;
       let nearest: string | undefined, distance = 1.7;
       for (const [id, p] of this.displayed) { const d = Math.hypot(p.x - x, p.y - y); if (d < distance) { nearest = id; distance = d; } }
       if (nearest) this.onSelect(nearest);
@@ -42,6 +45,9 @@ export class WorldMap {
     const focus = world.civilization.settlements.find(v => v.id === world.civilization.focus)!;
     const changedFocus = previous?.civilization.focus !== world.civilization.focus;
     this.origin = { x: Math.max(0, focus.center.x - 16), y: Math.max(0, focus.center.y - 12) };
+    if (this.district.endsWith('e')) this.origin.x += 16;
+    if (this.district.startsWith('s')) this.origin.y += 12;
+    this.canvas.setAttribute('aria-label', this.district === 'all' ? '마을 지도' : `${this.district === 'nw' ? '북서' : this.district === 'ne' ? '북동' : this.district === 'sw' ? '남서' : '남동'} 구역 지도`);
     const advanced = !previous || previous.tick !== world.tick;
     const snap = rebuilt || changedFocus || !options.playing || this.reducedMotion.matches || document.hidden;
     if (advanced || snap) {
@@ -52,7 +58,7 @@ export class WorldMap {
       if (advanced) this.lastUpdate = now;
     }
     this.world = world; this.selected = selected; this.residents = world.npcs.filter(n => n.alive);
-    const key = JSON.stringify([world.seed, world.width, world.height, this.origin, world.buildings.map(b => [b.id, b.kind, b.name, b.position]), world.resources.map(r => [r.id, r.kind, r.position, r.amount > 0])]);
+    const key = JSON.stringify([world.seed, world.width, world.height, this.origin, this.zoom, world.buildings.map(b => [b.id, b.kind, b.name, b.position]), world.resources.map(r => [r.id, r.kind, r.position, r.amount > 0])]);
     if (rebuilt || key !== this.sceneKey) { this.buildScene(world); this.sceneKey = key; }
     this.animating = this.motion.active(now); this.draw(now);
   }
@@ -107,7 +113,7 @@ export class WorldMap {
     this.scene.width = this.canvas.width; this.scene.height = this.canvas.height;
     const ctx = this.scene.getContext('2d')!, c = this.cell;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    ctx.save(); ctx.translate(-this.origin.x * c, -this.origin.y * c); ctx.drawImage(this.terrain, 0, 0);
+    ctx.save(); ctx.scale(this.zoom, this.zoom); ctx.translate(-this.origin.x * c, -this.origin.y * c); ctx.drawImage(this.terrain, 0, 0);
     for (const r of w.resources) {
       if (!this.inView(r.position, 2)) continue;
       const x = r.position.x * c, y = r.position.y * c;
@@ -145,13 +151,13 @@ export class WorldMap {
     this.label(ctx, '공동 농장', 21.5 * c, 5 * c);
     ctx.restore();
   }
-  private inView(p: Position, padding = 0) { return p.x >= this.origin.x - padding && p.x < this.origin.x + 32 + padding && p.y >= this.origin.y - padding && p.y < this.origin.y + 24 + padding; }
+  private inView(p: Position, padding = 0) { return p.x >= this.origin.x - padding && p.x < this.origin.x + 32 / this.zoom + padding && p.y >= this.origin.y - padding && p.y < this.origin.y + 24 / this.zoom + padding; }
   private draw(now = performance.now()) {
     const w = this.world; if (!w) return;
     const ctx = this.canvas.getContext('2d')!, c = this.cell;
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.drawImage(this.scene, 0, 0);
-    ctx.save(); ctx.translate(-this.origin.x * c, -this.origin.y * c);
+    ctx.save(); ctx.scale(this.zoom, this.zoom); ctx.translate(-this.origin.x * c, -this.origin.y * c);
     const selected = w.npcs.find(n => n.id === this.selected);
     if (selected?.currentAction?.path.length) {
       ctx.strokeStyle = '#fff9d0bb'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.beginPath(); const position = this.motion.position(selected.id, now) ?? selected.position; ctx.moveTo((position.x + .5) * c, (position.y + .5) * c);
@@ -182,6 +188,6 @@ export class WorldMap {
       ctx.strokeStyle = '#deeeee66'; ctx.lineWidth = 1;
       for (let i = 0; i < 75; i++) { const x = noise(i, 1, w.seed) * this.canvas.width, y = (noise(i, 2, w.seed) * this.canvas.height + w.tick * 8) % this.canvas.height; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 3, y + 9); ctx.stroke(); }
     }
-    if (this.grid) { ctx.strokeStyle = '#4a62452a'; ctx.lineWidth = 1; for (let x = 0; x <= 32; x++) { ctx.beginPath(); ctx.moveTo(x * c, 0); ctx.lineTo(x * c, 24 * c); ctx.stroke(); } for (let y = 0; y <= 24; y++) { ctx.beginPath(); ctx.moveTo(0, y * c); ctx.lineTo(32 * c, y * c); ctx.stroke(); } }
+    if (this.grid) { ctx.save(); ctx.scale(this.zoom, this.zoom); ctx.strokeStyle = '#4a62452a'; ctx.lineWidth = 1; for (let x = 0; x <= 32; x++) { ctx.beginPath(); ctx.moveTo(x * c, 0); ctx.lineTo(x * c, 24 * c); ctx.stroke(); } for (let y = 0; y <= 24; y++) { ctx.beginPath(); ctx.moveTo(0, y * c); ctx.lineTo(32 * c, y * c); ctx.stroke(); } ctx.restore(); }
   }
 }

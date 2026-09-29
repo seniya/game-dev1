@@ -1,3 +1,4 @@
+import type { UrbanState } from './urban-types';
 export const TICKS_PER_DAY = 144;
 export type Position = { x: number; y: number };
 export type Resources = { food: number; wood: number };
@@ -27,13 +28,13 @@ export interface NPC {
   dailyTaken: number; lastTalk: number; knownRumors: string[];
 }
 export const OCCUPATIONS: Record<NPC['occupation'], string> = { farmer: '농부', gatherer: '채집가', woodcutter: '나무꾼', carpenter: '목수', merchant: '상인' };
-export type EventKind = 'arrival' | 'production' | 'consumption' | 'storage' | 'trade' | 'loan' | 'repayment' | 'default' | 'share' | 'theft' | 'witness' | 'rumor' | 'talk' | 'scarcity' | 'health' | 'death' | 'weather' | 'relationship' | 'memory' | 'goal' | 'llm' | 'experiment' | 'failure' | 'project' | 'wage' | 'price' | 'family' | 'birth' | 'coming_of_age' | 'inheritance' | 'education' | 'construction' | 'settlement' | 'migration' | 'caravan' | 'occupation';
+export type EventKind = 'arrival' | 'production' | 'consumption' | 'storage' | 'trade' | 'loan' | 'repayment' | 'default' | 'share' | 'theft' | 'witness' | 'rumor' | 'talk' | 'scarcity' | 'health' | 'death' | 'weather' | 'relationship' | 'memory' | 'goal' | 'llm' | 'experiment' | 'failure' | 'project' | 'wage' | 'price' | 'family' | 'birth' | 'coming_of_age' | 'inheritance' | 'education' | 'construction' | 'settlement' | 'migration' | 'caravan' | 'occupation' | 'industry' | 'public_service' | 'tax' | 'urban' | 'policy' | 'freight';
 export interface WorldEvent { id: string; tick: number; kind: EventKind; actorId?: string; targetId?: string; locationId?: string; participants: string[]; importance: number; description: string; causeId?: string; data: Record<string, string | number | boolean | string[]> }
 export interface Loan { id: string; lenderId: string; borrowerId: string; amount: number; remaining: number; due: number; status: 'active' | 'repaid' | 'defaulted'; sourceEventId: string }
 export interface DecisionRequest { id: string; npcId: string; eventId: string; tick: number; attempts: number }
 export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys: string[]; dailyByNpc: Record<string, number>; dailyTotal: number; requested: number; completed: number; rejected: number; failed: number }
 export interface WorldState {
-  version: 3; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
+  version: 4; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
   tiles: Tile[]; buildings: Building[]; resources: ResourceNode[]; npcs: NPC[];
   storage: Resources; market: Resources & { coins: number; foodPrice: number; woodPrice: number };
   weather: 'sunny' | 'rain' | 'cloudy' | 'drought'; droughtUntil: number;
@@ -52,7 +53,7 @@ export interface Economy { since: number; openingFood: number; openingWood: numb
 
 export const DAYS_PER_YEAR = 12;
 export const YEAR_TICKS = DAYS_PER_YEAR * TICKS_PER_DAY;
-export const MAX_POPULATION = 400;
+export const MAX_POPULATION = 3000;
 export interface Life {
   bornTick: number; parentIds: string[]; partnerId?: string; generation: number;
   skill: number; lastBirth: number; lastMove: number; deathTick?: number;
