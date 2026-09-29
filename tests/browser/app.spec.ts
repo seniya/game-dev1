@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test('observe, pause, inspect, experiment, save and restore a world', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', error => errors.push(error.message));
-  await page.goto('/'); await expect(page.getByRole('heading', { name: '이야기가 자라는 마을' })).toBeVisible();
+  await page.goto('/?local=1'); await expect(page.getByRole('heading', { name: '이야기가 자라는 마을' })).toBeVisible();
   await page.getByRole('button', { name: '일시정지', exact: true }).click();
   const before = await page.locator('#game-clock').innerText(); await page.waitForTimeout(850); expect(await page.locator('#game-clock').innerText()).toBe(before);
   await page.getByRole('button', { name: '한 틱 진행' }).click(); expect(await page.locator('#game-clock').innerText()).not.toBe(before);
@@ -26,7 +26,7 @@ test('observe, pause, inspect, experiment, save and restore a world', async ({ p
 });
 
 test('reset preserves a separate backup and reload resumes local progress', async ({ page }) => {
-  await page.goto('/'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
+  await page.goto('/?local=1'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
   await page.getByRole('button', { name: '관찰 실험실' }).click();
   await page.getByRole('button', { name: '식량 24개 투입' }).click();
   await page.locator('#seed-input').fill('123'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
@@ -37,7 +37,7 @@ test('reset preserves a separate backup and reload resumes local progress', asyn
   await expect(page.locator('#seed-label')).toHaveText('42'); await expect(page.locator('#events')).toContainText('외부 식량 24개');
 });
 test('mobile layout fits the viewport and invalid import preserves the world', async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/');
+  await page.setViewportSize({ width: 390, height: 844 }); await page.goto('/?local=1');
   await page.getByRole('button', { name: '일시정지', exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(page.locator('#world-map')).toBeVisible(); const before = await page.locator('#game-clock').innerText();
@@ -46,7 +46,7 @@ test('mobile layout fits the viewport and invalid import preserves the world', a
 });
 
 test('daily observations, prices and life history show actual linked events', async ({ page }) => {
-  await page.goto('/'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
+  await page.goto('/?local=1'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
   await page.getByRole('button', { name: '마을 경제', exact: true }).click();
   await expect(page.locator('#economy-view')).toContainText('첫날이 끝나면');
   await page.getByRole('button', { name: '관찰 실험실' }).click();
@@ -72,4 +72,49 @@ test('daily observations, prices and life history show actual linked events', as
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole('button', { name: '마을 경제', exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test('server world synchronizes two devices, archives history, exports and restores a backup', async ({ browser }) => {
+  const a = await browser.newContext(), b = await browser.newContext();
+  const page = await a.newPage(), other = await b.newPage();
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/');
+  await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
+  await page.getByRole('button', { name: '관찰 실험실' }).click();
+  await page.locator('#seed-input').fill('42'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
+  await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
+  await other.goto('/'); await expect(other.locator('#seed-label')).toHaveText('42');
+  await page.getByRole('button', { name: '하루 관찰 진행', exact: true }).click();
+  await expect(page.locator('#game-clock')).toContainText('2일째');
+  await expect(other.locator('#game-clock')).toContainText('2일째');
+  const time = await page.locator('#game-clock').innerText();
+  await page.reload(); await expect(page.locator('#game-clock')).toHaveText(time);
+  await page.getByRole('button', { name: '세계의 기록', exact: true }).click();
+  await page.getByRole('button', { name: '모든 사건', exact: true }).click();
+  await expect(page.locator('.event-row')).toHaveCount(40);
+  await page.getByRole('button', { name: /이전 기록 더 보기/ }).click();
+  await expect(page.locator('.event-row')).toHaveCount(80);
+  await page.locator('.event-row').last().click();
+  await expect(page.getByRole('dialog')).toContainText('원인에서 이후 선택까지');
+  await page.getByRole('button', { name: '닫기', exact: true }).click();
+  await page.getByRole('textbox', { name: '사건 검색' }).fill('없는문구xyz');
+  await expect(page.locator('#events')).toContainText('이 조건에 맞는 기록이 없습니다');
+  await page.getByRole('button', { name: '세계 관찰', exact: true }).click();
+  await page.getByRole('tab', { name: '생애', exact: true }).click();
+  await expect(page.locator('#npc-detail .causal-button').first()).toBeVisible();
+  const download = page.waitForEvent('download'); await page.getByRole('button', { name: '세계 저장', exact: true }).click();
+  expect((await download).suggestedFilename()).toContain('server');
+  await page.getByRole('button', { name: '관찰 실험실' }).click();
+  await page.locator('#seed-input').fill('123'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
+  await expect(page.locator('#seed-label')).toHaveText('123');
+  await expect(other.locator('#seed-label')).toHaveText('123');
+  await page.getByRole('button', { name: '불러오기', exact: true }).click();
+  await page.getByRole('button', { name: '서버의 교체 전 백업 복원', exact: true }).click();
+  await expect(page.locator('#seed-label')).toHaveText('42');
+  await expect(page.locator('#game-clock')).toHaveText(time);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/server-mobile.png', fullPage: true });
+  expect(errors).toEqual([]);
+  await a.close(); await b.close();
 });

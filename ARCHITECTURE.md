@@ -35,3 +35,14 @@ TypeScript + Vite + DOM/Canvas. 렌더러 라이브러리나 외부 API 없이 �
 
 ## 검증과 운영
 `npm test`, `npm run build`, `npm run simulate -- --days 100`. 브라우저 smoke는 실행/정지/주민선택/저장·로드/필터를 확인한다. 성능 측정은 실제 실행 시간과 사건 수를 함께 보고한다. 코어에는 운영 환경 비밀이나 네트워크 의존성이 없다.
+
+
+## v0.3 서버 경계
+
+- `src/server/world.ts`: 서버 시계, 검증된 명령, 상한, 필요한 사건 참조만 남기는 체크포인트.
+- `src/server/store.ts`: D1 원자적 리비전 비교/저장, 명령 중복 방지, 사건·참여자·근거 색인.
+- `src/server/worker.ts`: 같은 출처 JSON API, 제한된 사건 페이지, 전체 파일 내보내기.
+- `src/ui/cloud.ts`: 명령 직렬화, 응답 유실 재시도, 최신 리비전 적용.
+- `src/main.ts`: 기본 서버 관측과 명시적인 기기 모드. 서버 snapshot은 표시용이며 브라우저에서 Simulation.load로 실행하지 않는다.
+
+자세한 저장·동시성·배포 계약: [SERVER_WORLD.md](SERVER_WORLD.md).
