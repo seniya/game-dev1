@@ -1,0 +1,7 @@
+/graft/
+node_modules/
+dist/
+playwright-report/
+test-results/
+*.save.json
+.env
