@@ -131,6 +131,6 @@
 - [x] 기존 **18조건 + 100일 Mock** 회귀 통과. `reports/regression.json`.
 - [x] 실제 로컬 Worker/D1: 역사 원문/도시 비교, 스트리밍 저장·가져오기, 3,000명 생성·분할 진행·중단·재접속 통과. `reports/heritage-workerd.json`.
 - [x] **3시드 × 300명 × 900일**, **3시드 × 1,000명 × 60일 + 2시드 × 3,000명 × 30일** 최종 통과. 모든 회계 오차·아카이브 원인 누락 0, 저장 연속성 일치. `reports/civilization-regression.json`, `reports/heritage-regression.json`.
-- [ ] 정확한 소스 커밋과 그 빌드 아티팩트를 기존 소유자 전용 사이트에 배포하고 성공 확인.
+- [x] 소스 `bb1664e190bf3c70824340266636ea29aef804f3`와 그 빌드 아티팩트를 기존 소유자 전용 사이트 **Sites 버전 13**으로 배포, `succeeded` 확인. 실제 화면 파일 해시 일치, 기존 세계의 시간·사건 수·Chrome 모드 유지, v5 읽기와 역사 API 확인. `reports/deployment-v08.json` 참조.
 
 기존 v0.7 장기 결과는 `reports/v07-regression.json`, `reports/civilization-v07-regression.json`, `reports/urban-v07-regression.json`에 보존한다. 확대 실행은 로컬 측정이며 모든 기기·production의 배속이나 장기 생존을 보장하지 않는다. 스트리밍 저장은 전체 사건 아카이브의 메모리 복제를 줄이며 실행 체크포인트 크기·가져오기 제한을 없애지 않는다.
