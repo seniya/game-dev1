@@ -14,7 +14,7 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('step'), ticks: z.union([z.literal(1), z.literal(144)]) }).strict(),
     z.object({ type: z.literal('experiment'), kind: z.enum(['food', 'drought']) }).strict(),
     z.object({ type: z.literal('llm'), enabled: z.boolean() }).strict(),
-    z.object({ type: z.literal('ai-mode'), mode: z.enum(['off', 'mock', 'remote']) }).strict(),
+    z.object({ type: z.literal('ai-mode'), mode: z.enum(['off', 'mock', 'remote', 'chrome']) }).strict(),
     z.object({ type: z.literal('dialogue'), speakerId: z.string().max(100), listenerId: z.string().max(100) }).strict(),
     z.object({ type: z.literal('reset'), seed: z.number().int().min(0).max(4294967295) }).strict(),
     z.object({ type: z.literal('import'), save: z.string().max(10_000_000) }).strict(),
@@ -25,7 +25,7 @@ export interface ClockState {
   running: boolean; speed: 1 | 5 | 20; offline: boolean;
   clock: number; lastSeen: number; eventCount: number; socialCount: number;
   catchupTicks: number; skippedTicks: number; backupEpoch?: string;
-  aiMode?: 'off' | 'mock' | 'remote'; aiGeneration?: string;
+  aiMode?: 'off' | 'mock' | 'remote' | 'chrome'; aiGeneration?: string;
   dialogue?: { id: string; speakerId: string; listenerId: string };
 }
 export interface StoredWorld { revision: number; epoch: string; meta: ClockState; state: WorldState }
@@ -72,7 +72,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   const ticks = Math.min(144, available);
   meta.catchupTicks = offline ? ticks : 0; meta.skippedTicks = available - ticks;
   const decisions = new DecisionCoordinator(sim, new MockLLMProvider());
-  const useMock = meta.aiMode !== 'remote';
+  const useMock = meta.aiMode !== 'remote' && meta.aiMode !== 'chrome';
   for (let i = 0; i < ticks; i++) { sim.step(); if (useMock && sim.pending) await decisions.drain(); }
   meta.clock = available > 144 || offline || !meta.running ? now : meta.clock + ticks * 700 / meta.speed;
   meta.lastSeen = now;
@@ -88,6 +88,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   }
   if (a.type === 'dialogue') {
     const state = sim.snapshot(), speaker = state.npcs.find(n => n.id === a.speakerId), listener = state.npcs.find(n => n.id === a.listenerId);
+    if (meta.aiMode === 'chrome') throw new Error('Chrome 목표 선택 모드에서는 주민 대화를 생성하지 않습니다. Mock 또는 외부 API 모드를 선택해 주세요.');
     if (!state.llm.enabled || meta.dialogue || !speaker?.alive || !listener?.alive || speaker.id === listener.id || !speaker.memories.some(m => m.relatedNpcIds.includes(listener.id))) throw new Error('주민의 공유된 기억과 AI 설정을 확인해 주세요. 대화는 한 번에 하나씩 요청할 수 있습니다.');
     if (meta.aiMode === 'remote') meta.dialogue = { id: command.id, speakerId: speaker.id, listenerId: listener.id };
     else {

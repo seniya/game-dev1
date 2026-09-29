@@ -1,0 +1,9 @@
+{
+  "browser": "148.0.7778.178",
+  "channel": "chrome",
+  "present": true,
+  "availability": "unavailable",
+  "deviceStatus": "세계: Chrome 목표 선택 · 이 기기에서는 Chrome AI를 사용할 수 없습니다. 다른 기기를 기다리거나 Mock / AI 끄기를 선택할 수 있습니다.",
+  "realInferenceVerified": false,
+  "jobs": []
+}

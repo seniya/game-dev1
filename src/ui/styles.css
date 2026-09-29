@@ -37,3 +37,7 @@
 .ai-settings .causal-button { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; width: 100%; }
 .ai-result { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.8; max-height: 320px; overflow: auto; }
 .dialogue-button { display: block; margin-top: 12px; font-size: 12px; }
+.chrome-device { margin: 18px 0; padding: 18px; border: 1px solid #d8dfd5; border-radius: 10px; background: #f4f7f0; }
+.chrome-device progress { width: 100%; margin-bottom: 12px; accent-color: #537d61; }
+.chrome-device .cloud-actions { gap: 8px; }
+.chrome-device button { white-space: normal; }

@@ -269,14 +269,14 @@ export class Simulation {
       if (npc.goals.some(g => g.kind === goal.kind)) continue;
       if (npc.goals.length >= 4) npc.goals.shift();
       npc.goals.push({ id: `g${w.nextId++}`, ...goal, createdAt: w.tick, sourceEventId: request.eventId });
-      appendEvent(w, { kind: 'goal', actorId: npc.id, causeId: request.eventId, importance: 45, description: `${npc.identity.name}의 새 목표: ${GOAL_LABELS[goal.kind]}`, data: { kind: goal.kind, reason: goal.reason } });
+      appendEvent(w, { kind: 'goal', actorId: npc.id, causeId: request.eventId, importance: 45, description: `${npc.identity.name}의 ${provenance?.model === 'chrome-built-in' ? 'Chrome AI가 제안한 목표' : '새 목표'}: ${GOAL_LABELS[goal.kind]}`, data: { kind: goal.kind, reason: goal.reason, ...(provenance ?? {}) } });
     }
     for (const meaning of result.relationshipInterpretations) {
       const relation = relationship(npc, meaning.npcId); relation.interpretation = meaning.meaning;
       if (!relation.evidence.includes(request.eventId)) relation.evidence.push(request.eventId);
     }
     w.llm.completed++;
-    appendEvent(w, { kind: 'llm', actorId: npc.id, causeId: request.eventId, importance: 25, description: `${npc.identity.name}의 해석: ${result.interpretation}`, data: { result: JSON.stringify(result), requestId, ...(provenance ?? {}) } });
+    appendEvent(w, { kind: 'llm', actorId: npc.id, causeId: request.eventId, importance: 25, description: `${npc.identity.name}${provenance?.model === 'chrome-built-in' ? ': ' : '의 해석: '}${result.interpretation}`, data: { result: JSON.stringify(result), requestId, ...(provenance ?? {}) } });
     return true;
   }
   recordDialogue(speakerId: string, listenerId: string, text: string, evidence: string[], requestId: string, model: string): boolean {

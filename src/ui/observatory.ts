@@ -4,7 +4,7 @@ import { balance } from '../sim/economy';
 
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const stamp = (e: WorldEvent) => `${dayOf(e.tick)}일 ${timeLabel(e.tick)}`;
-export function knowledge(e: WorldEvent) { return e.kind === 'rumor' ? '전해 들은 소문' : ['memory', 'llm', 'goal', 'relationship'].includes(e.kind) ? '개인의 기억·해석' : e.kind === 'witness' ? '직접 목격' : '관찰된 사실'; }
+export function knowledge(e: WorldEvent) { return e.data.model === 'chrome-built-in' ? 'Chrome AI 목표 제안 · 서버가 구성한 한국어' : e.kind === 'rumor' ? '전해 들은 소문' : ['memory', 'llm', 'goal', 'relationship'].includes(e.kind) ? '개인의 기억·해석' : e.kind === 'witness' ? '직접 목격' : '관찰된 사실'; }
 export function eventLink(e: WorldEvent) { return `<button class="causal-button" data-event="${esc(e.id)}"><span><small>${stamp(e)} · ${knowledge(e)}</small><br>${esc(e.description)}</span><span aria-hidden="true">→</span></button>`; }
 export function timeline(w: WorldState, e: WorldEvent) {
   const byId = new Map(w.events.map(e => [e.id, e])), ancestors: WorldEvent[] = [];

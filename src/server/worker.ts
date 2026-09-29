@@ -4,6 +4,7 @@ import { applyCommand, commandSchema, viewWorld } from './world';
 import { Conflict, WorldStore } from './store';
 import type { WorldEvent } from '../sim/types';
 import { aiStatus, processAI } from './ai';
+import { claimChrome, processChrome, submitChrome, chromeSubmissionSchema } from './chrome';
 import { modelConfig, type ModelEnv } from './model';
 
 interface Env extends ModelEnv { DB: D1Database; ASSETS: Fetcher }
@@ -18,11 +19,31 @@ export default {
     if (request.method !== 'GET' && (request.headers.get('Origin') !== url.origin || !request.headers.get('Content-Type')?.startsWith('application/json'))) return json({ error: '같은 사이트의 JSON 요청만 허용됩니다.' }, 403);
     if (!env.DB) return json({ error: '세계 저장소에 연결하지 못했습니다.' }, 503);
     const store = new WorldStore(env.DB);
-    const wakeAI = () => { if (context && modelConfig(env)) context.waitUntil(processAI(store, env).catch(() => { console.error('AI background processing failed'); })); };
+    const wakeAI = () => { if (context) context.waitUntil(Promise.all([processChrome(store), processAI(store, env)]).catch(() => { console.error('AI background processing failed'); })); };
     try {
       await store.init(Date.now());
       if (url.pathname === '/api/world' && request.method === 'GET') { const world = await store.read(); wakeAI(); return json(viewWorld(world)); }
       if (url.pathname === '/api/ai' && request.method === 'GET') return json(await aiStatus(env.DB, env));
+      if (url.pathname === '/api/chrome/claim' && request.method === 'POST') {
+        const body = await request.text();
+        if (body !== '{}') return json({ error: '실행권 요청 형식이 올바르지 않습니다.' }, 400);
+        return json({ lease: await claimChrome(store) });
+      }
+      if (url.pathname === '/api/chrome/result' && request.method === 'POST') {
+        if (Number(request.headers.get('Content-Length')) > 6000) return json({ error: '응답 크기를 초과했습니다.' }, 413);
+        const body = await request.text();
+        if (body.length > 6000) return json({ error: '응답 크기를 초과했습니다.' }, 413);
+        const parsed = chromeSubmissionSchema.safeParse(JSON.parse(body));
+        if (!parsed.success) return json({ error: 'Chrome 응답 형식이 올바르지 않습니다.' }, 400);
+        const result = await submitChrome(store, parsed.data);
+        return json(result, result.status);
+      }
+      if (url.pathname.startsWith('/api/chrome/jobs/') && request.method === 'GET') {
+        const job = await env.DB.prepare('SELECT id,epoch,generation,request,context,hash,status,attempts,result,error,created,updated FROM chrome_jobs WHERE id=?').bind(decodeURIComponent(url.pathname.slice('/api/chrome/jobs/'.length))).first();
+        if (!job) return json({ error: '판단 기록을 찾을 수 없습니다.' }, 404);
+        const calls = await env.DB.prepare('SELECT day,started,outcome FROM chrome_calls WHERE job=? ORDER BY started').bind(job.id).all();
+        return json({ ...job, model: 'chrome-built-in', calls: calls.results });
+      }
       if (url.pathname.startsWith('/api/ai/jobs/') && request.method === 'GET') {
         const job = await env.DB.prepare('SELECT * FROM ai_jobs WHERE id=?').bind(decodeURIComponent(url.pathname.slice('/api/ai/jobs/'.length))).first();
         if (!job) return json({ error: '판단 기록을 찾을 수 없습니다.' }, 404);

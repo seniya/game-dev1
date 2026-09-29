@@ -51,6 +51,6 @@ TypeScript + Vite + DOM/Canvas. 렌더러 라이브러리나 외부 API 없이 �
 
 `server/model.ts`는 서버 환경 변수로만 연결되는 JSON 모델 어댑터와 근거 검증을 제공한다. `server/ai.ts`는 D1 예산/lease 예약, 비동기 호출, 결과 저장과 최신 세계 반영을 처리한다. UI는 모드·대화 요청만 제출하며 모델 주소나 인증 키를 받지 않는다. 로컬/CLI의 Mock 코디네이터와 코어의 무네트워크 계약은 유지한다. 자세한 운영 계약은 LLM_ARCHITECTURE.md를 참조한다.
 
-## 예정된 Chrome 내장 AI 경계
+## Chrome 내장 AI 시험 구현 경계
 
-다음 구현은 서버가 제한된 판단 요청을 발급하고 선택된 Chrome 기기가 추론 결과를 제출하는 방식이다. 세계 상태·시계와 결과 검증·저장은 서버가 계속 소유한다. 기기별 실행권과 공급자별 지원 기능을 추가하며, 첫 Chrome 기능은 허용 목표 선택과 서버의 한국어 이유 표시다. 외부 API는 명시적으로 선택할 수 있는 기존 서버 경로로 유지하고 자동 대체 호출은 하지 않는다. 아직 구현되지 않은 상세 계약은 [CHROME_AI_PLAN.md](CHROME_AI_PLAN.md)를 따른다.
+서버가 제한된 영어 판단 요청을 발급하고 선택된 Chrome 기기가 목표 선택 결과를 제출한다. `src/llm/chrome-contract.ts`는 안전한 context·응답 코드·한국어 템플릿, `src/ui/chrome.ts`는 기기 session lifecycle, `src/server/chrome.ts`는 D1 실행권·서버 검증·영구 저장·리비전 적용을 담당한다. 세계 상태·시계는 서버가 계속 소유한다. 외부 API는 명시적으로 선택하는 기존 경로이며 자동 대체하지 않는다. 실제 기기 추론은 아직 수용 검증을 통과하지 않았으며 [CHROME_AI_VALIDATION.md](CHROME_AI_VALIDATION.md)에서 모의 검증과 구분한다.

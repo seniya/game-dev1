@@ -1,34 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DatabaseSync } from 'node:sqlite';
-import type { D1Database } from '@cloudflare/workers-types';
 import worker from '../src/server/worker';
 import { Simulation } from '../src/sim/engine';
 import { applyCommand, compactWorld, initialWorld, type Command, type WorldView } from '../src/server/world';
-import { WorldStore } from '../src/server/store';
+import { Conflict, WorldStore } from '../src/server/store';
 
-// Executes the actual D1 SQL with SQLite transactions, including rollback of a failed CAS.
-function database() {
-  const sqlite = new DatabaseSync(':memory:');
-  class Statement {
-    values: (string | number)[] = [];
-    constructor(readonly sql: string) {}
-    bind(...values: (string | number)[]) { this.values = values; return this; }
-    async first() { return sqlite.prepare(this.sql).get(...this.values) ?? null; }
-    async all() { return { results: sqlite.prepare(this.sql).all(...this.values), success: true, meta: {} }; }
-  }
-  const db = {
-    prepare(sql: string) { return new Statement(sql); },
-    async batch(statements: Statement[]) {
-      sqlite.exec('BEGIN');
-      try {
-        const result = statements.map(s => ({ results: sqlite.prepare(s.sql).all(...s.values), success: true, meta: {} }));
-        sqlite.exec('COMMIT'); return result;
-      } catch (e) { sqlite.exec('ROLLBACK'); throw e; }
-    },
-  } as unknown as D1Database;
-  return db;
-}
+import { database } from './helpers/database';
 function harness() {
   const db = database(), env = { DB: db, ASSETS: { fetch: () => new Response('asset') } } as never;
   const request = (path: string, data?: unknown, origin = 'https://world.test') => worker.fetch(new Request(`https://world.test/api/${path}`, data === undefined ? {} : { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }), env);
@@ -292,4 +269,141 @@ test('a stored ready result is recovered after a Worker restart without another 
   await processAI(restarted, modelEnv, async () => { calls++; throw new Error('unexpected second request'); });
   assert.equal(calls, 1); assert.equal((await restarted.read()).state.llm.completed, 1);
   assert.equal((await aiStatus(store.db, modelEnv)).jobs[0].status, 'applied');
+});
+
+import { claimChrome, processChrome, submitChrome, chromeSubmissionSchema } from '../src/server/chrome';
+import { chromeContext, validateChromeResult, renderChromeResult, CHROME_LEASE_MS, CHROME_DAILY_LIMIT, type ChromeLease } from '../src/llm/chrome-contract';
+async function chromeWorld() {
+  const store = new WorldStore(database()); await store.init(1000);
+  const initial = await store.read();
+  const { world } = await applyCommand(initial, { id: crypto.randomUUID(), revision: initial.revision, action: { type: 'ai-mode', mode: 'chrome' } }, 1000);
+  socialEvent(world.state, { kind: 'scarcity', actorId: world.state.npcs[0].id, description: '절대 모델에 보내면 안 되는 한국어 자유문장', importance: 75, data: { secret: 'private hidden information' } });
+  world.meta.eventCount = world.state.events.length;
+  await store.commit(world, world.state.events.filter(e => !initial.state.events.some(old => old.id === e.id)), 'fixture', crypto.randomUUID());
+  return store;
+}
+function chromeOutput(lease: ChromeLease) {
+  const { context: _context, expires: _expires, ...envelope } = lease;
+  return { ...envelope, output: JSON.stringify({ goals: [{ kind: 'expand_farm', reasonCode: 'food_security', evidence: [lease.context.trigger.id] }] }) };
+}
+test('Chrome context exports English rule facts only, distinguishes hearsay and excludes unknown secrets', () => {
+  const world = new Simulation(42).snapshot(), [npc, other, hidden] = world.npcs;
+  const theft = socialEvent(world, { kind: 'theft', actorId: hidden.id, importance: 80, description: '비공개 절도', data: { amount: 3 } });
+  const rumor = socialEvent(world, { kind: 'rumor', actorId: other.id, targetId: npc.id, importance: 60, causeId: theft.id, description: '자유 소문', data: { suspectId: hidden.id, rootEventId: theft.id, secret: 'do not export' } });
+  const event = socialEvent(world, { kind: 'scarcity', actorId: npc.id, importance: 70, description: '기근 비밀', data: { culprit: hidden.id } });
+  const request = world.llm.queue.find(q => q.eventId === event.id)!;
+  const context = chromeContext(world, request.id)!;
+  const text = JSON.stringify(context);
+  assert.ok(!/[가-힣]/.test(text)); assert.ok(!text.includes('secret')); assert.ok(!text.includes(theft.id + '"'));
+  assert.equal(context.memories.find(m => m.id === rumor.id)?.knowledge, 'hearsay');
+  assert.equal(context.memories.find(m => m.id === rumor.id)?.roles.reportedSuspect, hidden.id);
+  assert.ok(!('causeId' in context.trigger)); assert.ok(!('identity' in context));
+  event.kind = 'experiment'; assert.equal(chromeContext(world, request.id), null);
+});
+test('Chrome two devices get one lease; saved results survive ordinary ticks and replay exactly once', async () => {
+  const store = await chromeWorld();
+  const leases = await Promise.all([claimChrome(store, 2000), claimChrome(store, 2000)]);
+  assert.equal(leases.filter(Boolean).length, 1); const lease = leases.find(Boolean)!;
+  let current = await store.read();
+  const stepped = await applyCommand(current, { id: crypto.randomUUID(), revision: current.revision, action: { type: 'step', ticks: 1 } }, 3000);
+  await store.commit(stepped.world, stepped.events, 'tick', crypto.randomUUID());
+  current = await store.read();
+  const replay = Simulation.load(JSON.stringify(current.state));
+  const value = validateChromeResult(chromeOutput(lease).output, lease.context);
+  assert.ok(replay.applyInterpretation(current.state.llm.queue[0].id, renderChromeResult(value, lease.context), { model: 'chrome-built-in', evidence: [lease.context.trigger.id] }));
+  assert.equal((await submitChrome(store, chromeOutput(lease), 4000)).state, 'applied');
+  const applied = await store.read();
+  assert.deepEqual(applied.state, compactWorld(replay.snapshot()));
+  assert.equal((await submitChrome(store, chromeOutput(lease), 5000)).state, 'applied');
+  assert.deepEqual(await store.read(), applied);
+  assert.ok(applied.state.events.some(e => e.kind === 'goal' && e.data.model === 'chrome-built-in' && e.description.includes('Chrome AI가 제안한 목표')));
+  assert.equal((await aiStatus(store.db, modelEnv, 5000)).usage?.calls, 0);
+});
+test('Chrome rejects altered leases, context, response shape, codes, evidence and direct state edits', async () => {
+  const store = await chromeWorld(), lease = (await claimChrome(store, 2000))!, input = chromeOutput(lease);
+  for (const field of ['token', 'epoch', 'generation', 'hash'] as const) {
+    assert.equal((await submitChrome(store, { ...input, [field]: field === 'token' ? crypto.randomUUID() : 'tampered' }, 3000)).status, 409);
+  }
+  assert.equal(chromeSubmissionSchema.safeParse({ ...input, context: lease.context }).success, false);
+  assert.equal(chromeSubmissionSchema.safeParse({ ...input, version: 2 }).success, false);
+  const valid = JSON.parse(input.output);
+  for (const response of [
+    { ...valid, resources: { food: 1000 } }, { ...valid, position: { x: 0, y: 0 } }, { ...valid, relationships: [] },
+    { goals: [{ ...valid.goals[0], kind: 'teleport' }] }, { goals: [{ ...valid.goals[0], reasonCode: 'mutual_help' }] },
+    { goals: [{ ...valid.goals[0], evidence: ['unknown'] }] }, { goals: [{ ...valid.goals[0], reason: 'free text' }] },
+    { goals: [valid.goals[0], valid.goals[0]] },
+  ]) assert.throws(() => validateChromeResult(JSON.stringify(response), lease.context));
+  assert.equal((await submitChrome(store, { ...input, output: JSON.stringify({ ...valid, wealth: 999 }) }, 3000)).status, 422);
+  assert.equal((await store.read()).state.llm.completed, 0);
+  assert.equal((await store.read()).state.llm.failed, 1);
+});
+test('Chrome expired leases can transfer to another device and old responses are rejected', async () => {
+  const store = await chromeWorld(), first = (await claimChrome(store, 2000))!;
+  assert.equal((await submitChrome(store, chromeOutput(first), 2000 + CHROME_LEASE_MS)).status, 409);
+  const second = (await claimChrome(store, 2000 + CHROME_LEASE_MS))!;
+  assert.equal(first.id, second.id); assert.notEqual(first.token, second.token);
+  assert.equal((await submitChrome(store, chromeOutput(first), 2001 + CHROME_LEASE_MS)).status, 409);
+  assert.equal((await submitChrome(store, chromeOutput(second), 2001 + CHROME_LEASE_MS)).state, 'applied');
+  assert.equal((await store.read()).state.llm.completed, 1);
+});
+test('Chrome abandoned requests stop at three attempts and use a separate UTC budget', async () => {
+  const store = await chromeWorld();
+  for (let i = 0; i < 3; i++) assert.ok(await claimChrome(store, 2000 + i * CHROME_LEASE_MS));
+  assert.equal(await claimChrome(store, 2000 + 3 * CHROME_LEASE_MS), null);
+  assert.equal((await store.read()).state.llm.failed, 1);
+  const status = await aiStatus(store.db, modelEnv, 2000);
+  assert.equal(status.chrome.usage?.calls, 3); assert.equal(status.usage?.calls, 0);
+  const fresh = await chromeWorld();
+  for (let i = 0; i < CHROME_DAILY_LIMIT; i++) await fresh.db.batch([fresh.db.prepare('INSERT INTO chrome_calls(token,job,day,started) VALUES(?,?,?,?)').bind(String(i), 'past', '1970-01-01', 1)]);
+  assert.equal(await claimChrome(fresh, 2000), null);
+  assert.ok(await claimChrome(fresh, 86_400_001));
+});
+test('Chrome reset, import and AI setting generation changes reject late output', async () => {
+  for (const action of [{ type: 'reset', seed: 8 }, { type: 'import', save: new Simulation(9).save() }, { type: 'ai-mode', mode: 'off' }, { type: 'ai-mode', mode: 'chrome' }] as const) {
+    const store = await chromeWorld(), lease = (await claimChrome(store, 2000))!, current = await store.read();
+    const next = await applyCommand(current, { id: crypto.randomUUID(), revision: current.revision, action }, 3000);
+    await store.commit(next.world, next.events, 'change', crypto.randomUUID());
+    assert.equal((await submitChrome(store, chromeOutput(lease), 4000)).status, 409);
+    await processChrome(store, 4000);
+    assert.equal((await store.db.prepare('SELECT status FROM chrome_jobs WHERE id=?').bind(lease.id).first<{ status: string }>())!.status, 'stale');
+  }
+});
+test('Chrome approved output is durable before apply, survives Worker restart and revision conflicts', async () => {
+  const store = await chromeWorld(), lease = (await claimChrome(store, 2000))!, commit = store.commit;
+  store.commit = async () => { throw new Error('terminated'); };
+  await assert.rejects(submitChrome(store, chromeOutput(lease), 3000), /terminated/);
+  store.commit = commit;
+  assert.equal((await store.db.prepare('SELECT status FROM chrome_jobs').first<{ status: string }>())!.status, 'ready');
+  const restarted = new WorldStore(store.db); await restarted.init(4000); await processChrome(restarted, 4000);
+  assert.equal((await restarted.read()).state.llm.completed, 1);
+  assert.equal((await aiStatus(store.db, modelEnv, 4000)).chrome.usage?.calls, 1);
+  const fresh = await chromeWorld(), pending = (await claimChrome(fresh, 2000))!, original = fresh.commit;
+  fresh.commit = async () => { throw new Conflict('concurrent tick'); };
+  await submitChrome(fresh, chromeOutput(pending), 3000);
+  fresh.commit = original;
+  await processChrome(fresh, 5000);
+  assert.equal((await fresh.read()).state.llm.completed, 1);
+});
+test('Chrome failures and unsupported context leave simulation running without calling an external model', async () => {
+  const store = await chromeWorld(); let calls = 0;
+  await processAI(store, modelEnv, async () => { calls++; throw new Error('must not call'); });
+  const lease = (await claimChrome(store, 2000))!, { output: _output, ...envelope } = chromeOutput(lease);
+  await submitChrome(store, { ...envelope, error: 'timeout' }, 3000);
+  let current = await store.read();
+  const next = await applyCommand(current, { id: crypto.randomUUID(), revision: current.revision, action: { type: 'step', ticks: 144 } }, 4000);
+  await store.commit(next.world, next.events, 'continue', crypto.randomUUID());
+  await processAI(store, modelEnv, async () => { calls++; throw new Error('must not call'); });
+  assert.equal(calls, 0); assert.equal((await store.read()).state.tick, current.state.tick + 144);
+  const unsupported = await chromeWorld(); current = await unsupported.read();
+  const trigger = current.state.events.find(e => e.id === current.state.llm.queue[0].eventId)!; trigger.kind = 'experiment';
+  await unsupported.commit({ ...current, revision: current.revision + 1 }, [], 'unsupported', crypto.randomUUID());
+  assert.equal(await claimChrome(unsupported, 2000), null);
+  assert.equal((await unsupported.read()).state.llm.failed, 1);
+});
+test('Chrome result routes reject cross-origin writes and malformed envelopes', async () => {
+  const h = harness(); await h.get();
+  assert.equal((await h.request('chrome/claim', {}, 'https://other.test')).status, 403);
+  assert.equal((await h.request('chrome/claim', { context: 'client supplied' })).status, 400);
+  assert.equal((await h.request('chrome/result', { output: '{}' })).status, 400);
+  assert.deepEqual(await (await h.request('chrome/claim', {})).json(), { lease: null });
 });

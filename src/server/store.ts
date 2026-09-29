@@ -3,6 +3,11 @@ import type { WorldEvent, WorldState } from '../sim/types';
 import { initialWorld, type StoredWorld } from './world';
 
 const schema = [
+  'CREATE TABLE IF NOT EXISTS chrome_jobs (id TEXT PRIMARY KEY, epoch TEXT NOT NULL, generation TEXT NOT NULL, request TEXT NOT NULL, context TEXT NOT NULL, hash TEXT NOT NULL, status TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, token TEXT, expires INTEGER NOT NULL DEFAULT 0, result TEXT, error TEXT, created INTEGER NOT NULL, updated INTEGER NOT NULL, UNIQUE(epoch,generation,request))',
+  'CREATE INDEX IF NOT EXISTS chrome_jobs_recent ON chrome_jobs(created DESC)',
+  'CREATE TABLE IF NOT EXISTS chrome_calls (token TEXT PRIMARY KEY, job TEXT NOT NULL, day TEXT NOT NULL, started INTEGER NOT NULL, outcome TEXT)',
+  'CREATE INDEX IF NOT EXISTS chrome_calls_day ON chrome_calls(day)',
+  'CREATE TABLE IF NOT EXISTS chrome_lock (id INTEGER PRIMARY KEY CHECK(id=1), token TEXT NOT NULL, expires INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS world (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, epoch TEXT NOT NULL, meta TEXT NOT NULL)',
   'CREATE TABLE IF NOT EXISTS snapshots (epoch TEXT NOT NULL, part INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY(epoch,part))',
   'CREATE TABLE IF NOT EXISTS events (epoch TEXT NOT NULL, id TEXT NOT NULL, seq INTEGER NOT NULL, tick INTEGER NOT NULL, kind TEXT NOT NULL, cause TEXT, body TEXT NOT NULL, PRIMARY KEY(epoch,id))',

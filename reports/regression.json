@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-29T08:23:03.654Z",
+  "generatedAt": "2026-09-29T09:21:32.559Z",
   "measurementNotes": "elapsedMs includes independent replay, save validation, and continuation checks; processHeapMB includes multiple live simulation copies and garbage awaiting collection, not single-world memory.",
   "contract": "same seed + commands; all accounts conserve; save continuation and independent replay match",
   "cases": [
@@ -68,7 +68,7 @@
       "minDailyFood": 106,
       "maxDailyFood": 2719,
       "bytes": 9204552,
-      "elapsedMs": 3335,
+      "elapsedMs": 3467,
       "processHeapMB": 200,
       "sha256": "a990046788a17a8381981bdfe9cef9b58572c40fc9db53b3c2d2bc921a06c946"
     },
@@ -269,7 +269,7 @@
       "minDailyFood": 0,
       "maxDailyFood": 3131,
       "bytes": 1792731,
-      "elapsedMs": 437,
+      "elapsedMs": 434,
       "processHeapMB": 266,
       "sha256": "b35891b9ddd736c66dd643a658194e4f053de021a108d05cc28ae8884d514ace"
     },
@@ -1446,8 +1446,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 1513,
       "bytes": 14238644,
-      "elapsedMs": 8115,
-      "processHeapMB": 388,
+      "elapsedMs": 8048,
+      "processHeapMB": 366,
       "sha256": "15a2366f3dd66423b381a2339d7a94ed7aa63660e9b7753891b5e8842717cdba"
     },
     {
@@ -1516,8 +1516,8 @@
       "minDailyFood": 106,
       "maxDailyFood": 9357,
       "bytes": 34059550,
-      "elapsedMs": 12645,
-      "processHeapMB": 1016,
+      "elapsedMs": 12709,
+      "processHeapMB": 991,
       "sha256": "465fa7688fcdb7a5fb36b9787f73e585a2c2e59517875d706ba1cead69c03bdc"
     },
     {
@@ -1717,8 +1717,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 12548,
       "bytes": 5177115,
-      "elapsedMs": 1194,
-      "processHeapMB": 1078,
+      "elapsedMs": 1265,
+      "processHeapMB": 114,
       "sha256": "930f15afa2f996ea481aae0be772543e5a62334dfbb3155204eba5adfbf970f8"
     },
     {
@@ -2894,8 +2894,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 5410,
       "bytes": 46068805,
-      "elapsedMs": 22866,
-      "processHeapMB": 1057,
+      "elapsedMs": 23465,
+      "processHeapMB": 552,
       "sha256": "8a4a4e6482d5d1d42df986278b8ad8a7792bf4a080c1bfcdec3931f72411db1f"
     },
     {
@@ -2962,8 +2962,8 @@
       "minDailyFood": 111,
       "maxDailyFood": 2888,
       "bytes": 8569391,
-      "elapsedMs": 2647,
-      "processHeapMB": 1147,
+      "elapsedMs": 2649,
+      "processHeapMB": 754,
       "sha256": "68c5c50e72134bbc58326b07676d5d30dcfb3a462483f9ca5df6559108678880"
     },
     {
@@ -3161,8 +3161,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 3830,
       "bytes": 1922928,
-      "elapsedMs": 410,
-      "processHeapMB": 1192,
+      "elapsedMs": 414,
+      "processHeapMB": 800,
       "sha256": "dfeffe03a45cb9033de2fe150153a598b8fb8715b3c230e82c6c642bd70f8d04"
     },
     {
@@ -4286,8 +4286,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 266,
       "bytes": 21180783,
-      "elapsedMs": 14093,
-      "processHeapMB": 1660,
+      "elapsedMs": 13695,
+      "processHeapMB": 1302,
       "sha256": "ff00db42d94a86e99f4dff7a8cae5cc698b3fed90d31834a0fa53dc982733bc4"
     },
     {
@@ -4355,8 +4355,8 @@
       "minDailyFood": 111,
       "maxDailyFood": 9278,
       "bytes": 31545657,
-      "elapsedMs": 10337,
-      "processHeapMB": 427,
+      "elapsedMs": 10438,
+      "processHeapMB": 581,
       "sha256": "03f896f70bdc24ae7410871954d2c4e3ba5cfe64383a0147bd619679f84d26c8"
     },
     {
@@ -4554,8 +4554,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 15375,
       "bytes": 5640584,
-      "elapsedMs": 1222,
-      "processHeapMB": 488,
+      "elapsedMs": 1204,
+      "processHeapMB": 690,
       "sha256": "22ca932b4342eff9e3aff26410cedd464075d791f47eadb3b7fe303b65ef6469"
     },
     {
@@ -5679,8 +5679,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 566,
       "bytes": 75577268,
-      "elapsedMs": 41698,
-      "processHeapMB": 1710,
+      "elapsedMs": 42242,
+      "processHeapMB": 1285,
       "sha256": "b9d7488fd9c172118ccacefb38bf969e5697bebfe5012e40b6559afb0a852c67"
     },
     {
@@ -5748,8 +5748,8 @@
       "minDailyFood": 112,
       "maxDailyFood": 2505,
       "bytes": 16084997,
-      "elapsedMs": 4476,
-      "processHeapMB": 1932,
+      "elapsedMs": 4475,
+      "processHeapMB": 1684,
       "sha256": "f48c9d454deda91b529e3de54a4e7aa86dc65a1a6b91366d20745bad224aac34"
     },
     {
@@ -5948,8 +5948,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 789,
       "bytes": 3176056,
-      "elapsedMs": 616,
-      "processHeapMB": 1923,
+      "elapsedMs": 620,
+      "processHeapMB": 1684,
       "sha256": "630ca56d3c712770e1d053c01b280001c3e7b31e7df7d5200449f649ed48f8e3"
     },
     {
@@ -7151,8 +7151,8 @@
       "minDailyFood": 1,
       "maxDailyFood": 2094,
       "bytes": 17067932,
-      "elapsedMs": 7703,
-      "processHeapMB": 2322,
+      "elapsedMs": 7734,
+      "processHeapMB": 2082,
       "sha256": "eb839296dee18fb3cfcc673760ecbc9e6b006f8885cc242f57a9eac9a15cc869"
     },
     {
@@ -7220,8 +7220,8 @@
       "minDailyFood": 112,
       "maxDailyFood": 8658,
       "bytes": 58330146,
-      "elapsedMs": 23312,
-      "processHeapMB": 1303,
+      "elapsedMs": 22867,
+      "processHeapMB": 1311,
       "sha256": "f76fdfadbdbf876a7e0bbff95298dbb3cae622e4587c6153865709efb6d45b93"
     },
     {
@@ -7420,8 +7420,8 @@
       "minDailyFood": 0,
       "maxDailyFood": 3016,
       "bytes": 9849029,
-      "elapsedMs": 1953,
-      "processHeapMB": 1413,
+      "elapsedMs": 1948,
+      "processHeapMB": 1421,
       "sha256": "9f760f9fb325ecf8da3900a6de14dbfeb59565c7216f5de03922ce144ce9fc4b"
     },
     {
@@ -8623,8 +8623,8 @@
       "minDailyFood": 1,
       "maxDailyFood": 7554,
       "bytes": 53663849,
-      "elapsedMs": 24563,
-      "processHeapMB": 1078,
+      "elapsedMs": 24937,
+      "processHeapMB": 1025,
       "sha256": "f4f52061e6705cbd24953d2c8ba043a2d3d494ad2a356c358b74a7a8ac1c7345"
     }
   ],
