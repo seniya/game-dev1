@@ -127,3 +127,26 @@ test('concurrent writers at the checkpoint boundary commit one complete world', 
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM world_changes').first<{ n: number }>())!.n, 0);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM command_inputs').first<{ n: number }>())!.n, CHECKPOINT_COMMITS);
 });
+
+test('an abandoned initialization cannot strand another request sharing the D1 binding', async () => {
+  const db = database(); let release!: () => void, first = true;
+  const abandoned = new Promise<void>(resolve => { release = resolve; });
+  const binding = {
+    prepare: db.prepare.bind(db),
+    async batch(statements: Parameters<D1Database['batch']>[0]) {
+      if (first) { first = false; await abandoned; }
+      return db.batch(statements);
+    },
+  } as D1Database;
+  const interruptedRequest = new WorldStore(binding).init(Date.now());
+  const nextRequest = new WorldStore(binding);
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const initialized = await Promise.race([
+      nextRequest.init(Date.now()).then(() => true),
+      new Promise<boolean>(resolve => { timeout = setTimeout(() => resolve(false), 1000); }),
+    ]);
+    assert.equal(initialized, true, 'a new request must initialize independently of abandoned I/O');
+    assert.ok((await nextRequest.read()).state.npcs.length);
+  } finally { clearTimeout(timeout); release(); await interruptedRequest; }
+});

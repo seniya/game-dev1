@@ -209,3 +209,16 @@ test('multiple settlements, focused history and family inspection survive reload
   await page.screenshot({ path: 'test-results/civilization-mobile.png', fullPage: true });
   expect(errors).toEqual([]);
 });
+
+test('initial server load recovers automatically after a failed request', async ({ page }) => {
+  let attempts = 0;
+  await page.route('**/api/world', async route => {
+    if (++attempts === 1) return route.abort('failed');
+    await route.continue();
+  });
+  await page.goto('/');
+  await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료', { timeout: 15000 });
+  expect(attempts).toBeGreaterThanOrEqual(2);
+  await expect(page.locator('#play-button')).toBeEnabled();
+  await expect(page.locator('#world-map')).toBeVisible();
+});

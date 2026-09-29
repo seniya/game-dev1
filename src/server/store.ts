@@ -41,15 +41,17 @@ const schema = [
   'CREATE INDEX IF NOT EXISTS ai_calls_day ON ai_calls(day)',
   'CREATE TABLE IF NOT EXISTS ai_lock (id INTEGER PRIMARY KEY CHECK(id=1), token TEXT NOT NULL, expires INTEGER NOT NULL)',
 ];
-const ready = new WeakMap<object, Promise<void>>();
+// Cache only completed initialization. Pending D1 I/O belongs to its Worker request;
+// sharing that promise can strand later requests when the first client disconnects.
+const ready = new WeakSet<object>();
 export class Conflict extends Error {}
 export class WorldStore {
   private baseline?: { world: StoredWorld; checkpoint: Checkpoint; journalBytes: number };
   constructor(readonly db: D1Database) {}
   async init(now: number) {
-    let promise = ready.get(this.db);
-    if (!promise) { promise = this.initialize(now); ready.set(this.db, promise); }
-    try { await promise; } catch (e) { ready.delete(this.db); throw e; }
+    if (ready.has(this.db)) return;
+    await this.initialize(now);
+    ready.add(this.db);
   }
   private async initialize(now: number) {
     await this.db.batch(schema.map(s => this.db.prepare(s)));

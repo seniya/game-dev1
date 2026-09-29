@@ -5,7 +5,12 @@ export class CloudClient {
   private queue = Promise.resolve();
   constructor(private receive: (w: WorldView) => void, private status: (message: string) => void) {}
   async get<T>(path: string): Promise<T> {
-    const response = await fetch(`/api/${path}`, { cache: 'no-store', signal: AbortSignal.timeout(30_000) });
+    let response: Response;
+    try { response = await fetch(`/api/${path}`, { cache: 'no-store', signal: AbortSignal.timeout(10_000) }); }
+    catch (error) {
+      if (error instanceof DOMException && error.name === 'TimeoutError') throw new Error('서버 응답이 지연되고 있습니다. 잠시 후 다시 연결합니다.');
+      throw error;
+    }
     if (!response.headers.get('content-type')?.includes('application/json')) throw new Error('서버에 연결할 수 없습니다.');
     const result = await response.json();
     if (!response.ok) throw new Error(result.error ?? '서버 응답을 확인할 수 없습니다.');

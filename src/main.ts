@@ -397,14 +397,20 @@ function startCloud() {
     render();
     if (world.meta.catchupTicks) toast(`자리를 비운 동안 ${world.meta.catchupTicks}틱을 반영했습니다.${world.meta.skippedTicks ? ' 하루 상한을 넘긴 시간은 진행하지 않았습니다.' : ''}`);
   }, message => { $('cloud-status').textContent = message; });
-  const connect = async () => { try { await cloud!.connect(); await refreshAI(); } catch (e) { cloudFailure(e); } };
+  let polling = false, lastAI = 0;
+  const connect = async () => {
+    if (polling) return;
+    polling = true;
+    try { await cloud!.connect(); await refreshAI(); }
+    catch (e) { cloudFailure(e); }
+    finally { polling = false; }
+  };
   $('cloud-retry').onclick = () => { journalKey = ''; lifeKey = ''; void connect(); };
   void connect();
-  let polling = false, lastAI = 0;
   setInterval(async () => {
-    if (document.hidden || polling || !cloudReady) return;
+    if (document.hidden || polling) return;
     polling = true;
-    try { if (cloud!.world!.meta.running) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); if (Date.now() - lastAI > 10_000) { lastAI = Date.now(); await refreshAI(); } }
+    try { if (cloudReady && cloud!.world!.meta.running) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); if (Date.now() - lastAI > 10_000) { lastAI = Date.now(); await refreshAI(); } }
     catch (e) { $('cloud-status').textContent = '연결이 끊겼습니다. 서버의 마지막 저장은 유지됩니다. 다시 연결하는 중…'; }
     finally { polling = false; void chromeRunner!.tick(); }
   }, 2000);
