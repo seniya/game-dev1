@@ -99,6 +99,13 @@ test('rolling hourly budget spans UTC midnight and reservations include failed c
   assert.equal(await claimChrome(store, 89_939_999), null);
   assert.ok(await claimChrome(store, 89_940_000));
   assert.equal((await chromeSchedule(store.db, 89_940_000)).hourlyCalls, 6);
+  // Migrated v0.5 usage can exceed the new cap; report the true count.
+  const legacy = await fixture();
+  for (let i = 0; i < 7; i++) await legacy.db.batch([legacy.db.prepare('INSERT INTO chrome_calls VALUES(?,?,?,?,?)').bind(`legacy${i}`, 'old', '1970-01-01', 1000 + i, 'applied')]);
+  const upgraded = await chromeSchedule(legacy.db, 2000);
+  assert.equal(upgraded.hourlyCalls, 7);
+  assert.equal(upgraded.nextAt, 1001 + 3_600_000);
+
 });
 
 test('resolved scarcity and completed facilities skip inference; state changes during inference skip application', async () => {
