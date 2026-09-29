@@ -37,7 +37,7 @@ let sim = new Simulation(42), coordinator = new DecisionCoordinator(sim, new Moc
 const cloudMode = new URLSearchParams(location.search).get('local') !== '1';
 let cloud: CloudClient | undefined;
 let cloudReady = false;
-interface AIStatus { chrome?: { dailyLimit: number; usage: { calls: number }; jobs: { id: string; epoch: string; status: string; attempts: number; error: string | null }[] }; configured: boolean; model: string | null; day: string; dailyLimit: number; maxOutputTokens: number; usage: { calls: number; inputTokens: number; outputTokens: number }; jobs: { id: string; epoch: string; kind: string; status: string; attempts: number; error: string | null; model: string }[] }
+interface AIStatus { chrome?: { schedule?: { hourlyCalls: number; hourlyLimit: number }; dailyLimit: number; usage: { calls: number }; jobs: { id: string; epoch: string; status: string; attempts: number; error: string | null }[] }; configured: boolean; model: string | null; day: string; dailyLimit: number; maxOutputTokens: number; usage: { calls: number; inputTokens: number; outputTokens: number }; jobs: { id: string; epoch: string; kind: string; status: string; attempts: number; error: string | null; model: string }[] }
 let aiStatus: AIStatus | undefined;
 let chromeRunner: ChromeRunner | undefined;
 let journalKey = '', journalNext: number | null = null, journalEpoch = '', journalEvents: WorldEvent[] = [], journalRequest = 0;
@@ -327,7 +327,7 @@ async function showCloudEvent(id: string) {
 async function cloudDownload(path: string, name: string) {
   try { download(name, JSON.stringify(await cloud!.get(path))); toast('서버의 세계 기록을 파일로 내보냈습니다.'); } catch (e) { cloudFailure(e); }
 }
-const aiLabels: Record<string, string> = { pending: '처리 대기', running: '응답 대기', ready: '저장 대기', applied: '반영 완료', rejected: '근거 변경으로 거부', failed: '처리 실패', stale: '세계 변경으로 취소' };
+const aiLabels: Record<string, string> = { skipped: '현재 상태에 따라 생략', pending: '사건 수집·처리 대기', running: '응답 대기', ready: '저장 대기', applied: '반영 완료', rejected: '근거 변경으로 거부', failed: '처리 실패', stale: '세계 변경으로 취소' };
 function renderAI() {
   if (!cloudMode) return;
   const mode = cloud?.world?.meta.aiMode ?? (state.llm.enabled ? 'mock' : 'off');
@@ -340,7 +340,7 @@ function renderAI() {
   if (!aiStatus) return;
   const { usage } = aiStatus;
   $('ai-usage').textContent = `외부 API · 실제 날짜 ${aiStatus.day} UTC · 호출 ${usage.calls} / ${aiStatus.dailyLimit}회 · 보고된 입력 ${usage.inputTokens} / 출력 ${usage.outputTokens}토큰 · 응답당 최대 ${aiStatus.maxOutputTokens}토큰${usage.calls >= aiStatus.dailyLimit ? ' · 오늘 상한 도달, 다음 UTC 날짜까지 대기' : ''}`;
-  $('ai-usage').textContent += ` · Chrome 실행 시도 ${aiStatus.chrome?.usage.calls ?? 0} / ${aiStatus.chrome?.dailyLimit ?? 36}회. 외부 API를 선택하면 제한된 주민·사건 정보를 설정한 공급자에게 전송하며 요금이 발생할 수 있습니다.`;
+  $('ai-usage').textContent += ` · Chrome 실행 시도 ${aiStatus.chrome?.usage.calls ?? 0} / ${aiStatus.chrome?.dailyLimit ?? 36}회 · 최근 1시간 ${aiStatus.chrome?.schedule?.hourlyCalls ?? 0} / ${aiStatus.chrome?.schedule?.hourlyLimit ?? 6}회 · 사건 수집 60초 · 실행 후 최소 60초 휴식. 외부 API를 선택하면 제한된 주민·사건 정보를 설정한 공급자에게 전송하며 요금이 발생할 수 있습니다.`;
   $('ai-audit').innerHTML = `<p class="inspector-footnote">세계 초기화에도 호출 예산은 유지됩니다. 실제 모델이 만든 해석과 말은 사실 자체가 아니며, 인용한 사건으로 근거를 확인할 수 있습니다.</p>${aiStatus.jobs.length ? aiStatus.jobs.map(j => `<button class="causal-button" data-ai-job="${esc(j.id)}"><b>${j.kind === 'dialogue' ? '기억에 근거한 말' : '중요 사건 해석'}</b><span>${esc(aiLabels[j.status] ?? j.status)} · ${j.attempts}/3회 · ${esc(j.model)}</span></button>`).join('') : '<p class="muted">외부 모델 호출 기록이 아직 없습니다.</p>'}${(aiStatus.chrome?.jobs ?? []).map(j => `<button class="causal-button" data-chrome-job="${esc(j.id)}"><b>Chrome 목표 선택</b><span>${esc(aiLabels[j.status] ?? j.status)} · ${j.attempts}/3회${j.error ? ` · ${esc(j.error)}` : ''}</span></button>`).join('')}`;
 }
 async function refreshAI() {

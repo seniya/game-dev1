@@ -3,16 +3,20 @@ import { database } from '../helpers/database';
 import worker from '../../src/server/worker';
 import { WorldStore } from '../../src/server/store';
 import { applyCommand } from '../../src/server/world';
+import { processChrome } from '../../src/server/chrome';
 import { socialEvent } from '../../src/sim/social';
 
-async function fixture(page: Page) {
+async function fixture(page: Page, collected = true) {
   const db = database(), store = new WorldStore(db); await store.init(Date.now());
   const current = await store.read(), result = await applyCommand(current, { id: crypto.randomUUID(), revision: current.revision, action: { type: 'ai-mode', mode: 'chrome' } }, Date.now());
   // Both allowed choices must create a new goal in this acceptance fixture.
   result.world.state.npcs[0].goals = [];
+  result.world.state.npcs[0].needs.hunger = 80;
   socialEvent(result.world.state, { kind: 'scarcity', actorId: result.world.state.npcs[0].id, description: '식량 부족', importance: 75 });
   result.world.meta.eventCount = result.world.state.events.length;
   await store.commit(result.world, result.world.state.events.slice(current.state.events.length), 'fixture', crypto.randomUUID());
+  // Seed a completed collection window; separate tests cover actual waiting.
+  await processChrome(store, Date.now() - (collected ? 60_001 : 0));
   await page.route('**/api/**', async route => {
     const req = route.request(), headers = { ...req.headers(), origin: new URL(req.url()).origin };
     const response = await worker.fetch(new Request(req.url(), { method: req.method(), headers, body: req.postData() }), { DB: db, ASSETS: { fetch: () => new Response('asset') } } as never);
@@ -31,7 +35,7 @@ async function mockModel(page: Page, scenario: 'success' | 'download-failure' | 
       if (scenario === 'hang') return new Promise<string>(() => {});
       if (scenario === 'invalid-output') return JSON.stringify({ goals: [{ kind: 'invent_resources', evidence: ['not-known'] }] });
       const context = JSON.parse(input.slice(input.indexOf('\n') + 1));
-      return JSON.stringify({ goals: [{ kind: 'expand_farm', reasonCode: 'food_security', evidence: [context.trigger.id] }] });
+      return JSON.stringify(context.candidates.find((c: any) => c.goals[0].kind === 'expand_farm') ?? context.candidates[0]);
     } });
     Object.assign(window, { LanguageModel: {
       async availability(options: unknown) { stats.options.push(options); return 'downloadable'; },
@@ -175,7 +179,29 @@ test('server-rejected model output stops the device instead of consuming more re
   await expect(page.locator('#chrome-stop')).toBeDisabled();
   expect((await store.read()).state.llm.completed).toBe(0);
   expect(await page.evaluate(() => (window as any).modelStats.prompted)).toBe(1);
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: '기기 진단 JSON 내보내기' }).click();
+  const stream = await (await download).createReadStream(), chunks: Buffer[] = [];
+  for await (const chunk of stream!) chunks.push(chunk);
+  const diagnostic = JSON.parse(Buffer.concat(chunks).toString());
+  expect(diagnostic.attempts[0].rejectionReason).toBe('invalid_shape');
+  expect(diagnostic.attempts[0].elapsedMs).toBeGreaterThan(0);
   expect((await store.db.prepare('SELECT COUNT(*) AS n FROM ai_calls').first<{ n: number }>())!.n).toBe(0);
+});
+
+test('server collection and rest windows are visible and do not start extra model calls', async ({ page }) => {
+  const store = await fixture(page, false); await mockModel(page);
+  await page.goto('/'); await page.getByRole('button', { name: '관찰 실험실' }).click();
+  await page.getByRole('button', { name: '이 기기에서 다운로드·활성화' }).click();
+  await expect(page.locator('#chrome-status')).toContainText('관련 사건을 모으는 중');
+  expect(await page.evaluate(() => (window as any).modelStats.prompted)).toBe(0);
+  await store.db.batch([store.db.prepare('UPDATE chrome_jobs SET created=?').bind(Date.now() - 60_001)]);
+  await expect.poll(async () => (await store.read()).state.llm.completed).toBe(1);
+  await expect(page.locator('#chrome-status')).toContainText('다음 판단까지 쉬는 중');
+  expect(await page.evaluate(() => (window as any).modelStats.prompted)).toBe(1);
+  for (let i = 0; i < 5; i++) await store.db.batch([store.db.prepare('INSERT INTO chrome_calls VALUES(?,?,?,?,?)').bind(`budget${i}`, 'budget-fixture', new Date().toISOString().slice(0, 10), Date.now(), 'failed')]);
+  await expect(page.locator('#chrome-status')).toContainText('최근 1시간 한도 도달');
+  expect(await page.evaluate(() => (window as any).modelStats.prompted)).toBe(1);
 });
 
 test('cancelled download destroys a late session without activating the device', async ({ page }) => {

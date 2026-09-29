@@ -279,6 +279,14 @@ export class Simulation {
     appendEvent(w, { kind: 'llm', actorId: npc.id, causeId: request.eventId, importance: 25, description: `${npc.identity.name}${provenance?.model === 'chrome-built-in' ? ': ' : '의 해석: '}${result.interpretation}`, data: { result: JSON.stringify(result), requestId, ...(provenance ?? {}) } });
     return true;
   }
+  closeChromeRequests(ids: string[], reason: string, representative: string) {
+    const w = this.state, requests = w.llm.queue.filter(q => ids.includes(q.id));
+    if (!requests.length) return;
+    w.llm.queue = w.llm.queue.filter(q => !ids.includes(q.id));
+    appendEvent(w, { kind: 'llm', actorId: requests[0].npcId, causeId: requests[0].eventId, importance: 5,
+      description: `Chrome 판단 ${reason === 'merged' ? '사건 묶음으로 처리' : '현재 상태에 따라 생략'}`,
+      data: { reason, requestIds: requests.map(q => q.id), representative, evidence: requests.map(q => q.eventId) } });
+  }
   recordDialogue(speakerId: string, listenerId: string, text: string, evidence: string[], requestId: string, model: string): boolean {
     const w = this.state, speaker = w.npcs.find(n => n.id === speakerId), listener = w.npcs.find(n => n.id === listenerId);
     if (!speaker?.alive || !listener?.alive || speakerId === listenerId || !text.trim() || text.length > 500 || !evidence.length || evidence.length > 8 || evidence.some(id => !eventById(w, id) || !speaker.memories.some(m => m.sourceEventId === id && m.relatedNpcIds.includes(listenerId)))) return false;

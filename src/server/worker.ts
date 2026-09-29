@@ -6,6 +6,8 @@ import type { WorldEvent } from '../sim/types';
 import { aiStatus, processAI } from './ai';
 import { claimChrome, processChrome, submitChrome, chromeSubmissionSchema } from './chrome';
 import { modelConfig, type ModelEnv } from './model';
+import { chromeSchedule } from './chrome-schedule';
+import { CHROME_COLLECT_MS } from '../llm/chrome-contract';
 
 interface Env extends ModelEnv { DB: D1Database; ASSETS: Fetcher }
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
@@ -27,7 +29,14 @@ export default {
       if (url.pathname === '/api/chrome/claim' && request.method === 'POST') {
         const body = await request.text();
         if (body !== '{}') return json({ error: '실행권 요청 형식이 올바르지 않습니다.' }, 400);
-        return json({ lease: await claimChrome(store) });
+        const lease = await claimChrome(store);
+        const waiting = await chromeSchedule(env.DB);
+        if (!lease && waiting.reason === 'ready') {
+          const pending = await env.DB.prepare("SELECT MIN(created) AS created FROM chrome_jobs WHERE status='pending'").first<{ created: number | null }>();
+          waiting.reason = pending?.created != null ? 'collecting' : 'idle';
+          if (pending?.created != null) waiting.nextAt = Math.max(waiting.nextAt, pending.created + CHROME_COLLECT_MS);
+        }
+        return json({ lease, waiting });
       }
       if (url.pathname === '/api/chrome/result' && request.method === 'POST') {
         if (Number(request.headers.get('Content-Length')) > 6000) return json({ error: '응답 크기를 초과했습니다.' }, 413);
@@ -42,7 +51,8 @@ export default {
         const job = await env.DB.prepare('SELECT id,epoch,generation,request,context,hash,status,attempts,result,error,created,updated FROM chrome_jobs WHERE id=?').bind(decodeURIComponent(url.pathname.slice('/api/chrome/jobs/'.length))).first();
         if (!job) return json({ error: '판단 기록을 찾을 수 없습니다.' }, 404);
         const calls = await env.DB.prepare('SELECT day,started,outcome FROM chrome_calls WHERE job=? ORDER BY started').bind(job.id).all();
-        return json({ ...job, model: 'chrome-built-in', calls: calls.results });
+        const batch = await env.DB.prepare('SELECT requests,npc,topic FROM chrome_batches WHERE job=?').bind(job.id).first();
+        return json({ ...job, model: 'chrome-built-in', batch, calls: calls.results });
       }
       if (url.pathname.startsWith('/api/ai/jobs/') && request.method === 'GET') {
         const job = await env.DB.prepare('SELECT * FROM ai_jobs WHERE id=?').bind(decodeURIComponent(url.pathname.slice('/api/ai/jobs/'.length))).first();

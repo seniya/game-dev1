@@ -7,6 +7,9 @@ export const CHROME_OUTPUT_LIMIT = 2_000;
 export const CHROME_TIMEOUT_MS = 60_000;
 export const CHROME_LEASE_MS = 90_000;
 export const CHROME_DAILY_LIMIT = 36;
+export const CHROME_HOURLY_LIMIT = 6;
+export const CHROME_COLLECT_MS = 60_000;
+export const CHROME_REST_MS = 60_000;
 export const CHROME_MODEL = 'chrome-built-in';
 const reasons = {
   food_security: '식량 부족의 경험을 바탕으로 먹을 것을 준비하려 한다.',
@@ -41,6 +44,7 @@ export interface ChromeFact {
 export interface ChromeContext {
   version: 1; npcId: string; tick: number; trigger: ChromeFact; memories: ChromeFact[];
   allowedGoals: GoalKind[]; choices: { reasonCode: ReasonCode; kinds: GoalKind[]; evidence: string[] }[];
+  related?: ChromeFact[];
 }
 // Only explicit rule mappings are exported. Never copy descriptions, data bags, causal ancestors or other residents' memories.
 function fact(event: WorldEvent, npc: NPC): ChromeFact | null {
@@ -54,16 +58,17 @@ function fact(event: WorldEvent, npc: NPC): ChromeFact | null {
   for (const key of keys) if (typeof event.data[key] === 'number' && Number.isFinite(event.data[key])) quantities[key] = event.data[key];
   return { id: event.id, kind: event.kind, tick: event.tick, knowledge: event.kind === 'rumor' ? 'hearsay' : event.kind === 'witness' && event.actorId === npc.id || event.kind === 'death' ? 'witnessed' : 'experienced', description: descriptions[event.kind], roles, quantities };
 }
-export function chromeContext(world: WorldState, requestId: string): ChromeContext | null {
+export function chromeContext(world: WorldState, requestId: string, relatedIds: string[] = []): ChromeContext | null {
   const request = world.llm.queue.find(q => q.id === requestId), npc = world.npcs.find(n => n.id === request?.npcId);
   const event = world.events.find(e => e.id === request?.eventId);
   if (!npc?.alive || !event) return null;
   const trigger = fact(event, npc); if (!trigger) return null;
   const known = new Set(npc.memories.map(m => m.sourceEventId));
-  const memories = world.events.filter(e => known.has(e.id) && e.id !== trigger.id).slice(-8).map(e => fact(e, npc)).filter((e): e is ChromeFact => !!e);
-  const facts = [trigger, ...memories];
+  const related = world.events.filter(e => relatedIds.includes(e.id) && known.has(e.id) && e.id !== trigger.id).slice(-2).map(e => fact(e, npc)).filter((e): e is ChromeFact => !!e);
+  const memories = world.events.filter(e => known.has(e.id) && e.id !== trigger.id && !related.some(r => r.id === e.id)).slice(-(8 - related.length)).map(e => fact(e, npc)).filter((e): e is ChromeFact => !!e);
+  const facts = [trigger, ...related, ...memories];
   const choices = (Object.keys(rules) as ReasonCode[]).filter(code => rules[code].events.includes(trigger.kind)).map(reasonCode => ({ reasonCode, kinds: rules[reasonCode].goals, evidence: facts.filter(e => rules[reasonCode].events.includes(e.kind)).map(e => e.id) }));
-  const context: ChromeContext = { version: 1, npcId: npc.id, tick: world.tick, trigger, memories, allowedGoals: [...GOAL_KINDS], choices };
+  const context: ChromeContext = { version: 1, npcId: npc.id, tick: world.tick, trigger, memories, allowedGoals: [...GOAL_KINDS], choices, ...(related.length ? { related } : {}) };
   // Imported arbitrary identifiers must not smuggle prose/instructions into the English contract.
   if (facts.some(f => !/^[a-zA-Z0-9_-]{1,100}$/.test(f.id) || Object.values(f.roles).some(id => !/^[a-zA-Z0-9_-]{1,100}$/.test(id))) || !/^[a-zA-Z0-9_-]{1,100}$/.test(npc.id)) return null;
   return choices.length && JSON.stringify(context).length <= CHROME_CONTEXT_LIMIT ? context : null;
@@ -71,20 +76,51 @@ export function chromeContext(world: WorldState, requestId: string): ChromeConte
 const goalSchema = z.object({ kind: z.enum(GOAL_KINDS as [GoalKind, ...GoalKind[]]), reasonCode: z.enum(Object.keys(reasons) as [ReasonCode, ...ReasonCode[]]), evidence: z.array(z.string().max(100)).min(1).max(4) }).strict();
 export const chromeResponseSchema = z.object({ goals: z.array(goalSchema).min(1).max(2) }).strict();
 export type ChromeResult = z.infer<typeof chromeResponseSchema>;
+export class ChromeValidationError extends Error {
+  constructor(readonly code: string) { super(code); }
+}
 export function validateChromeResult(raw: string, context: ChromeContext): ChromeResult {
-  if (raw.length > CHROME_OUTPUT_LIMIT) throw new Error('invalid_output');
-  const value = chromeResponseSchema.parse(JSON.parse(raw));
-  if (new Set(value.goals.map(g => g.kind)).size !== value.goals.length) throw new Error('invalid_output');
+  const fail = (code: string): never => { throw new ChromeValidationError(code); };
+  if (raw.length > CHROME_OUTPUT_LIMIT) fail('output_too_large');
+  let parsed: unknown; try { parsed = JSON.parse(raw); } catch { fail('invalid_json'); }
+  const checked = chromeResponseSchema.safeParse(parsed);
+  if (!checked.success) return fail('invalid_shape');
+  const value = checked.data;
+  if (new Set(value.goals.map(g => g.kind)).size !== value.goals.length) fail('duplicate_goal');
   for (const goal of value.goals) {
     const choice = context.choices.find(c => c.reasonCode === goal.reasonCode);
-    if (!choice || !context.allowedGoals.includes(goal.kind) || !choice.kinds.includes(goal.kind) || !goal.evidence.includes(context.trigger.id) || new Set(goal.evidence).size !== goal.evidence.length || goal.evidence.some(id => !choice.evidence.includes(id))) throw new Error('invalid_output');
+    if (!choice || !context.allowedGoals.includes(goal.kind) || !choice.kinds.includes(goal.kind)) fail('invalid_goal_reason');
+    if (!goal.evidence.includes(context.trigger.id)) fail('missing_trigger');
+    if (new Set(goal.evidence).size !== goal.evidence.length) fail('duplicate_evidence');
+    if (goal.evidence.some(id => !choice!.evidence.includes(id))) fail('unknown_evidence');
   }
   return value;
 }
 export function renderChromeResult(result: ChromeResult, context: ChromeContext): Interpretation {
   return { newGoals: result.goals.map(g => ({ kind: g.kind, reason: `${context.trigger.knowledge === 'hearsay' ? '확인되지 않은 소문을 들었다. ' : ''}${reasons[g.reasonCode]} (근거: ${g.evidence.join(', ')})` })), interpretation: 'Chrome AI가 제안한 목표 · 한국어 이유는 서버가 근거와 코드로 구성했습니다.', relationshipInterpretations: [] };
 }
+export function chromeCandidates(context: ChromeContext): ChromeResult[] {
+  // Each complete candidate satisfies the same cross-field rules as server validation.
+  return context.choices.flatMap(choice => choice.kinds.filter(kind => context.allowedGoals.includes(kind)).map(kind => ({ goals: [{ kind, reasonCode: choice.reasonCode, evidence: [context.trigger.id, ...(context.related ?? []).map(e => e.id).filter(id => choice.evidence.includes(id))] }] })));
+}
 export function chromeResponseConstraint(context: ChromeContext) {
-  return { type: 'object', additionalProperties: false, required: ['goals'], properties: { goals: { type: 'array', minItems: 1, maxItems: 2, items: { type: 'object', additionalProperties: false, required: ['kind', 'reasonCode', 'evidence'], properties: { kind: { type: 'string', enum: context.allowedGoals }, reasonCode: { type: 'string', enum: context.choices.map(c => c.reasonCode) }, evidence: { type: 'array', minItems: 1, maxItems: 4, items: { type: 'string', enum: [context.trigger, ...context.memories].map(e => e.id) } } } } } } };
+  return { type: 'object', enum: chromeCandidates(context) };
+}
+
+export function chromeGoalUseful(world: WorldState, npc: NPC, kind: GoalKind): boolean {
+  if (!npc.alive || npc.goals.some(g => g.kind === kind)) return false;
+  const building = kind === 'build_home' ? world.buildings.find(b => b.id === npc.homeId) : world.buildings.find(b => b.kind === (kind === 'expand_farm' ? 'farm' : 'storage'));
+  if (['build_home', 'expand_farm', 'secure_storage'].includes(kind) && (!building || building.level >= 4)) return false;
+  return true;
+}
+export function relevantChromeContext(world: WorldState, context: ChromeContext): ChromeContext {
+  const npc = world.npcs.find(n => n.id === context.npcId);
+  if (!npc) return { ...context, allowedGoals: [], choices: [] };
+  const topic = context.choices[0]?.reasonCode;
+  const resolved = topic === 'food_security' && npc.inventory.food >= 2 && npc.needs.hunger < 65
+    || topic === 'recover_health' && context.trigger.kind !== 'death' && npc.needs.health >= 70
+    || topic === 'repay_obligation' && !world.loans.some(l => l.status !== 'repaid' && (l.lenderId === npc.id || l.borrowerId === npc.id));
+  const choices = resolved ? [] : context.choices.map(c => ({ ...c, kinds: c.kinds.filter(kind => chromeGoalUseful(world, npc, kind)) })).filter(c => c.kinds.length);
+  return { ...context, choices, allowedGoals: [...new Set(choices.flatMap(c => c.kinds))] };
 }
 export interface ChromeLease { id: string; epoch: string; generation: string; hash: string; version: 1; token: string; expires: number; context: ChromeContext }

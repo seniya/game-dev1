@@ -1,4 +1,4 @@
-import { CHROME_TIMEOUT_MS, CHROME_OUTPUT_LIMIT, CHROME_CONTEXT_LIMIT, chromeResponseConstraint, type ChromeLease } from '../llm/chrome-contract';
+import { CHROME_TIMEOUT_MS, CHROME_OUTPUT_LIMIT, CHROME_CONTEXT_LIMIT, chromeCandidates, chromeResponseConstraint, type ChromeLease } from '../llm/chrome-contract';
 
 export type Availability = 'unavailable' | 'downloadable' | 'downloading' | 'available';
 interface Session {
@@ -14,12 +14,13 @@ interface ModelAPI {
   availability(options: ModelOptions): Promise<Availability>;
   create(options: ModelOptions & { signal: AbortSignal; monitor: (monitor: { addEventListener(type: string, cb: (event: { loaded: number }) => void): void }) => void }): Promise<Session>;
 }
+const rejectionMessages: Record<string, string> = { invalid_json: 'JSON 형식 오류', invalid_shape: '필수 응답 항목 오류', invalid_goal_reason: '허용되지 않은 목표와 이유 조합', missing_trigger: '원인 사건 근거 누락', duplicate_goal: '목표 중복', duplicate_evidence: '근거 중복', unknown_evidence: '허용되지 않은 근거', output_too_large: '응답 길이 초과' };
 const options: ModelOptions = { expectedInputs: [{ type: 'text', languages: ['en'] }], expectedOutputs: [{ type: 'text', languages: ['en'] }] };
 const api = () => (globalThis as typeof globalThis & { LanguageModel?: ModelAPI }).LanguageModel;
 export interface DeviceState { availability: Availability | 'checking' | 'failed'; enabled: boolean; busy: boolean; progress: number; message: string }
 interface DeviceAttempt {
   jobId: string; startedAt: string; elapsedMs: number; contextWindow?: number; inputUsage?: number;
-  outputLength?: number; outcome: string;
+  outputLength?: number; outcome: string; rejectionReason?: string;
 }
 export class ChromeRunner {
   state: DeviceState = { availability: 'checking', enabled: false, busy: false, progress: 0, message: '이 기기의 Chrome AI 지원을 확인하고 있습니다.' };
@@ -89,8 +90,13 @@ export class ChromeRunner {
     const started = performance.now();
     const timer = setTimeout(() => controller.abort(new DOMException('Inference timeout', 'TimeoutError')), CHROME_TIMEOUT_MS);
     try {
-      lease = (await this.post<{ lease: ChromeLease | null }>('claim', {}, controller.signal)).lease;
-      if (!lease) { this.notify('이 기기에서 대기 중 · 새 사건, 다른 기기의 처리 또는 일일 상한을 기다립니다.'); return; }
+      const claimed = await this.post<{ lease: ChromeLease | null; waiting?: { reason: string; nextAt: number; serverNow: number } }>('claim', {}, controller.signal);
+      lease = claimed.lease;
+      if (!lease) {
+        const wait = claimed.waiting, seconds = wait ? Math.max(0, Math.ceil((wait.nextAt - wait.serverNow) / 1000)) : 0;
+        const labels: Record<string, string> = { collecting: '관련 사건을 모으는 중', rest: '다음 판단까지 쉬는 중', hourly_limit: '최근 1시간 한도 도달', daily_limit: '오늘 한도 도달', idle: '새로운 중요 사건 대기', ready: '다른 기기의 처리 또는 새 사건 대기' };
+        this.notify(`이 기기에서 대기 중 · ${labels[wait?.reason ?? 'idle'] ?? '다음 판단 대기'}${seconds ? ` · 최소 ${seconds}초 후 확인` : ''}`); return;
+      }
       attempt = { jobId: lease.id, startedAt: new Date().toISOString(), elapsedMs: 0, outcome: 'running' };
       this.attempts.push(attempt); this.attempts = this.attempts.slice(-20);
       controller.signal.throwIfAborted();
@@ -98,7 +104,7 @@ export class ChromeRunner {
       this.notify('Chrome AI가 목표를 선택하고 있습니다. 세계는 계속 진행됩니다.');
       // Clone an empty session for each resident; never retain another resident's context.
       session = await abortable(this.session!.clone({ signal: controller.signal }), controller.signal);
-      const prompt = `Choose 1-2 goals from choices. Cite trigger.id. Hearsay is unverified. Return JSON only: {"goals":[{"kind":"allowed kind","reasonCode":"allowed code","evidence":["event ID"]}]}.\n${JSON.stringify(lease.context)}`;
+      const prompt = `Choose exactly one complete candidate response. Copy its kind, reasonCode and evidence exactly. Hearsay is unverified. Return JSON only.\n${JSON.stringify({ ...lease.context, candidates: chromeCandidates(lease.context) })}`;
       const promptOptions = { signal: controller.signal, responseConstraint: chromeResponseConstraint(lease.context), omitResponseConstraintInput: true };
       attempt.contextWindow = session.contextWindow;
       if (session.measureContextUsage) {
@@ -122,12 +128,14 @@ export class ChromeRunner {
           try { const result = await this.post<{ state: string }>('result', submission, AbortSignal.timeout(10_000)); if (attempt?.outcome === 'running') attempt.outcome = result.state; if (this.state.enabled) this.notify(result.state === 'applied' ? '서버가 목표와 근거를 검증해 반영했습니다.' : '서버에 결과를 저장했습니다. 처리 기록에서 확인할 수 있습니다.'); break; }
           catch (error) { if (error instanceof Rejected || retry) {
             if (attempt?.outcome === 'running') attempt.outcome = error instanceof Rejected ? error.status === 422 ? 'invalid_output' : 'server_rejected' : 'connection_failed';
+            if (attempt) { attempt.elapsedMs = Math.round(performance.now() - started); if (error instanceof Rejected) attempt.rejectionReason = error.reason; }
             if (error instanceof Rejected && error.status === 422 && this.controller === controller) {
-              this.stop('서버가 모델 응답의 목표·근거를 거부했습니다. 기기 실행을 중단했으니 처리 기록을 확인한 뒤 다시 활성화해 주세요.'); this.state.availability = 'failed';
+              this.stop(`서버가 모델 응답의 목표·근거를 거부했습니다 (${rejectionMessages[error.reason ?? ''] ?? '응답 검증 실패'}). 기기 실행을 중단했으니 처리 기록을 확인한 뒤 다시 활성화해 주세요.`); this.state.availability = 'failed';
             } else if (this.state.enabled) this.notify('결과를 반영하지 못했습니다. 서버 처리 기록을 확인해 주세요.');
             break;
           } }
         }
+        if (attempt) attempt.elapsedMs = Math.round(performance.now() - started);
         await this.updated().catch(() => {});
       }
       if (attempt) attempt.elapsedMs = Math.round(performance.now() - started);
@@ -137,11 +145,11 @@ export class ChromeRunner {
   }
   private async post<T>(path: string, body: object, signal: AbortSignal): Promise<T> {
     const response = await fetch(`/api/chrome/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
-    if (!response.ok) throw new Rejected(response.status);
+    if (!response.ok) { const data = await response.json().catch(() => ({})) as { reason?: unknown }; throw new Rejected(response.status, typeof data.reason === 'string' && /^[a-z_]{1,40}$/.test(data.reason) ? data.reason : undefined); }
     return response.json() as Promise<T>;
   }
 }
-class Rejected extends Error { constructor(readonly status: number) { super('Server rejected request'); } }
+class Rejected extends Error { constructor(readonly status: number, readonly reason?: string) { super('Server rejected request'); } }
 function abortable<T extends Session | string | number>(promise: Promise<T>, signal: AbortSignal): Promise<T> {
   return new Promise((resolve, reject) => {
     const abort = () => reject(signal.reason);

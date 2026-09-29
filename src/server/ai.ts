@@ -1,3 +1,4 @@
+import { chromeSchedule } from './chrome-schedule';
 import { CHROME_DAILY_LIMIT } from '../llm/chrome-contract';
 import type { D1Database } from '@cloudflare/workers-types';
 import { Simulation } from '../sim/engine';
@@ -24,7 +25,7 @@ export async function aiStatus(db: D1Database, env: ModelEnv, now = Date.now()) 
   const jobs = await db.prepare('SELECT id,epoch,request,kind,status,attempts,error,model,created,updated FROM ai_jobs ORDER BY created DESC,id DESC LIMIT 20').all();
   const chromeUsage = await db.prepare('SELECT COUNT(*) AS calls FROM chrome_calls WHERE day=?').bind(day).first();
   const chromeJobs = await db.prepare('SELECT id,epoch,status,attempts,error,created,updated FROM chrome_jobs ORDER BY created DESC,id DESC LIMIT 20').all();
-  return { chrome: { dailyLimit: CHROME_DAILY_LIMIT, usage: chromeUsage, jobs: chromeJobs.results }, configured: !!config, model: config?.model ?? null, day, dailyLimit: config?.dailyLimit ?? 24, maxOutputTokens: MODEL_OUTPUT_LIMIT, usage, jobs: jobs.results };
+  return { chrome: { schedule: await chromeSchedule(db, now), dailyLimit: CHROME_DAILY_LIMIT, usage: chromeUsage, jobs: chromeJobs.results }, configured: !!config, model: config?.model ?? null, day, dailyLimit: config?.dailyLimit ?? 24, maxOutputTokens: MODEL_OUTPUT_LIMIT, usage, jobs: jobs.results };
 }
 
 async function ensureJob(store: WorldStore, w: StoredWorld, model: string, now: number): Promise<Job | null> {
