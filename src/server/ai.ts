@@ -1,3 +1,5 @@
+import { recollections } from '../sim/recollection';
+import { historyContext, type HistoryContext } from '../sim/history';
 import { chromeSchedule } from './chrome-schedule';
 import { CHROME_DAILY_LIMIT } from '../llm/chrome-contract';
 import type { D1Database } from '@cloudflare/workers-types';
@@ -8,7 +10,7 @@ import { Conflict, WorldStore } from './store';
 import { ModelError, ServerModelProvider, modelConfig, MODEL_OUTPUT_LIMIT, type ModelEnv, type GroundedDialogue, type GroundedInterpretation } from './model';
 
 interface Job {
-  id: string; epoch: string; generation: string; request: string; kind: 'interpretation' | 'dialogue';
+  id: string; epoch: string; generation: string; request: string; kind: 'interpretation' | 'dialogue' | 'history';
   context: string; status: string; attempts: number; next_attempt: number; result: string | null;
   error: string | null; model: string; created: number; updated: number;
 }
@@ -17,7 +19,7 @@ export const utcDay = (now: number) => new Date(now).toISOString().slice(0, 10);
 const generation = (w: StoredWorld) => w.meta.aiGeneration ?? 'legacy';
 function active(w: StoredWorld, job: Job) {
   return w.epoch === job.epoch && generation(w) === job.generation && w.meta.aiMode === 'remote' && w.state.llm.enabled &&
-    (job.kind === 'dialogue' ? w.meta.dialogue?.id === job.request : w.state.llm.queue.some(q => q.id === job.request));
+    (job.kind === 'history' ? w.meta.history?.id === job.request : job.kind === 'dialogue' ? w.meta.dialogue?.id === job.request : w.state.llm.queue.some(q => q.id === job.request));
 }
 export async function aiStatus(db: D1Database, env: ModelEnv, now = Date.now()) {
   const config = modelConfig(env), day = utcDay(now);
@@ -29,11 +31,13 @@ export async function aiStatus(db: D1Database, env: ModelEnv, now = Date.now()) 
 }
 
 async function ensureJob(store: WorldStore, w: StoredWorld, model: string, now: number): Promise<Job | null> {
-  let context: NPCContext | DialogueContext, request: string, kind: Job['kind'];
-  if (w.meta.dialogue) {
+  let context: NPCContext | DialogueContext | HistoryContext, request: string, kind: Job['kind'];
+  if (w.meta.history) {
+    context = historyContext(w.state.events, w.meta.history.topic); request = w.meta.history.id; kind = 'history';
+  } else if (w.meta.dialogue) {
     const d = w.meta.dialogue, speaker = w.state.npcs.find(n => n.id === d.speakerId), listener = w.state.npcs.find(n => n.id === d.listenerId);
     if (!speaker || !listener) return null;
-    context = { speaker, listener, memories: speaker.memories.filter(m => m.relatedNpcIds.includes(listener.id)).slice(-8) }; request = d.id; kind = 'dialogue';
+    context = { speaker, listener, memories: recollections(speaker.memories, listener.id, d.topic), ...(d.topic ? { topic: d.topic } : {}) }; request = d.id; kind = 'dialogue';
   } else {
     const next = Simulation.load(JSON.stringify(w.state)).decisionContext(); if (!next) return null;
     context = next.context; request = next.requestId; kind = 'interpretation';
@@ -69,7 +73,10 @@ async function applyReady(store: WorldStore, job: Job, now: number) {
     const sim = Simulation.load(JSON.stringify(current.state)), before = new Set(current.state.events.map(e => e.id));
     const meta = { ...current.meta }; let status = 'failed';
     if (outcome.ok) {
-      if (job.kind === 'interpretation') {
+      if (job.kind === 'history') {
+        const c = JSON.parse(job.context) as HistoryContext;
+        status = sim.recordHistory(c.topic, (outcome.value as GroundedDialogue).evidence, job.request, job.model) ? 'applied' : 'rejected';
+      } else if (job.kind === 'interpretation') {
         const { evidence, ...result } = outcome.value as GroundedInterpretation;
         status = sim.applyInterpretation(job.request, result, { evidence, model: job.model }) ? 'applied' : 'rejected';
       } else {
@@ -83,6 +90,7 @@ async function applyReady(store: WorldStore, job: Job, now: number) {
         sim.failDecision(job.request, outcome.error, retry);
       }
     }
+    if (job.kind === 'history' && status !== 'pending') delete meta.history;
     if (job.kind === 'dialogue' && status !== 'pending') delete meta.dialogue;
     const state = sim.snapshot(), events = state.events.filter(e => !before.has(e.id));
     meta.eventCount += events.length;
@@ -115,7 +123,7 @@ export async function processAI(store: WorldStore, env: ModelEnv, transport: typ
   const token = await reserve(store, job, config.dailyLimit, now); if (!token) return;
   const provider = new ServerModelProvider({ ...config, model: job.model }, transport); let outcome: Outcome;
   try {
-    outcome = { ok: true, value: job.kind === 'dialogue' ? await provider.generateDialogue(JSON.parse(job.context)) : await provider.interpretEvent(JSON.parse(job.context)) };
+    outcome = { ok: true, value: job.kind === 'history' ? await provider.explainHistory(JSON.parse(job.context)) : job.kind === 'dialogue' ? await provider.generateDialogue(JSON.parse(job.context)) : await provider.interpretEvent(JSON.parse(job.context)) };
   } catch (error) {
     const failure = error instanceof ModelError ? error : new ModelError('provider_error', false);
     outcome = { ok: false, error: failure.code, retryable: failure.retryable };

@@ -1,3 +1,5 @@
+import { historyContext, validateHistorySelection, type HistoryTopic } from './history';
+import { cropMultiplier, ecologyDay, societyDay, harvest, setCouncil } from './heritage';
 import { indexPeople, updatePerson, person, neighbours } from './spatial';
 import { initializeUrban, urbanDay, advanceFreight, industryWork, city, useTool, setPolicy } from './urban';
 import type { Service } from './urban-types';
@@ -32,7 +34,14 @@ export class Simulation {
     if (!this.state.civilization.settlements.some(v => v.id === focus)) throw new Error('관찰할 마을이 없습니다.');
     this.state.civilization.focus = focus; this.state.civilization.detail = detail;
   }
+  setCouncil(id: string, enabled: boolean) { setCouncil(this.state, id, enabled); }
   setPolicy(id: string, taxRate: number, priority: Service) { setPolicy(this.state, id, taxRate, priority); }
+  recordHistory(topic: HistoryTopic, evidence: string[], requestId: string, model: string): boolean {
+    const context = historyContext(this.state.events.filter(e => evidence.includes(e.id)), topic);
+    if (!validateHistorySelection({ evidence }, context)) return false;
+    appendEvent(this.state, { kind: 'llm', importance: 55, description: `역사 관찰 · 모델이 고른 근거 ${evidence.length}건. 원문 사건을 함께 확인하세요.`, data: { history: true, topic, evidence, requestId, model } });
+    return true;
+  }
   setLLM(enabled: boolean) { this.state.llm.enabled = enabled; if (!enabled) this.state.llm.queue = []; }
   step(count = 1, motion?: MotionTrace) {
     if (!Number.isInteger(count) || count < 1 || count > 1_000_000) throw new Error('틱 수가 올바르지 않습니다.');
@@ -53,7 +62,7 @@ export class Simulation {
     advanceJourneys(w);
     advanceFreight(w);
     indexPeople(w);
-    for (const farm of w.buildings.filter(b => b.kind === 'farm')) farm.growth = Math.min(120, farm.growth + (w.weather === 'drought' ? .025 : w.weather === 'rain' ? .24 : .14) * (1 + (farm.level - 1) * .35) * (city(w, farm.settlementId!)?.fertility ?? 70) / 70 * (w.urban.buildings[farm.id]?.condition ?? 100) / 100);
+    for (const farm of w.buildings.filter(b => b.kind === 'farm')) farm.growth = Math.min(120, farm.growth + (w.weather === 'drought' ? .025 : w.weather === 'rain' ? .24 : .14) * (1 + (farm.level - 1) * .35) * (city(w, farm.settlementId!)?.fertility ?? 70) / 70 * (w.urban.buildings[farm.id]?.condition ?? 100) / 100 * cropMultiplier(w, farm.settlementId!));
     for (let i = 0; i < w.npcs.length; i++) {
       const n = w.npcs[(i + w.tick) % w.npcs.length];
       if (!n.alive) continue;
@@ -99,7 +108,7 @@ export class Simulation {
     w.weather = w.tick < w.droughtUntil ? 'drought' : roll < .24 ? 'rain' : roll < .55 ? 'cloudy' : 'sunny';
     const weatherName = { rain: '비', cloudy: '흐림', sunny: '맑음', drought: '가뭄' }[w.weather];
     appendEvent(w, { kind: 'weather', importance: 20, description: `${dayOf(w.tick)}일째 · ${weatherName}. ${w.weather === 'drought' ? '농장과 열매의 생산량이 감소한다.' : '새로운 하루가 시작되었다.'}` });
-    for (const r of w.resources) r.amount = Math.min(r.capacity, r.amount + (r.kind === 'wood' ? 3 : w.weather === 'drought' ? 0 : w.weather === 'rain' ? 2 : 1));
+    ecologyDay(w);
     sampleDay(w);
     for (const n of w.npcs) {
       n.dailyTaken = 0;
@@ -109,6 +118,7 @@ export class Simulation {
     regionalDay(w);
     urbanDay(w);
     initializeUrban(w);
+    societyDay(w);
     decayMemories(w);
   }
   private advance(n: NPC) {
@@ -160,14 +170,14 @@ export class Simulation {
         const farm = w.buildings.find(b => b.id === a.targetId && b.kind === 'farm');
         if (!farm || farm.growth < 3) { this.fail(n, '작물이 아직 자라지 않았다.'); break; }
         n.life.skill = Math.min(100, n.life.skill + .02);
-        const amount = Math.min(4 + Math.floor(n.life.skill / 25) + useTool(w, n), Math.floor(farm.growth)); farm.growth -= amount; n.inventory.food += amount;
+        const amount = Math.min(4 + Math.floor(n.life.skill / 25) + useTool(w, n), Math.floor(farm.growth)); farm.growth -= amount; harvest(w, farm.settlementId!, amount); n.inventory.food += amount;
         w.economy.totals.producedFood += amount;
-        const harvest = simple('production', `${n.identity.name}이 농장에서 식량 ${amount}개를 수확했다.`, 25, { resource: 'food', amount, level: farm.level });
+        const harvestEvent = simple('production', `${n.identity.name}이 농장에서 식량 ${amount}개를 수확했다.`, 25, { resource: 'food', amount, level: farm.level });
         // The market employs harvesters: one harvested unit enters its stock in exchange for a funded wage.
         const wage = Math.min(2, localMarket.coins);
         if (wage > 0) {
           n.inventory.food--; localMarket.food++; localMarket.coins -= wage; n.wealth += wage; w.urban.citizens[n.id].income += wage; w.economy.totals.wages += wage;
-          appendEvent(w, { kind: 'wage', actorId: n.id, locationId: localBuilding(w, n, 'market').id, causeId: harvest.id, importance: 30, description: `${n.identity.name}이 수확 식량 1개를 시장에 납품하고 공동 시장 기금에서 임금 ${wage}코인을 받았다.`, data: { employer: 'market', amount: wage, food: 1, fundRemaining: localMarket.coins } });
+          appendEvent(w, { kind: 'wage', actorId: n.id, locationId: localBuilding(w, n, 'market').id, causeId: harvestEvent.id, importance: 30, description: `${n.identity.name}이 수확 식량 1개를 시장에 납품하고 공동 시장 기금에서 임금 ${wage}코인을 받았다.`, data: { employer: 'market', amount: wage, food: 1, fundRemaining: localMarket.coins } });
         }
         break;
       }

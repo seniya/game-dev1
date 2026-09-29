@@ -1,3 +1,4 @@
+import { initializeHeritage } from './heritage';
 import { initializeUrban } from './urban';
 import { type WorldState, type NPC, type Settlement, type Building, YEAR_TICKS } from './types';
 import { appendEvent } from './social';
@@ -47,7 +48,7 @@ function addVillage(w: WorldState): Settlement {
     const position = { x: x - 12 + j % 7 * 2, y: y + 8 + Math.floor(j / 7) * 2 };
     w.resources.push({ id: `r-new-${w.nextId++}`, position, kind: j % 2 ? 'wood' : 'food', amount: 8, capacity: 24 });
   }
-  initializeUrban(w);
+  initializeUrban(w); if (w.heritage) initializeHeritage(w);
   return v;
 }
 export function populateSettlements(w: WorldState) {
@@ -138,7 +139,7 @@ export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' =
     const b: Building = { id: `c${w.nextId++}`, kind, name: `${v.name} ${kind === 'home' ? '새집' : '새 농장'}`, position: p, level: 1, growth: 0, settlementId: v.id, ownerIds: [] }; w.buildings.push(b);
     if (kind === 'farm') { delete b.ownerIds; w.tiles[p.y * w.width + p.x] = 'farm'; }
     appendEvent(w, { kind: 'construction', locationId: b.id, importance: 50, description: `${v.name}이 주거 부족에 대응하여 공동 목재 ${cost}개로 ${kind === 'home' ? capacity(b) + '인 주택' : '생산 농장'}을 지었다.`, data: { wood: cost, settlementId: v.id, capacity: kind === 'home' ? capacity(b) : 0 } });
-    initializeUrban(w);
+    initializeUrban(w); if (w.heritage) initializeHeritage(w);
     return b;
   }
 }

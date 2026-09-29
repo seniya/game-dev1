@@ -1,0 +1,104 @@
+{
+  "generatedAt": "2026-09-29T22:36:43.593Z",
+  "runtime": "local Cloudflare Worker/D1, real HTTP requests",
+  "history": {
+    "records": 5,
+    "first": "e2781",
+    "last": "e12227"
+  },
+  "exportBytes": 3492922,
+  "threeKExportBytes": 7793524,
+  "measurements": [
+    {
+      "action": "reset",
+      "ms": 59,
+      "population": 72,
+      "tick": 36,
+      "bytes": 168285
+    },
+    {
+      "action": "ai-mode",
+      "ms": 56,
+      "population": 72,
+      "tick": 36,
+      "bytes": 168285
+    },
+    {
+      "action": "step",
+      "ms": 296,
+      "population": 72,
+      "tick": 180,
+      "bytes": 387545
+    },
+    {
+      "action": "step",
+      "ms": 302,
+      "population": 72,
+      "tick": 324,
+      "bytes": 466958
+    },
+    {
+      "action": "step",
+      "ms": 409,
+      "population": 72,
+      "tick": 468,
+      "bytes": 547586
+    },
+    {
+      "action": "step",
+      "ms": 391,
+      "population": 72,
+      "tick": 612,
+      "bytes": 641220
+    },
+    {
+      "action": "import",
+      "ms": 823,
+      "population": 72,
+      "tick": 612,
+      "bytes": 641220
+    },
+    {
+      "action": "reset",
+      "ms": 552,
+      "population": 3000,
+      "tick": 36,
+      "bytes": 3834800
+    },
+    {
+      "action": "ai-mode",
+      "ms": 580,
+      "population": 3000,
+      "tick": 36,
+      "bytes": 3834800
+    },
+    {
+      "action": "step",
+      "ms": 1557,
+      "population": 3000,
+      "tick": 37,
+      "bytes": 7308696
+    },
+    {
+      "action": "sync",
+      "ms": 1779,
+      "population": 3000,
+      "tick": 38,
+      "bytes": 7585182
+    },
+    {
+      "action": "play",
+      "ms": 1186,
+      "population": 3000,
+      "tick": 38,
+      "bytes": 7508123
+    }
+  ],
+  "checks": [
+    "city historical comparisons",
+    "stream restore",
+    "3000 residents",
+    "bounded manual day",
+    "cancel and reconnect"
+  ]
+}

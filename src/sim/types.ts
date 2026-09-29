@@ -1,3 +1,5 @@
+import type { RecollectionTopic } from './recollection';
+import type { Heritage } from './heritage';
 import type { UrbanState } from './urban-types';
 export const TICKS_PER_DAY = 144;
 export type Position = { x: number; y: number };
@@ -28,13 +30,13 @@ export interface NPC {
   dailyTaken: number; lastTalk: number; knownRumors: string[];
 }
 export const OCCUPATIONS: Record<NPC['occupation'], string> = { farmer: '농부', gatherer: '채집가', woodcutter: '나무꾼', carpenter: '목수', merchant: '상인' };
-export type EventKind = 'arrival' | 'production' | 'consumption' | 'storage' | 'trade' | 'loan' | 'repayment' | 'default' | 'share' | 'theft' | 'witness' | 'rumor' | 'talk' | 'scarcity' | 'health' | 'death' | 'weather' | 'relationship' | 'memory' | 'goal' | 'llm' | 'experiment' | 'failure' | 'project' | 'wage' | 'price' | 'family' | 'birth' | 'coming_of_age' | 'inheritance' | 'education' | 'construction' | 'settlement' | 'migration' | 'caravan' | 'occupation' | 'industry' | 'public_service' | 'tax' | 'urban' | 'policy' | 'freight';
+export type EventKind = 'arrival' | 'production' | 'consumption' | 'storage' | 'trade' | 'loan' | 'repayment' | 'default' | 'share' | 'theft' | 'witness' | 'rumor' | 'talk' | 'scarcity' | 'health' | 'death' | 'weather' | 'relationship' | 'memory' | 'goal' | 'llm' | 'experiment' | 'failure' | 'project' | 'wage' | 'price' | 'family' | 'birth' | 'coming_of_age' | 'inheritance' | 'education' | 'construction' | 'settlement' | 'migration' | 'caravan' | 'occupation' | 'industry' | 'public_service' | 'tax' | 'urban' | 'policy' | 'freight' | 'ecology' | 'council' | 'diplomacy';
 export interface WorldEvent { id: string; tick: number; kind: EventKind; actorId?: string; targetId?: string; locationId?: string; participants: string[]; importance: number; description: string; causeId?: string; data: Record<string, string | number | boolean | string[]> }
 export interface Loan { id: string; lenderId: string; borrowerId: string; amount: number; remaining: number; due: number; status: 'active' | 'repaid' | 'defaulted'; sourceEventId: string }
 export interface DecisionRequest { id: string; npcId: string; eventId: string; tick: number; attempts: number }
 export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys: string[]; dailyByNpc: Record<string, number>; dailyTotal: number; requested: number; completed: number; rejected: number; failed: number }
 export interface WorldState {
-  version: 4; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
+  version: 5; heritage: Heritage; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
   tiles: Tile[]; buildings: Building[]; resources: ResourceNode[]; npcs: NPC[];
   storage: Resources; market: Resources & { coins: number; foodPrice: number; woodPrice: number };
   weather: 'sunny' | 'rain' | 'cloudy' | 'drought'; droughtUntil: number;
@@ -44,7 +46,7 @@ export interface WorldState {
 }
 export interface Interpretation { newGoals: { kind: GoalKind; reason: string }[]; interpretation: string; relationshipInterpretations: { npcId: string; meaning: string }[] }
 export interface NPCContext { npc: NPC; event: WorldEvent; allowedGoals: GoalKind[]; tick: number }
-export interface DialogueContext { speaker: NPC; listener: NPC; memories: Memory[] }
+export interface DialogueContext { topic?: RecollectionTopic; speaker: NPC; listener: NPC; memories: Memory[] }
 export interface DialogueResult { text: string }
 
 export interface EconomyFlow { producedFood: number; producedWood: number; consumedFood: number; investedWood: number; externalFood: number; trades: number; tradeVolume: number; wages: number }

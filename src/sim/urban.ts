@@ -1,3 +1,4 @@
+import { accord, harvest } from './heritage';
 import type { WorldState, NPC, Building } from './types';
 import { GOODS, INDUSTRIES, SERVICES, emptyGoods, INDUSTRY_LABELS, GOOD_LABELS, SERVICE_LABELS, type Industry, type Citizen, type City, type Service, type Good } from './urban-types';
 import { stocks, market, capacity, isTravelling, startMigration } from './civilization';
@@ -28,11 +29,11 @@ export function cityMetrics(w: WorldState, id: string) {
   const food = stocks(w, id).food + market(w, id).food + people.reduce((s, n) => s + n.inventory.food, 0);
   return { population: people.length, beds, vacant: Math.max(0, beds - people.length), employed, adults: adults.length, jobs, food, stress: total('stress'), trust: total('trust'), housing: total('housing'), sick: people.filter(n => w.urban.citizens[n.id]?.disease > 0).length, stage: people.length >= 150 && w.urban.enterprises.filter(e => e.settlementId === id).length >= 4 && c.services.water > 0 ? '도시' : people.length >= 60 ? '읍' : '마을' };
 }
-export function setPolicy(w: WorldState, id: string, taxRate: number, priority: Service) {
+export function setPolicy(w: WorldState, id: string, taxRate: number, priority: Service, causeId?: string) {
   if (!Number.isInteger(taxRate) || taxRate < 0 || taxRate > 30 || !SERVICES.includes(priority) || !w.civilization.settlements.some(v => v.id === id)) throw new Error('도시 정책 값이 올바르지 않습니다.');
   initializeUrban(w); const c = city(w, id), previous = c.taxRate;
   c.taxRate = taxRate; c.priority = priority;
-  c.policyEventId = c.lastEventId = appendEvent(w, { kind: 'policy', importance: 60, description: `${id}의 세율을 ${taxRate}%로, 공공투자 우선순위를 ${SERVICE_LABELS[priority]}로 변경했다.`, data: { settlementId: id, previous, taxRate, priority } }).id;
+  c.policyEventId = c.lastEventId = appendEvent(w, { kind: 'policy', importance: 60, causeId, description: `${id}의 세율을 ${taxRate}%로, 공공투자 우선순위를 ${SERVICE_LABELS[priority]}로 변경했다.`, data: { settlementId: id, previous, taxRate, priority } }).id;
 }
 function site(w: WorldState, id: string): { x: number; y: number } | undefined {
   const v = w.civilization.settlements.find(v => v.id === id)!;
@@ -68,7 +69,7 @@ export function industryWork(w: WorldState, n: NPC): boolean {
   const { e, c, b } = job, u = w.urban.citizens[n.id], m = market(w, n.settlementId);
   let amount = 1 + Math.floor((u.skills[e.kind] + u.education * .3) / 35), output: string = e.kind;
   const consume = (key: Good, amount: number) => { c.goods[key] -= amount; w.urban.ledger.consumed[key] += amount; };
-  if (e.kind === 'field') { amount = Math.min(Math.floor(b.growth), Math.max(1, Math.round(amount * c.fertility / 45))); b.growth -= amount; c.goods.grain += amount; w.urban.ledger.produced.grain += amount; output = 'grain'; }
+  if (e.kind === 'field') { amount = Math.min(Math.floor(b.growth), Math.max(1, Math.round(amount * c.fertility / 45))); b.growth -= amount; harvest(w, e.settlementId, amount); c.goods.grain += amount; w.urban.ledger.produced.grain += amount; output = 'grain'; }
   if (e.kind === 'mine' || e.kind === 'quarry') { const key = e.kind === 'mine' ? 'ore' : 'stone'; amount = Math.min(amount, c.deposits[key]); c.deposits[key] -= amount; c.goods[key] += amount; w.urban.ledger.produced[key] += amount; c.pollution = clamp(c.pollution + .1); output = key; }
   if (e.kind === 'mill') { consume('grain', 2); amount = 3; m.food += amount; w.economy.totals.producedFood += amount; output = 'food'; }
   if (e.kind === 'smith') { consume('ore', 2); stocks(w, n.settlementId).wood--; w.economy.totals.investedWood++; amount = 1; c.goods.tools++; w.urban.ledger.produced.tools++; output = 'tools'; c.pollution = clamp(c.pollution + .15); }
@@ -83,14 +84,15 @@ export function useTool(w: WorldState, n: NPC): number {
   c.goods.tools--; w.urban.ledger.consumed.tools++; return 2;
 }
 export function startFreight(w: WorldState, from: string, to: string, good: Good): boolean {
+  const relation = accord(w, from, to); if (relation?.status === 'dispute') return false;
   const a = city(w, from), b = city(w, to); if (!a || !b || from === to || w.urban.freight.some(f => f.from === from && f.to === to && f.good === good)) return false;
   const vs = w.civilization.settlements, path = findPath(w, vs.find(v => v.id === from)!.center, vs.find(v => v.id === to)!.center); if (!path) return false;
-  const fee = Math.max(1, Math.ceil(path.length / (16 * (1 + a.active.road)))), buyer = market(w, to);
+  const fee = Math.max(1, Math.ceil(path.length / (16 * (1 + a.active.road))) - (relation?.status === 'cooperation' ? 1 : 0)), buyer = market(w, to);
   const price = good === 'tools' ? 4 : 2, amount = Math.min(8 + a.active.road * 4, Math.max(0, a.goods[good] - 4), Math.floor((buyer.coins - fee) / price));
   if (amount <= 0 || b.goods[good] >= 4) return false;
   const carrier = w.npcs.find(n => n.alive && n.identity.age >= 18 && n.settlementId === from); if (!carrier) return false;
   a.goods[good] -= amount; buyer.coins -= amount * price + fee; carrier.wealth += fee; w.urban.citizens[carrier.id].income += fee;
-  const e = appendEvent(w, { kind: 'freight', actorId: carrier.id, importance: 45, description: `${from} → ${to}: ${GOOD_LABELS[good]} ${amount}개를 운송한다. 운임 ${fee}코인, 거리 ${path.length}칸.`, data: { from, to, good, amount, fee, phase: 'departed' } });
+  const e = appendEvent(w, { kind: 'freight', actorId: carrier.id, causeId: relation?.lastEventId, importance: 45, description: `${from} → ${to}: ${GOOD_LABELS[good]} ${amount}개를 운송한다. 운임 ${fee}코인, 거리 ${path.length}칸.`, data: { from, to, good, amount, fee, phase: 'departed' } });
   w.urban.freight.push({ id: `u${w.nextId++}`, from, to, good, amount, coins: amount * price, fee, path, progress: 0, sourceEventId: e.id });
   return true;
 }
@@ -99,7 +101,8 @@ export function advanceFreight(w: WorldState) {
     f.progress = Math.min(f.path.length, f.progress + 1 + city(w, f.from).active.road);
     if (f.progress < f.path.length) continue;
     city(w, f.to).goods[f.good] += f.amount; market(w, f.from).coins += f.coins;
-    appendEvent(w, { kind: 'freight', causeId: f.sourceEventId, importance: 45, description: `${f.from} → ${f.to}: ${GOOD_LABELS[f.good]} ${f.amount}개와 대금 ${f.coins}코인을 인도했다.`, data: { from: f.from, to: f.to, good: f.good, amount: f.amount, phase: 'arrived' } });
+    const delivered = appendEvent(w, { kind: 'freight', causeId: f.sourceEventId, importance: 45, description: `${f.from} → ${f.to}: ${GOOD_LABELS[f.good]} ${f.amount}개와 대금 ${f.coins}코인을 인도했다.`, data: { from: f.from, to: f.to, good: f.good, amount: f.amount, phase: 'arrived' } });
+    const relation = accord(w, f.from, f.to); if (relation) { relation.deliveries++; relation.deliveryEventId = delivered.id; }
     w.urban.freight = w.urban.freight.filter(x => x.id !== f.id);
   }
 }

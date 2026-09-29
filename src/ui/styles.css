@@ -80,3 +80,18 @@
 .urban-table th,.urban-table td { padding: 8px; border-bottom: 1px solid #dce0d2; text-align: right; }
 .urban-table th:first-child,.urban-table td:first-child { text-align: left; }
 .resident-paging { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 15px; padding: 15px; }
+
+.heritage-panel { margin-top: 20px; padding: 18px; background: var(--surface, #fff); border: 1px solid #ddd8ce; border-radius: 12px; }
+.heritage-panel p { line-height: 1.7; font-size: 13px; overflow-wrap: anywhere; }
+.heritage-panel h4 { margin-top: 18px; }
+.history-list article { padding: 14px 0; border-bottom: 1px solid #ddd8ce; overflow-wrap: anywhere; }
+.history-list article p { line-height: 1.7; }
+.history-list article span, .history-list small { color: #6b716b; font-size: 12px; }
+.history-list .evidence-link, .history-list .text-button { margin: 4px 10px 4px 0; }
+#history-query { display: grid; gap: 10px; }
+.history-dates { display: flex; gap: 12px; }
+.history-dates label { min-width: 0; flex: 1; }
+.history-dates input { display: block; width: 100%; min-width: 0; box-sizing: border-box; }
+.heritage-panel summary { cursor: pointer; font-weight: 600; }
+.heritage-panel summary span { display: inline-block; margin-left: 10px; font-size: 12px; font-weight: 400; color: #69716b; }
+.heritage-panel[open] summary { margin-bottom: 18px; }

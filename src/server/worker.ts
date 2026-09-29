@@ -1,3 +1,4 @@
+import { readHistory, streamWorld } from './history';
 import { summarize } from '../sim/engine';
 import type { D1Database, Fetcher, ExecutionContext } from '@cloudflare/workers-types';
 import { applyCommand, commandSchema, viewWorld } from './world';
@@ -67,7 +68,7 @@ export default {
         const parsed = commandSchema.safeParse(JSON.parse(body));
         if (!parsed.success) return json({ error: '명령 형식이 올바르지 않습니다.' }, 400);
         const command = parsed.data;
-        if (command.action.type === 'ai-mode' && command.action.mode === 'remote' && !modelConfig(env)) return json({ error: '서버 모델이 연결되지 않았습니다. 모델 주소와 이름을 먼저 설정해 주세요.' }, 400);
+        if ((command.action.type === 'history-ai' || command.action.type === 'ai-mode' && command.action.mode === 'remote') && !modelConfig(env)) return json({ error: '서버 모델이 연결되지 않았습니다. 모델 주소와 이름을 먼저 설정해 주세요.' }, 400);
         const canonical = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(command))))).map(b => b.toString(16).padStart(2, '0')).join('');
         const previous = await store.command(command.id);
         if (previous) {
@@ -82,6 +83,8 @@ export default {
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
         wakeAI(); return json(viewWorld(world, motion));
       }
+      if (url.pathname === '/api/history' && request.method === 'GET') return json(await readHistory(store, await store.read(), url.searchParams));
+      if (url.pathname === '/api/export-stream' && request.method === 'GET') return streamWorld(store, await store.read());
       if (url.pathname === '/api/export' && request.method === 'GET') {
         const current = await store.read(), epoch = url.searchParams.has('backup') ? current.meta.backupEpoch : current.epoch;
         if (!epoch) return json({ error: '초기화 전 백업이 없습니다.' }, 404);
@@ -107,7 +110,7 @@ export default {
         const filter = p.get('filter');
         if (filter === 'important') clauses.push("(json_extract(e.body,'$.importance')>=45 OR e.kind='weather')");
         if (filter === 'social') clauses.push("e.kind IN ('share','talk','witness','rumor','relationship','memory','family','birth','coming_of_age','education','migration','death')");
-        if (filter === 'economy') clauses.push("e.kind IN ('production','storage','trade','loan','repayment','default','theft','scarcity','wage','price','project','consumption','experiment','inheritance','construction','settlement','caravan','occupation','industry','public_service','tax','urban','policy','freight')");
+        if (filter === 'economy') clauses.push("e.kind IN ('production','storage','trade','loan','repayment','default','theft','scarcity','wage','price','project','consumption','experiment','inheritance','construction','settlement','caravan','occupation','industry','public_service','tax','urban','policy','freight','ecology','council','diplomacy')");
         if (filter === 'life') clauses.push("e.kind NOT IN ('arrival','memory','failure')");
         const rows = await env.DB.prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();
         return json({ epoch: current.epoch, eventCount: current.meta.eventCount, cursors: Object.fromEntries(rows.results.slice(0, 40).map(r => [parseEvent(r).id, r.seq])), events: rows.results.slice(0, 40).map(parseEvent), next: rows.results.length > 40 ? rows.results[39].seq : null });
@@ -126,7 +129,7 @@ export default {
       return json({ error: '지원하지 않는 요청입니다.' }, 404);
     } catch (error) {
       if (error instanceof SyntaxError) return json({ error: 'JSON 형식을 확인해 주세요.' }, 400);
-      if (error instanceof Error && /저장|주민|시드|도시 정책/.test(error.message)) return json({ error: error.message }, 400);
+      if (error instanceof Error && /저장|주민|시드|도시 정책|역사 조회|도시 의회/.test(error.message)) return json({ error: error.message }, 400);
       console.error('World request failed', error instanceof Error ? error.message : 'unknown');
       return json({ error: '서버 처리에 실패했습니다. 세계는 마지막 저장 상태로 유지됩니다.' }, 503);
     }

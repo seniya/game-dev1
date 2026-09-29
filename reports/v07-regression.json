@@ -1,0 +1,6707 @@
+{
+  "generatedAt": "2026-09-29T15:02:34.870Z",
+  "measurementNotes": "elapsedMs includes independent replay, save validation, and continuation checks; processHeapMB includes multiple live simulation copies and garbage awaiting collection, not single-world memory.",
+  "contract": "same seed + commands; all accounts conserve; save continuation and independent replay match",
+  "cases": [
+    {
+      "seed": 7,
+      "days": 100,
+      "condition": "normal",
+      "population": 15,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 3,
+      "generations": 1,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 0,
+      "averageFood": 2234.18,
+      "storage": {
+        "food": 4118,
+        "wood": 2697
+      },
+      "conflicts": 91,
+      "thefts": 32,
+      "shares": 39,
+      "strongestRelationship": {
+        "residents": "새봄29076 ↔ 소율",
+        "score": 178
+      },
+      "weakestRelationship": {
+        "residents": "서연 ↔ 다은",
+        "score": -84
+      },
+      "events": 38985,
+      "economy": {
+        "producedFood": 7951,
+        "producedWood": 2873,
+        "consumedFood": 3847,
+        "investedWood": 163,
+        "externalFood": 0,
+        "trades": 98,
+        "tradeVolume": 174,
+        "wages": 132,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "프로젝트에 필요한 목재나 목표가 없다.": 2,
+        "대화 상대가 지금 바쁘다.": 56,
+        "작물이 아직 자라지 않았다.": 2434,
+        "채집 자원이 소진되었다.": 294,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 23,
+        "거래 재고 또는 실제 자금이 부족하다.": 69,
+        "식량 공유 조건이 바뀌었다.": 29,
+        "절도 조건이 바뀌었다.": 5
+      },
+      "deathEvidence": [],
+      "minDailyFood": 100,
+      "maxDailyFood": 4176,
+      "bytes": 8332917,
+      "elapsedMs": 3052,
+      "processHeapMB": 185,
+      "sha256": "2759207ef0cc3b1bf9fae90d540dd4b7ec833bef9fb394fdc9ed8fe1c752570d"
+    },
+    {
+      "seed": 7,
+      "days": 100,
+      "condition": "drought",
+      "population": 4,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 2,
+      "generations": 1,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 10,
+      "averageFood": 1134.91,
+      "storage": {
+        "food": 2506,
+        "wood": 1408
+      },
+      "conflicts": 26,
+      "thefts": 7,
+      "shares": 23,
+      "strongestRelationship": {
+        "residents": "민서 ↔ 유준",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "서연 ↔ 다은",
+        "score": -34
+      },
+      "events": 9450,
+      "economy": {
+        "producedFood": 3401,
+        "producedWood": 1667,
+        "consumedFood": 969,
+        "investedWood": 178,
+        "externalFood": 24,
+        "trades": 95,
+        "tradeVolume": 205,
+        "wages": 443,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "작물이 아직 자라지 않았다.": 96,
+        "프로젝트에 필요한 목재나 목표가 없다.": 4,
+        "대화 상대가 지금 바쁘다.": 11,
+        "채집 자원이 소진되었다.": 62,
+        "거래 재고 또는 실제 자금이 부족하다.": 25,
+        "식량 공유 조건이 바뀌었다.": 3,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 33,
+        "절도 조건이 바뀌었다.": 1,
+        "공동 식량 또는 오늘 인출 한도가 없다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e2744",
+          "tick": 864,
+          "description": "수아이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 20.000000000000007,
+            "fatigue": 36.0499999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e2772",
+          "tick": 877,
+          "description": "소율이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 37.599999999999994,
+            "fatigue": 8,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e2794",
+          "tick": 883,
+          "description": "서연이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 48.799999999999955,
+            "fatigue": 22.849999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3027",
+          "tick": 1006,
+          "description": "하루이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 24.80000000000001,
+            "fatigue": 4.29,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3074",
+          "tick": 1015,
+          "description": "도윤이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 38.39999999999999,
+            "fatigue": 8.97,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3171",
+          "tick": 1067,
+          "description": "다은이 생존 자원 부족로 38세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 38,
+            "hunger": 100,
+            "thirst": 8.799999999999999,
+            "fatigue": 25.139999999999954,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3179",
+          "tick": 1070,
+          "description": "시우이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 18.400000000000006,
+            "fatigue": 23.159999999999965,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3203",
+          "tick": 1101,
+          "description": "지호이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 29.600000000000016,
+            "fatigue": 35.6999999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3210",
+          "tick": 1105,
+          "description": "이안이 생존 자원 부족로 62세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 62,
+            "hunger": 100,
+            "thirst": 34.400000000000006,
+            "fatigue": 29.369999999999933,
+            "food": 1,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3215",
+          "tick": 1112,
+          "description": "나은이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 45.599999999999966,
+            "fatigue": 51.65999999999957,
+            "food": 0,
+            "storageFood": 1,
+            "weather": "drought"
+          }
+        }
+      ],
+      "minDailyFood": 0,
+      "maxDailyFood": 2533,
+      "bytes": 2174022,
+      "elapsedMs": 645,
+      "processHeapMB": 239,
+      "sha256": "9cbe8f000c97b0230fb3f97472e4882d6906da27001230be1fa7e3e49e6a7739"
+    },
+    {
+      "seed": 7,
+      "days": 100,
+      "condition": "pressure",
+      "population": 58,
+      "initialPopulation": 100,
+      "historyMode": "server-checkpoint; full archive integrity tested in civilization-regression",
+      "settlements": 12,
+      "births": 11,
+      "generations": 1,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 53,
+      "averageFood": 6365.96,
+      "storage": {
+        "food": 1555,
+        "wood": 2821
+      },
+      "conflicts": 1671,
+      "thefts": 533,
+      "shares": 425,
+      "strongestRelationship": {
+        "residents": "새봄57755 ↔ 여울4",
+        "score": 180
+      },
+      "weakestRelationship": {
+        "residents": "유준4 ↔ 해솔6",
+        "score": -100
+      },
+      "events": 24823,
+      "economy": {
+        "producedFood": 32713,
+        "producedWood": 10701,
+        "consumedFood": 16445,
+        "investedWood": 1192,
+        "externalFood": 0,
+        "trades": 1181,
+        "tradeVolume": 2267,
+        "wages": 3427,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "채집 자원이 소진되었다.": 143,
+        "작물이 아직 자라지 않았다.": 793,
+        "대화 상대가 지금 바쁘다.": 18,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 25,
+        "식량 공유 조건이 바뀌었다.": 11,
+        "거래 재고 또는 실제 자금이 부족하다.": 13,
+        "절도 조건이 바뀌었다.": 3
+      },
+      "deathEvidence": [
+        {
+          "id": "e16568",
+          "tick": 627,
+          "description": "지호6이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 62.5,
+            "fatigue": 23.48999999999934,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19153",
+          "tick": 720,
+          "description": "이안5이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 100,
+            "thirst": 50.5,
+            "fatigue": 22.009999999999977,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19177",
+          "tick": 722,
+          "description": "민서3이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 7,
+            "fatigue": 36.64999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19216",
+          "tick": 723,
+          "description": "지호2이 생존 자원 부족로 60세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 60,
+            "hunger": 100,
+            "thirst": 11.5,
+            "fatigue": 9.420000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19708",
+          "tick": 742,
+          "description": "다은3이 생존 자원 부족로 36세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 36,
+            "hunger": 100,
+            "thirst": 17,
+            "fatigue": 27.819999999999943,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e20411",
+          "tick": 771,
+          "description": "하루6이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 32.5,
+            "fatigue": 14.520000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21317",
+          "tick": 802,
+          "description": "다은6이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 38,
+            "fatigue": 32.64999999999992,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21672",
+          "tick": 817,
+          "description": "연우이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 9.5,
+            "fatigue": 17.429999999999982,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21752",
+          "tick": 821,
+          "description": "소율4이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 25,
+            "fatigue": 22.37999999999994,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21905",
+          "tick": 826,
+          "description": "도윤4이 생존 자원 부족로 51세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 51,
+            "hunger": 100,
+            "thirst": 21,
+            "fatigue": 22.729999999999947,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e23095",
+          "tick": 874,
+          "description": "서연2이 생존 자원 부족로 46세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 46,
+            "hunger": 93.19999999999989,
+            "thirst": 11.5,
+            "fatigue": 18.22999999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e23340",
+          "tick": 885,
+          "description": "이안2이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 93.99999999999989,
+            "thirst": 25,
+            "fatigue": 45.61999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e23776",
+          "tick": 911,
+          "description": "시우3이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 36,
+            "fatigue": 11.22,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e24728",
+          "tick": 953,
+          "description": "해솔3이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 6.5,
+            "fatigue": 47.929999999999836,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e24860",
+          "tick": 961,
+          "description": "지호5이 생존 자원 부족로 37세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 37,
+            "hunger": 97.19999999999987,
+            "thirst": 17.5,
+            "fatigue": 23.4599999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e25100",
+          "tick": 970,
+          "description": "연우4이 생존 자원 부족로 40세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 40,
+            "hunger": 96.39999999999988,
+            "thirst": 17,
+            "fatigue": 33.07999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e25419",
+          "tick": 985,
+          "description": "나은5이 생존 자원 부족로 20세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 20,
+            "hunger": 100,
+            "thirst": 21,
+            "fatigue": 46.279999999999845,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e25526",
+          "tick": 990,
+          "description": "나은2이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 29,
+            "fatigue": 33.65999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26042",
+          "tick": 1010,
+          "description": "해솔4이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 32.5,
+            "fatigue": 35.8199999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26244",
+          "tick": 1021,
+          "description": "민재6이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 18.5,
+            "fatigue": 36.3599999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26521",
+          "tick": 1039,
+          "description": "서연5이 생존 자원 부족로 52세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 52,
+            "hunger": 100,
+            "thirst": 28,
+            "fatigue": 57.47999999999979,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26665",
+          "tick": 1049,
+          "description": "서연4이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 30,
+            "fatigue": 15.400000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26755",
+          "tick": 1055,
+          "description": "민재5이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 48.5,
+            "fatigue": 24.459999999999958,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26881",
+          "tick": 1062,
+          "description": "나은4이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 63.5,
+            "fatigue": 15.510000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26910",
+          "tick": 1064,
+          "description": "수아3이 생존 자원 부족로 24세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 24,
+            "hunger": 100,
+            "thirst": 65,
+            "fatigue": 17.159999999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26979",
+          "tick": 1067,
+          "description": "서연이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 33.5,
+            "fatigue": 16.17,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27253",
+          "tick": 1080,
+          "description": "해솔5이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 1.5,
+            "fatigue": 33.719999999999914,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27279",
+          "tick": 1082,
+          "description": "민재2이 생존 자원 부족로 59세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 59,
+            "hunger": 100,
+            "thirst": 41,
+            "fatigue": 21.119999999999976,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27286",
+          "tick": 1083,
+          "description": "연우6이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 35,
+            "fatigue": 32.39999999999992,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27348",
+          "tick": 1088,
+          "description": "지호이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 42.5,
+            "fatigue": 37.389999999999894,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27351",
+          "tick": 1088,
+          "description": "나은이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 53.5,
+            "fatigue": 23.759999999999962,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27599",
+          "tick": 1098,
+          "description": "민서5이 생존 자원 부족로 56세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 56,
+            "hunger": 100,
+            "thirst": 6,
+            "fatigue": 42.62999999999987,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27630",
+          "tick": 1100,
+          "description": "서연7이 생존 자원 부족로 21세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 21,
+            "hunger": 100,
+            "thirst": 12.5,
+            "fatigue": 30.789999999999928,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e28351",
+          "tick": 1144,
+          "description": "여울6이 생존 자원 부족로 46세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 46,
+            "hunger": 100,
+            "thirst": 49,
+            "fatigue": 19.569999999999705,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e28661",
+          "tick": 1159,
+          "description": "소율5이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 25,
+            "fatigue": 85.18999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29263",
+          "tick": 1205,
+          "description": "유준이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 17.5,
+            "fatigue": 73.02999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29403",
+          "tick": 1216,
+          "description": "하루7이 생존 자원 부족로 24세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 24,
+            "hunger": 100,
+            "thirst": 16.5,
+            "fatigue": 18.809999999999988,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29897",
+          "tick": 1248,
+          "description": "하루2이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 69,
+            "fatigue": 30.689999999999927,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30013",
+          "tick": 1258,
+          "description": "시우6이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 25.5,
+            "fatigue": 9.57,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30133",
+          "tick": 1267,
+          "description": "소율3이 생존 자원 부족로 29세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 29,
+            "hunger": 100,
+            "thirst": 62.5,
+            "fatigue": 50.93999999999982,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30157",
+          "tick": 1269,
+          "description": "연우3이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 76,
+            "fatigue": 44.259999999999856,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30378",
+          "tick": 1289,
+          "description": "다은5이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 100,
+            "thirst": 88,
+            "fatigue": 47.22999999999984,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30406",
+          "tick": 1292,
+          "description": "시우2이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 76.5,
+            "fatigue": 45.53999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30734",
+          "tick": 1312,
+          "description": "도윤이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 28,
+            "fatigue": 28.729999999999936,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30788",
+          "tick": 1317,
+          "description": "다은이 생존 자원 부족로 38세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 38,
+            "hunger": 100,
+            "thirst": 25,
+            "fatigue": 37.49999999999903,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e31925",
+          "tick": 1402,
+          "description": "여울3이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 41.5,
+            "fatigue": 91.76999999999961,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32507",
+          "tick": 1442,
+          "description": "민재이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 81,
+            "fatigue": 68.40999999999944,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32779",
+          "tick": 1463,
+          "description": "하루4이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 100,
+            "thirst": 57,
+            "fatigue": 60.33999999999921,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32839",
+          "tick": 1467,
+          "description": "연우5이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 15.5,
+            "fatigue": 27.79999999999994,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e33482",
+          "tick": 1521,
+          "description": "유준5이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 87,
+            "fatigue": 27.429999999999943,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e33994",
+          "tick": 1563,
+          "description": "연우2이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 32,
+            "fatigue": 76.9299999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e34340",
+          "tick": 1592,
+          "description": "수아5이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 50.5,
+            "fatigue": 88.90999999999963,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e35759",
+          "tick": 1711,
+          "description": "나은6이 생존 자원 부족로 26세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 26,
+            "hunger": 100,
+            "thirst": 78.5,
+            "fatigue": 76.88999999999969,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        }
+      ],
+      "minDailyFood": 21,
+      "maxDailyFood": 16540,
+      "bytes": 7952228,
+      "elapsedMs": 15735,
+      "processHeapMB": 265,
+      "sha256": "92a7da894dcf3c0954dd1dc96f16cd810b142478b9f56ca446c3c67eb5b1c13d"
+    },
+    {
+      "seed": 7,
+      "days": 365,
+      "condition": "normal",
+      "population": 14,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 3,
+      "generations": 1,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 1,
+      "averageFood": 7120,
+      "storage": {
+        "food": 13498,
+        "wood": 10232
+      },
+      "conflicts": 335,
+      "thefts": 105,
+      "shares": 139,
+      "strongestRelationship": {
+        "residents": "하루 ↔ 유준",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "서연 ↔ 다은",
+        "score": -98
+      },
+      "events": 151672,
+      "economy": {
+        "producedFood": 28438,
+        "producedWood": 10488,
+        "consumedFood": 14960,
+        "investedWood": 243,
+        "externalFood": 0,
+        "trades": 663,
+        "tradeVolume": 1092,
+        "wages": 179,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "프로젝트에 필요한 목재나 목표가 없다.": 2,
+        "대화 상대가 지금 바쁘다.": 319,
+        "작물이 아직 자라지 않았다.": 9787,
+        "채집 자원이 소진되었다.": 1076,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 62,
+        "거래 재고 또는 실제 자금이 부족하다.": 479,
+        "식량 공유 조건이 바뀌었다.": 143,
+        "절도 조건이 바뀌었다.": 11
+      },
+      "deathEvidence": [
+        {
+          "id": "e113816",
+          "tick": 39888,
+          "description": "이안이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 37.59999999999982,
+            "thirst": 17,
+            "fatigue": 36.959999999999894,
+            "food": 5,
+            "storageFood": 10646,
+            "weather": "sunny"
+          }
+        }
+      ],
+      "minDailyFood": 100,
+      "maxDailyFood": 13548,
+      "bytes": 32647647,
+      "elapsedMs": 9783,
+      "processHeapMB": 791,
+      "sha256": "78fb040bdb1d4a34ebc923883e61fcd9de4fcbbb00564d01a68ca9d2424b8fd7"
+    },
+    {
+      "seed": 7,
+      "days": 365,
+      "condition": "drought",
+      "population": 4,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 2,
+      "generations": 1,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 10,
+      "averageFood": 5247.35,
+      "storage": {
+        "food": 12613,
+        "wood": 5297
+      },
+      "conflicts": 26,
+      "thefts": 7,
+      "shares": 25,
+      "strongestRelationship": {
+        "residents": "민서 ↔ 유준",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "서연 ↔ 다은",
+        "score": -34
+      },
+      "events": 34669,
+      "economy": {
+        "producedFood": 16268,
+        "producedWood": 5632,
+        "consumedFood": 3723,
+        "investedWood": 254,
+        "externalFood": 24,
+        "trades": 342,
+        "tradeVolume": 676,
+        "wages": 443,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "작물이 아직 자라지 않았다.": 588,
+        "프로젝트에 필요한 목재나 목표가 없다.": 4,
+        "대화 상대가 지금 바쁘다.": 61,
+        "채집 자원이 소진되었다.": 64,
+        "거래 재고 또는 실제 자금이 부족하다.": 97,
+        "식량 공유 조건이 바뀌었다.": 4,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 33,
+        "절도 조건이 바뀌었다.": 1,
+        "공동 식량 또는 오늘 인출 한도가 없다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e2744",
+          "tick": 864,
+          "description": "수아이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 20.000000000000007,
+            "fatigue": 36.0499999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e2772",
+          "tick": 877,
+          "description": "소율이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 37.599999999999994,
+            "fatigue": 8,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e2794",
+          "tick": 883,
+          "description": "서연이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 48.799999999999955,
+            "fatigue": 22.849999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3027",
+          "tick": 1006,
+          "description": "하루이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 24.80000000000001,
+            "fatigue": 4.29,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3074",
+          "tick": 1015,
+          "description": "도윤이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 38.39999999999999,
+            "fatigue": 8.97,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3171",
+          "tick": 1067,
+          "description": "다은이 생존 자원 부족로 38세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 38,
+            "hunger": 100,
+            "thirst": 8.799999999999999,
+            "fatigue": 25.139999999999954,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3179",
+          "tick": 1070,
+          "description": "시우이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 18.400000000000006,
+            "fatigue": 23.159999999999965,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3203",
+          "tick": 1101,
+          "description": "지호이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 29.600000000000016,
+            "fatigue": 35.6999999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3210",
+          "tick": 1105,
+          "description": "이안이 생존 자원 부족로 62세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 62,
+            "hunger": 100,
+            "thirst": 34.400000000000006,
+            "fatigue": 29.369999999999933,
+            "food": 1,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3215",
+          "tick": 1112,
+          "description": "나은이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 45.599999999999966,
+            "fatigue": 51.65999999999957,
+            "food": 0,
+            "storageFood": 1,
+            "weather": "drought"
+          }
+        }
+      ],
+      "minDailyFood": 0,
+      "maxDailyFood": 12634,
+      "bytes": 7912140,
+      "elapsedMs": 2112,
+      "processHeapMB": 841,
+      "sha256": "7c2bec931758b2323e361404ee105d5a25ec079ae595a54c9e9e23311c363278"
+    },
+    {
+      "seed": 7,
+      "days": 365,
+      "condition": "pressure",
+      "population": 51,
+      "initialPopulation": 100,
+      "historyMode": "server-checkpoint; full archive integrity tested in civilization-regression",
+      "settlements": 12,
+      "births": 11,
+      "generations": 1,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 60,
+      "averageFood": 31327.58,
+      "storage": {
+        "food": 7407,
+        "wood": 12215
+      },
+      "conflicts": 4217,
+      "thefts": 1428,
+      "shares": 835,
+      "strongestRelationship": {
+        "residents": "수아 ↔ 수아4",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "유준4 ↔ 해솔6",
+        "score": -100
+      },
+      "events": 36536,
+      "economy": {
+        "producedFood": 123099,
+        "producedWood": 37911,
+        "consumedFood": 60024,
+        "investedWood": 1711,
+        "externalFood": 0,
+        "trades": 3281,
+        "tradeVolume": 5843,
+        "wages": 3766,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "작물이 아직 자라지 않았다.": 522,
+        "채집 자원이 소진되었다.": 82,
+        "대화 상대가 지금 바쁘다.": 35,
+        "거래 재고 또는 실제 자금이 부족하다.": 17,
+        "식량 공유 조건이 바뀌었다.": 6,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 15,
+        "절도 조건이 바뀌었다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e16568",
+          "tick": 627,
+          "description": "지호6이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 62.5,
+            "fatigue": 23.48999999999934,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19153",
+          "tick": 720,
+          "description": "이안5이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 100,
+            "thirst": 50.5,
+            "fatigue": 22.009999999999977,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19177",
+          "tick": 722,
+          "description": "민서3이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 7,
+            "fatigue": 36.64999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19216",
+          "tick": 723,
+          "description": "지호2이 생존 자원 부족로 60세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 60,
+            "hunger": 100,
+            "thirst": 11.5,
+            "fatigue": 9.420000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19708",
+          "tick": 742,
+          "description": "다은3이 생존 자원 부족로 36세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 36,
+            "hunger": 100,
+            "thirst": 17,
+            "fatigue": 27.819999999999943,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e20411",
+          "tick": 771,
+          "description": "하루6이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 32.5,
+            "fatigue": 14.520000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21317",
+          "tick": 802,
+          "description": "다은6이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 38,
+            "fatigue": 32.64999999999992,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21672",
+          "tick": 817,
+          "description": "연우이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 9.5,
+            "fatigue": 17.429999999999982,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21752",
+          "tick": 821,
+          "description": "소율4이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 25,
+            "fatigue": 22.37999999999994,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e21905",
+          "tick": 826,
+          "description": "도윤4이 생존 자원 부족로 51세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 51,
+            "hunger": 100,
+            "thirst": 21,
+            "fatigue": 22.729999999999947,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e23095",
+          "tick": 874,
+          "description": "서연2이 생존 자원 부족로 46세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 46,
+            "hunger": 93.19999999999989,
+            "thirst": 11.5,
+            "fatigue": 18.22999999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e23340",
+          "tick": 885,
+          "description": "이안2이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 93.99999999999989,
+            "thirst": 25,
+            "fatigue": 45.61999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e23776",
+          "tick": 911,
+          "description": "시우3이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 36,
+            "fatigue": 11.22,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e24728",
+          "tick": 953,
+          "description": "해솔3이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 6.5,
+            "fatigue": 47.929999999999836,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e24860",
+          "tick": 961,
+          "description": "지호5이 생존 자원 부족로 37세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 37,
+            "hunger": 97.19999999999987,
+            "thirst": 17.5,
+            "fatigue": 23.4599999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e25100",
+          "tick": 970,
+          "description": "연우4이 생존 자원 부족로 40세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 40,
+            "hunger": 96.39999999999988,
+            "thirst": 17,
+            "fatigue": 33.07999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e25419",
+          "tick": 985,
+          "description": "나은5이 생존 자원 부족로 20세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 20,
+            "hunger": 100,
+            "thirst": 21,
+            "fatigue": 46.279999999999845,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e25526",
+          "tick": 990,
+          "description": "나은2이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 29,
+            "fatigue": 33.65999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26042",
+          "tick": 1010,
+          "description": "해솔4이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 32.5,
+            "fatigue": 35.8199999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26244",
+          "tick": 1021,
+          "description": "민재6이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 18.5,
+            "fatigue": 36.3599999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26521",
+          "tick": 1039,
+          "description": "서연5이 생존 자원 부족로 52세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 52,
+            "hunger": 100,
+            "thirst": 28,
+            "fatigue": 57.47999999999979,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26665",
+          "tick": 1049,
+          "description": "서연4이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 30,
+            "fatigue": 15.400000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26755",
+          "tick": 1055,
+          "description": "민재5이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 48.5,
+            "fatigue": 24.459999999999958,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26881",
+          "tick": 1062,
+          "description": "나은4이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 63.5,
+            "fatigue": 15.510000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26910",
+          "tick": 1064,
+          "description": "수아3이 생존 자원 부족로 24세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 24,
+            "hunger": 100,
+            "thirst": 65,
+            "fatigue": 17.159999999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e26979",
+          "tick": 1067,
+          "description": "서연이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 33.5,
+            "fatigue": 16.17,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27253",
+          "tick": 1080,
+          "description": "해솔5이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 1.5,
+            "fatigue": 33.719999999999914,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27279",
+          "tick": 1082,
+          "description": "민재2이 생존 자원 부족로 59세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 59,
+            "hunger": 100,
+            "thirst": 41,
+            "fatigue": 21.119999999999976,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27286",
+          "tick": 1083,
+          "description": "연우6이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 35,
+            "fatigue": 32.39999999999992,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27348",
+          "tick": 1088,
+          "description": "지호이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 42.5,
+            "fatigue": 37.389999999999894,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27351",
+          "tick": 1088,
+          "description": "나은이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 53.5,
+            "fatigue": 23.759999999999962,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27599",
+          "tick": 1098,
+          "description": "민서5이 생존 자원 부족로 56세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 56,
+            "hunger": 100,
+            "thirst": 6,
+            "fatigue": 42.62999999999987,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27630",
+          "tick": 1100,
+          "description": "서연7이 생존 자원 부족로 21세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 21,
+            "hunger": 100,
+            "thirst": 12.5,
+            "fatigue": 30.789999999999928,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e28351",
+          "tick": 1144,
+          "description": "여울6이 생존 자원 부족로 46세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 46,
+            "hunger": 100,
+            "thirst": 49,
+            "fatigue": 19.569999999999705,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e28661",
+          "tick": 1159,
+          "description": "소율5이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 25,
+            "fatigue": 85.18999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29263",
+          "tick": 1205,
+          "description": "유준이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 17.5,
+            "fatigue": 73.02999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29403",
+          "tick": 1216,
+          "description": "하루7이 생존 자원 부족로 24세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 24,
+            "hunger": 100,
+            "thirst": 16.5,
+            "fatigue": 18.809999999999988,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29897",
+          "tick": 1248,
+          "description": "하루2이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 69,
+            "fatigue": 30.689999999999927,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30013",
+          "tick": 1258,
+          "description": "시우6이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 25.5,
+            "fatigue": 9.57,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30133",
+          "tick": 1267,
+          "description": "소율3이 생존 자원 부족로 29세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 29,
+            "hunger": 100,
+            "thirst": 62.5,
+            "fatigue": 50.93999999999982,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30157",
+          "tick": 1269,
+          "description": "연우3이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 76,
+            "fatigue": 44.259999999999856,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30378",
+          "tick": 1289,
+          "description": "다은5이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 100,
+            "thirst": 88,
+            "fatigue": 47.22999999999984,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30406",
+          "tick": 1292,
+          "description": "시우2이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 76.5,
+            "fatigue": 45.53999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30734",
+          "tick": 1312,
+          "description": "도윤이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 28,
+            "fatigue": 28.729999999999936,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30788",
+          "tick": 1317,
+          "description": "다은이 생존 자원 부족로 38세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 38,
+            "hunger": 100,
+            "thirst": 25,
+            "fatigue": 37.49999999999903,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e31925",
+          "tick": 1402,
+          "description": "여울3이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 41.5,
+            "fatigue": 91.76999999999961,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32507",
+          "tick": 1442,
+          "description": "민재이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 81,
+            "fatigue": 68.40999999999944,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32779",
+          "tick": 1463,
+          "description": "하루4이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 100,
+            "thirst": 57,
+            "fatigue": 60.33999999999921,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32839",
+          "tick": 1467,
+          "description": "연우5이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 15.5,
+            "fatigue": 27.79999999999994,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e33482",
+          "tick": 1521,
+          "description": "유준5이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 87,
+            "fatigue": 27.429999999999943,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e33994",
+          "tick": 1563,
+          "description": "연우2이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 32,
+            "fatigue": 76.9299999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e34340",
+          "tick": 1592,
+          "description": "수아5이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 50.5,
+            "fatigue": 88.90999999999963,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e35759",
+          "tick": 1711,
+          "description": "나은6이 생존 자원 부족로 26세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 26,
+            "hunger": 100,
+            "thirst": 78.5,
+            "fatigue": 76.88999999999969,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e501970",
+          "tick": 39888,
+          "description": "이안이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 42.399999999998485,
+            "thirst": 55.5,
+            "fatigue": 43.88999999999986,
+            "food": 4,
+            "storageFood": 6284,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e525311",
+          "tick": 41616,
+          "description": "여울5이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 24.39999999999908,
+            "thirst": 30.5,
+            "fatigue": 50.529999999999546,
+            "food": 3,
+            "storageFood": 6638,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e549269",
+          "tick": 43344,
+          "description": "도윤5이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 27.200000000000014,
+            "thirst": 33.5,
+            "fatigue": 39.59999999999988,
+            "food": 2,
+            "storageFood": 5786,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e572410",
+          "tick": 45072,
+          "description": "민서4이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 33.99999999999728,
+            "thirst": 36,
+            "fatigue": 40.25999999999988,
+            "food": 4,
+            "storageFood": 5915,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e595688",
+          "tick": 46800,
+          "description": "유준2이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 45.99999999999954,
+            "thirst": 9.5,
+            "fatigue": 47.84999999999984,
+            "food": 5,
+            "storageFood": 6290,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e595690",
+          "tick": 46800,
+          "description": "다은4이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 49.59999999999952,
+            "thirst": 11.5,
+            "fatigue": 45.20999999999985,
+            "food": 2,
+            "storageFood": 6295,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e639280",
+          "tick": 50256,
+          "description": "유준3이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 28.400000000000002,
+            "thirst": 4.5,
+            "fatigue": 5.61,
+            "food": 4,
+            "storageFood": 17825,
+            "weather": "sunny"
+          }
+        }
+      ],
+      "minDailyFood": 21,
+      "maxDailyFood": 63354,
+      "bytes": 14007512,
+      "elapsedMs": 73609,
+      "processHeapMB": 482,
+      "sha256": "10cd3fc63ce48ea628e9f887198f8841482eb5f4cafbfb15de558e15c93fed01"
+    },
+    {
+      "seed": 42,
+      "days": 100,
+      "condition": "normal",
+      "population": 14,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 2,
+      "generations": 1,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 0,
+      "averageFood": 3772.26,
+      "storage": {
+        "food": 7306,
+        "wood": 3489
+      },
+      "conflicts": 7,
+      "thefts": 2,
+      "shares": 6,
+      "strongestRelationship": {
+        "residents": "새봄8944 ↔ 소율",
+        "score": 180
+      },
+      "weakestRelationship": {
+        "residents": "수아 ↔ 유준",
+        "score": 17
+      },
+      "events": 36979,
+      "economy": {
+        "producedFood": 11196,
+        "producedWood": 3666,
+        "consumedFood": 3882,
+        "investedWood": 103,
+        "externalFood": 0,
+        "trades": 61,
+        "tradeVolume": 133,
+        "wages": 58,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "채집 자원이 소진되었다.": 279,
+        "프로젝트에 필요한 목재나 목표가 없다.": 1,
+        "작물이 아직 자라지 않았다.": 1404,
+        "거래 재고 또는 실제 자금이 부족하다.": 3,
+        "대화 상대가 지금 바쁘다.": 38,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 23,
+        "식량 공유 조건이 바뀌었다.": 6
+      },
+      "deathEvidence": [],
+      "minDailyFood": 114,
+      "maxDailyFood": 7368,
+      "bytes": 7841974,
+      "elapsedMs": 2337,
+      "processHeapMB": 598,
+      "sha256": "21cf71aba972402a079afda8d89d6d910606f92667b67b5e6d3d9d08b00cd2f7"
+    },
+    {
+      "seed": 42,
+      "days": 100,
+      "condition": "drought",
+      "population": 6,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 6,
+      "averageFood": 2151.74,
+      "storage": {
+        "food": 4830,
+        "wood": 2415
+      },
+      "conflicts": 12,
+      "thefts": 3,
+      "shares": 19,
+      "strongestRelationship": {
+        "residents": "이안 ↔ 소율",
+        "score": 159
+      },
+      "weakestRelationship": {
+        "residents": "수아 ↔ 나은",
+        "score": -8.5
+      },
+      "events": 23043,
+      "economy": {
+        "producedFood": 6759,
+        "producedWood": 2713,
+        "consumedFood": 1985,
+        "investedWood": 146,
+        "externalFood": 24,
+        "trades": 127,
+        "tradeVolume": 275,
+        "wages": 399,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "채집 자원이 소진되었다.": 85,
+        "프로젝트에 필요한 목재나 목표가 없다.": 2,
+        "작물이 아직 자라지 않았다.": 264,
+        "거래 재고 또는 실제 자금이 부족하다.": 27,
+        "식량 공유 조건이 바뀌었다.": 8,
+        "대화 상대가 지금 바쁘다.": 40,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 66,
+        "공동 식량 또는 오늘 인출 한도가 없다.": 9,
+        "식량 대여 조건을 충족하지 못했다.": 1,
+        "대상 주민과 만나지 못했다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e2901",
+          "tick": 1042,
+          "description": "지호이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 2.4000000000000004,
+            "fatigue": 7.590000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3227",
+          "tick": 1180,
+          "description": "도윤이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 11.200000000000001,
+            "fatigue": 24.789999999999957,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3286",
+          "tick": 1207,
+          "description": "서연이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 3.2,
+            "fatigue": 9.9,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3396",
+          "tick": 1271,
+          "description": "시우이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 39.199999999999825,
+            "fatigue": 29.369999999999933,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3462",
+          "tick": 1304,
+          "description": "다은이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 31.200000000000017,
+            "fatigue": 40.93999999999988,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3493",
+          "tick": 1326,
+          "description": "수아이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 74.39999999999986,
+            "fatigue": 9.9,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        }
+      ],
+      "minDailyFood": 2,
+      "maxDailyFood": 4862,
+      "bytes": 4997817,
+      "elapsedMs": 1274,
+      "processHeapMB": 703,
+      "sha256": "38544c6f439a4e0b9d8fba446223d7311f89e7dd97c2e22b1e295d01050875e9"
+    },
+    {
+      "seed": 42,
+      "days": 100,
+      "condition": "pressure",
+      "population": 75,
+      "initialPopulation": 100,
+      "historyMode": "server-checkpoint; full archive integrity tested in civilization-regression",
+      "settlements": 12,
+      "births": 11,
+      "generations": 1,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 36,
+      "averageFood": 8173.99,
+      "storage": {
+        "food": 491,
+        "wood": 3183
+      },
+      "conflicts": 1316,
+      "thefts": 246,
+      "shares": 1226,
+      "strongestRelationship": {
+        "residents": "유준3 ↔ 지호4",
+        "score": 197.5
+      },
+      "weakestRelationship": {
+        "residents": "소율2 ↔ 시우4",
+        "score": -100
+      },
+      "events": 31727,
+      "economy": {
+        "producedFood": 40425,
+        "producedWood": 11371,
+        "consumedFood": 21877,
+        "investedWood": 1186,
+        "externalFood": 0,
+        "trades": 1347,
+        "tradeVolume": 2427,
+        "wages": 2543,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "작물이 아직 자라지 않았다.": 1627,
+        "채집 자원이 소진되었다.": 262,
+        "식량 공유 조건이 바뀌었다.": 38,
+        "대화 상대가 지금 바쁘다.": 35,
+        "거래 재고 또는 실제 자금이 부족하다.": 13,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 9
+      },
+      "deathEvidence": [
+        {
+          "id": "e16557",
+          "tick": 642,
+          "description": "시우5이 생존 자원 부족로 39세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 39,
+            "hunger": 100,
+            "thirst": 11,
+            "fatigue": 22.229999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e16877",
+          "tick": 653,
+          "description": "수아6이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 71,
+            "fatigue": 31.799999999999923,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e17698",
+          "tick": 684,
+          "description": "다은5이 생존 자원 부족로 56세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 56,
+            "hunger": 100,
+            "thirst": 56.5,
+            "fatigue": 40.37999999999988,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e18490",
+          "tick": 718,
+          "description": "도윤3이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 100,
+            "thirst": 31,
+            "fatigue": 8.25,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19169",
+          "tick": 744,
+          "description": "수아3이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 23.5,
+            "fatigue": 52.899999999999814,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19294",
+          "tick": 750,
+          "description": "해솔2이 생존 자원 부족로 54세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 54,
+            "hunger": 100,
+            "thirst": 28,
+            "fatigue": 61.269999999999776,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19407",
+          "tick": 756,
+          "description": "나은4이 생존 자원 부족로 60세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 60,
+            "hunger": 100,
+            "thirst": 52.5,
+            "fatigue": 19.89999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19472",
+          "tick": 760,
+          "description": "나은이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 53.5,
+            "fatigue": 19.569999999999983,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19676",
+          "tick": 770,
+          "description": "연우3이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 93.99999999999989,
+            "thirst": 42,
+            "fatigue": 21.87999999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20399",
+          "tick": 800,
+          "description": "소율6이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 54.5,
+            "fatigue": 71.82999999999973,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20532",
+          "tick": 806,
+          "description": "연우6이 생존 자원 부족로 26세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 26,
+            "hunger": 100,
+            "thirst": 77.5,
+            "fatigue": 75.6699999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20740",
+          "tick": 816,
+          "description": "이안4이 생존 자원 부족로 52세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 52,
+            "hunger": 100,
+            "thirst": 8,
+            "fatigue": 53.22999999999981,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20822",
+          "tick": 818,
+          "description": "하루5이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 62,
+            "fatigue": 24.08999999999996,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21010",
+          "tick": 829,
+          "description": "유준6이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 10.5,
+            "fatigue": 43.32999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21519",
+          "tick": 852,
+          "description": "지호5이 생존 자원 부족로 26세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 26,
+            "hunger": 100,
+            "thirst": 32,
+            "fatigue": 48.939999999999834,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21531",
+          "tick": 852,
+          "description": "이안이 생존 자원 부족로 31세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 31,
+            "hunger": 100,
+            "thirst": 25.5,
+            "fatigue": 15.969999999999928,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21605",
+          "tick": 855,
+          "description": "민서2이 생존 자원 부족로 39세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 39,
+            "hunger": 100,
+            "thirst": 2,
+            "fatigue": 9.530000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e22403",
+          "tick": 898,
+          "description": "다은3이 생존 자원 부족로 49세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 49,
+            "hunger": 100,
+            "thirst": 33,
+            "fatigue": 24.499999999999957,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e22833",
+          "tick": 920,
+          "description": "민서5이 생존 자원 부족로 39세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 39,
+            "hunger": 100,
+            "thirst": 35.5,
+            "fatigue": 49.74999999999955,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23192",
+          "tick": 942,
+          "description": "해솔6이 생존 자원 부족로 40세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 40,
+            "hunger": 100,
+            "thirst": 62.5,
+            "fatigue": 20.45999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23568",
+          "tick": 961,
+          "description": "도윤4이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 99.59999999999987,
+            "thirst": 45,
+            "fatigue": 32.749999999999915,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23642",
+          "tick": 966,
+          "description": "도윤6이 생존 자원 부족로 36세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 36,
+            "hunger": 100,
+            "thirst": 18,
+            "fatigue": 20.679999999999666,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23920",
+          "tick": 980,
+          "description": "해솔3이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 87.5,
+            "fatigue": 93.23999999999961,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e24223",
+          "tick": 1001,
+          "description": "민재3이 생존 자원 부족로 51세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 51,
+            "hunger": 100,
+            "thirst": 27.5,
+            "fatigue": 45.20999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e24871",
+          "tick": 1037,
+          "description": "하루6이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 65,
+            "fatigue": 57.639999999999795,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e25765",
+          "tick": 1088,
+          "description": "나은2이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 90,
+            "fatigue": 71.74999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e26020",
+          "tick": 1099,
+          "description": "이안2이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 17.5,
+            "fatigue": 73.64999999999971,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e27383",
+          "tick": 1171,
+          "description": "민서3이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 83.5,
+            "fatigue": 37.819999999999894,
+            "food": 1,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29198",
+          "tick": 1273,
+          "description": "다은6이 생존 자원 부족로 52세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 52,
+            "hunger": 100,
+            "thirst": 23,
+            "fatigue": 89.27999999999963,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e49528",
+          "tick": 2489,
+          "description": "지호6이 생존 자원 부족로 36세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 36,
+            "hunger": 100,
+            "thirst": 71.5,
+            "fatigue": 26.689999999999074,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e89453",
+          "tick": 4961,
+          "description": "민재이 생존 자원 부족로 51세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 51,
+            "hunger": 100,
+            "thirst": 31.5,
+            "fatigue": 100,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e108670",
+          "tick": 6203,
+          "description": "수아5이 생존 자원 부족로 60세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 60,
+            "hunger": 100,
+            "thirst": 14,
+            "fatigue": 85.26999999999938,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e109956",
+          "tick": 6282,
+          "description": "유준2이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 89.9999999999999,
+            "thirst": 68,
+            "fatigue": 100,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e110170",
+          "tick": 6297,
+          "description": "민서7이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 22.5,
+            "fatigue": 67.11999999999975,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e111967",
+          "tick": 6421,
+          "description": "시우이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 93.99999999999989,
+            "thirst": 56.5,
+            "fatigue": 25.739999999999952,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e113329",
+          "tick": 6513,
+          "description": "여울3이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 72.5,
+            "fatigue": 5.61,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        }
+      ],
+      "minDailyFood": 86,
+      "maxDailyFood": 18806,
+      "bytes": 9934124,
+      "elapsedMs": 25691,
+      "processHeapMB": 316,
+      "sha256": "fbd649a797f376832c6decefaff63da4799ad036903d1e67ac4ca3c7589b2439"
+    },
+    {
+      "seed": 42,
+      "days": 365,
+      "condition": "normal",
+      "population": 13,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 2,
+      "generations": 1,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 1,
+      "averageFood": 13354.64,
+      "storage": {
+        "food": 26154,
+        "wood": 12957
+      },
+      "conflicts": 13,
+      "thefts": 4,
+      "shares": 75,
+      "strongestRelationship": {
+        "residents": "새봄8944 ↔ 소율",
+        "score": 196
+      },
+      "weakestRelationship": {
+        "residents": "나은 ↔ 유준",
+        "score": 19.5
+      },
+      "events": 138076,
+      "economy": {
+        "producedFood": 40826,
+        "producedWood": 13196,
+        "consumedFood": 14655,
+        "investedWood": 178,
+        "externalFood": 0,
+        "trades": 154,
+        "tradeVolume": 280,
+        "wages": 64,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "채집 자원이 소진되었다.": 979,
+        "프로젝트에 필요한 목재나 목표가 없다.": 1,
+        "작물이 아직 자라지 않았다.": 6404,
+        "거래 재고 또는 실제 자금이 부족하다.": 24,
+        "대화 상대가 지금 바쁘다.": 232,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 34,
+        "식량 공유 조건이 바뀌었다.": 60
+      },
+      "deathEvidence": [
+        {
+          "id": "e124200",
+          "tick": 46800,
+          "description": "하루이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 42.79999999999925,
+            "thirst": 21,
+            "fatigue": 45.20999999999985,
+            "food": 4,
+            "storageFood": 23430,
+            "weather": "rain"
+          }
+        }
+      ],
+      "minDailyFood": 114,
+      "maxDailyFood": 26214,
+      "bytes": 29310100,
+      "elapsedMs": 9797,
+      "processHeapMB": 671,
+      "sha256": "f0b40332f53e66fb51baff6b16b9e8cebc2ae0e3fb4d71cdbd0190bd86b2d8f0"
+    },
+    {
+      "seed": 42,
+      "days": 365,
+      "condition": "drought",
+      "population": 5,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 7,
+      "averageFood": 9554.02,
+      "storage": {
+        "food": 19920,
+        "wood": 9458
+      },
+      "conflicts": 12,
+      "thefts": 3,
+      "shares": 19,
+      "strongestRelationship": {
+        "residents": "하루 ↔ 소율",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "수아 ↔ 나은",
+        "score": -8.5
+      },
+      "events": 80610,
+      "economy": {
+        "producedFood": 26681,
+        "producedWood": 9815,
+        "consumedFood": 6814,
+        "investedWood": 211,
+        "externalFood": 24,
+        "trades": 425,
+        "tradeVolume": 682,
+        "wages": 399,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "채집 자원이 소진되었다.": 238,
+        "프로젝트에 필요한 목재나 목표가 없다.": 2,
+        "작물이 아직 자라지 않았다.": 423,
+        "거래 재고 또는 실제 자금이 부족하다.": 51,
+        "식량 공유 조건이 바뀌었다.": 8,
+        "대화 상대가 지금 바쁘다.": 185,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 66,
+        "공동 식량 또는 오늘 인출 한도가 없다.": 9,
+        "식량 대여 조건을 충족하지 못했다.": 1,
+        "대상 주민과 만나지 못했다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e2901",
+          "tick": 1042,
+          "description": "지호이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 2.4000000000000004,
+            "fatigue": 7.590000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3227",
+          "tick": 1180,
+          "description": "도윤이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 11.200000000000001,
+            "fatigue": 24.789999999999957,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3286",
+          "tick": 1207,
+          "description": "서연이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 3.2,
+            "fatigue": 9.9,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3396",
+          "tick": 1271,
+          "description": "시우이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 39.199999999999825,
+            "fatigue": 29.369999999999933,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3462",
+          "tick": 1304,
+          "description": "다은이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 31.200000000000017,
+            "fatigue": 40.93999999999988,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3493",
+          "tick": 1326,
+          "description": "수아이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 74.39999999999986,
+            "fatigue": 9.9,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e74559",
+          "tick": 46800,
+          "description": "하루이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 5.199999999999977,
+            "thirst": 9,
+            "fatigue": 0.66,
+            "food": 4,
+            "storageFood": 17648,
+            "weather": "cloudy"
+          }
+        }
+      ],
+      "minDailyFood": 2,
+      "maxDailyFood": 19950,
+      "bytes": 17518025,
+      "elapsedMs": 5454,
+      "processHeapMB": 914,
+      "sha256": "9f0426c6458199193f4533d468fab74ecce75d6e3a96931debfcb4bf870ce03f"
+    },
+    {
+      "seed": 42,
+      "days": 365,
+      "condition": "pressure",
+      "population": 67,
+      "initialPopulation": 100,
+      "historyMode": "server-checkpoint; full archive integrity tested in civilization-regression",
+      "settlements": 12,
+      "births": 12,
+      "generations": 2,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 45,
+      "averageFood": 36025.79,
+      "storage": {
+        "food": 3332,
+        "wood": 12809
+      },
+      "conflicts": 6455,
+      "thefts": 1405,
+      "shares": 2044,
+      "strongestRelationship": {
+        "residents": "서연 ↔ 시우2",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "여울4 ↔ 이안6",
+        "score": -100
+      },
+      "events": 45666,
+      "economy": {
+        "producedFood": 152826,
+        "producedWood": 37885,
+        "consumedFood": 78767,
+        "investedWood": 1657,
+        "externalFood": 0,
+        "trades": 3339,
+        "tradeVolume": 5626,
+        "wages": 2659,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "식량 공유 조건이 바뀌었다.": 20,
+        "작물이 아직 자라지 않았다.": 1031,
+        "채집 자원이 소진되었다.": 91,
+        "거래 재고 또는 실제 자금이 부족하다.": 27,
+        "대화 상대가 지금 바쁘다.": 36,
+        "절도 조건이 바뀌었다.": 1,
+        "식량 대여 조건을 충족하지 못했다.": 1,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e16557",
+          "tick": 642,
+          "description": "시우5이 생존 자원 부족로 39세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 39,
+            "hunger": 100,
+            "thirst": 11,
+            "fatigue": 22.229999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e16877",
+          "tick": 653,
+          "description": "수아6이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 71,
+            "fatigue": 31.799999999999923,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e17698",
+          "tick": 684,
+          "description": "다은5이 생존 자원 부족로 56세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 56,
+            "hunger": 100,
+            "thirst": 56.5,
+            "fatigue": 40.37999999999988,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e18490",
+          "tick": 718,
+          "description": "도윤3이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 100,
+            "thirst": 31,
+            "fatigue": 8.25,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19169",
+          "tick": 744,
+          "description": "수아3이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 23.5,
+            "fatigue": 52.899999999999814,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19294",
+          "tick": 750,
+          "description": "해솔2이 생존 자원 부족로 54세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 54,
+            "hunger": 100,
+            "thirst": 28,
+            "fatigue": 61.269999999999776,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19407",
+          "tick": 756,
+          "description": "나은4이 생존 자원 부족로 60세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 60,
+            "hunger": 100,
+            "thirst": 52.5,
+            "fatigue": 19.89999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19472",
+          "tick": 760,
+          "description": "나은이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 53.5,
+            "fatigue": 19.569999999999983,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e19676",
+          "tick": 770,
+          "description": "연우3이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 93.99999999999989,
+            "thirst": 42,
+            "fatigue": 21.87999999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20399",
+          "tick": 800,
+          "description": "소율6이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 54.5,
+            "fatigue": 71.82999999999973,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20532",
+          "tick": 806,
+          "description": "연우6이 생존 자원 부족로 26세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 26,
+            "hunger": 100,
+            "thirst": 77.5,
+            "fatigue": 75.6699999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20740",
+          "tick": 816,
+          "description": "이안4이 생존 자원 부족로 52세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 52,
+            "hunger": 100,
+            "thirst": 8,
+            "fatigue": 53.22999999999981,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e20822",
+          "tick": 818,
+          "description": "하루5이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 62,
+            "fatigue": 24.08999999999996,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21010",
+          "tick": 829,
+          "description": "유준6이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 10.5,
+            "fatigue": 43.32999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21519",
+          "tick": 852,
+          "description": "지호5이 생존 자원 부족로 26세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 26,
+            "hunger": 100,
+            "thirst": 32,
+            "fatigue": 48.939999999999834,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21531",
+          "tick": 852,
+          "description": "이안이 생존 자원 부족로 31세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 31,
+            "hunger": 100,
+            "thirst": 25.5,
+            "fatigue": 15.969999999999928,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e21605",
+          "tick": 855,
+          "description": "민서2이 생존 자원 부족로 39세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 39,
+            "hunger": 100,
+            "thirst": 2,
+            "fatigue": 9.530000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e22403",
+          "tick": 898,
+          "description": "다은3이 생존 자원 부족로 49세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 49,
+            "hunger": 100,
+            "thirst": 33,
+            "fatigue": 24.499999999999957,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e22833",
+          "tick": 920,
+          "description": "민서5이 생존 자원 부족로 39세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 39,
+            "hunger": 100,
+            "thirst": 35.5,
+            "fatigue": 49.74999999999955,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23192",
+          "tick": 942,
+          "description": "해솔6이 생존 자원 부족로 40세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 40,
+            "hunger": 100,
+            "thirst": 62.5,
+            "fatigue": 20.45999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23568",
+          "tick": 961,
+          "description": "도윤4이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 99.59999999999987,
+            "thirst": 45,
+            "fatigue": 32.749999999999915,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23642",
+          "tick": 966,
+          "description": "도윤6이 생존 자원 부족로 36세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 36,
+            "hunger": 100,
+            "thirst": 18,
+            "fatigue": 20.679999999999666,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e23920",
+          "tick": 980,
+          "description": "해솔3이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 87.5,
+            "fatigue": 93.23999999999961,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e24223",
+          "tick": 1001,
+          "description": "민재3이 생존 자원 부족로 51세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 51,
+            "hunger": 100,
+            "thirst": 27.5,
+            "fatigue": 45.20999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e24871",
+          "tick": 1037,
+          "description": "하루6이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 65,
+            "fatigue": 57.639999999999795,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e25765",
+          "tick": 1088,
+          "description": "나은2이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 90,
+            "fatigue": 71.74999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e26020",
+          "tick": 1099,
+          "description": "이안2이 생존 자원 부족로 57세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 57,
+            "hunger": 100,
+            "thirst": 17.5,
+            "fatigue": 73.64999999999971,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e27383",
+          "tick": 1171,
+          "description": "민서3이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 83.5,
+            "fatigue": 37.819999999999894,
+            "food": 1,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e29198",
+          "tick": 1273,
+          "description": "다은6이 생존 자원 부족로 52세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 52,
+            "hunger": 100,
+            "thirst": 23,
+            "fatigue": 89.27999999999963,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e49528",
+          "tick": 2489,
+          "description": "지호6이 생존 자원 부족로 36세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 36,
+            "hunger": 100,
+            "thirst": 71.5,
+            "fatigue": 26.689999999999074,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e89453",
+          "tick": 4961,
+          "description": "민재이 생존 자원 부족로 51세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 51,
+            "hunger": 100,
+            "thirst": 31.5,
+            "fatigue": 100,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e108670",
+          "tick": 6203,
+          "description": "수아5이 생존 자원 부족로 60세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 60,
+            "hunger": 100,
+            "thirst": 14,
+            "fatigue": 85.26999999999938,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e109956",
+          "tick": 6282,
+          "description": "유준2이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 89.9999999999999,
+            "thirst": 68,
+            "fatigue": 100,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e110170",
+          "tick": 6297,
+          "description": "민서7이 생존 자원 부족로 42세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 42,
+            "hunger": 100,
+            "thirst": 22.5,
+            "fatigue": 67.11999999999975,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e111967",
+          "tick": 6421,
+          "description": "시우이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 93.99999999999989,
+            "thirst": 56.5,
+            "fatigue": 25.739999999999952,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e113329",
+          "tick": 6513,
+          "description": "여울3이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 72.5,
+            "fatigue": 5.61,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e624099",
+          "tick": 38160,
+          "description": "하루4이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 29.599999999997287,
+            "thirst": 31,
+            "fatigue": 29.039999999999935,
+            "food": 2,
+            "storageFood": 1855,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e654374",
+          "tick": 39888,
+          "description": "하루3이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 34.400000000000006,
+            "thirst": 16.5,
+            "fatigue": 3.3000000000000003,
+            "food": 2,
+            "storageFood": 22424,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e685248",
+          "tick": 41616,
+          "description": "지호2이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 47.59999999999965,
+            "thirst": 36.5,
+            "fatigue": 39.59999999999988,
+            "food": 4,
+            "storageFood": 23629,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e685252",
+          "tick": 41616,
+          "description": "유준5이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 39.99999999999972,
+            "thirst": 14,
+            "fatigue": 3.9600000000000004,
+            "food": 3,
+            "storageFood": 2031,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e685256",
+          "tick": 41616,
+          "description": "소율5이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 37.599999999999994,
+            "thirst": 31,
+            "fatigue": 43.22999999999986,
+            "food": 3,
+            "storageFood": 2031,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e685258",
+          "tick": 41616,
+          "description": "이안6이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 48.799999999999955,
+            "thirst": 24.5,
+            "fatigue": 4.62,
+            "food": 3,
+            "storageFood": 16866,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e685260",
+          "tick": 41616,
+          "description": "여울6이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 16.799999999999862,
+            "thirst": 24,
+            "fatigue": 45.86999999999985,
+            "food": 4,
+            "storageFood": 2034,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e770855",
+          "tick": 46800,
+          "description": "하루이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 35.999999999999176,
+            "thirst": 41,
+            "fatigue": 43.22999999999986,
+            "food": 3,
+            "storageFood": 2733,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e770859",
+          "tick": 46800,
+          "description": "하루2이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 20.79999999999911,
+            "thirst": 29.5,
+            "fatigue": 29.699999999999932,
+            "food": 7,
+            "storageFood": 19090,
+            "weather": "sunny"
+          }
+        }
+      ],
+      "minDailyFood": 86,
+      "maxDailyFood": 74373,
+      "bytes": 17253190,
+      "elapsedMs": 101370,
+      "processHeapMB": 395,
+      "sha256": "b34c4d0ca63f7b08673305b5cca89eaa70854cbae7b7efc5ef69d5f26a93f6f9"
+    },
+    {
+      "seed": 123,
+      "days": 100,
+      "condition": "normal",
+      "population": 12,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 0,
+      "averageFood": 2216.75,
+      "storage": {
+        "food": 4385,
+        "wood": 3438
+      },
+      "conflicts": 2129,
+      "thefts": 674,
+      "shares": 11,
+      "strongestRelationship": {
+        "residents": "도윤 ↔ 유준",
+        "score": 192
+      },
+      "weakestRelationship": {
+        "residents": "하루 ↔ 이안",
+        "score": -98
+      },
+      "events": 51693,
+      "economy": {
+        "producedFood": 8162,
+        "producedWood": 3626,
+        "consumedFood": 3745,
+        "investedWood": 159,
+        "externalFood": 0,
+        "trades": 58,
+        "tradeVolume": 95,
+        "wages": 113,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "대화 상대가 지금 바쁘다.": 31,
+        "프로젝트에 필요한 목재나 목표가 없다.": 3,
+        "작물이 아직 자라지 않았다.": 2059,
+        "채집 자원이 소진되었다.": 338,
+        "절도 조건이 바뀌었다.": 11,
+        "식량 공유 조건이 바뀌었다.": 9,
+        "거래 재고 또는 실제 자금이 부족하다.": 4,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 1
+      },
+      "deathEvidence": [],
+      "minDailyFood": 107,
+      "maxDailyFood": 4476,
+      "bytes": 11544092,
+      "elapsedMs": 3647,
+      "processHeapMB": 591,
+      "sha256": "1733999c439eca89b6ad1679fa99e839bde6fcdc31747a9649d17ffd7ec683e2"
+    },
+    {
+      "seed": 123,
+      "days": 100,
+      "condition": "drought",
+      "population": 4,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 8,
+      "averageFood": 1511.09,
+      "storage": {
+        "food": 3374,
+        "wood": 82
+      },
+      "conflicts": 166,
+      "thefts": 42,
+      "shares": 28,
+      "strongestRelationship": {
+        "residents": "시우 ↔ 나은",
+        "score": 163
+      },
+      "weakestRelationship": {
+        "residents": "하루 ↔ 이안",
+        "score": -98
+      },
+      "events": 19768,
+      "economy": {
+        "producedFood": 4669,
+        "producedWood": 308,
+        "consumedFood": 1350,
+        "investedWood": 164,
+        "externalFood": 24,
+        "trades": 59,
+        "tradeVolume": 124,
+        "wages": 400,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "프로젝트에 필요한 목재나 목표가 없다.": 2,
+        "작물이 아직 자라지 않았다.": 152,
+        "대화 상대가 지금 바쁘다.": 32,
+        "채집 자원이 소진되었다.": 32,
+        "절도 조건이 바뀌었다.": 2,
+        "식량 공유 조건이 바뀌었다.": 5,
+        "거래 재고 또는 실제 자금이 부족하다.": 16,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 54,
+        "공동 식량 또는 오늘 인출 한도가 없다.": 4,
+        "식량 대여 조건을 충족하지 못했다.": 1,
+        "대상 주민과 만나지 못했다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e2933",
+          "tick": 814,
+          "description": "지호이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 7.999999999999999,
+            "fatigue": 72.03999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3164",
+          "tick": 909,
+          "description": "이안이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 22.40000000000001,
+            "fatigue": 3.3000000000000003,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3239",
+          "tick": 939,
+          "description": "소율이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 29.600000000000016,
+            "fatigue": 67.16999999999975,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3243",
+          "tick": 941,
+          "description": "유준이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 100,
+            "thirst": 28.000000000000014,
+            "fatigue": 47.59999999999984,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3353",
+          "tick": 997,
+          "description": "수아이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 26.400000000000013,
+            "fatigue": 24.749999999999957,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3409",
+          "tick": 1029,
+          "description": "서연이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 100,
+            "thirst": 39.999999999999986,
+            "fatigue": 6.930000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3496",
+          "tick": 1079,
+          "description": "하루이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 92.39999999999989,
+            "thirst": 23.20000000000001,
+            "fatigue": 22.43999999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3527",
+          "tick": 1106,
+          "description": "다은이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 25.600000000000012,
+            "fatigue": 28.709999999999937,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        }
+      ],
+      "minDailyFood": 0,
+      "maxDailyFood": 3406,
+      "bytes": 4393707,
+      "elapsedMs": 1241,
+      "processHeapMB": 611,
+      "sha256": "01a8b56b81b7f884be6c843c05970785b371745ebd081e49b787fd01c0c26ca1"
+    },
+    {
+      "seed": 123,
+      "days": 100,
+      "condition": "pressure",
+      "population": 58,
+      "initialPopulation": 100,
+      "historyMode": "server-checkpoint; full archive integrity tested in civilization-regression",
+      "settlements": 12,
+      "births": 9,
+      "generations": 1,
+      "journeys": 0,
+      "day": 101,
+      "elapsedDays": 100,
+      "deaths": 51,
+      "averageFood": 7635.32,
+      "storage": {
+        "food": 2866,
+        "wood": 2641
+      },
+      "conflicts": 745,
+      "thefts": 239,
+      "shares": 513,
+      "strongestRelationship": {
+        "residents": "시우 ↔ 민서7",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "지호2 ↔ 지호5",
+        "score": -94
+      },
+      "events": 26260,
+      "economy": {
+        "producedFood": 35878,
+        "producedWood": 9264,
+        "consumedFood": 16563,
+        "investedWood": 1144,
+        "externalFood": 0,
+        "trades": 1197,
+        "tradeVolume": 2303,
+        "wages": 2753,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 6,
+        "samples": 100
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "대상 주민과 만나지 못했다.": 3620,
+        "작물이 아직 자라지 않았다.": 707,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 21,
+        "채집 자원이 소진되었다.": 128,
+        "대화 상대가 지금 바쁘다.": 32,
+        "거래 재고 또는 실제 자금이 부족하다.": 6,
+        "식량 공유 조건이 바뀌었다.": 3,
+        "절도 조건이 바뀌었다.": 6
+      },
+      "deathEvidence": [
+        {
+          "id": "e14460",
+          "tick": 586,
+          "description": "하루4이 생존 자원 부족로 46세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 46,
+            "hunger": 100,
+            "thirst": 22,
+            "fatigue": 96.61999999999959,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e14501",
+          "tick": 588,
+          "description": "소율2이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 32,
+            "fatigue": 84.40999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e14873",
+          "tick": 609,
+          "description": "여울3이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 53.5,
+            "fatigue": 56.21999999999979,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e14913",
+          "tick": 611,
+          "description": "소율5이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 48.5,
+            "fatigue": 29.00999999999962,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15030",
+          "tick": 616,
+          "description": "민재이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 68.5,
+            "fatigue": 29.999999999999613,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15068",
+          "tick": 618,
+          "description": "하루7이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 16.5,
+            "fatigue": 34.619999999999635,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15156",
+          "tick": 623,
+          "description": "도윤7이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 100,
+            "thirst": 27.5,
+            "fatigue": 11.22,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15385",
+          "tick": 640,
+          "description": "연우4이 생존 자원 부족로 56세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 56,
+            "hunger": 100,
+            "thirst": 76.5,
+            "fatigue": 30.809999999999924,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15401",
+          "tick": 641,
+          "description": "민재3이 생존 자원 부족로 28세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 28,
+            "hunger": 100,
+            "thirst": 31.5,
+            "fatigue": 46.64999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15488",
+          "tick": 646,
+          "description": "다은6이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 49,
+            "fatigue": 20.12999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15595",
+          "tick": 652,
+          "description": "나은6이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 59.5,
+            "fatigue": 40.22999999999956,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15902",
+          "tick": 663,
+          "description": "서연3이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 60,
+            "fatigue": 43.529999999999546,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15927",
+          "tick": 664,
+          "description": "나은4이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 61,
+            "fatigue": 34.43999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15961",
+          "tick": 666,
+          "description": "유준이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 100,
+            "thirst": 50,
+            "fatigue": 26.06999999999995,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16007",
+          "tick": 668,
+          "description": "민서6이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 8,
+            "fatigue": 34.55999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16155",
+          "tick": 674,
+          "description": "민서4이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 76,
+            "fatigue": 46.82999999999955,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16234",
+          "tick": 678,
+          "description": "지호4이 생존 자원 부족로 29세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 29,
+            "hunger": 100,
+            "thirst": 21,
+            "fatigue": 24.08999999999996,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16243",
+          "tick": 679,
+          "description": "여울2이 생존 자원 부족로 40세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 40,
+            "hunger": 100,
+            "thirst": 18.5,
+            "fatigue": 2.64,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16284",
+          "tick": 681,
+          "description": "이안6이 생존 자원 부족로 63세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 63,
+            "hunger": 100,
+            "thirst": 7.5,
+            "fatigue": 58.499999999999474,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16314",
+          "tick": 682,
+          "description": "유준4이 생존 자원 부족로 28세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 28,
+            "hunger": 100,
+            "thirst": 15,
+            "fatigue": 44.99999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16394",
+          "tick": 687,
+          "description": "다은3이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 10,
+            "fatigue": 37.4099999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16520",
+          "tick": 696,
+          "description": "유준3이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 0.5,
+            "fatigue": 18.969999999999672,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16544",
+          "tick": 698,
+          "description": "다은4이 생존 자원 부족로 24세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 24,
+            "hunger": 100,
+            "thirst": 83.5,
+            "fatigue": 68.60999999999942,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16713",
+          "tick": 708,
+          "description": "시우3이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 32.5,
+            "fatigue": 1.6500000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16784",
+          "tick": 712,
+          "description": "수아4이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 23,
+            "fatigue": 6.2700000000000005,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16886",
+          "tick": 718,
+          "description": "하루3이 생존 자원 부족로 54세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 54,
+            "hunger": 100,
+            "thirst": 36.5,
+            "fatigue": 6.2700000000000005,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e17142",
+          "tick": 723,
+          "description": "나은2이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 13,
+            "fatigue": 16.27,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17220",
+          "tick": 727,
+          "description": "연우3이 생존 자원 부족로 31세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 31,
+            "hunger": 100,
+            "thirst": 16.5,
+            "fatigue": 29.43999999999963,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17288",
+          "tick": 731,
+          "description": "소율4이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 17,
+            "fatigue": 18.909999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17371",
+          "tick": 737,
+          "description": "다은5이 생존 자원 부족로 59세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 59,
+            "hunger": 100,
+            "thirst": 33,
+            "fatigue": 1.9800000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17455",
+          "tick": 741,
+          "description": "시우4이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 57,
+            "fatigue": 33.45999999999968,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17551",
+          "tick": 746,
+          "description": "소율이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 51,
+            "fatigue": 10.330000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17555",
+          "tick": 747,
+          "description": "민재4이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 28.5,
+            "fatigue": 27.319999999999624,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17664",
+          "tick": 755,
+          "description": "수아3이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 43.5,
+            "fatigue": 23.529999999999962,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17759",
+          "tick": 761,
+          "description": "시우6이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 100,
+            "thirst": 57,
+            "fatigue": 19.89999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17763",
+          "tick": 761,
+          "description": "하루이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 100,
+            "thirst": 56,
+            "fatigue": 29.639999999999368,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17855",
+          "tick": 765,
+          "description": "해솔3이 생존 자원 부족로 62세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 62,
+            "hunger": 100,
+            "thirst": 49.5,
+            "fatigue": 21.219999999999974,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17883",
+          "tick": 766,
+          "description": "해솔이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 49,
+            "fatigue": 35.89999999999958,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18000",
+          "tick": 774,
+          "description": "서연4이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 24,
+            "fatigue": 44.64999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18091",
+          "tick": 780,
+          "description": "지호6이 생존 자원 부족로 59세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 59,
+            "hunger": 100,
+            "thirst": 18,
+            "fatigue": 84.2199999999994,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18139",
+          "tick": 784,
+          "description": "소율6이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 54.5,
+            "fatigue": 17.819999999999993,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18217",
+          "tick": 789,
+          "description": "여울6이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 67.59999999999998,
+            "thirst": 35,
+            "fatigue": 100,
+            "food": 2,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18378",
+          "tick": 797,
+          "description": "이안이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 65.5,
+            "fatigue": 19.799999999999983,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18691",
+          "tick": 818,
+          "description": "유준5이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 61.599999999999866,
+            "thirst": 12.5,
+            "fatigue": 99.39999999999925,
+            "food": 2,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19589",
+          "tick": 874,
+          "description": "유준2이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 33,
+            "fatigue": 25.299999999999642,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27293",
+          "tick": 1427,
+          "description": "서연7이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 100,
+            "thirst": 19.5,
+            "fatigue": 38.609999999999886,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e28856",
+          "tick": 1557,
+          "description": "해솔2이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 100,
+            "fatigue": 81.83999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30835",
+          "tick": 1710,
+          "description": "나은이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 68,
+            "fatigue": 94.59999999999961,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32902",
+          "tick": 1864,
+          "description": "서연2이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 26.5,
+            "fatigue": 9.57,
+            "food": 2,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e33168",
+          "tick": 1878,
+          "description": "이안2이 생존 자원 부족로 54세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 54,
+            "hunger": 100,
+            "thirst": 30.5,
+            "fatigue": 12.930000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e33641",
+          "tick": 1918,
+          "description": "서연이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 100,
+            "thirst": 42,
+            "fatigue": 18.43999999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        }
+      ],
+      "minDailyFood": 13,
+      "maxDailyFood": 19606,
+      "bytes": 7796234,
+      "elapsedMs": 35513,
+      "processHeapMB": 421,
+      "sha256": "9322ede0880d76ea8bbbe9c985b2422f2a6f841e09eece116216e9b50cf09dc9"
+    },
+    {
+      "seed": 123,
+      "days": 365,
+      "condition": "normal",
+      "population": 12,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 0,
+      "averageFood": 7910.49,
+      "storage": {
+        "food": 15706,
+        "wood": 12897
+      },
+      "conflicts": 5629,
+      "thefts": 1818,
+      "shares": 42,
+      "strongestRelationship": {
+        "residents": "도윤 ↔ 유준",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "하루 ↔ 이안",
+        "score": -98
+      },
+      "events": 182500,
+      "economy": {
+        "producedFood": 29380,
+        "producedWood": 13155,
+        "consumedFood": 13637,
+        "investedWood": 235,
+        "externalFood": 0,
+        "trades": 314,
+        "tradeVolume": 476,
+        "wages": 113,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "대화 상대가 지금 바쁘다.": 201,
+        "프로젝트에 필요한 목재나 목표가 없다.": 3,
+        "작물이 아직 자라지 않았다.": 7583,
+        "채집 자원이 소진되었다.": 1379,
+        "절도 조건이 바뀌었다.": 20,
+        "식량 공유 조건이 바뀌었다.": 49,
+        "거래 재고 또는 실제 자금이 부족하다.": 33,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 1,
+        "대상 주민과 만나지 못했다.": 5
+      },
+      "deathEvidence": [],
+      "minDailyFood": 107,
+      "maxDailyFood": 15804,
+      "bytes": 40376225,
+      "elapsedMs": 11669,
+      "processHeapMB": 1055,
+      "sha256": "2d70e1471ca413869a405ba3cb71fc087bb78d0258debd63e075242fb6665231"
+    },
+    {
+      "seed": 123,
+      "days": 365,
+      "condition": "drought",
+      "population": 4,
+      "initialPopulation": 12,
+      "historyMode": "full-local",
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 8,
+      "averageFood": 6902.15,
+      "storage": {
+        "food": 14686,
+        "wood": 127
+      },
+      "conflicts": 166,
+      "thefts": 42,
+      "shares": 28,
+      "strongestRelationship": {
+        "residents": "시우 ↔ 나은",
+        "score": 163
+      },
+      "weakestRelationship": {
+        "residents": "하루 ↔ 이안",
+        "score": -98
+      },
+      "events": 67734,
+      "economy": {
+        "producedFood": 19239,
+        "producedWood": 428,
+        "consumedFood": 4605,
+        "investedWood": 236,
+        "externalFood": 24,
+        "trades": 59,
+        "tradeVolume": 124,
+        "wages": 400,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "프로젝트에 필요한 목재나 목표가 없다.": 2,
+        "작물이 아직 자라지 않았다.": 307,
+        "대화 상대가 지금 바쁘다.": 102,
+        "채집 자원이 소진되었다.": 32,
+        "절도 조건이 바뀌었다.": 2,
+        "식량 공유 조건이 바뀌었다.": 5,
+        "거래 재고 또는 실제 자금이 부족하다.": 16,
+        "고용·재료·임금 또는 시설 조건이 바뀌었다.": 54,
+        "공동 식량 또는 오늘 인출 한도가 없다.": 4,
+        "식량 대여 조건을 충족하지 못했다.": 1,
+        "대상 주민과 만나지 못했다.": 1
+      },
+      "deathEvidence": [
+        {
+          "id": "e2933",
+          "tick": 814,
+          "description": "지호이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 7.999999999999999,
+            "fatigue": 72.03999999999972,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3164",
+          "tick": 909,
+          "description": "이안이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 22.40000000000001,
+            "fatigue": 3.3000000000000003,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3239",
+          "tick": 939,
+          "description": "소율이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 29.600000000000016,
+            "fatigue": 67.16999999999975,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3243",
+          "tick": 941,
+          "description": "유준이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 100,
+            "thirst": 28.000000000000014,
+            "fatigue": 47.59999999999984,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3353",
+          "tick": 997,
+          "description": "수아이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 26.400000000000013,
+            "fatigue": 24.749999999999957,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3409",
+          "tick": 1029,
+          "description": "서연이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 100,
+            "thirst": 39.999999999999986,
+            "fatigue": 6.930000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3496",
+          "tick": 1079,
+          "description": "하루이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 92.39999999999989,
+            "thirst": 23.20000000000001,
+            "fatigue": 22.43999999999997,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        },
+        {
+          "id": "e3527",
+          "tick": 1106,
+          "description": "다은이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 25.600000000000012,
+            "fatigue": 28.709999999999937,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "drought"
+          }
+        }
+      ],
+      "minDailyFood": 0,
+      "maxDailyFood": 14723,
+      "bytes": 14842817,
+      "elapsedMs": 3625,
+      "processHeapMB": 679,
+      "sha256": "bccc413fba280872fe4e6b30f35b620a963debaef9f0b1b54a8770412bc1e2f1"
+    },
+    {
+      "seed": 123,
+      "days": 365,
+      "condition": "pressure",
+      "population": 52,
+      "initialPopulation": 100,
+      "historyMode": "server-checkpoint; full archive integrity tested in civilization-regression",
+      "settlements": 12,
+      "births": 9,
+      "generations": 1,
+      "journeys": 0,
+      "day": 366,
+      "elapsedDays": 365,
+      "deaths": 57,
+      "averageFood": 38453.02,
+      "storage": {
+        "food": 9135,
+        "wood": 10016
+      },
+      "conflicts": 2745,
+      "thefts": 1004,
+      "shares": 980,
+      "strongestRelationship": {
+        "residents": "시우 ↔ 민서7",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "민서3 ↔ 지호5",
+        "score": -100
+      },
+      "events": 35307,
+      "economy": {
+        "producedFood": 138324,
+        "producedWood": 28715,
+        "consumedFood": 60692,
+        "investedWood": 1546,
+        "externalFood": 0,
+        "trades": 2975,
+        "tradeVolume": 5098,
+        "wages": 2955,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 4,
+        "samples": 365
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "failureReasons": {
+        "대상 주민과 만나지 못했다.": 896,
+        "작물이 아직 자라지 않았다.": 628,
+        "채집 자원이 소진되었다.": 92,
+        "대화 상대가 지금 바쁘다.": 24,
+        "식량 공유 조건이 바뀌었다.": 14,
+        "절도 조건이 바뀌었다.": 4,
+        "거래 재고 또는 실제 자금이 부족하다.": 9
+      },
+      "deathEvidence": [
+        {
+          "id": "e14460",
+          "tick": 586,
+          "description": "하루4이 생존 자원 부족로 46세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 46,
+            "hunger": 100,
+            "thirst": 22,
+            "fatigue": 96.61999999999959,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e14501",
+          "tick": 588,
+          "description": "소율2이 생존 자원 부족로 58세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 58,
+            "hunger": 100,
+            "thirst": 32,
+            "fatigue": 84.40999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e14873",
+          "tick": 609,
+          "description": "여울3이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 53.5,
+            "fatigue": 56.21999999999979,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e14913",
+          "tick": 611,
+          "description": "소율5이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 48.5,
+            "fatigue": 29.00999999999962,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15030",
+          "tick": 616,
+          "description": "민재이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 68.5,
+            "fatigue": 29.999999999999613,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15068",
+          "tick": 618,
+          "description": "하루7이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 16.5,
+            "fatigue": 34.619999999999635,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15156",
+          "tick": 623,
+          "description": "도윤7이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 100,
+            "thirst": 27.5,
+            "fatigue": 11.22,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15385",
+          "tick": 640,
+          "description": "연우4이 생존 자원 부족로 56세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 56,
+            "hunger": 100,
+            "thirst": 76.5,
+            "fatigue": 30.809999999999924,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15401",
+          "tick": 641,
+          "description": "민재3이 생존 자원 부족로 28세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 28,
+            "hunger": 100,
+            "thirst": 31.5,
+            "fatigue": 46.64999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15488",
+          "tick": 646,
+          "description": "다은6이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 49,
+            "fatigue": 20.12999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15595",
+          "tick": 652,
+          "description": "나은6이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 59.5,
+            "fatigue": 40.22999999999956,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15902",
+          "tick": 663,
+          "description": "서연3이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 60,
+            "fatigue": 43.529999999999546,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15927",
+          "tick": 664,
+          "description": "나은4이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 61,
+            "fatigue": 34.43999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e15961",
+          "tick": 666,
+          "description": "유준이 생존 자원 부족로 33세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 33,
+            "hunger": 100,
+            "thirst": 50,
+            "fatigue": 26.06999999999995,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16007",
+          "tick": 668,
+          "description": "민서6이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 8,
+            "fatigue": 34.55999999999991,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16155",
+          "tick": 674,
+          "description": "민서4이 생존 자원 부족로 61세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 61,
+            "hunger": 100,
+            "thirst": 76,
+            "fatigue": 46.82999999999955,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16234",
+          "tick": 678,
+          "description": "지호4이 생존 자원 부족로 29세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 29,
+            "hunger": 100,
+            "thirst": 21,
+            "fatigue": 24.08999999999996,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16243",
+          "tick": 679,
+          "description": "여울2이 생존 자원 부족로 40세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 40,
+            "hunger": 100,
+            "thirst": 18.5,
+            "fatigue": 2.64,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16284",
+          "tick": 681,
+          "description": "이안6이 생존 자원 부족로 63세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 63,
+            "hunger": 100,
+            "thirst": 7.5,
+            "fatigue": 58.499999999999474,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16314",
+          "tick": 682,
+          "description": "유준4이 생존 자원 부족로 28세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 28,
+            "hunger": 100,
+            "thirst": 15,
+            "fatigue": 44.99999999999985,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16394",
+          "tick": 687,
+          "description": "다은3이 생존 자원 부족로 43세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 43,
+            "hunger": 100,
+            "thirst": 10,
+            "fatigue": 37.4099999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16520",
+          "tick": 696,
+          "description": "유준3이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 0.5,
+            "fatigue": 18.969999999999672,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16544",
+          "tick": 698,
+          "description": "다은4이 생존 자원 부족로 24세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 24,
+            "hunger": 100,
+            "thirst": 83.5,
+            "fatigue": 68.60999999999942,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16713",
+          "tick": 708,
+          "description": "시우3이 생존 자원 부족로 35세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 35,
+            "hunger": 100,
+            "thirst": 32.5,
+            "fatigue": 1.6500000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16784",
+          "tick": 712,
+          "description": "수아4이 생존 자원 부족로 22세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 22,
+            "hunger": 100,
+            "thirst": 23,
+            "fatigue": 6.2700000000000005,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e16886",
+          "tick": 718,
+          "description": "하루3이 생존 자원 부족로 54세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 54,
+            "hunger": 100,
+            "thirst": 36.5,
+            "fatigue": 6.2700000000000005,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e17142",
+          "tick": 723,
+          "description": "나은2이 생존 자원 부족로 30세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 30,
+            "hunger": 100,
+            "thirst": 13,
+            "fatigue": 16.27,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17220",
+          "tick": 727,
+          "description": "연우3이 생존 자원 부족로 31세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 31,
+            "hunger": 100,
+            "thirst": 16.5,
+            "fatigue": 29.43999999999963,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17288",
+          "tick": 731,
+          "description": "소율4이 생존 자원 부족로 23세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 23,
+            "hunger": 100,
+            "thirst": 17,
+            "fatigue": 18.909999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17371",
+          "tick": 737,
+          "description": "다은5이 생존 자원 부족로 59세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 59,
+            "hunger": 100,
+            "thirst": 33,
+            "fatigue": 1.9800000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17455",
+          "tick": 741,
+          "description": "시우4이 생존 자원 부족로 34세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 34,
+            "hunger": 100,
+            "thirst": 57,
+            "fatigue": 33.45999999999968,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17551",
+          "tick": 746,
+          "description": "소율이 생존 자원 부족로 25세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 25,
+            "hunger": 100,
+            "thirst": 51,
+            "fatigue": 10.330000000000002,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17555",
+          "tick": 747,
+          "description": "민재4이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 28.5,
+            "fatigue": 27.319999999999624,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17664",
+          "tick": 755,
+          "description": "수아3이 생존 자원 부족로 53세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 53,
+            "hunger": 100,
+            "thirst": 43.5,
+            "fatigue": 23.529999999999962,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17759",
+          "tick": 761,
+          "description": "시우6이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 100,
+            "thirst": 57,
+            "fatigue": 19.89999999999998,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17763",
+          "tick": 761,
+          "description": "하루이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 100,
+            "thirst": 56,
+            "fatigue": 29.639999999999368,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17855",
+          "tick": 765,
+          "description": "해솔3이 생존 자원 부족로 62세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 62,
+            "hunger": 100,
+            "thirst": 49.5,
+            "fatigue": 21.219999999999974,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e17883",
+          "tick": 766,
+          "description": "해솔이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 49,
+            "fatigue": 35.89999999999958,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18000",
+          "tick": 774,
+          "description": "서연4이 생존 자원 부족로 48세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 48,
+            "hunger": 100,
+            "thirst": 24,
+            "fatigue": 44.64999999999986,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18091",
+          "tick": 780,
+          "description": "지호6이 생존 자원 부족로 59세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 59,
+            "hunger": 100,
+            "thirst": 18,
+            "fatigue": 84.2199999999994,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18139",
+          "tick": 784,
+          "description": "소율6이 생존 자원 부족로 32세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 32,
+            "hunger": 100,
+            "thirst": 54.5,
+            "fatigue": 17.819999999999993,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18217",
+          "tick": 789,
+          "description": "여울6이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 67.59999999999998,
+            "thirst": 35,
+            "fatigue": 100,
+            "food": 2,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18378",
+          "tick": 797,
+          "description": "이안이 생존 자원 부족로 41세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 41,
+            "hunger": 100,
+            "thirst": 65.5,
+            "fatigue": 19.799999999999983,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e18691",
+          "tick": 818,
+          "description": "유준5이 생존 자원 부족로 50세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 50,
+            "hunger": 61.599999999999866,
+            "thirst": 12.5,
+            "fatigue": 99.39999999999925,
+            "food": 2,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e19589",
+          "tick": 874,
+          "description": "유준2이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 33,
+            "fatigue": 25.299999999999642,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "cloudy"
+          }
+        },
+        {
+          "id": "e27293",
+          "tick": 1427,
+          "description": "서연7이 생존 자원 부족로 44세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 44,
+            "hunger": 100,
+            "thirst": 19.5,
+            "fatigue": 38.609999999999886,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e28856",
+          "tick": 1557,
+          "description": "해솔2이 생존 자원 부족로 27세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 27,
+            "hunger": 100,
+            "thirst": 100,
+            "fatigue": 81.83999999999966,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e30835",
+          "tick": 1710,
+          "description": "나은이 생존 자원 부족로 47세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 47,
+            "hunger": 100,
+            "thirst": 68,
+            "fatigue": 94.59999999999961,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e32902",
+          "tick": 1864,
+          "description": "서연2이 생존 자원 부족로 55세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 55,
+            "hunger": 100,
+            "thirst": 26.5,
+            "fatigue": 9.57,
+            "food": 2,
+            "storageFood": 0,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e33168",
+          "tick": 1878,
+          "description": "이안2이 생존 자원 부족로 54세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 54,
+            "hunger": 100,
+            "thirst": 30.5,
+            "fatigue": 12.930000000000001,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e33641",
+          "tick": 1918,
+          "description": "서연이 생존 자원 부족로 45세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "needs",
+            "age": 45,
+            "hunger": 100,
+            "thirst": 42,
+            "fatigue": 18.43999999999999,
+            "food": 0,
+            "storageFood": 0,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e527610",
+          "tick": 38160,
+          "description": "연우이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 39.19999999999981,
+            "thirst": 9.5,
+            "fatigue": 45.53999999999985,
+            "food": 2,
+            "storageFood": 7927,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e527614",
+          "tick": 38160,
+          "description": "이안5이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 46.79999999999724,
+            "thirst": 10.5,
+            "fatigue": 48.179999999999836,
+            "food": 3,
+            "storageFood": 7927,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e629869",
+          "tick": 45072,
+          "description": "하루2이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 21.599999999998357,
+            "thirst": 23,
+            "fatigue": 29.369999999999933,
+            "food": 9,
+            "storageFood": 31551,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e629871",
+          "tick": 45072,
+          "description": "나은5이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 25.199999999999992,
+            "thirst": 6.5,
+            "fatigue": 40.25999999999988,
+            "food": 1,
+            "storageFood": 9641,
+            "weather": "sunny"
+          }
+        },
+        {
+          "id": "e680382",
+          "tick": 48528,
+          "description": "민서5이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 36,
+            "thirst": 41.5,
+            "fatigue": 48.179999999999836,
+            "food": 2,
+            "storageFood": 34175,
+            "weather": "rain"
+          }
+        },
+        {
+          "id": "e680386",
+          "tick": 48528,
+          "description": "민서7이 노화로 85세에 세상을 떠났다.",
+          "conditions": {
+            "reason": "age",
+            "age": 85,
+            "hunger": 15.59999999999998,
+            "thirst": 2.5,
+            "fatigue": 4.62,
+            "food": 1,
+            "storageFood": 10367,
+            "weather": "rain"
+          }
+        }
+      ],
+      "minDailyFood": 13,
+      "maxDailyFood": 77954,
+      "bytes": 13400131,
+      "elapsedMs": 129830,
+      "processHeapMB": 389,
+      "sha256": "d7e136c638215eaf875d56d5dfd680f2f23089659c9aab1464ffafc762eb989b"
+    }
+  ],
+  "mock": {
+    "settlements": 1,
+    "births": 0,
+    "generations": 0,
+    "journeys": 0,
+    "seed": 42,
+    "day": 101,
+    "elapsedDays": 100,
+    "population": 12,
+    "deaths": 0,
+    "averageFood": 4129.89,
+    "storage": {
+      "food": 8396,
+      "wood": 3467
+    },
+    "conflicts": 2,
+    "thefts": 1,
+    "shares": 0,
+    "strongestRelationship": {
+      "residents": "하루 ↔ 소율",
+      "score": 157
+    },
+    "weakestRelationship": {
+      "residents": "수아 ↔ 유준",
+      "score": 17
+    },
+    "events": 37241,
+    "economy": {
+      "producedFood": 12102,
+      "producedWood": 3675,
+      "consumedFood": 3685,
+      "investedWood": 127,
+      "externalFood": 0,
+      "trades": 51,
+      "tradeVolume": 107,
+      "wages": 52,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "foodPrice": 1,
+      "outstandingDebt": 0,
+      "samples": 100
+    },
+    "llm": {
+      "requested": 10,
+      "completed": 10,
+      "rejected": 0,
+      "failed": 0,
+      "queued": 0
+    }
+  }
+}

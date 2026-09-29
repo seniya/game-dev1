@@ -1,3 +1,4 @@
+import { initializeHeritage } from './heritage';
 import { initializeUrban } from './urban';
 import { type WorldState, type NPC, type Tile, type Building } from './types';
 import { createEconomy } from './economy';
@@ -7,7 +8,7 @@ import { random } from './random';
 export function createWorld(seed = 42, population = 12): WorldState {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 4294967295) throw new Error('시드는 0~4294967295 정수여야 합니다.');
   if (!Number.isInteger(population) || population < 10 || population > 3000) throw new Error('주민 수는 10~3000명이어야 합니다.');
-  const w: WorldState = { version: 4, urban: undefined as unknown as WorldState['urban'], civilization: { settlements: [], journeys: [], focus: 'v0', detail: 'full' }, seed, rng: seed || 0x9e3779b9, tick: 36, nextId: 1, width: 32, height: 24,
+  const w: WorldState = { version: 5, heritage: undefined as unknown as WorldState['heritage'], urban: undefined as unknown as WorldState['urban'], civilization: { settlements: [], journeys: [], focus: 'v0', detail: 'full' }, seed, rng: seed || 0x9e3779b9, tick: 36, nextId: 1, width: 32, height: 24,
     tiles: [], buildings: [], resources: [], npcs: [], storage: { food: 28, wood: 12 },
     market: { food: 20, wood: 0, coins: 180, foodPrice: 3, woodPrice: 2 }, weather: 'sunny', droughtUntil: 0,
     economy: undefined as unknown as WorldState['economy'], events: [], loans: [], llm: { enabled: true, queue: [], gateKeys: [], dailyByNpc: {}, dailyTotal: 0, requested: 0, completed: 0, rejected: 0, failed: 0 },
@@ -48,7 +49,7 @@ export function createWorld(seed = 42, population = 12): WorldState {
   }
   initializeCivilization(w);
   populateSettlements(w);
-  initializeUrban(w);
+  initializeUrban(w); initializeHeritage(w, true);
   w.economy = createEconomy(w);
   return w;
 }

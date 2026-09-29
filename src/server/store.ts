@@ -29,6 +29,8 @@ const schema = [
   'CREATE TABLE IF NOT EXISTS events (epoch TEXT NOT NULL, id TEXT NOT NULL, seq INTEGER NOT NULL, tick INTEGER NOT NULL, kind TEXT NOT NULL, cause TEXT, body TEXT NOT NULL, PRIMARY KEY(epoch,id))',
   'CREATE INDEX IF NOT EXISTS events_time ON events(epoch,tick,seq)',
   'CREATE INDEX IF NOT EXISTS events_order ON events(epoch,seq)',
+  "CREATE INDEX IF NOT EXISTS events_kind_order ON events(epoch,kind,seq)",
+  "CREATE INDEX IF NOT EXISTS events_region_order ON events(epoch,json_extract(body,'$.data.settlementId'),kind,seq)",
   'CREATE INDEX IF NOT EXISTS events_cause ON events(epoch,cause)',
   'CREATE TABLE IF NOT EXISTS participants (epoch TEXT NOT NULL, npc TEXT NOT NULL, event TEXT NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY(epoch,npc,event))',
   'CREATE INDEX IF NOT EXISTS participants_order ON participants(epoch,npc,seq)',
@@ -111,7 +113,7 @@ export class WorldStore {
       state = restoreChange(state, JSON.parse(body) as StateChange); revision = next;
     }
     if (expected !== undefined && revision !== expected) throw new Error('세계 체크포인트와 변경 기록의 버전이 다릅니다.');
-    if ((state.version as number) !== 4) onUpgrade?.();
+    if ((state.version as number) !== 5) onUpgrade?.();
     return this.upgrade(state);
   }
   async read(): Promise<StoredWorld> {
@@ -131,7 +133,7 @@ export class WorldStore {
     this.baseline = { world: structuredClone(world), checkpoint, upgraded, journalBytes: changes.reduce((n, r) => n + new TextEncoder().encode(r.body).length, 0) };
     return world;
   }
-  private upgrade(state: WorldState): WorldState { return state.version === 4 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
+  private upgrade(state: WorldState): WorldState { return state.version === 5 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
   async command(id: string) { return this.db.prepare('SELECT body FROM commands WHERE id=?').bind(id).first<{ body: string }>(); }
   async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string, extra: D1PreparedStatement[] = [], input?: CommandInput) {
     if (this.baseline?.world.revision !== w.revision - 1) await this.read();

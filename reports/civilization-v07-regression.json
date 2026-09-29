@@ -1,75 +1,74 @@
 {
-  "generatedAt": "2026-09-29T22:46:56.443Z",
+  "generatedAt": "2026-09-29T15:13:48.213Z",
   "notes": "No external food injections. Full original events archived to temporary SQLite, engine checkpoints compacted every 30 days; archive cause references checked. 900 days plus 15 single-tick continuation checks. Detail mode omits only distant routine records; all physical rules run each tick. maxDayMs is local wall time, not a production SLA.",
   "cases": [
     {
       "days": 900,
       "extraCheckpointTicks": 15,
       "initialPopulation": 300,
-      "archiveCount": 1413790,
+      "archiveCount": 1336106,
       "oldestBirth": {
         "kind": "birth",
-        "actorId": "npc-born-201987",
+        "actorId": "npc-born-184263",
         "participants": [
-          "npc-born-201987",
-          "npc23",
-          "npc68"
+          "npc-born-184263",
+          "npc26",
+          "npc278"
         ],
-        "locationId": "c35110",
+        "locationId": "c173",
         "importance": 60,
-        "description": "나은2과 지호5의 가족에 새봄201988이 태어났다.",
+        "description": "이안2과 시우18의 가족에 새봄184264이 태어났다.",
         "data": {
-          "settlementId": "v5",
           "parents": [
-            "npc23",
-            "npc68"
+            "npc26",
+            "npc278"
           ],
           "generation": 1,
           "consumedFood": 2
         },
-        "id": "e201988",
+        "id": "e184264",
         "tick": 3456
       },
       "peakPopulation": 300,
       "peakGenerations": 2,
-      "maxDayMs": 642,
-      "elapsedMs": 355166,
-      "saveBytes": 67441435,
+      "maxDayMs": 467,
+      "elapsedMs": 311286,
+      "saveBytes": 58777735,
       "settlements": 12,
-      "births": 32,
+      "births": 34,
       "generations": 2,
       "journeys": 0,
       "seed": 7,
       "day": 901,
       "elapsedDays": 900.1,
-      "population": 32,
-      "deaths": 300,
-      "averageFood": 202265.91,
+      "population": 31,
+      "deaths": 303,
+      "averageFood": 216192.14,
       "storage": {
-        "food": 20967,
-        "wood": 18276
+        "food": 18052,
+        "wood": 23056
       },
-      "conflicts": 39997,
-      "thefts": 9791,
-      "shares": 9062,
+      "conflicts": 30728,
+      "thefts": 7203,
+      "shares": 6213,
       "strongestRelationship": {
-        "residents": "하루2 ↔ 나은",
+        "residents": "하루 ↔ 지호3",
         "score": 200
       },
       "weakestRelationship": {
-        "residents": "서연17 ↔ 해솔6",
+        "residents": "유준16 ↔ 해솔6",
         "score": -100
       },
-      "events": 152924,
+      "events": 139881,
       "economy": {
-        "producedFood": 788086,
-        "producedWood": 134649,
-        "consumedFood": 369314,
-        "investedWood": 5058,
+        "producedFood": 802022,
+        "producedWood": 158880,
+        "consumedFood": 343274,
+        "investedWood": 5073,
         "externalFood": 0,
-        "trades": 15073,
-        "tradeVolume": 24296,
-        "wages": 66430,
+        "trades": 13783,
+        "tradeVolume": 22873,
+        "wages": 8997,
         "balance": {
           "food": 0,
           "wood": 0,
@@ -88,170 +87,78 @@
       },
       "birthsByGeneration": {
         "0": 300,
-        "1": 25,
-        "2": 7
+        "1": 32,
+        "2": 2
       },
-      "importantHistory": 805
+      "importantHistory": 845
     },
     {
       "days": 900,
       "extraCheckpointTicks": 15,
       "initialPopulation": 300,
-      "archiveCount": 1781189,
+      "archiveCount": 1941419,
       "oldestBirth": {
         "kind": "birth",
-        "actorId": "npc-born-250652",
+        "actorId": "npc-born-259655",
         "participants": [
-          "npc-born-250652",
-          "npc129",
-          "npc228"
+          "npc-born-259655",
+          "npc102",
+          "npc210"
         ],
-        "locationId": "c54",
+        "locationId": "c55",
         "importance": 60,
-        "description": "서연9과 지호15의 가족에 새봄250653이 태어났다.",
+        "description": "시우7과 도윤14의 가족에 새봄259656이 태어났다.",
         "data": {
-          "settlementId": "v3",
           "parents": [
-            "npc129",
-            "npc228"
+            "npc102",
+            "npc210"
           ],
           "generation": 1,
           "consumedFood": 2
         },
-        "id": "e250653",
+        "id": "e259656",
         "tick": 3456
       },
       "peakPopulation": 300,
-      "peakGenerations": 2,
-      "maxDayMs": 793,
-      "elapsedMs": 394553,
-      "saveBytes": 76794868,
+      "peakGenerations": 1,
+      "maxDayMs": 1364,
+      "elapsedMs": 489599,
+      "saveBytes": 76438296,
       "settlements": 12,
-      "births": 19,
-      "generations": 2,
+      "births": 20,
+      "generations": 1,
       "journeys": 0,
       "seed": 42,
       "day": 901,
       "elapsedDays": 900.1,
       "population": 19,
-      "deaths": 300,
-      "averageFood": 254744.24,
+      "deaths": 301,
+      "averageFood": 340839.1,
       "storage": {
-        "food": 37527,
-        "wood": 21140
+        "food": 59092,
+        "wood": 22348
       },
-      "conflicts": 71195,
-      "thefts": 17275,
-      "shares": 8995,
+      "conflicts": 88738,
+      "thefts": 21483,
+      "shares": 6427,
       "strongestRelationship": {
-        "residents": "서연 ↔ 다은5",
+        "residents": "하루 ↔ 다은",
         "score": 200
       },
       "weakestRelationship": {
-        "residents": "나은18 ↔ 시우4",
+        "residents": "나은18 ↔ 이안6",
         "score": -100
       },
-      "events": 178599,
+      "events": 185279,
       "economy": {
-        "producedFood": 894950,
-        "producedWood": 123953,
-        "consumedFood": 391881,
-        "investedWood": 5140,
+        "producedFood": 1114536,
+        "producedWood": 157984,
+        "consumedFood": 434862,
+        "investedWood": 5890,
         "externalFood": 0,
-        "trades": 13938,
-        "tradeVolume": 22571,
-        "wages": 69959,
-        "balance": {
-          "food": 0,
-          "wood": 0,
-          "coins": 0
-        },
-        "foodPrice": 1,
-        "outstandingDebt": 0,
-        "samples": 900
-      },
-      "llm": {
-        "requested": 0,
-        "completed": 0,
-        "rejected": 0,
-        "failed": 0,
-        "queued": 0
-      },
-      "birthsByGeneration": {
-        "0": 300,
-        "1": 18,
-        "2": 1
-      },
-      "importantHistory": 1238
-    },
-    {
-      "days": 900,
-      "extraCheckpointTicks": 15,
-      "initialPopulation": 300,
-      "archiveCount": 1738780,
-      "oldestBirth": {
-        "kind": "birth",
-        "actorId": "npc-born-239664",
-        "participants": [
-          "npc-born-239664",
-          "npc128",
-          "npc290"
-        ],
-        "locationId": "c31",
-        "importance": 60,
-        "description": "하루9과 도윤19의 가족에 새봄239665이 태어났다.",
-        "data": {
-          "settlementId": "v2",
-          "parents": [
-            "npc128",
-            "npc290"
-          ],
-          "generation": 1,
-          "consumedFood": 2
-        },
-        "id": "e239665",
-        "tick": 3456
-      },
-      "peakPopulation": 300,
-      "peakGenerations": 1,
-      "maxDayMs": 515,
-      "elapsedMs": 351009,
-      "saveBytes": 73974911,
-      "settlements": 12,
-      "births": 20,
-      "generations": 1,
-      "journeys": 0,
-      "seed": 123,
-      "day": 901,
-      "elapsedDays": 900.1,
-      "population": 20,
-      "deaths": 300,
-      "averageFood": 233039.75,
-      "storage": {
-        "food": 75800,
-        "wood": 18780
-      },
-      "conflicts": 83942,
-      "thefts": 17335,
-      "shares": 8516,
-      "strongestRelationship": {
-        "residents": "서연 ↔ 나은4",
-        "score": 200
-      },
-      "weakestRelationship": {
-        "residents": "지호17 ↔ 다은6",
-        "score": -100
-      },
-      "events": 172430,
-      "economy": {
-        "producedFood": 873463,
-        "producedWood": 127084,
-        "consumedFood": 398656,
-        "investedWood": 5465,
-        "externalFood": 0,
-        "trades": 11033,
-        "tradeVolume": 17707,
-        "wages": 67963,
+        "trades": 14247,
+        "tradeVolume": 23285,
+        "wages": 11373,
         "balance": {
           "food": 0,
           "wood": 0,
@@ -272,7 +179,97 @@
         "0": 300,
         "1": 20
       },
-      "importantHistory": 1006
+      "importantHistory": 1507
+    },
+    {
+      "days": 900,
+      "extraCheckpointTicks": 15,
+      "initialPopulation": 300,
+      "archiveCount": 1634865,
+      "oldestBirth": {
+        "kind": "birth",
+        "actorId": "npc-born-208324",
+        "participants": [
+          "npc-born-208324",
+          "npc42",
+          "npc87"
+        ],
+        "locationId": "c128",
+        "importance": 60,
+        "description": "이안3과 나은6의 가족에 새봄208325이 태어났다.",
+        "data": {
+          "parents": [
+            "npc42",
+            "npc87"
+          ],
+          "generation": 1,
+          "consumedFood": 2
+        },
+        "id": "e208325",
+        "tick": 3456
+      },
+      "peakPopulation": 300,
+      "peakGenerations": 2,
+      "maxDayMs": 765,
+      "elapsedMs": 306702,
+      "saveBytes": 62772192,
+      "settlements": 12,
+      "births": 27,
+      "generations": 2,
+      "journeys": 0,
+      "seed": 123,
+      "day": 901,
+      "elapsedDays": 900.1,
+      "population": 27,
+      "deaths": 300,
+      "averageFood": 192670.15,
+      "storage": {
+        "food": 56713,
+        "wood": 21542
+      },
+      "conflicts": 82497,
+      "thefts": 16739,
+      "shares": 6521,
+      "strongestRelationship": {
+        "residents": "서연 ↔ 나은4",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "해솔16 ↔ 도윤5",
+        "score": -100
+      },
+      "events": 150997,
+      "economy": {
+        "producedFood": 769187,
+        "producedWood": 138619,
+        "consumedFood": 371623,
+        "investedWood": 4614,
+        "externalFood": 0,
+        "trades": 15556,
+        "tradeVolume": 25736,
+        "wages": 10283,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 1,
+        "samples": 900
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "birthsByGeneration": {
+        "0": 300,
+        "1": 19,
+        "2": 8
+      },
+      "importantHistory": 825
     }
   ]
 }

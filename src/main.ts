@@ -1,3 +1,6 @@
+import { RECOLLECTION_LABELS, RECOLLECTION_TOPICS, recollections, type RecollectionTopic } from './sim/recollection';
+import { historyView, treeView, type HistoryPage } from './ui/heritage';
+import { historyMatches, type HistoryTopic } from './sim/history';
 import { setUrbanLayer, setDistrict } from './ui/urban';
 import type { Service } from './sim/urban-types';
 import { stocks, market } from './sim/civilization';
@@ -74,7 +77,7 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.5</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.8</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
     <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></header>
@@ -119,9 +122,10 @@ function render() {
   $('play-button').innerHTML = icon(playing ? 'pause' : 'play', 17); $('play-button').setAttribute('aria-label', playing ? '일시정지' : '재생');
   const openDetails = [...document.querySelectorAll<HTMLDetailsElement>('#npc-detail details[open]')].map(d => d.className);
   const inspectorScroll = $('npc-detail').scrollTop;
+  const heritageOpen = document.querySelector<HTMLDetailsElement>('#heritage-overview')?.open;
   const urbanOpen = document.querySelector<HTMLDetailsElement>('#urban-overview')?.open;
   const policyEditing = document.activeElement?.closest('#urban-policy');
-  if (!policyEditing) { setHTML('civilization-panel', civilizationView(state)); if (urbanOpen) document.querySelector<HTMLDetailsElement>('#urban-overview')!.open = true; }
+  if (!policyEditing) { setHTML('civilization-panel', civilizationView(state)); if (urbanOpen) document.querySelector<HTMLDetailsElement>('#urban-overview')!.open = true; if (heritageOpen) document.querySelector<HTMLDetailsElement>('#heritage-overview')!.open = true; }
   $('village-title').textContent = state.civilization.settlements.find(v => v.id === state.civilization.focus)?.name ?? '마을';
   map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed }); presentationMotion = undefined; renderInspector(); renderEvents();
   for (const detail of document.querySelectorAll<HTMLDetailsElement>('#npc-detail details')) detail.open = openDetails.includes(detail.className);
@@ -141,7 +145,7 @@ function renderInspector() {
   $('npc-header').innerHTML = `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}"><span class="pixel-person"><i></i><b></b></span><span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <span>${n.identity.age}세</span></h3><p>${n.identity.age < 18 ? '양육·성장 중' : OCCUPATIONS[n.occupation]} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p><span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`;
   if (tab === 'life') { if (cloudMode) { renderCloudLife(); return; } $('npc-detail').innerHTML = lifeHistory(state, n, lifeLimit); return; }
   if (tab === 'relationships') {
-    $('npc-detail').innerHTML = `<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p><div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button>${cloudMode && cloud?.world?.meta.aiMode !== 'chrome' && n.alive && state.npcs.find(p => p.id === r.npcId)?.alive && n.memories.some(m => m.relatedNpcIds.includes(r.npcId)) ? `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" ${!state.llm.enabled || cloud?.world?.meta.dialogue ? 'disabled' : ''}>기억에 근거한 말 듣기</button>` : ''}</article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`;
+    $('npc-detail').innerHTML = `<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p><div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button>${cloudMode && cloud?.world?.meta.aiMode !== 'chrome' && n.alive && state.npcs.find(p => p.id === r.npcId)?.alive && n.memories.some(m => m.relatedNpcIds.includes(r.npcId)) ? `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" ${!state.llm.enabled || cloud?.world?.meta.dialogue ? 'disabled' : ''}>기억에 근거한 말 듣기</button>${RECOLLECTION_TOPICS.filter(t => t !== 'shared' && recollections(n.memories, r.npcId, t).length).map(t => `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" data-recall="${t}" ${!state.llm.enabled || cloud?.world?.meta.dialogue || cloud?.world?.meta.history ? 'disabled' : ''}>${RECOLLECTION_LABELS[t]}</button>`).join('')}` : ''}</article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`;
     return;
   }
   if (tab === 'memories') {
@@ -162,7 +166,7 @@ function renderResidents() {
   residentPage = Math.min(residentPage, Math.max(0, Math.ceil(state.npcs.length / 60) - 1));
   $('resident-grid').innerHTML = state.npcs.slice(residentPage * 60, (residentPage + 1) * 60).map(n => `<button class="resident-card" data-npc="${esc(n.id)}"><span class="resident-dot" style="background:${npcColor(n)}">${esc(n.identity.name[0])}</span><div><h3>${esc(n.identity.name)} <small>${OCCUPATIONS[n.occupation]}</small></h3><p>${actionText(n)}</p><span>배고픔 ${n.needs.hunger.toFixed(0)} · 건강 ${n.needs.health.toFixed(0)} · 식량 ${n.inventory.food}</span></div>${icon('arrow', 16)}</button>`).join('') + (state.npcs.length > 60 ? `<div class="resident-paging"><button class="button" data-resident-page="-1" ${residentPage === 0 ? 'disabled' : ''}>이전 주민</button><span>${residentPage + 1} / ${Math.ceil(state.npcs.length / 60)}</span><button class="button" data-resident-page="1" ${(residentPage + 1) * 60 >= state.npcs.length ? 'disabled' : ''}>다음 주민 목록</button></div>` : '');
 }
-const kindLabels: Partial<Record<WorldEvent['kind'], string>> = { industry: '산업 생산', public_service: '공공서비스', tax: '세금·임대', urban: '도시 관측', policy: '정책 변경', freight: '물자 운송', family: '가족 형성', birth: '출생', coming_of_age: '성년', inheritance: '상속', education: '기술 전승', construction: '건설', settlement: '새 정착지', migration: '이주', caravan: '마을 교역', occupation: '직업 변화', price: '가격 산정', wage: '노동 보상', share: '따뜻한 도움', theft: '식량 절도', witness: '목격', rumor: '소문', talk: '이웃의 대화', relationship: '관계 변화', memory: '새로운 기억', goal: '새로운 바람', weather: '마을의 날씨', scarcity: '식량 부족', health: '건강', death: '마지막 인사', production: '생산', consumption: '생활', storage: '공동 창고', trade: '거래', loan: '대여', repayment: '상환', default: '연체', experiment: '관찰 실험', project: '목표 달성', llm: '사건 해석', arrival: '이동', failure: '계획 변경' };
+const kindLabels: Partial<Record<WorldEvent['kind'], string>> = { ecology: '생태 변화', council: '주민 공동결정', diplomacy: '도시 관계', industry: '산업 생산', public_service: '공공서비스', tax: '세금·임대', urban: '도시 관측', policy: '정책 변경', freight: '물자 운송', family: '가족 형성', birth: '출생', coming_of_age: '성년', inheritance: '상속', education: '기술 전승', construction: '건설', settlement: '새 정착지', migration: '이주', caravan: '마을 교역', occupation: '직업 변화', price: '가격 산정', wage: '노동 보상', share: '따뜻한 도움', theft: '식량 절도', witness: '목격', rumor: '소문', talk: '이웃의 대화', relationship: '관계 변화', memory: '새로운 기억', goal: '새로운 바람', weather: '마을의 날씨', scarcity: '식량 부족', health: '건강', death: '마지막 인사', production: '생산', consumption: '생활', storage: '공동 창고', trade: '거래', loan: '대여', repayment: '상환', default: '연체', experiment: '관찰 실험', project: '목표 달성', llm: '사건 해석', arrival: '이동', failure: '계획 변경' };
 function renderEvents() {
   if (cloudMode) { void loadJournal(); return; }
   const filtered = state.events.filter(e => {
@@ -172,7 +176,7 @@ function renderEvents() {
     if (search && !`${e.description} ${e.id} ${e.causeId ?? ''} ${JSON.stringify(e.data)}`.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 'important') return e.importance >= 45 || e.kind === 'weather';
     if (filter === 'social') return ['share', 'talk', 'witness', 'rumor', 'relationship', 'memory', 'family', 'birth', 'coming_of_age', 'education', 'migration', 'death'].includes(e.kind);
-    if (filter === 'economy') return ['production', 'storage', 'trade', 'loan', 'repayment', 'default', 'theft', 'scarcity', 'wage', 'price', 'project', 'consumption', 'experiment', 'inheritance', 'construction', 'settlement', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight'].includes(e.kind);
+    if (filter === 'economy') return ['production', 'storage', 'trade', 'loan', 'repayment', 'default', 'theft', 'scarcity', 'wage', 'price', 'project', 'consumption', 'experiment', 'inheritance', 'construction', 'settlement', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'council', 'diplomacy'].includes(e.kind);
     return true;
   });
   const shown = filtered.slice(-eventLimit).reverse();
@@ -256,7 +260,7 @@ $('file-input').onchange = async () => {
 };
 $('close-dialog').onclick = () => $<HTMLDialogElement>('detail-dialog').close();
 $('detail-dialog').onclick = event => { if (event.target === $('detail-dialog')) $<HTMLDialogElement>('detail-dialog').close(); };
-$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.4</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>현재는 한 마을의 경제·사회·기록을 관찰하는 단계이며 서버 모델을 연결하면 실제 AI의 해석과 기억에 근거한 말을 관찰할 수 있습니다. 출생·세대 교체·다른 마을 이주는 후속 단계입니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
+$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.8</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>여러 도시의 가족·세대·생산·생태·공동결정을 관찰합니다. 도시 연대기와 가계도에서 실제 사건을 따라갈 수 있으며, 모델 없이도 세계와 역사 조회가 동작합니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
 $('dialog-content').addEventListener('click', event => { if ((event.target as HTMLElement).closest('#export-report')) download('living-small-world-report.json', JSON.stringify(summarize(state), null, 2)); });
 document.querySelector('.brand')!.addEventListener('click', event => { event.preventDefault(); setView('world'); });
 
@@ -361,7 +365,7 @@ function renderAI() {
   const { usage } = aiStatus;
   $('ai-usage').textContent = `외부 API · 실제 날짜 ${aiStatus.day} UTC · 호출 ${usage.calls} / ${aiStatus.dailyLimit}회 · 보고된 입력 ${usage.inputTokens} / 출력 ${usage.outputTokens}토큰 · 응답당 최대 ${aiStatus.maxOutputTokens}토큰${usage.calls >= aiStatus.dailyLimit ? ' · 오늘 상한 도달, 다음 UTC 날짜까지 대기' : ''}`;
   $('ai-usage').textContent += ` · Chrome 실행 시도 ${aiStatus.chrome?.usage.calls ?? 0} / ${aiStatus.chrome?.dailyLimit ?? 36}회 · 최근 1시간 ${aiStatus.chrome?.schedule?.hourlyCalls ?? 0} / ${aiStatus.chrome?.schedule?.hourlyLimit ?? 6}회 · 사건 수집 60초 · 실행 후 최소 60초 휴식. 외부 API를 선택하면 제한된 주민·사건 정보를 설정한 공급자에게 전송하며 요금이 발생할 수 있습니다.`;
-  $('ai-audit').innerHTML = `<p class="inspector-footnote">세계 초기화에도 호출 예산은 유지됩니다. 실제 모델이 만든 해석과 말은 사실 자체가 아니며, 인용한 사건으로 근거를 확인할 수 있습니다.</p>${aiStatus.jobs.length ? aiStatus.jobs.map(j => `<button class="causal-button" data-ai-job="${esc(j.id)}"><b>${j.kind === 'dialogue' ? '기억에 근거한 말' : '중요 사건 해석'}</b><span>${esc(aiLabels[j.status] ?? j.status)} · ${j.attempts}/3회 · ${esc(j.model)}</span></button>`).join('') : '<p class="muted">외부 모델 호출 기록이 아직 없습니다.</p>'}${(aiStatus.chrome?.jobs ?? []).map(j => `<button class="causal-button" data-chrome-job="${esc(j.id)}"><b>Chrome 목표 선택</b><span>${esc(aiLabels[j.status] ?? j.status)} · ${j.attempts}/3회${j.error ? ` · ${esc(j.error)}` : ''}</span></button>`).join('')}`;
+  $('ai-audit').innerHTML = `<p class="inspector-footnote">세계 초기화에도 호출 예산은 유지됩니다. 실제 모델이 만든 해석과 말은 사실 자체가 아니며, 인용한 사건으로 근거를 확인할 수 있습니다.</p>${aiStatus.jobs.length ? aiStatus.jobs.map(j => `<button class="causal-button" data-ai-job="${esc(j.id)}"><b>${j.kind === 'history' ? '역사 근거 선택' : j.kind === 'dialogue' ? '기억에 근거한 말' : '중요 사건 해석'}</b><span>${esc(aiLabels[j.status] ?? j.status)} · ${j.attempts}/3회 · ${esc(j.model)}</span></button>`).join('') : '<p class="muted">외부 모델 호출 기록이 아직 없습니다.</p>'}${(aiStatus.chrome?.jobs ?? []).map(j => `<button class="causal-button" data-chrome-job="${esc(j.id)}"><b>Chrome 목표 선택</b><span>${esc(aiLabels[j.status] ?? j.status)} · ${j.attempts}/3회${j.error ? ` · ${esc(j.error)}` : ''}</span></button>`).join('')}`;
 }
 async function refreshAI() {
   try { aiStatus = await cloud!.get<AIStatus>('ai'); renderAI(); }
@@ -444,7 +448,7 @@ function startCloud() {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!button) return;
     if (button.dataset.dialogue) {
       event.stopImmediatePropagation();
-      void cloud!.send({ type: 'dialogue', speakerId: selectedId, listenerId: button.dataset.dialogue }).then(() => { toast(cloud!.world!.meta.aiMode === 'remote' ? '말을 준비하고 있습니다. 완료되면 세계의 기록에 남습니다.' : '기억에 근거한 말을 세계의 기록에 남겼습니다.'); }).catch(cloudFailure); return;
+      void cloud!.send({ type: 'dialogue', speakerId: selectedId, listenerId: button.dataset.dialogue, ...(button.dataset.recall ? { topic: button.dataset.recall as RecollectionTopic } : {}) }).then(() => { toast(cloud!.world!.meta.aiMode === 'remote' ? '말을 준비하고 있습니다. 완료되면 세계의 기록에 남습니다.' : '기억에 근거한 말을 세계의 기록에 남겼습니다.'); }).catch(cloudFailure); return;
     }
     if (button.dataset.chromeJob) { event.stopImmediatePropagation(); void showAIJob(button.dataset.chromeJob, true); return; }
     if (button.dataset.aiJob) { event.stopImmediatePropagation(); void showAIJob(button.dataset.aiJob); return; }
@@ -461,7 +465,7 @@ function startCloud() {
     event.stopImmediatePropagation();
     if (button.id === 'more-events') void loadJournal(true);
     if (button.id === 'more-life') void loadCloudLife(true);
-    if (button.id === 'save-button') void cloudDownload('export', `living-small-world-server-day${dayOf(state.tick)}.save.json`);
+    if (button.id === 'save-button') { const a = document.createElement('a'); a.href = '/api/export-stream'; a.download = ''; a.click(); }
     if (button.id === 'export-report') void cloudDownload('report', 'living-small-world-report.json');
     if (button.id === 'export-observations') void cloudDownload('observations', 'living-small-world-observations.json');
     if (button.id === 'load-button') openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>서버에 이어지는 작은 세계</h2><p>서버 세계는 같은 계정의 모든 기기에 반영됩니다. 교체 전 세계는 서버 백업으로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button">서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">서버 가져오기: 10MB 이하, 생존 주민 3,000명까지. 더 큰 파일은 기기 세계에서 열 수 있습니다.</p>`);
@@ -513,3 +517,50 @@ document.addEventListener('change', event => {
 });
 
 document.addEventListener('click', event => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-resident-page]'); if (button) { residentPage += Number(button.dataset.residentPage); renderResidents(); } });
+
+let historyTopic: HistoryTopic = 'population', historyNpc: string | undefined, historySettlement: string | undefined;
+let localHistoryEvents: WorldEvent[] = [];
+let historyFrom = '', historyTo = '', historyNext: number | null = null, historyRequest = 0, historyEpoch = '';
+async function showHistory(older = false) {
+  const request = ++historyRequest;
+  try {
+    const p = new URLSearchParams({ topic: historyTopic });
+    if (historyNpc) p.set('npc', historyNpc);
+    if (historySettlement) p.set('settlement', historySettlement);
+    if (historyFrom) p.set('from', String((Number(historyFrom) - 1) * 144));
+    if (historyTo) p.set('to', String(Number(historyTo) * 144 - 1));
+    if (older && historyNext !== null) p.set('before', String(historyNext));
+    let result: HistoryPage;
+    if (cloudMode) { p.set('epoch', historyEpoch); result = await cloud!.get<HistoryPage>(`history?${p}`); }
+    else {
+      if (!older) localHistoryEvents = state.events.filter(e => historyMatches(state, e, historyTopic, historySettlement, historyNpc) && (!historyFrom || e.tick >= (Number(historyFrom) - 1) * 144) && (!historyTo || e.tick < Number(historyTo) * 144)).reverse();
+      const all = localHistoryEvents;
+      const start = older ? historyNext ?? 0 : 0; result = { events: all.slice(start, start + 40), next: all.length > start + 40 ? start + 40 : null };
+      const samples = state.events.filter(e => !historyNpc && e.kind === 'urban' && e.data.settlementId === historySettlement && (!historyFrom || e.tick >= (Number(historyFrom) - 1) * 144) && (!historyTo || e.tick < Number(historyTo) * 144));
+      if (samples.length) result.comparison = { first: samples[0], last: samples.at(-1)! };
+    }
+    if (request !== historyRequest) return;
+    historyNext = result.next;
+    openDialog(historyView(result, historyTopic, cloudMode && cloud?.world?.meta.aiMode === 'remote', !!historyNpc, historyFrom, historyTo));
+  } catch (e) { toast((e as Error).message); }
+}
+document.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!button) return;
+  if (button.id === 'family-tree') openDialog(treeView(state, selectedId));
+  if (button.id === 'city-history' || button.dataset.personHistory) {
+    historyNpc = button.dataset.personHistory; historySettlement = historyNpc ? undefined : state.civilization.focus;
+    historyTopic = historyNpc ? 'economy' : 'population'; historyFrom = ''; historyTo = ''; historyEpoch = cloud?.world?.epoch ?? ''; void showHistory();
+  }
+  if (button.id === 'history-more') void showHistory(true);
+  if (button.id === 'history-ai' && cloudMode) { button.disabled = true; void cloud!.send({ type: 'history-ai', topic: historyTopic }).then(() => toast('최근 세계의 근거 선택을 요청했습니다. 결과는 세계의 기록과 AI 감사에 남습니다.')).catch(cloudFailure); }
+});
+document.addEventListener('submit', event => {
+  if ((event.target as HTMLElement).id !== 'history-query') return; event.preventDefault();
+  historyTopic = $<HTMLSelectElement>('history-topic').value as HistoryTopic;
+  historyFrom = $<HTMLInputElement>('history-from').value; historyTo = $<HTMLInputElement>('history-to').value; void showHistory();
+});
+document.addEventListener('change', async event => {
+  const input = event.target as HTMLInputElement; if (input.id !== 'council-enabled') return;
+  try { if (cloudMode) await cloud!.send({ type: 'council', settlementId: state.civilization.focus, enabled: input.checked }); else { sim.setCouncil(state.civilization.focus, input.checked); render(); localSave(); } }
+  catch (e) { toast((e as Error).message); render(); }
+});

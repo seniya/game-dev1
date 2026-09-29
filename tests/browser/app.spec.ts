@@ -287,3 +287,38 @@ test('1000 resident city world has paginated residents and selectable regions', 
   await page.getByRole('button', { name: '세계 관찰', exact: true }).click(); await page.locator('#urban-overview summary').click();
   await expect(page.locator('.urban-atlas button')).toHaveCount(4); await page.locator('.urban-atlas button').nth(1).click(); await expect(page.locator('#village-title')).toContainText('강너머');
 });
+
+test('ecology and council controls persist; historical questions, evidence and family tree work on mobile', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/?local=1'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
+  await page.locator('#heritage-overview summary').click();
+  await expect(page.locator('.heritage-panel')).toContainText('가축');
+  await page.locator('#council-enabled').uncheck(); await expect(page.locator('#council-enabled')).not.toBeChecked();
+  await page.getByRole('button', { name: '관찰 실험실' }).click(); await page.getByRole('button', { name: '하루 관찰 진행', exact: true }).click();
+  await page.getByRole('button', { name: '세계 관찰', exact: true }).click();
+  await page.getByRole('button', { name: '도시 연대기와 원인 보기' }).click();
+  await page.locator('#history-topic').selectOption('ecology'); await page.getByRole('button', { name: '기록 조회', exact: true }).click();
+  await expect(page.locator('.history-list')).toContainText('토양');
+  await page.locator('.history-list article').filter({ hasText: '토양' }).getByRole('button', { name: '원문과 이후 영향', exact: true }).click(); await expect(page.getByRole('dialog')).toContainText('생태 변화');
+  await page.getByRole('button', { name: '닫기', exact: true }).click();
+  await page.getByRole('tab', { name: '생애', exact: true }).click(); await page.getByRole('button', { name: '가계도와 계승 기록', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('가계도와 재산 계승');
+  await page.getByRole('button', { name: '이 인물의 재산·생애 기록' }).first().click(); await expect(page.getByRole('dialog')).toContainText('인물의 생애와 재산 기록');
+  await page.getByRole('button', { name: '닫기', exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.reload(); await expect(page.locator('#council-enabled')).not.toBeChecked(); expect(errors).toEqual([]);
+});
+
+test('server history retrieves original events and streamed save remains a valid restorable world', async ({ page }) => {
+  await page.goto('/'); await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
+  await page.getByRole('button', { name: '관찰 실험실' }).click(); await page.locator('#population-input').fill('12'); await page.locator('#seed-input').fill('42'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
+  await expect(page.locator('#nav-population')).toHaveText('12'); await page.getByRole('button', { name: '하루 관찰 진행', exact: true }).click(); await expect(page.locator('#game-clock')).toContainText('2일째');
+  await page.getByRole('button', { name: '세계 관찰', exact: true }).click(); await page.locator('#heritage-overview summary').click(); await page.getByRole('button', { name: '도시 연대기와 원인 보기' }).click();
+  await page.locator('#history-topic').selectOption('ecology'); await page.getByRole('button', { name: '기록 조회', exact: true }).click(); await expect(page.locator('.history-list')).toContainText('토양');
+  await page.getByRole('button', { name: '원문과 이후 영향', exact: true }).first().click(); await expect(page.getByRole('dialog')).toContainText('원인에서 이후 선택까지'); await page.getByRole('button', { name: '닫기', exact: true }).click();
+  const download = page.waitForEvent('download'); await page.getByRole('button', { name: '세계 저장', exact: true }).click();
+  const file = await download; expect(await file.failure()).toBeNull();
+  const stream = await file.createReadStream(); const chunks = []; for await (const chunk of stream!) chunks.push(chunk);
+  const { Simulation } = await import('../../src/sim/engine'); const restored = Simulation.load(Buffer.concat(chunks).toString()).snapshot(); expect(restored.version).toBe(5); expect(restored.events.some(e => e.kind === 'ecology')).toBe(true);
+});

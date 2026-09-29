@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,6 +12,7 @@
     "test:browser": "playwright test",
     "regression": "tsx src/regression.ts",
     "regression:civilization": "tsx src/civilization-regression.ts",
+    "regression:heritage": "tsx src/heritage-regression.ts",
     "regression:urban": "tsx src/urban-regression.ts"
   },
   "devDependencies": {
