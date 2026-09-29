@@ -1,3 +1,4 @@
+import { compactWorld } from './server/world';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import assert from 'node:assert/strict';
@@ -6,7 +7,7 @@ import { balance } from './sim/economy';
 import { DecisionCoordinator } from './llm/coordinator';
 import { MockLLMProvider } from './llm/provider';
 
-// Fixed matrix; no cherry-picked success seed. Population pressure is intentionally unfunded.
+// Fixed matrix; no cherry-picked success seed. v0.6 distributes large populations across initial settlements.
 const cases = [7, 42, 123].flatMap(seed => [100, 365].flatMap(days =>
   (['normal', 'drought', 'pressure'] as const).map(condition => ({ seed, days, condition, population: condition === 'pressure' ? 100 : 12 }))));
 const hash = (s: string) => createHash('sha256').update(s).digest('hex');
@@ -18,12 +19,13 @@ for (const c of cases) {
     if (c.condition === 'drought' && day < 10) s.experiment('drought');
     if (c.condition === 'drought' && day === 10) s.experiment('food');
     s.step(144);
+    return c.population >= 100 && (day + 1) % 30 === 0 ? Simulation.load(JSON.stringify(compactWorld(s.snapshot()))) : s;
   };
   const split = Math.floor(c.days / 2);
-  for (let day = 0; day < split; day++) stepDay(sim, day);
+  for (let day = 0; day < split; day++) sim = stepDay(sim, day);
   const checkpoint = sim.save();
   let resumed = Simulation.load(checkpoint);
-  for (let day = split; day < c.days; day++) { stepDay(sim, day); stepDay(resumed, day); }
+  for (let day = split; day < c.days; day++) { sim = stepDay(sim, day); resumed = stepDay(resumed, day); }
   assert.equal(hash(sim.save()), hash(resumed.save()), `resume ${JSON.stringify(c)}`);
   const state = sim.snapshot(), serialized = sim.save();
   assert.deepEqual(balance(state), { food: 0, wood: 0, coins: 0 });
@@ -32,12 +34,12 @@ for (const c of cases) {
   // Decisions stuck for longer than one day indicate a planner fault, regardless of starvation.
   assert.ok(state.npcs.every(n => !n.alive || !n.currentAction || state.tick - n.decision.tick <= 144));
   // Run an independent complete replay, including all interventions.
-  const replay = new Simulation(c.seed, c.population); replay.setLLM(false);
-  for (let day = 0; day < c.days; day++) stepDay(replay, day);
+  let replay = new Simulation(c.seed, c.population); replay.setLLM(false);
+  for (let day = 0; day < c.days; day++) replay = stepDay(replay, day);
   assert.equal(hash(replay.save()), hash(serialized));
   const failures = state.events.filter(e => e.kind === 'failure'), reasons: Record<string, number> = {};
   for (const e of failures) { const reason = e.description.split(': ').slice(1).join(': '); reasons[reason] = (reasons[reason] ?? 0) + 1; }
-  const row = { ...c, initialPopulation: c.population, ...summarize(state), failureReasons: reasons, deathEvidence: state.events.filter(e => e.kind === 'death').map(e => ({ id: e.id, tick: e.tick, description: e.description, conditions: e.data })),
+  const row = { ...c, initialPopulation: c.population, historyMode: c.population >= 100 ? 'server-checkpoint; full archive integrity tested in civilization-regression' : 'full-local', ...summarize(state), failureReasons: reasons, deathEvidence: state.events.filter(e => e.kind === 'death').map(e => ({ id: e.id, tick: e.tick, description: e.description, conditions: e.data })),
     minDailyFood: Math.min(...state.economy.daily.map(d => d.food)), maxDailyFood: Math.max(...state.economy.daily.map(d => d.food)),
     bytes: Buffer.byteLength(serialized), elapsedMs: Math.round(performance.now() - started), processHeapMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), sha256: hash(serialized) };
   results.push(row);

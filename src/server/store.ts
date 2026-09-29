@@ -1,3 +1,4 @@
+import { Simulation } from '../sim/engine';
 import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types';
 import type { WorldEvent, WorldState } from '../sim/types';
 import { initialWorld, type StoredWorld } from './world';
@@ -79,8 +80,9 @@ export class WorldStore {
       this.db.prepare('SELECT body FROM snapshots WHERE epoch=(SELECT epoch FROM world WHERE id=1) ORDER BY part'),
     ]);
     const row = result[0].results[0] as unknown as { revision: number; epoch: string; meta: string };
-    return { revision: row.revision, epoch: row.epoch, meta: JSON.parse(row.meta), state: JSON.parse(result[1].results.map(r => r.body).join('')) };
+    return { revision: row.revision, epoch: row.epoch, meta: JSON.parse(row.meta), state: this.upgrade(JSON.parse(result[1].results.map(r => r.body).join(''))) };
   }
+  private upgrade(state: WorldState): WorldState { return state.version === 3 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
   async command(id: string) { return this.db.prepare('SELECT body FROM commands WHERE id=?').bind(id).first<{ body: string }>(); }
   async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string, extra: D1PreparedStatement[] = []) {
     try {

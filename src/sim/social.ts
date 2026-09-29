@@ -11,7 +11,10 @@ export function eventById(w: WorldState, id: string): WorldEvent | undefined {
 }
 export function appendEvent(w: WorldState, input: EventInput): WorldEvent {
   const e: WorldEvent = { ...input, id: `e${w.nextId++}`, tick: w.tick, participants: input.participants ?? [input.actorId, input.targetId].filter((id): id is string => !!id), data: input.data ?? {} };
-  w.events.push(e);
+  // Distant routine movement/consumption can be omitted; consequential events and all causes remain.
+  const actor = w.civilization?.detail === 'focused' && input.actorId ? w.npcs.find(n => n.id === input.actorId) : undefined;
+  const brief = w.civilization?.detail === 'focused' && actor && actor.settlementId !== w.civilization.focus && input.importance < 30 && ['arrival', 'consumption', 'storage', 'failure'].includes(input.kind);
+  if (!brief) w.events.push(e);
   return e;
 }
 export function relationship(n: NPC, targetId: string): Relationship {
@@ -28,6 +31,7 @@ export function changeRelationship(w: WorldState, n: NPC, targetId: string, chan
   }
   r.interpretation = meaning;
   if (!r.evidence.includes(cause.id)) r.evidence.push(cause.id);
+  if (r.evidence.length > 12) r.evidence = [r.evidence[0], ...r.evidence.slice(-11)];
   appendEvent(w, { kind: 'relationship', actorId: n.id, targetId, importance: 30, causeId: cause.id, description: `${n.identity.name} → ${w.npcs.find(p => p.id === targetId)?.identity.name}: ${actual.join(', ') || '관계의 기억을 갱신'}`, data: { meaning } });
 }
 export function remember(w: WorldState, n: NPC, event: WorldEvent, description = event.description) {
@@ -62,6 +66,8 @@ export function socialEvent(w: WorldState, input: EventInput): WorldEvent {
 }
 export function decayMemories(w: WorldState) {
   for (const n of w.npcs) {
+    // Only seven-day-old witness records can be retold. Original events stay in the archive.
+    n.knownRumors = n.knownRumors.filter(id => w.tick - (eventById(w, id)?.tick ?? -Infinity) < TICKS_PER_DAY * 7);
     for (const memory of n.memories) memory.importance = Math.max(0, memory.importance - (memory.importance >= 75 ? .15 : 2));
     n.memories = n.memories.filter(m => m.importance > 15 || w.tick - m.createdAt < TICKS_PER_DAY);
   }

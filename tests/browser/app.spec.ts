@@ -190,3 +190,22 @@ test('configured model audit displays escaped results, links evidence and export
   await page.getByRole('button', { name: `근거 사건 ${source.id}` }).click();
   await expect(page.getByRole('dialog')).toContainText(source.description);
 });
+
+test('multiple settlements, focused history and family inspection survive reload on mobile', async ({ page }) => {
+  const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/?local=1'); await page.getByRole('button', { name: '일시정지', exact: true }).click();
+  await page.getByRole('button', { name: '관찰 실험실' }).click();
+  await page.locator('#population-input').fill('100'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
+  await expect(page.locator('.settlement-card')).toHaveCount(3);
+  await page.locator('[data-village="v1"]').click(); await expect(page.locator('#village-title')).toContainText('강너머');
+  await page.locator('#world-detail').selectOption('focused');
+  await page.getByRole('tab', { name: '생애', exact: true }).click();
+  await expect(page.locator('.family-card')).toContainText('가족과 계승');
+  await expect(page.locator('.family-card')).toContainText('12일 = 1년');
+  await page.reload(); await expect(page.locator('#world-detail')).toHaveValue('focused');
+  await expect(page.locator('#village-title')).toContainText('강너머');
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/civilization-mobile.png', fullPage: true });
+  expect(errors).toEqual([]);
+});

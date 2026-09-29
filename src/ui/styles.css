@@ -41,3 +41,15 @@
 .chrome-device progress { width: 100%; margin-bottom: 12px; accent-color: #537d61; }
 .chrome-device .cloud-actions { gap: 8px; }
 .chrome-device button { white-space: normal; }
+
+.civilization-panel { padding: 16px 20px; border-top: 1px solid #e3e5d8; background: #fafbf5; }
+.civilization-heading, .civilization-controls { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 12px; color: #687668; }
+.civilization-heading h3 { margin: 0; color: #354e40; font-size: 14px; }
+.settlement-list { display: flex; gap: 8px; overflow-x: auto; padding: 12px 0; }
+.settlement-card { flex: 0 0 190px; text-align: left; background: #fffef8; border: 1px solid #d9dfd0; border-radius: 10px; padding: 12px; color: #596c59; cursor: pointer; }
+.settlement-card.active { border-color: #668970; background: #edf3e8; }
+.settlement-card b, .settlement-card span { display: block; margin-bottom: 5px; font-size: 11px; }
+.settlement-card b { font-size: 13px; color: #354e40; }
+.civilization-controls select, #population-input { border: 1px solid #ced6c6; border-radius: 6px; padding: 7px; max-width: 100%; background: #fffef8; color: #354e40; }
+.family-card { padding: 12px; border: 1px solid #dce3d5; border-radius: 10px; background: #f6f8ef; margin-bottom: 16px; font-size: 12px; line-height: 1.8; }
+@media (max-width: 600px) { .civilization-panel { padding: 12px; } .civilization-heading { gap: 5px; } .game-clock { flex-wrap: wrap; } }

@@ -11,23 +11,27 @@ export class WorldMap {
   private grid = false;
   private onSelect: (id: string) => void;
   private cell = 30;
+  private origin = { x: 0, y: 0 };
+  private terrainBuildings = 0;
   constructor(private canvas: HTMLCanvasElement, onSelect: (id: string) => void) {
     this.onSelect = onSelect;
     canvas.addEventListener('click', event => {
       if (!this.world) return;
-      const rect = canvas.getBoundingClientRect(), x = (event.clientX - rect.left) / rect.width * this.world.width, y = (event.clientY - rect.top) / rect.height * this.world.height;
+      const rect = canvas.getBoundingClientRect(), x = (event.clientX - rect.left) / rect.width * 32 + this.origin.x, y = (event.clientY - rect.top) / rect.height * 24 + this.origin.y;
       const nearest = this.world.npcs.filter(n => n.alive).map(n => ({ n, d: Math.hypot(n.position.x + .5 - x, n.position.y + .5 - y) })).sort((a, b) => a.d - b.d)[0];
       if (nearest && nearest.d < 1.7) this.onSelect(nearest.n.id);
     });
   }
   setGrid(value: boolean) { this.grid = value; this.draw(); }
   update(world: WorldState, selected: string) {
-    if (!this.world || this.world.seed !== world.seed || this.world.width !== world.width || this.world.height !== world.height) this.buildTerrain(world);
+    if (!this.world || this.world.seed !== world.seed || this.world.width !== world.width || this.world.height !== world.height || this.terrainBuildings !== world.buildings.length) this.buildTerrain(world);
+    const focus = world.civilization.settlements.find(v => v.id === world.civilization.focus)!;
+    this.origin = { x: Math.max(0, focus.center.x - 16), y: Math.max(0, focus.center.y - 12) };
     this.world = world; this.selected = selected; this.draw();
   }
   reset() { this.world = undefined; }
   private buildTerrain(w: WorldState) {
-    const c = this.cell; this.canvas.width = this.terrain.width = w.width * c; this.canvas.height = this.terrain.height = w.height * c;
+    const c = this.cell; this.canvas.width = 32 * c; this.canvas.height = 24 * c; this.terrain.width = w.width * c; this.terrain.height = w.height * c; this.terrainBuildings = w.buildings.length;
     const ctx = this.terrain.getContext('2d')!;
     for (let y = 0; y < w.height; y++) for (let x = 0; x < w.width; x++) {
       const t = w.tiles[y * w.width + x], v = noise(x, y, w.seed);
@@ -68,7 +72,8 @@ export class WorldMap {
   private draw() {
     const w = this.world; if (!w) return;
     const ctx = this.canvas.getContext('2d')!, c = this.cell;
-    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height); ctx.drawImage(this.terrain, 0, 0);
+    ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    ctx.save(); ctx.translate(-this.origin.x * c, -this.origin.y * c); ctx.drawImage(this.terrain, 0, 0);
     for (const r of w.resources) {
       const x = r.position.x * c, y = r.position.y * c;
       if (r.kind === 'wood') this.tree(ctx, x, y, r.amount > 0 ? 1 : .35);
@@ -79,7 +84,7 @@ export class WorldMap {
     }
     for (const b of w.buildings) {
       const x = b.position.x * c + c / 2, y = b.position.y * c + c / 2;
-      if (b.kind === 'farm') continue;
+      if (b.kind === 'farm') { this.label(ctx, b.name, x, y - 10); continue; }
       ctx.fillStyle = '#4c594530'; ctx.beginPath(); ctx.ellipse(x + 8, y + 9, 31, 12, 0, 0, Math.PI * 2); ctx.fill();
       if (b.kind === 'well') {
         ctx.fillStyle = '#c5c0a7'; ctx.beginPath(); ctx.ellipse(x, y, 16, 10, 0, 0, Math.PI * 2); ctx.fill();
@@ -110,7 +115,7 @@ export class WorldMap {
     }
     const occupants = new Map<string, number>();
     for (const n of [...w.npcs].sort((a, b) => a.position.y - b.position.y)) {
-      if (!n.alive) continue;
+      if (!n.alive || n.position.x < this.origin.x || n.position.x >= this.origin.x + 32 || n.position.y < this.origin.y || n.position.y >= this.origin.y + 24) continue;
       const key = `${n.position.x},${n.position.y}`, slot = occupants.get(key) ?? 0; occupants.set(key, slot + 1);
       const x = (n.position.x + .5) * c + (slot % 3 - (slot ? 1 : 0)) * 8, y = (n.position.y + .5) * c + Math.floor(slot / 3) * 5;
       if (n.id === this.selected) { ctx.strokeStyle = '#fff9de'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 5, 13, 7, 0, 0, Math.PI * 2); ctx.stroke(); }
@@ -122,6 +127,7 @@ export class WorldMap {
       if (n.id === this.selected) this.label(ctx, n.identity.name, x, y - 32, true);
       if (n.currentAction?.kind === 'Sleep' && !n.currentAction.path.length) { ctx.font = 'bold 12px sans-serif'; ctx.fillStyle = '#fffde7'; ctx.fillText('z', x + 9, y - 20); }
     }
+    ctx.restore();
     const hour = (w.tick % 144) / 6;
     if (hour > 19 || hour < 6) { ctx.fillStyle = '#21334925'; ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); }
     if (w.weather === 'drought') { ctx.fillStyle = '#c3984220'; ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); }

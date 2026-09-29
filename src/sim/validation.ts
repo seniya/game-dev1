@@ -1,3 +1,4 @@
+import { initializeCivilization } from './civilization';
 import { z } from 'zod';
 import { GOAL_KINDS, type WorldState, type Interpretation } from './types';
 import { walkable } from './pathfinding';
@@ -18,29 +19,31 @@ const relationship = z.object({ npcId: id, familiarity: score, trust: score, aff
 const memory = z.object({ id, type: z.enum(['personal', 'social', 'event', 'economic', 'trauma', 'achievement']), description, importance: score, emotionalImpact: z.number().min(-100).max(100), createdAt: natural, relatedNpcIds: z.array(id), relatedLocationIds: z.array(id), sourceEventId: id, repetitions: natural.min(1) }).strict();
 const npc = z.object({
   id, identity: z.object({ name: z.string().min(1).max(80), age: natural.max(150) }).strict(), position: pos, homeId: id,
+  settlementId: id, life: z.object({ bornTick: z.number().int().min(-300000).max(Number.MAX_SAFE_INTEGER), parentIds: z.array(id).max(2), partnerId: id.optional(), generation: natural.max(1000), skill: score, lastBirth: natural, lastMove: natural, deathTick: natural.optional(), birthEventId: id.optional(), deathEventId: id.optional(), estateSettled: z.boolean() }).strict(),
   occupation: z.enum(['farmer', 'gatherer', 'woodcutter', 'carpenter', 'merchant']), alive: z.boolean(),
   needs: z.object({ hunger: score, thirst: score, fatigue: score, health: score, safety: score, social: score }).strict(),
   personality: z.object({ diligence: score, greed: score, sociability: score, aggression: score, empathy: score, curiosity: score }).strict(),
-  inventory: resources, wealth: natural, relationships: z.array(relationship).max(100), memories: z.array(memory).max(40),
+  inventory: resources, wealth: natural, relationships: z.array(relationship).max(4000), memories: z.array(memory).max(40),
   goals: z.array(z.object({ id, kind: goalKind, reason: description, createdAt: natural, sourceEventId: id.optional() }).strict()).max(4),
   currentAction: action.optional(), decision: z.object({ reason: description, candidates: z.array(candidate).max(6), tick: natural }).strict(), dailyTaken: natural.max(3), lastTalk: z.number().int().min(-1000), knownRumors: z.array(id),
 }).strict();
-const event = z.object({ id, tick: natural, kind: z.enum(['arrival', 'production', 'consumption', 'storage', 'trade', 'loan', 'repayment', 'default', 'share', 'theft', 'witness', 'rumor', 'talk', 'scarcity', 'health', 'death', 'weather', 'relationship', 'memory', 'goal', 'llm', 'experiment', 'failure', 'project', 'wage', 'price']), actorId: id.optional(), targetId: id.optional(), locationId: id.optional(), participants: z.array(id).max(100), importance: score, description, causeId: id.optional(), data: z.record(z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.array(id)])) }).strict();
+const event = z.object({ id, tick: natural, kind: z.enum(['arrival', 'production', 'consumption', 'storage', 'trade', 'loan', 'repayment', 'default', 'share', 'theft', 'witness', 'rumor', 'talk', 'scarcity', 'health', 'death', 'weather', 'relationship', 'memory', 'goal', 'llm', 'experiment', 'failure', 'project', 'wage', 'price', 'family', 'birth', 'coming_of_age', 'inheritance', 'education', 'construction', 'settlement', 'migration', 'caravan', 'occupation']), actorId: id.optional(), targetId: id.optional(), locationId: id.optional(), participants: z.array(id).max(4000), importance: score, description, causeId: id.optional(), data: z.record(z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.array(id)])) }).strict();
 const flow = z.object({ producedFood: natural, producedWood: natural, consumedFood: natural, investedWood: natural, externalFood: natural, trades: natural, tradeVolume: natural, wages: natural }).strict();
 const economy = z.object({ since: natural, openingFood: natural, openingWood: natural, openingCoins: natural, totals: flow,
   last: flow.extend({ shares: natural, conflicts: natural }).strict(),
-  daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(100), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
+  daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(400), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
-  version: z.literal(2), seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(128), height: natural.min(8).max(128),
+  version: z.literal(3), seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(128), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(16384),
-  buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120) }).strict()).max(1000),
+  buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120), settlementId: id, ownerIds: z.array(id).max(4000).optional() }).strict()).max(1000),
   resources: z.array(z.object({ id, position: pos, kind: z.enum(['food', 'wood']), amount: natural, capacity: natural.min(1) }).strict()).max(1000),
-  npcs: z.array(npc).min(10).max(100), storage: resources, market: resources.extend({ coins: natural, foodPrice: natural.min(1).max(12), woodPrice: natural.min(1).max(3) }).strict(),
+  npcs: z.array(npc).min(10).max(4000), storage: resources, market: resources.extend({ coins: natural, foodPrice: natural.min(1).max(12), woodPrice: natural.min(1).max(3) }).strict(),
   weather: z.enum(['sunny', 'rain', 'cloudy', 'drought']), droughtUntil: natural,
+  civilization: z.object({ settlements: z.array(z.object({ id, name: description, center: pos, foundedAt: natural, sourceEventId: id.optional(), storage: resources, market: resources.extend({ coins: natural, foodPrice: natural.min(1).max(12), woodPrice: natural.min(1).max(3) }).strict() }).strict()).min(1).max(12), journeys: z.array(z.object({ id, kind: z.enum(['migration', 'trade']), from: id, to: id, npcIds: z.array(id).max(400), path: z.array(pos).max(16384), progress: natural, food: natural, coins: natural, sourceEventId: id, homeId: id.optional() }).strict()).max(1000), focus: id, detail: z.enum(['full', 'focused']) }).strict(),
   economy, events: z.array(event).max(1000000), loans: z.array(z.object({ id, lenderId: id, borrowerId: id, amount: natural.min(1), remaining: natural, due: natural, status: z.enum(['active', 'repaid', 'defaulted']), sourceEventId: id }).strict()),
   llm: z.object({ enabled: z.boolean(), queue: z.array(z.object({ id, npcId: id, eventId: id, tick: natural, attempts: natural.max(2) }).strict()).max(24), gateKeys: z.array(z.string().max(150)).max(12), dailyByNpc: z.record(natural.max(2)), dailyTotal: natural.max(12), requested: natural, completed: natural, rejected: natural, failed: natural }).strict(),
-  stats: z.object({ foodSum: z.number().finite().nonnegative(), samples: natural, deaths: natural.max(100), thefts: natural, shares: natural, conflicts: natural }).strict(),
+  stats: z.object({ foodSum: z.number().finite().nonnegative(), samples: natural, deaths: natural.max(4000), thefts: natural, shares: natural, conflicts: natural }).strict(),
 }).strict();
 
 export function validateSave(input: unknown): WorldState {
@@ -48,11 +51,16 @@ export function validateSave(input: unknown): WorldState {
   if (input && typeof input === 'object' && (input as { version?: number }).version === 1) {
     const legacy = structuredClone(input) as WorldState;
     try {
-      legacy.version = 2;
+      (legacy as unknown as { version: number }).version = 2;
       legacy.loans = legacy.loans.map(l => ({ ...l, remaining: l.status === 'repaid' ? 0 : l.amount }));
       legacy.economy = createEconomy(legacy);
       input = legacy;
     } catch { throw new Error('저장 파일 형식 오류: 이전 버전의 세계 데이터가 올바르지 않습니다.'); }
+  }
+  if (input && typeof input === 'object' && (input as { version?: number }).version === 2) {
+    const legacy = structuredClone(input) as WorldState;
+    try { initializeCivilization(legacy); legacy.version = 3; input = legacy; }
+    catch { throw new Error('저장 파일 형식 오류: 이전 세계의 생애·마을 변환에 실패했습니다.'); }
   }
   const parsed = world.safeParse(input);
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
@@ -60,9 +68,29 @@ export function validateSave(input: unknown): WorldState {
   const ensure = (condition: unknown, message: string) => { if (!condition) throw new Error(`저장 파일 무결성 오류: ${message}`); };
   ensure(w.tiles.length === w.width * w.height, '지도 크기');
   const ids = new Set<string>(), events = new Map(w.events.map(e => [e.id, e])), npcs = new Set(w.npcs.map(n => n.id)), buildings = new Map(w.buildings.map(b => [b.id, b]));
-  const register = (value: string) => { ensure(!ids.has(value), `중복 ID ${value}`); ids.add(value); if (/^[emqlg]\d+$/.test(value)) ensure(Number(value.slice(1)) < w.nextId, '다음 ID'); };
+  const register = (value: string) => { ensure(!ids.has(value), `중복 ID ${value}`); ids.add(value); if (/^[emqlgcj]\d+$/.test(value)) ensure(Number(value.slice(1)) < w.nextId, '다음 ID'); };
   [...w.buildings, ...w.resources, ...w.npcs, ...w.events, ...w.loans, ...w.llm.queue].forEach(v => register(v.id));
-  for (const b of w.buildings) ensure(walkable(w, b.position), '건물 위치');
+  const villages = new Set(w.civilization.settlements.map(v => v.id));
+  ensure(villages.size === w.civilization.settlements.length && villages.has('v0') && villages.has(w.civilization.focus), '마을 ID/관찰 대상');
+  ensure(w.npcs.filter(n => n.alive).length <= 400, '생존 인구 상한');
+  for (const v of w.civilization.settlements) {
+    register(v.id);
+    ensure(walkable(w, v.center) && v.foundedAt <= w.tick && (!v.sourceEventId || events.has(v.sourceEventId)), '정착지 위치/출처');
+    if (v.id === 'v0') ensure(v.storage.food + v.storage.wood + v.market.food + v.market.wood + v.market.coins === 0, '중앙 재고 중복');
+  }
+  for (const b of w.buildings) { ensure(walkable(w, b.position) && villages.has(b.settlementId!), '건물 위치/마을'); ensure(!b.ownerIds || new Set(b.ownerIds).size === b.ownerIds.length && b.ownerIds.every(id => npcs.has(id)), '주택 소유권'); }
+  const travellers = new Set<string>();
+  for (const j of w.civilization.journeys) {
+    register(j.id); ensure(villages.has(j.from) && villages.has(j.to) && j.from !== j.to && events.has(j.sourceEventId) && j.progress <= j.path.length, '이동 출처/마을/진행');
+    ensure(j.path.every((p, i) => walkable(w, p) && (!i || distance(j.path[i - 1], p) === 1)), '이동 경로');
+    for (const id of j.npcIds) { ensure(npcs.has(id) && !travellers.has(id), '이주 주민 중복'); travellers.add(id); }
+    if (j.kind === 'migration') {
+      const person = w.npcs.find(n => n.id === j.npcIds[0]);
+      const target = buildings.get(j.homeId!);
+      ensure(person && person.settlementId === j.from && target && (!j.path.length || distance(j.path.at(-1)!, target.position) === 0) && (j.progress === j.path.length || distance(person.position, j.path[j.progress]) === 1), '이주 경로와 현재 위치');
+      ensure(j.npcIds.length === 1 && buildings.get(j.homeId!)?.kind === 'home' && buildings.get(j.homeId!)?.settlementId === j.to && j.food === 0 && j.coins === 0, '이주 주택/화물');
+    } else ensure(j.npcIds.length === 0 && !j.homeId && j.food > 0 && j.coins > 0, '교역 화물');
+  }
   for (const kind of ['farm', 'storage', 'market', 'well', 'home']) ensure(w.buildings.some(b => b.kind === kind), `필수 건물 ${kind}`);
   for (const r of w.resources) { ensure(walkable(w, r.position), '자원 위치'); ensure(r.amount <= r.capacity, '자원 용량'); }
   let lastTick = 0; const seenEvents = new Set<string>();
@@ -75,7 +103,15 @@ export function validateSave(input: unknown): WorldState {
     ensure(!e.locationId || buildings.has(e.locationId), '사건 위치'); ensure(e.participants.every(n => npcs.has(n)), '사건 참여자');
   }
   for (const n of w.npcs) {
+    if (n.id.startsWith('npc-born-')) ensure(Number(n.id.slice(9)) < w.nextId, '출생 ID 순서');
     ensure(walkable(w, n.position) && buildings.get(n.homeId)?.kind === 'home', '주민 위치/집');
+    ensure(villages.has(n.settlementId) && buildings.get(n.homeId)?.settlementId === n.settlementId, '주민 소속 마을');
+    ensure(n.life.bornTick <= w.tick && n.life.lastBirth <= w.tick && n.life.lastMove <= w.tick, '생애 시간');
+    ensure(new Set(n.life.parentIds).size === n.life.parentIds.length && n.life.parentIds.every(id => id !== n.id && w.npcs.some(p => p.id === id && p.life.bornTick < n.life.bornTick && p.life.generation < n.life.generation)), '부모/세대 참조');
+    ensure(!n.life.partnerId || w.npcs.some(p => p.id === n.life.partnerId && p.id !== n.id && p.alive && n.alive && p.life.partnerId === n.id), '배우자 참조');
+    ensure(!n.life.birthEventId || events.get(n.life.birthEventId)?.kind === 'birth' && events.get(n.life.birthEventId)?.actorId === n.id && events.get(n.life.birthEventId)?.tick === n.life.bornTick, '출생 출처');
+    ensure(!n.life.deathEventId || !n.alive && events.get(n.life.deathEventId)?.kind === 'death' && events.get(n.life.deathEventId)?.actorId === n.id && events.get(n.life.deathEventId)?.tick === n.life.deathTick, '사망 출처');
+    ensure(n.life.estateSettled === !n.alive && (n.life.deathTick === undefined || !n.alive && n.life.deathTick <= w.tick), '상속/사망 상태');
     ensure(n.alive === (n.needs.health > 0), '생존 상태'); ensure(n.alive || !n.currentAction, '사망 주민 행동');
     ensure(n.decision.tick <= w.tick && n.lastTalk <= w.tick, '판단 시간');
     ensure(new Set(n.relationships.map(r => r.npcId)).size === n.relationships.length, '중복 관계');

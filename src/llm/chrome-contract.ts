@@ -109,7 +109,7 @@ export function chromeResponseConstraint(context: ChromeContext) {
 
 export function chromeGoalUseful(world: WorldState, npc: NPC, kind: GoalKind): boolean {
   if (!npc.alive || npc.goals.some(g => g.kind === kind)) return false;
-  const building = kind === 'build_home' ? world.buildings.find(b => b.id === npc.homeId) : world.buildings.find(b => b.kind === (kind === 'expand_farm' ? 'farm' : 'storage'));
+  const building = kind === 'build_home' ? world.buildings.find(b => b.id === npc.homeId) : world.buildings.find(b => b.settlementId === npc.settlementId && b.kind === (kind === 'expand_farm' ? 'farm' : 'storage') && b.level < 4);
   if (['build_home', 'expand_farm', 'secure_storage'].includes(kind) && (!building || building.level >= 4)) return false;
   return true;
 }

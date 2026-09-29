@@ -1,0 +1,274 @@
+{
+  "generatedAt": "2026-09-29T11:46:03.823Z",
+  "notes": "No external food injections. Full original events archived to temporary SQLite, engine checkpoints compacted every 30 days; archive cause references checked. 900 days plus 15 single-tick continuation checks. Detail mode omits only distant routine records; all physical rules run each tick. maxDayMs is local wall time, not a production SLA.",
+  "cases": [
+    {
+      "days": 900,
+      "extraCheckpointTicks": 15,
+      "initialPopulation": 300,
+      "archiveCount": 1293444,
+      "oldestBirth": {
+        "kind": "birth",
+        "actorId": "npc-born-185336",
+        "participants": [
+          "npc-born-185336",
+          "npc14",
+          "npc203"
+        ],
+        "locationId": "c46952",
+        "importance": 60,
+        "description": "연우과 소율13의 가족에 새봄185337이 태어났다.",
+        "data": {
+          "parents": [
+            "npc14",
+            "npc203"
+          ],
+          "generation": 1,
+          "consumedFood": 2
+        },
+        "id": "e185337",
+        "tick": 3456
+      },
+      "peakPopulation": 300,
+      "peakGenerations": 2,
+      "maxDayMs": 855,
+      "elapsedMs": 225586,
+      "saveBytes": 48748857,
+      "settlements": 12,
+      "births": 28,
+      "generations": 2,
+      "journeys": 0,
+      "seed": 7,
+      "day": 901,
+      "elapsedDays": 900.1,
+      "population": 28,
+      "deaths": 300,
+      "averageFood": 212997.53,
+      "storage": {
+        "food": 27194,
+        "wood": 23138
+      },
+      "conflicts": 49151,
+      "thefts": 11344,
+      "shares": 5422,
+      "strongestRelationship": {
+        "residents": "소율 ↔ 도윤19",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "나은19 ↔ 지호4",
+        "score": -100
+      },
+      "events": 117243,
+      "economy": {
+        "producedFood": 745913,
+        "producedWood": 150115,
+        "consumedFood": 316935,
+        "investedWood": 968,
+        "externalFood": 0,
+        "trades": 7885,
+        "tradeVolume": 14122,
+        "wages": 11872,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 900
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "birthsByGeneration": {
+        "0": 300,
+        "1": 22,
+        "2": 6
+      },
+      "importantHistory": 687
+    },
+    {
+      "days": 900,
+      "extraCheckpointTicks": 15,
+      "initialPopulation": 300,
+      "archiveCount": 1873882,
+      "oldestBirth": {
+        "kind": "birth",
+        "actorId": "npc-born-249521",
+        "participants": [
+          "npc-born-249521",
+          "npc161",
+          "npc251"
+        ],
+        "locationId": "c51156",
+        "importance": 60,
+        "description": "서연11과 소율16의 가족에 새봄249522이 태어났다.",
+        "data": {
+          "parents": [
+            "npc161",
+            "npc251"
+          ],
+          "generation": 1,
+          "consumedFood": 2
+        },
+        "id": "e249522",
+        "tick": 3456
+      },
+      "peakPopulation": 300,
+      "peakGenerations": 1,
+      "maxDayMs": 594,
+      "elapsedMs": 311439,
+      "saveBytes": 70431775,
+      "settlements": 12,
+      "births": 14,
+      "generations": 1,
+      "journeys": 0,
+      "seed": 42,
+      "day": 901,
+      "elapsedDays": 900.1,
+      "population": 14,
+      "deaths": 300,
+      "averageFood": 191702.92,
+      "storage": {
+        "food": 23909,
+        "wood": 23872
+      },
+      "conflicts": 93277,
+      "thefts": 20286,
+      "shares": 8793,
+      "strongestRelationship": {
+        "residents": "서연 ↔ 서연19",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "나은18 ↔ 시우4",
+        "score": -100
+      },
+      "events": 176342,
+      "economy": {
+        "producedFood": 790786,
+        "producedWood": 151133,
+        "consumedFood": 391668,
+        "investedWood": 992,
+        "externalFood": 0,
+        "trades": 8645,
+        "tradeVolume": 14793,
+        "wages": 11554,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 900
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "birthsByGeneration": {
+        "0": 300,
+        "1": 14
+      },
+      "importantHistory": 705
+    },
+    {
+      "days": 900,
+      "extraCheckpointTicks": 15,
+      "initialPopulation": 300,
+      "archiveCount": 1059302,
+      "oldestBirth": {
+        "kind": "birth",
+        "actorId": "npc-born-157100",
+        "participants": [
+          "npc-born-157100",
+          "npc1",
+          "npc262"
+        ],
+        "locationId": "c7",
+        "importance": 60,
+        "description": "서연과 시우17의 가족에 새봄157101이 태어났다.",
+        "data": {
+          "parents": [
+            "npc1",
+            "npc262"
+          ],
+          "generation": 1,
+          "consumedFood": 2
+        },
+        "id": "e157101",
+        "tick": 3456
+      },
+      "peakPopulation": 300,
+      "peakGenerations": 1,
+      "maxDayMs": 299,
+      "elapsedMs": 161447,
+      "saveBytes": 41779578,
+      "settlements": 12,
+      "births": 19,
+      "generations": 1,
+      "journeys": 0,
+      "seed": 123,
+      "day": 901,
+      "elapsedDays": 900.1,
+      "population": 19,
+      "deaths": 300,
+      "averageFood": 186174.76,
+      "storage": {
+        "food": 21561,
+        "wood": 18817
+      },
+      "conflicts": 54342,
+      "thefts": 17456,
+      "shares": 2574,
+      "strongestRelationship": {
+        "residents": "서연 ↔ 민재11",
+        "score": 200
+      },
+      "weakestRelationship": {
+        "residents": "시우16 ↔ 해솔16",
+        "score": -100
+      },
+      "events": 102986,
+      "economy": {
+        "producedFood": 631464,
+        "producedWood": 141202,
+        "consumedFood": 259156,
+        "investedWood": 796,
+        "externalFood": 0,
+        "trades": 5507,
+        "tradeVolume": 10437,
+        "wages": 11064,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 900
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "birthsByGeneration": {
+        "0": 300,
+        "1": 19
+      },
+      "importantHistory": 656
+    }
+  ]
+}

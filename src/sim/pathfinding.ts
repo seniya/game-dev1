@@ -4,6 +4,16 @@ export function walkable(w: Pick<WorldState, 'width' | 'height' | 'tiles'>, p: P
 }
 export function findPath(w: Pick<WorldState, 'width' | 'height' | 'tiles'>, from: Position, to: Position): Position[] | null {
   if (!walkable(w, from) || !walkable(w, to)) return null;
+  // Most daily trips are over open ground. Check shortest axis paths before BFS.
+  for (const axes of [['x', 'y'], ['y', 'x']] as const) {
+    const p = { ...from }, path: Position[] = []; let blocked = false;
+    for (const axis of axes) while (p[axis] !== to[axis]) {
+      p[axis] += Math.sign(to[axis] - p[axis]);
+      if (!walkable(w, p)) { blocked = true; break; }
+      path.push({ ...p });
+    }
+    if (!blocked) return path;
+  }
   const start = from.y * w.width + from.x, end = to.y * w.width + to.x;
   if (start === end) return [];
   const parents = new Int32Array(w.width * w.height).fill(-1), queue = [start]; parents[start] = start;

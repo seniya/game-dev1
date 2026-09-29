@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.5.1",
+  "version": "0.6.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -10,7 +10,8 @@
     "simulate": "tsx src/cli.ts",
     "test": "tsx --test tests/*.test.ts",
     "test:browser": "playwright test",
-    "regression": "tsx src/regression.ts"
+    "regression": "tsx src/regression.ts",
+    "regression:civilization": "tsx src/civilization-regression.ts"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.62.0",

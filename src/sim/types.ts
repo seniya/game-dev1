@@ -3,7 +3,7 @@ export type Position = { x: number; y: number };
 export type Resources = { food: number; wood: number };
 export type Tile = 'grass' | 'water' | 'path' | 'forest' | 'rock' | 'farm';
 export type BuildingKind = 'home' | 'storage' | 'farm' | 'market' | 'well';
-export interface Building { id: string; kind: BuildingKind; name: string; position: Position; level: number; growth: number }
+export interface Building { id: string; kind: BuildingKind; name: string; position: Position; level: number; growth: number; settlementId?: string; ownerIds?: string[] }
 export interface ResourceNode { id: string; position: Position; kind: 'food' | 'wood'; amount: number; capacity: number }
 export interface Needs { hunger: number; thirst: number; fatigue: number; health: number; safety: number; social: number }
 export interface Personality { diligence: number; greed: number; sociability: number; aggression: number; empathy: number; curiosity: number }
@@ -19,6 +19,7 @@ export interface Relationship { npcId: string; familiarity: number; trust: numbe
 export interface Memory { id: string; type: 'personal' | 'social' | 'event' | 'economic' | 'trauma' | 'achievement'; description: string; importance: number; emotionalImpact: number; createdAt: number; relatedNpcIds: string[]; relatedLocationIds: string[]; sourceEventId: string; repetitions: number }
 export interface NPC {
   id: string; identity: { name: string; age: number }; position: Position; homeId: string;
+  life: Life; settlementId: string;
   occupation: 'farmer' | 'gatherer' | 'woodcutter' | 'carpenter' | 'merchant'; alive: boolean;
   needs: Needs; personality: Personality; inventory: Resources; wealth: number;
   relationships: Relationship[]; memories: Memory[]; goals: Goal[];
@@ -26,13 +27,13 @@ export interface NPC {
   dailyTaken: number; lastTalk: number; knownRumors: string[];
 }
 export const OCCUPATIONS: Record<NPC['occupation'], string> = { farmer: '농부', gatherer: '채집가', woodcutter: '나무꾼', carpenter: '목수', merchant: '상인' };
-export type EventKind = 'arrival' | 'production' | 'consumption' | 'storage' | 'trade' | 'loan' | 'repayment' | 'default' | 'share' | 'theft' | 'witness' | 'rumor' | 'talk' | 'scarcity' | 'health' | 'death' | 'weather' | 'relationship' | 'memory' | 'goal' | 'llm' | 'experiment' | 'failure' | 'project' | 'wage' | 'price';
+export type EventKind = 'arrival' | 'production' | 'consumption' | 'storage' | 'trade' | 'loan' | 'repayment' | 'default' | 'share' | 'theft' | 'witness' | 'rumor' | 'talk' | 'scarcity' | 'health' | 'death' | 'weather' | 'relationship' | 'memory' | 'goal' | 'llm' | 'experiment' | 'failure' | 'project' | 'wage' | 'price' | 'family' | 'birth' | 'coming_of_age' | 'inheritance' | 'education' | 'construction' | 'settlement' | 'migration' | 'caravan' | 'occupation';
 export interface WorldEvent { id: string; tick: number; kind: EventKind; actorId?: string; targetId?: string; locationId?: string; participants: string[]; importance: number; description: string; causeId?: string; data: Record<string, string | number | boolean | string[]> }
 export interface Loan { id: string; lenderId: string; borrowerId: string; amount: number; remaining: number; due: number; status: 'active' | 'repaid' | 'defaulted'; sourceEventId: string }
 export interface DecisionRequest { id: string; npcId: string; eventId: string; tick: number; attempts: number }
 export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys: string[]; dailyByNpc: Record<string, number>; dailyTotal: number; requested: number; completed: number; rejected: number; failed: number }
 export interface WorldState {
-  version: 2; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
+  version: 3; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
   tiles: Tile[]; buildings: Building[]; resources: ResourceNode[]; npcs: NPC[];
   storage: Resources; market: Resources & { coins: number; foodPrice: number; woodPrice: number };
   weather: 'sunny' | 'rain' | 'cloudy' | 'drought'; droughtUntil: number;
@@ -48,3 +49,24 @@ export interface DialogueResult { text: string }
 export interface EconomyFlow { producedFood: number; producedWood: number; consumedFood: number; investedWood: number; externalFood: number; trades: number; tradeVolume: number; wages: number }
 export interface DailySample extends EconomyFlow { day: number; tick: number; population: number; food: number; storageFood: number; foodPrice: number; coins: number; poorest: number; median: number; richest: number; shares: number; conflicts: number; eventId: string }
 export interface Economy { since: number; openingFood: number; openingWood: number; openingCoins: number; totals: EconomyFlow; daily: DailySample[]; last: EconomyFlow & { shares: number; conflicts: number } }
+
+export const DAYS_PER_YEAR = 12;
+export const YEAR_TICKS = DAYS_PER_YEAR * TICKS_PER_DAY;
+export const MAX_POPULATION = 400;
+export interface Life {
+  bornTick: number; parentIds: string[]; partnerId?: string; generation: number;
+  skill: number; lastBirth: number; lastMove: number; deathTick?: number;
+  birthEventId?: string; deathEventId?: string; estateSettled: boolean;
+}
+export interface Settlement {
+  id: string; name: string; center: Position; foundedAt: number; sourceEventId?: string;
+  storage: Resources; market: WorldState['market'];
+}
+export interface Journey {
+  id: string; kind: 'migration' | 'trade'; from: string; to: string;
+  npcIds: string[]; path: Position[]; progress: number; food: number; coins: number;
+  sourceEventId: string; homeId?: string;
+}
+export interface Civilization {
+  settlements: Settlement[]; journeys: Journey[]; focus: string; detail: 'full' | 'focused';
+}
