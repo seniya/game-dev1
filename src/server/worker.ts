@@ -77,10 +77,10 @@ export default {
         const current = await store.read();
         if (command.revision !== current.revision) return json({ error: '다른 기기의 최신 상태를 반영했습니다. 변경을 다시 선택해 주세요.', world: viewWorld(current) }, 409);
         const acceptedAt = Date.now();
-        const { world, events } = await applyCommand(current, command, acceptedAt);
+        const { world, events, motion } = await applyCommand(current, command, acceptedAt);
         try { await store.commit(world, events, canonical, command.id, [], { action: command.action, at: acceptedAt }); }
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
-        wakeAI(); return json(viewWorld(world));
+        wakeAI(); return json(viewWorld(world, motion));
       }
       if (url.pathname === '/api/export' && request.method === 'GET') {
         const current = await store.read(), epoch = url.searchParams.has('backup') ? current.meta.backupEpoch : current.epoch;
@@ -96,7 +96,7 @@ export default {
       if (url.pathname === '/api/events' && request.method === 'GET') {
         const current = await store.read(), p = url.searchParams;
         if (p.get('epoch') && p.get('epoch') !== current.epoch) return json({ error: '세계가 교체되었습니다. 새로고침해 주세요.' }, 409);
-        const clauses = ['e.epoch=?'], values: (string | number)[] = [current.epoch];
+        const clauses = ['e.epoch=?', 'e.seq<=?'], values: (string | number)[] = [current.epoch, current.meta.eventCount];
         const npc = p.get('npc');
         if (npc) { clauses.push('EXISTS(SELECT 1 FROM participants p WHERE p.epoch=e.epoch AND p.event=e.id AND p.npc=?)'); values.push(npc); }
         for (const [key, sql] of [['before', 'e.seq < ?'], ['from', 'e.tick >= ?'], ['to', 'e.tick <= ?']] as const) {
@@ -110,7 +110,7 @@ export default {
         if (filter === 'economy') clauses.push("e.kind IN ('production','storage','trade','loan','repayment','default','theft','scarcity','wage','price','project','consumption','experiment','inheritance','construction','settlement','caravan','occupation')");
         if (filter === 'life') clauses.push("e.kind NOT IN ('arrival','memory','failure')");
         const rows = await env.DB.prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();
-        return json({ epoch: current.epoch, events: rows.results.slice(0, 40).map(parseEvent), next: rows.results.length > 40 ? rows.results[39].seq : null });
+        return json({ epoch: current.epoch, eventCount: current.meta.eventCount, cursors: Object.fromEntries(rows.results.slice(0, 40).map(r => [parseEvent(r).id, r.seq])), events: rows.results.slice(0, 40).map(parseEvent), next: rows.results.length > 40 ? rows.results[39].seq : null });
       }
       if (url.pathname.startsWith('/api/events/') && request.method === 'GET') {
         const current = await store.read(), id = decodeURIComponent(url.pathname.slice('/api/events/'.length));

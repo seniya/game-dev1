@@ -222,3 +222,42 @@ test('initial server load recovers automatically after a failed request', async 
   await expect(page.locator('#play-button')).toBeEnabled();
   await expect(page.locator('#world-map')).toBeVisible();
 });
+
+test('map paints intermediate positions between server updates while avoiding repeated journal and AI fetches', async ({ page }) => {
+  const { initialWorld, viewWorld } = await import('../../src/server/world');
+  const world = initialWorld(Date.now()); world.meta.running = true;
+  const npc = world.state.npcs[0]; npc.position = { x: 10, y: 10 }; npc.currentAction = undefined;
+  const calls: Record<string, number> = {};
+  await page.addInitScript(() => {
+    const points: number[][] = []; Object.assign(window, { renderedPoints: points });
+    const arc = CanvasRenderingContext2D.prototype.arc;
+    CanvasRenderingContext2D.prototype.arc = function (...args: Parameters<typeof arc>) {
+      if ((this.canvas as HTMLCanvasElement).id === 'world-map' && args[2] === 5) points.push([performance.now(), args[0], args[1]]);
+      return arc.apply(this, args);
+    };
+  });
+  await page.route('**/api/**', async route => {
+    const path = new URL(route.request().url()).pathname; calls[path] = (calls[path] ?? 0) + 1;
+    if (path === '/api/world') return route.fulfill({ json: viewWorld(world) });
+    if (path === '/api/command') {
+      const from = world.state.tick, x = npc.position.x, y = npc.position.y;
+      world.revision++; world.state.tick += 3; npc.position = { x: x + 1, y: y + 2 };
+      const event = { ...world.state.events[0], id: `received-${world.revision}`, tick: world.state.tick, importance: 75, description: '이미 받은 세계 응답의 새 사건' };
+      world.state.events.push(event); world.meta.eventCount++;
+      return route.fulfill({ json: viewWorld(world, { fromTick: from, toTick: world.state.tick, paths: { [npc.id]: [[x, y], [x + 1, y], [x + 1, y + 1], [x + 1, y + 2]] } }) });
+    }
+    if (path === '/api/events') return route.fulfill({ json: { epoch: world.epoch, events: [], next: null, eventCount: world.meta.eventCount, cursors: {} } });
+    if (path === '/api/ai') return route.fulfill({ json: { configured: false, model: null, day: '2026-09-29', dailyLimit: 24, maxOutputTokens: 700, usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, jobs: [] } });
+    return route.fulfill({ json: {} });
+  });
+  await page.goto('/'); await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
+  await page.waitForResponse(r => r.url().endsWith('/api/command'));
+  const since = await page.evaluate(() => performance.now());
+  await page.waitForTimeout(650);
+  const distinct = await page.evaluate(since => new Set((window as any).renderedPoints.filter((p: number[]) => p[0] > since && p[1] > 315 && p[1] < 345).map((p: number[]) => p[1].toFixed(2))).size, since);
+  expect(distinct).toBeGreaterThan(5);
+  await expect(page.locator('#events')).toContainText('이미 받은 세계 응답의 새 사건');
+  await page.waitForTimeout(8500);
+  expect(calls['/api/command']).toBeGreaterThanOrEqual(5);
+  expect(calls['/api/events']).toBe(1); expect(calls['/api/ai']).toBe(1);
+});

@@ -1,4 +1,5 @@
 import { stocks, market, localBuilding, advanceJourneys, regionalDay, isTravelling } from './civilization';
+import type { MotionTrace } from './motion';
 import { lifeDay, careForChild, die } from './life';
 import { sampleDay, balance, holdings } from './economy';
 import { createWorld } from './world';
@@ -29,9 +30,18 @@ export class Simulation {
     this.state.civilization.focus = focus; this.state.civilization.detail = detail;
   }
   setLLM(enabled: boolean) { this.state.llm.enabled = enabled; if (!enabled) this.state.llm.queue = []; }
-  step(count = 1) {
+  step(count = 1, motion?: MotionTrace) {
     if (!Number.isInteger(count) || count < 1 || count > 1_000_000) throw new Error('틱 수가 올바르지 않습니다.');
-    for (let i = 0; i < count; i++) this.tickOnce();
+    for (let i = 0; i < count; i++) {
+      this.tickOnce();
+      if (motion) {
+        motion.toTick = this.state.tick;
+        for (const n of this.state.npcs) {
+          const path = motion.paths[n.id];
+          if (path && path.length <= 144) path.push([n.position.x, n.position.y]);
+        }
+      }
+    }
   }
   private tickOnce() {
     const w = this.state; w.tick++;

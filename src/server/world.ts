@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Simulation } from '../sim/engine';
 import { DecisionCoordinator } from '../llm/coordinator';
 import { MockLLMProvider } from '../llm/provider';
+import { motionTrace, movingTrace, type MotionTrace } from '../sim/motion';
 import type { WorldState, WorldEvent } from '../sim/types';
 
 export const commandSchema = z.object({
@@ -30,13 +31,13 @@ export interface ClockState {
   dialogue?: { id: string; speakerId: string; listenerId: string };
 }
 export interface StoredWorld { revision: number; epoch: string; meta: ClockState; state: WorldState }
-export interface WorldView extends Omit<StoredWorld, 'state'> { state: WorldState }
+export interface WorldView extends Omit<StoredWorld, 'state'> { state: WorldState; motion?: MotionTrace }
 export function initialWorld(now: number): StoredWorld {
   const state = new Simulation(42).snapshot();
   return { revision: 0, epoch: 'initial', state, meta: { running: false, speed: 1, offline: false, clock: now, lastSeen: now, eventCount: state.events.length, socialCount: 0, catchupTicks: 0, skippedTicks: 0 } };
 }
-export function viewWorld(w: StoredWorld): WorldView {
-  return { ...w, state: { ...w.state, events: w.state.events.slice(-100), economy: { ...w.state.economy, daily: w.state.economy.daily.slice(-90) } } };
+export function viewWorld(w: StoredWorld, motion?: MotionTrace): WorldView {
+  return { ...w, ...(motion ? { motion } : {}), state: { ...w.state, events: w.state.events.slice(-100), economy: { ...w.state.economy, daily: w.state.economy.daily.slice(-90) } } };
 }
 // Keep only events required by engine rules and their causal ancestors. The archive owns the full journal.
 export function compactWorld(w: WorldState): WorldState {
@@ -65,12 +66,13 @@ export function compactWorld(w: WorldState): WorldState {
   }
   return { ...w, events: w.events.filter(e => keep.has(e.id)) };
 }
-export async function applyCommand(current: StoredWorld, command: Command, now: number): Promise<{ world: StoredWorld; events: WorldEvent[]; replaced: boolean }> {
+export async function applyCommand(current: StoredWorld, command: Command, now: number): Promise<{ world: StoredWorld; events: WorldEvent[]; replaced: boolean; motion?: MotionTrace }> {
   const meta = { ...current.meta };
   let sim = Simulation.load(JSON.stringify(current.state));
   let oldIds = new Set(current.state.events.map(e => e.id));
   let epoch = current.epoch, replaced = false;
   const a = command.action;
+  const motion = a.type === 'sync' ? motionTrace(current.state) : undefined;
   // A visible observer sends a heartbeat every two seconds. Gaps over 15 seconds are offline.
   const gap = Math.max(0, now - meta.lastSeen), offline = gap > 15_000;
   const available = meta.running && (!offline || meta.offline) ? Math.floor(Math.max(0, now - meta.clock) * meta.speed / 700) : 0;
@@ -79,7 +81,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   meta.catchupTicks = offline ? ticks : 0; meta.skippedTicks = available - ticks;
   const decisions = new DecisionCoordinator(sim, new MockLLMProvider());
   const useMock = meta.aiMode !== 'remote' && meta.aiMode !== 'chrome';
-  for (let i = 0; i < ticks; i++) { sim.step(); if (useMock && sim.pending) await decisions.drain(); }
+  for (let i = 0; i < ticks; i++) { sim.step(1, motion); if (useMock && sim.pending) await decisions.drain(); }
   meta.clock = available > tickBudget || offline || !meta.running ? now : meta.clock + ticks * 700 / meta.speed;
   meta.lastSeen = now;
   if (a.type === 'play') { meta.running = a.running; meta.clock = now; }
@@ -117,5 +119,5 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   const state = sim.snapshot(), events = state.events.filter(e => !oldIds.has(e.id));
   meta.eventCount += events.length;
   meta.socialCount += events.filter(e => ['share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
-  return { world: { revision: current.revision + 1, epoch, meta, state: compactWorld(state) }, events, replaced };
+  return { world: { revision: current.revision + 1, epoch, meta, state: compactWorld(state) }, events, replaced, ...(motion ? { motion: movingTrace(motion) } : {}) };
 }

@@ -11,6 +11,8 @@ import { DecisionCoordinator } from './llm/coordinator';
 import { MockLLMProvider } from './llm/provider';
 import { economyView, lifeHistory, timeline, knowledge } from './ui/observatory';
 import { WorldMap, npcColor } from './ui/map';
+import { motionTrace, type MotionTrace } from './sim/motion';
+import { mergeLiveJournal, type EventPage } from './ui/journal';
 
 const icon = (name: string, size = 18) => {
   const paths: Record<string, string> = {
@@ -43,6 +45,7 @@ interface AIStatus { chrome?: { schedule?: { hourlyCalls: number; hourlyLimit: n
 let aiStatus: AIStatus | undefined;
 let chromeRunner: ChromeRunner | undefined;
 let journalKey = '', journalNext: number | null = null, journalEpoch = '', journalEvents: WorldEvent[] = [], journalRequest = 0;
+let journalPage: EventPage | undefined;
 let lifeKey = '', lifeNext: number | null = null, lifeEvents: WorldEvent[] = [], lifeRequest = 0;
 let startupNote = '';
 try {
@@ -52,6 +55,9 @@ try {
 let state = sim.snapshot(), selectedId = state.npcs[0].id, playing = true, speed = 1, tab = 'overview', view = 'world', filter = 'important', search = '', selectedOnly = false, eventLimit = 40, lastSaveTick = sim.tick;
 if (cloudMode) playing = false;
 let metric = 'food', lifeLimit = 40;
+let presentationMotion: MotionTrace | undefined;
+const markupCache = new Map<string, string>();
+function setHTML(id: string, html: string) { if (markupCache.get(id) !== html) { $(id).innerHTML = html; markupCache.set(id, html); } }
 let noticeTimer: ReturnType<typeof setTimeout>;
 
 $('app').innerHTML = `
@@ -95,14 +101,14 @@ function selectedNPC() { return state.npcs.find(n => n.id === selectedId) ?? sta
 function selectNPC(id: string) { selectedId = id; tab = 'overview'; lifeLimit = 40; setView('world'); render(); }
 function actionText(n: NPC) { return !n.alive ? '세상을 떠남' : !n.currentAction ? '다음 행동을 생각하는 중' : `${n.currentAction.path.length ? '이동 중 · ' : ''}${ACTION_LABELS[n.currentAction.kind]}`; }
 function render() {
-  if (!cloudMode) state = sim.snapshot(); const summary = summarize(state), living = state.npcs.filter(n => n.alive), socialEvents = state.events.filter(e => ['share', 'talk', 'witness', 'rumor'].includes(e.kind));
+  if (!cloudMode) state = sim.snapshot(); const living = state.npcs.filter(n => n.alive), socialCount = cloudMode ? cloud?.world?.meta.socialCount ?? 0 : state.events.filter(e => ['share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
   const averageHealth = Math.round(living.reduce((s, n) => s + n.needs.health, 0) / Math.max(1, living.length));
-  $('stats').innerHTML = [
+  setHTML('stats', [
     ['people', '함께 살아가는 주민', `${living.length}<small>명</small>`, `${state.npcs.length}개의 서로 다른 삶`, 'sage'],
     ['food', '모든 마을 공동 식량', `${state.civilization.settlements.reduce((s, v) => s + stocks(state, v.id).food, 0)}<small>개</small>`, `목재 ${state.civilization.settlements.reduce((s, v) => s + stocks(state, v.id).wood, 0)}개 · 시장 식량 ${state.civilization.settlements.reduce((s, v) => s + market(state, v.id).food, 0)}개`, 'wheat'],
     ['heart', '마을의 평균 건강', `${averageHealth}<small>/ 100</small>`, averageHealth > 75 ? '평온하게 이어지는 일상' : '주민들의 건강을 살펴보세요', 'rose'],
-    ['book', '서로에게 남긴 이야기', `${cloudMode ? cloud?.world?.meta.socialCount ?? 0 : socialEvents.length}<small>건</small>`, `도움 ${state.stats.shares} · 갈등 ${state.stats.conflicts}`, 'blue'],
-  ].map(([i, label, number, text, color]) => `<article class="stat-card"><span class="stat-icon ${color}">${icon(i, 21)}</span><div><div class="stat-label">${label}</div><div class="stat-number">${number}</div><div class="stat-note">${text}</div></div></article>`).join('');
+    ['book', '서로에게 남긴 이야기', `${socialCount}<small>건</small>`, `도움 ${state.stats.shares} · 갈등 ${state.stats.conflicts}`, 'blue'],
+  ].map(([i, label, number, text, color]) => `<article class="stat-card"><span class="stat-icon ${color}">${icon(i, 21)}</span><div><div class="stat-label">${label}</div><div class="stat-number">${number}</div><div class="stat-note">${text}</div></div></article>`).join(''));
   $('nav-population').textContent = String(living.length); $('seed-label').textContent = String(state.seed); $('map-size').textContent = `${state.width} × ${state.height}`;
   const season = ['봄', '여름', '가을', '겨울'][Math.floor((dayOf(state.tick) - 1) / 3) % 4], weather = { sunny: '맑음', rain: '비', cloudy: '흐림', drought: '가뭄' }[state.weather];
   $('weather').innerHTML = `${icon('sun', 16)} ${season} <span>·</span> ${weather}`;
@@ -111,9 +117,9 @@ function render() {
   $('play-button').innerHTML = icon(playing ? 'pause' : 'play', 17); $('play-button').setAttribute('aria-label', playing ? '일시정지' : '재생');
   const openDetails = [...document.querySelectorAll<HTMLDetailsElement>('#npc-detail details[open]')].map(d => d.className);
   const inspectorScroll = $('npc-detail').scrollTop;
-  $('civilization-panel').innerHTML = civilizationView(state);
+  setHTML('civilization-panel', civilizationView(state));
   $('village-title').textContent = state.civilization.settlements.find(v => v.id === state.civilization.focus)?.name ?? '마을';
-  map.update(state, selectedId); renderInspector(); renderEvents();
+  map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed }); presentationMotion = undefined; renderInspector(); renderEvents();
   for (const detail of document.querySelectorAll<HTMLDetailsElement>('#npc-detail details')) detail.open = openDetails.includes(detail.className);
   $('npc-detail').scrollTop = inspectorScroll;
   if (view === 'residents') renderResidents();
@@ -124,7 +130,7 @@ function render() {
   if (cloudMode) renderAI();
   document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => { b.classList.toggle('active', b.dataset.tab === tab); b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
   // The summary is also available as a downloadable observational report.
-  $('stats').title = `관측 ${summary.elapsedDays}일 · 전체 사건 ${cloudMode ? cloud?.world?.meta.eventCount ?? 0 : summary.events}건`;
+  $('stats').title = `관측 ${Number(((state.tick - 36) / 144).toFixed(2))}일 · 전체 사건 ${cloudMode ? cloud?.world?.meta.eventCount ?? 0 : state.events.length}건`;
 }
 function renderInspector() {
   const n = selectedNPC();
@@ -253,10 +259,11 @@ function frame(now: number) {
   const elapsed = Math.min(250, now - lastFrame); lastFrame = now;
   if (!cloudMode && playing && !document.hidden) {
     accumulator += elapsed * speed; let steps = 0;
-    while (accumulator >= 700 && steps < 12) { sim.step(); accumulator -= 700; steps++; }
+    while (accumulator >= 700 && steps < 12) { presentationMotion ??= motionTrace(state); sim.step(1, presentationMotion); accumulator -= 700; steps++; }
     if (steps) void coordinator.processOne();
     if (steps && now - lastRender > 180) { render(); lastRender = now; }
   }
+  map.animate(now, view === 'world');
   requestAnimationFrame(frame);
 }
 document.addEventListener('visibilitychange', () => { accumulator = 0; lastFrame = performance.now(); if (document.hidden && sim.tick !== lastSaveTick) localSave(); });
@@ -265,7 +272,6 @@ setInterval(() => { if (sim.tick !== lastSaveTick) localSave(); }, 30000);
 render(); if (startupNote) toast(startupNote); requestAnimationFrame(frame);
 
 
-type EventPage = { epoch: string; events: WorldEvent[]; next: number | null };
 function cloudFailure(error: unknown) {
   const message = error instanceof Error ? error.message : '서버에 연결하지 못했습니다.';
   $('cloud-status').textContent = `${message} 연결 새로고침으로 다시 시도할 수 있습니다.`;
@@ -294,10 +300,14 @@ async function loadJournal(more = false) {
     // Only render paged data; no full journal is held by the browser.
     if (journalEvents.length > 400) journalEvents = journalEvents.slice(-400);
     journalNext = result.next; journalEpoch = result.epoch;
-    $('events').innerHTML = journalEvents.length ? journalEvents.map(e => `<button class="event-row" data-event="${esc(e.id)}"><span class="event-time"><b>${dayOf(e.tick)}일째</b> ${timeLabel(e.tick)}</span><span class="event-icon sage">${icon('book', 15)}</span><span class="event-description">${esc(e.description)}</span><span class="event-type">${kindLabels[e.kind] ?? e.kind}</span>${icon('arrow', 13)}</button>`).join('') : '<div class="empty-state journal-empty">이 조건에 맞는 기록이 없습니다.</div>';
-    $('more-events').hidden = result.next === null;
-    $('more-events').textContent = `이전 기록 더 보기 · 화면에 ${journalEvents.length}건`;
+    journalPage = { ...result, events: journalEvents };
+    renderJournal();
   } catch (error) { if (request === journalRequest) { journalKey = ''; $('events').textContent = '기록을 불러오지 못했습니다. 연결 새로고침으로 다시 시도해 주세요.'; cloudFailure(error); } }
+}
+function renderJournal() {
+  $('events').innerHTML = journalEvents.length ? journalEvents.map(e => `<button class="event-row" data-event="${esc(e.id)}"><span class="event-time"><b>${dayOf(e.tick)}일째</b> ${timeLabel(e.tick)}</span><span class="event-icon sage">${icon('book', 15)}</span><span class="event-description">${esc(e.description)}</span><span class="event-type">${kindLabels[e.kind] ?? e.kind}</span>${icon('arrow', 13)}</button>`).join('') : '<div class="empty-state journal-empty">이 조건에 맞는 기록이 없습니다.</div>';
+  $('more-events').hidden = journalNext === null;
+  $('more-events').textContent = `이전 기록 더 보기 · 화면에 ${journalEvents.length}건`;
 }
 function renderCloudLife() {
   const n = selectedNPC(), key = `${cloud?.world?.epoch}:${n.id}`;
@@ -379,10 +389,11 @@ function startCloud() {
   const controls = ['play-button', 'step-button', 'advance-day', 'drought-button', 'food-button', 'llm-toggle', 'ai-mode', 'offline-toggle', 'save-button', 'load-button', 'seed-input'];
   const disable = (value: boolean) => controls.forEach(id => ($<HTMLButtonElement>(id).disabled = value));
   disable(true);
-  let displayedRevision = -1;
+  let displayedEpoch = '', displayedEvents = -1;
   cloud = new CloudClient(world => {
-    const advanced = displayedRevision !== world.revision; displayedRevision = world.revision;
-    const changed = cloud!.world?.epoch !== journalEpoch;
+    const changed = displayedEpoch !== world.epoch, newEvents = displayedEvents !== world.meta.eventCount;
+    displayedEpoch = world.epoch; displayedEvents = world.meta.eventCount;
+    presentationMotion = world.motion;
     chromeRunner!.setWorld(world.epoch, world.meta.aiGeneration ?? 'legacy', world.meta.aiMode === 'chrome');
     state = world.state; playing = world.meta.running; speed = world.meta.speed;
     cloudReady = true; disable(false);
@@ -390,8 +401,13 @@ function startCloud() {
     $<HTMLInputElement>('offline-toggle').checked = world.meta.offline;
     $<HTMLInputElement>('seed-input').value = String(state.seed);
     document.querySelectorAll<HTMLElement>('[data-speed]').forEach(b => { b.classList.toggle('active', Number(b.dataset.speed) === speed); b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === speed)); });
-    if (changed || advanced && journalEvents.length <= 40) journalKey = '';
-    if (advanced && lifeEvents.length <= 40) lifeKey = '';
+    if (changed) journalKey = '';
+    else if (newEvents && journalEvents.length <= 40) {
+      const query = journalQuery(), merged = journalPage && journalKey === query.toString() ? mergeLiveJournal(journalPage, world, query) : undefined;
+      if (merged) { journalPage = merged; journalEvents = merged.events; journalNext = merged.next; renderJournal(); }
+      else journalKey = '';
+    }
+    if (newEvents && lifeEvents.length <= 40 && tab === 'life') lifeKey = '';
     if (changed) { lifeKey = ''; map.reset(); }
     $('save-status').textContent = `${dayOf(state.tick)}일째 ${timeLabel(state.tick)} · 서버에 저장됨`;
     render();
@@ -410,7 +426,7 @@ function startCloud() {
   setInterval(async () => {
     if (document.hidden || polling) return;
     polling = true;
-    try { if (cloudReady && cloud!.world!.meta.running) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); if (Date.now() - lastAI > 10_000) { lastAI = Date.now(); await refreshAI(); } }
+    try { if (cloudReady && cloud!.world!.meta.running) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); if ((view === 'experiments' || chromeRunner!.state.enabled) && Date.now() - lastAI > 10_000) { lastAI = Date.now(); await refreshAI(); } }
     catch (e) { $('cloud-status').textContent = '연결이 끊겼습니다. 서버의 마지막 저장은 유지됩니다. 다시 연결하는 중…'; }
     finally { polling = false; void chromeRunner!.tick(); }
   }, 2000);

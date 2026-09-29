@@ -18,7 +18,7 @@ export class CloudClient {
   }
   accept(world: WorldView) {
     if (this.world && world.revision < this.world.revision) return;
-    this.world = world; this.receive(world);
+    if (!this.world || world.revision > this.world.revision) { this.world = world; this.receive(world); }
     this.status(`서버 저장 완료 · ${world.meta.eventCount.toLocaleString()}개 사건 · 다른 기기에서 이어보기 가능`);
   }
   async connect() { this.accept(await this.get<WorldView>('world')); }
