@@ -110,3 +110,186 @@ test('archive cursors preserve imported event order independently of event ID sp
   const two = await (await h.request(`events?before=${one.next}`)).json() as typeof one;
   assert.equal(two.events[0].description, '관측 44');
 });
+
+// The fake HTTP transport exercises the real adapter, D1 scheduler and engine boundary without billing.
+import { processAI, aiStatus } from '../src/server/ai';
+import { modelConfig, ServerModelProvider, interpretationInput } from '../src/server/model';
+import { gate, appendEvent, socialEvent } from '../src/sim/social';
+const modelEnv = { LLM_BASE_URL: 'https://model.test/v1', LLM_MODEL: 'test-model', LLM_API_KEY: 'private-test-key', LLM_DAILY_LIMIT: '2' };
+function modelResponse(input: RequestInfo | URL, init?: RequestInit): Response {
+  assert.equal(String(input), 'https://model.test/v1/chat/completions');
+  const body = JSON.parse(init!.body as string), context = JSON.parse(body.messages[1].content);
+  const value = context.event ? { newGoals: [{ kind: 'secure_food', reason: '식량이 부족했던 경험' }], interpretation: '먹을 것을 준비하고 싶다.', relationshipInterpretations: [], evidence: [context.event.id] } : { text: '도움을 받았던 순간이 기억나.', evidence: [context.memories[0].sourceEventId] };
+  return Response.json({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(value) } }], usage: { prompt_tokens: 100, completion_tokens: 40 } });
+}
+async function remoteWorld(db = database()) {
+  const store = new WorldStore(db); await store.init(Date.now());
+  const initial = await store.read();
+  const { world } = await applyCommand(initial, { id: crypto.randomUUID(), revision: initial.revision, action: { type: 'ai-mode', mode: 'remote' } }, Date.now());
+  const event = appendEvent(world.state, { kind: 'scarcity', actorId: world.state.npcs[0].id, description: '식량이 부족하다.', importance: 75 });
+  gate(world.state, world.state.npcs[0], event);
+  world.meta.eventCount++;
+  await store.commit(world, [event], 'remote-test', crypto.randomUUID());
+  return { store, event };
+}
+test('server adapter validates schema and known evidence, strips hidden information and redacts errors', async () => {
+  assert.equal(modelConfig({ ...modelEnv, LLM_BASE_URL: 'http://external.test/v1' }), null);
+  assert.equal(modelConfig({ ...modelEnv, LLM_BASE_URL: 'https://user:secret@example.test/v1' }), null);
+  assert.ok(modelConfig({ ...modelEnv, LLM_BASE_URL: 'http://localhost:11434/v1' }));
+  const { store } = await remoteWorld();
+  const c = Simulation.load(JSON.stringify((await store.read()).state)).decisionContext()!.context;
+  c.event.data.secretThief = 'hidden-identity';
+  assert.ok(!JSON.stringify(interpretationInput(c)).includes('hidden-identity'));
+  const provider = new ServerModelProvider(modelConfig(modelEnv)!, async (url, init) => modelResponse(url, init));
+  assert.ok((await provider.interpretEvent(c)).evidence.includes(c.event.id));
+  for (const value of [
+    { newGoals: [], interpretation: '거짓', relationshipInterpretations: [], evidence: ['made-up-event'] },
+    { newGoals: [], interpretation: '거짓', relationshipInterpretations: [], evidence: [c.event.id], wealth: 999 },
+    { newGoals: [{ kind: 'kill', reason: 'invalid' }], interpretation: '거짓', relationshipInterpretations: [], evidence: [c.event.id] },
+  ]) {
+    const p = new ServerModelProvider(modelConfig(modelEnv)!, async () => Response.json({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(value) } }] }));
+    await assert.rejects(p.interpretEvent(c), /invalid_evidence_or_response/);
+  }
+  const failing = new ServerModelProvider(modelConfig(modelEnv)!, async () => { throw new Error('private-test-key'); });
+  await assert.rejects(failing.interpretEvent(c), e => e instanceof Error && e.message === 'network_error');
+});
+test('concurrent AI wakeups reserve one call, apply once and preserve physical world state', async () => {
+  const { store } = await remoteWorld(), before = await store.read(); let calls = 0;
+  const fetcher: typeof fetch = async (url, init) => { calls++; await new Promise(r => setTimeout(r, 10)); return modelResponse(url, init); };
+  await Promise.all([processAI(store, modelEnv, fetcher), processAI(store, modelEnv, fetcher)]);
+  const after = await store.read();
+  assert.equal(calls, 1); assert.equal(after.state.llm.completed, 1); assert.equal(after.state.llm.queue.length, 0);
+  assert.equal(after.state.tick, before.state.tick);
+  assert.deepEqual(after.state.npcs.map(n => [n.position, n.inventory, n.wealth, n.needs]), before.state.npcs.map(n => [n.position, n.inventory, n.wealth, n.needs]));
+  Simulation.load(JSON.stringify(await store.export(after.epoch)));
+  const status = await aiStatus(store.db, modelEnv);
+  assert.equal((status.usage as { calls: number }).calls, 1); assert.equal(status.jobs[0].status, 'applied');
+  await processAI(store, modelEnv, fetcher); assert.equal(calls, 1);
+});
+test('reset during model latency keeps simulation responsive and rejects the old response', async () => {
+  const { store } = await remoteWorld(); let resolve!: () => void, started!: () => void;
+  const start = new Promise<void>(r => { started = r; });
+  const pending = processAI(store, modelEnv, async (url, init) => { started(); await new Promise<void>(r => { resolve = r; }); return modelResponse(url, init); });
+  await start;
+  const old = await store.read();
+  const step = await applyCommand(old, { id: crypto.randomUUID(), revision: old.revision, action: { type: 'step', ticks: 1 } }, Date.now());
+  await store.commit(step.world, step.events, 'step', crypto.randomUUID());
+  assert.equal((await store.read()).state.tick, old.state.tick + 1);
+  const reset = await applyCommand(step.world, { id: crypto.randomUUID(), revision: step.world.revision, action: { type: 'reset', seed: 123 } }, Date.now());
+  await store.commit(reset.world, reset.events, 'reset', crypto.randomUUID());
+  resolve(); await pending;
+  assert.equal((await store.read()).state.seed, 123); assert.equal((await store.read()).state.llm.completed, 0);
+  assert.equal((await aiStatus(store.db, modelEnv)).jobs[0].status, 'stale');
+});
+test('network failures retry with backoff and a real UTC budget that survives world resets', async () => {
+  const { store } = await remoteWorld(); let calls = 0; const now = Date.now();
+  const fail: typeof fetch = async () => { calls++; return new Response('secret backend details', { status: 503 }); };
+  await processAI(store, modelEnv, fail, now);
+  await processAI(store, modelEnv, fail, now + 1000); assert.equal(calls, 1);
+  await processAI(store, modelEnv, fail, now + 31_000); assert.equal(calls, 2);
+  await processAI(store, modelEnv, fail, now + 92_000); assert.equal(calls, 2);
+  const status = await aiStatus(store.db, modelEnv, now);
+  assert.equal((status.usage as { calls: number }).calls, 2); assert.equal(status.jobs[0].error, 'http_503');
+  assert.ok(!JSON.stringify(status).includes('secret backend details'));
+  const current = await store.read();
+  const reset = await applyCommand(current, { id: crypto.randomUUID(), revision: current.revision, action: { type: 'reset', seed: 7 } }, now + 100_000);
+  await store.commit(reset.world, reset.events, 'reset', crypto.randomUUID());
+  assert.equal(((await aiStatus(store.db, modelEnv, now)).usage as { calls: number }).calls, 2);
+});
+test('invalid model results fail closed and unsupported remote settings cannot change the world', async () => {
+  const h = harness(); const before = await h.get();
+  assert.equal((await h.send({ type: 'ai-mode', mode: 'remote' }, before.revision)).status, 400);
+  assert.deepEqual(await h.get(), before);
+  const { store } = await remoteWorld();
+  await processAI(store, modelEnv, async () => Response.json({ choices: [{ finish_reason: 'stop', message: { content: '{"wealth":9999}' } }] }));
+  const after = await store.read(); assert.equal(after.state.llm.failed, 1); assert.equal(after.state.llm.queue.length, 0);
+  assert.equal((await aiStatus(store.db, modelEnv)).jobs[0].status, 'failed');
+});
+test('grounded dialogue cites only the speaker memories and never changes resources or relationships', async () => {
+  const h = harness(); let w = await h.get();
+  const state = new Simulation(42).snapshot();
+  socialEvent(state, { kind: 'share', actorId: state.npcs[0].id, targetId: state.npcs[1].id, description: '식량을 나누었던 기억', importance: 60 });
+  await h.send({ type: 'import', save: JSON.stringify(state) }, w.revision); w = await h.get();
+  const speaker = w.state.npcs.find(n => n.alive && n.memories.some(m => m.relatedNpcIds.length)); assert.ok(speaker);
+  const memory = speaker.memories.find(m => m.relatedNpcIds.length)!;
+  const listenerId = memory.relatedNpcIds[0];
+  assert.equal((await h.send({ type: 'dialogue', speakerId: speaker.id, listenerId }, w.revision)).status, 200);
+  const after = await h.get();
+  const event = after.state.events.find(e => e.data.dialogue); assert.ok(event);
+  assert.ok((event.data.evidence as string[]).every(id => speaker.memories.some(m => m.sourceEventId === id)));
+  assert.deepEqual(after.state.npcs, w.state.npcs);
+  Simulation.load(JSON.stringify(await (await h.request('export')).json()));
+});
+test('server transport aborts timeouts, rejects oversized bodies and does not forward redirects', async () => {
+  const { store } = await remoteWorld();
+  const c = Simulation.load(JSON.stringify((await store.read()).state)).decisionContext()!.context;
+  let aborted = false;
+  const timeout = new ServerModelProvider(modelConfig(modelEnv)!, async (_url, init) => new Promise((_resolve, reject) => {
+    assert.equal(init?.redirect, 'error');
+    init!.signal!.addEventListener('abort', () => { aborted = true; reject(new Error('aborted')); });
+  }), 10);
+  await assert.rejects(timeout.interpretEvent(c), /timeout/); assert.ok(aborted);
+  const huge = new ServerModelProvider(modelConfig(modelEnv)!, async () => new Response('x'.repeat(65_000)));
+  await assert.rejects(huge.interpretEvent(c), /response_too_large/);
+});
+test('remote dialogue uses remembered evidence and preserves a replayable approved result', async () => {
+  const { store } = await remoteWorld(); let w = await store.read();
+  const event = socialEvent(w.state, { kind: 'share', actorId: w.state.npcs[0].id, targetId: w.state.npcs[1].id, description: '함께 식량을 나누었다.', importance: 60 });
+  const added = w.state.events.slice(-3); // share + the two residents' memories
+  assert.equal(added[0].id, event.id);
+  w.meta.eventCount += added.length; w.revision++;
+  await store.commit(w, added, 'memory', crypto.randomUUID());
+  const c = await applyCommand(w, { id: crypto.randomUUID(), revision: w.revision, action: { type: 'dialogue', speakerId: w.state.npcs[0].id, listenerId: w.state.npcs[1].id } }, Date.now());
+  await store.commit(c.world, c.events, 'dialogue', crypto.randomUUID());
+  await processAI(store, modelEnv, async (url, init) => {
+    const context = JSON.parse(JSON.parse(init!.body as string).messages[1].content);
+    assert.deepEqual(Object.keys(context.listener).sort(), ['id', 'name']);
+    return modelResponse(url, init);
+  });
+  const after = await store.read(); assert.equal(after.meta.dialogue, undefined);
+  const e = after.state.events.find(e => e.data.dialogue)!; assert.ok(e); assert.deepEqual(e.data.evidence, [event.id]);
+  const replay = Simulation.load(JSON.stringify(c.world.state));
+  assert.ok(replay.recordDialogue(e.actorId!, e.targetId!, e.data.text as string, e.data.evidence as string[], e.data.requestId as string, e.data.model as string));
+  assert.deepEqual(compactWorld(replay.snapshot()), after.state);
+});
+test('mode switches invalidate in-flight work and approved interpretation reproduces the same world', async () => {
+  const { store } = await remoteWorld(); let release!: () => void, started!: () => void;
+  const start = new Promise<void>(r => { started = r; });
+  const pending = processAI(store, modelEnv, async (url, init) => { started(); await new Promise<void>(r => { release = r; }); return modelResponse(url, init); });
+  await start;
+  let w = await store.read();
+  for (const mode of ['off', 'remote'] as const) {
+    const result = await applyCommand(w, { id: crypto.randomUUID(), revision: w.revision, action: { type: 'ai-mode', mode } }, Date.now());
+    await store.commit(result.world, result.events, mode, crypto.randomUUID()); w = result.world;
+  }
+  release(); await pending;
+  assert.equal((await store.read()).state.llm.completed, 0);
+  assert.equal((await aiStatus(store.db, modelEnv)).jobs[0].status, 'stale');
+  // A saved ready outcome from a terminated request is applied using its original context, with no fetch.
+  const fresh = await remoteWorld();
+  await processAI(fresh.store, modelEnv, async (url, init) => modelResponse(url, init));
+  const saved = await fresh.store.db.prepare('SELECT * FROM ai_jobs').first<{ id: string; context: string; result: string; request: string }>(); assert.ok(saved);
+  const outcome = JSON.parse(saved.result).value;
+  assert.ok(outcome.evidence.length);
+  const context = JSON.parse(saved.context);
+  const replay = new Simulation(42).snapshot();
+  const event = appendEvent(replay, { kind: 'scarcity', actorId: replay.npcs[0].id, description: '식량이 부족하다.', importance: 75 });
+  gate(replay, replay.npcs[0], event);
+  const sim = Simulation.load(JSON.stringify(replay));
+  const { evidence, ...interpretation } = outcome;
+  assert.equal(context.event.id, event.id);
+  assert.ok(sim.applyInterpretation(saved.request, interpretation, { evidence, model: 'test-model' }));
+  assert.deepEqual(compactWorld(sim.snapshot()), (await fresh.store.read()).state);
+});
+test('a stored ready result is recovered after a Worker restart without another model request', async () => {
+  const { store } = await remoteWorld(); let calls = 0;
+  const commit = store.commit;
+  store.commit = async () => { throw new Error('simulated worker termination'); };
+  await assert.rejects(processAI(store, modelEnv, async (url, init) => { calls++; return modelResponse(url, init); }), /termination/);
+  store.commit = commit;
+  assert.equal((await aiStatus(store.db, modelEnv)).jobs[0].status, 'ready');
+  const restarted = new WorldStore(store.db); await restarted.init(Date.now());
+  await processAI(restarted, modelEnv, async () => { calls++; throw new Error('unexpected second request'); });
+  assert.equal(calls, 1); assert.equal((await restarted.read()).state.llm.completed, 1);
+  assert.equal((await aiStatus(store.db, modelEnv)).jobs[0].status, 'applied');
+});

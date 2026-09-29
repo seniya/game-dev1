@@ -46,3 +46,7 @@ TypeScript + Vite + DOM/Canvas. 렌더러 라이브러리나 외부 API 없이 �
 - `src/main.ts`: 기본 서버 관측과 명시적인 기기 모드. 서버 snapshot은 표시용이며 브라우저에서 Simulation.load로 실행하지 않는다.
 
 자세한 저장·동시성·배포 계약: [SERVER_WORLD.md](SERVER_WORLD.md).
+
+## v0.4 서버 모델 경계
+
+`server/model.ts`는 서버 환경 변수로만 연결되는 JSON 모델 어댑터와 근거 검증을 제공한다. `server/ai.ts`는 D1 예산/lease 예약, 비동기 호출, 결과 저장과 최신 세계 반영을 처리한다. UI는 모드·대화 요청만 제출하며 모델 주소나 인증 키를 받지 않는다. 로컬/CLI의 Mock 코디네이터와 코어의 무네트워크 계약은 유지한다. 자세한 운영 계약은 LLM_ARCHITECTURE.md를 참조한다.

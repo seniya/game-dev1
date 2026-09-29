@@ -118,3 +118,75 @@ test('server world synchronizes two devices, archives history, exports and resto
   expect(errors).toEqual([]);
   await a.close(); await b.close();
 });
+
+test('AI settings distinguish unavailable models and grounded Mock dialogue opens real evidence', async ({ page }) => {
+  // Use a page-local API fixture to avoid changing the shared server world used by the two-device test.
+  const { Simulation } = await import('../../src/sim/engine');
+  const { socialEvent } = await import('../../src/sim/social');
+  const { initialWorld, applyCommand, viewWorld } = await import('../../src/server/world');
+  let world = initialWorld(Date.now());
+  world.state = new Simulation(42).snapshot();
+  const [speaker, listener] = world.state.npcs;
+  socialEvent(world.state, { kind: 'share', actorId: speaker.id, targetId: listener.id, description: '서로 식량을 나누었던 기억', importance: 60 });
+  speaker.relationships.push({ npcId: listener.id, familiarity: 20, trust: 40, affection: 20, fear: 0, resentment: 0, respect: 20, family: false, interpretation: '도움이 기억난다.', evidence: [speaker.memories[0].sourceEventId] });
+  world.meta.eventCount = world.state.events.length;
+  await page.route('**/api/**', async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/world') return route.fulfill({ json: viewWorld(world) });
+    if (url.pathname === '/api/ai') return route.fulfill({ json: { configured: false, model: null, day: '2026-09-29', dailyLimit: 24, maxOutputTokens: 700, usage: { calls: 0, inputTokens: 0, outputTokens: 0 }, jobs: [] } });
+    if (url.pathname === '/api/command') { world = (await applyCommand(world, route.request().postDataJSON(), Date.now())).world; return route.fulfill({ json: viewWorld(world) }); }
+    if (url.pathname === '/api/events') return route.fulfill({ json: { epoch: world.epoch, events: [...world.state.events].reverse(), next: null } });
+    const id = decodeURIComponent(url.pathname.split('/').at(-1)!);
+    return route.fulfill({ json: { epoch: world.epoch, event: world.state.events.find(e => e.id === id), related: world.state.events } });
+  });
+  await page.goto('/');
+  await page.getByRole('button', { name: '관찰 실험실' }).click();
+  await expect(page.locator('#ai-status')).toContainText('서버 모델 미연결');
+  await expect(page.locator('#ai-mode option[value="remote"]')).toBeDisabled();
+  await page.locator('#ai-mode').selectOption('off');
+  await expect(page.locator('#llm-toggle')).not.toBeChecked();
+  await page.locator('#ai-mode').selectOption('mock');
+  await expect(page.locator('#llm-toggle')).toBeChecked();
+  await page.getByRole('button', { name: '세계 관찰', exact: true }).click();
+  await page.getByRole('tab', { name: '관계', exact: true }).click();
+  await page.getByRole('button', { name: '기억에 근거한 말 듣기' }).first().click();
+  await expect(page.getByRole('status').filter({ hasText: '기억에 근거한 말을 세계의 기록에 남겼습니다.' })).toBeVisible();
+  await page.getByRole('button', { name: '세계의 기록', exact: true }).click();
+  await page.getByRole('button', { name: '모든 사건', exact: true }).click();
+  await page.locator('.event-row').filter({ hasText: '떠올린 말' }).click();
+  await expect(page.getByRole('dialog')).toContainText('개인의 기억·해석');
+  await expect(page.getByRole('dialog')).toContainText('서로 식량을 나누었던 기억');
+  await page.getByRole('button', { name: '닫기', exact: true }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: '관찰 실험실' }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: 'test-results/ai-settings-mobile.png', fullPage: true });
+});
+
+test('configured model audit displays escaped results, links evidence and exports the saved input', async ({ page }) => {
+  const { initialWorld, applyCommand, viewWorld } = await import('../../src/server/world');
+  let world = initialWorld(Date.now());
+  const source = world.state.events[0], job = { id: 'audit-fixture', epoch: world.epoch, status: 'applied', kind: 'interpretation', attempts: 1, model: 'fixture-model', context: JSON.stringify({ event: source }), result: JSON.stringify({ ok: true, value: { interpretation: '<img src=x onerror=alert(1)>', evidence: [source.id], newGoals: [], relationshipInterpretations: [] } }), error: null };
+  await page.route('**/api/**', async route => {
+    const url = new URL(route.request().url());
+    if (url.pathname === '/api/world') return route.fulfill({ json: viewWorld(world) });
+    if (url.pathname === '/api/command') { world = (await applyCommand(world, route.request().postDataJSON(), Date.now())).world; return route.fulfill({ json: viewWorld(world) }); }
+    if (url.pathname === '/api/ai') return route.fulfill({ json: { configured: true, model: 'fixture-model', day: '2026-09-29', dailyLimit: 24, maxOutputTokens: 700, usage: { calls: 1, inputTokens: 100, outputTokens: 40 }, jobs: [job] } });
+    if (url.pathname.startsWith('/api/ai/jobs/')) return route.fulfill({ json: job });
+    if (url.pathname === '/api/events') return route.fulfill({ json: { epoch: world.epoch, events: world.state.events, next: null } });
+    return route.fulfill({ json: { epoch: world.epoch, event: source, related: [source] } });
+  });
+  await page.goto('/'); await page.getByRole('button', { name: '관찰 실험실' }).click();
+  await expect(page.locator('#ai-mode option[value="remote"]')).toBeEnabled();
+  await page.locator('#ai-mode').selectOption('remote');
+  await expect(page.locator('#ai-badge')).toContainText('서버 AI');
+  await page.getByText('최근 모델 처리 기록', { exact: true }).click();
+  await page.locator('[data-ai-job]').click();
+  await expect(page.getByRole('dialog')).toContainText('반영 완료');
+  await expect(page.getByRole('dialog').locator('img')).toHaveCount(0);
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: '판단 입력·결과 JSON 내보내기' }).click();
+  expect((await downloadPromise).suggestedFilename()).toBe('living-small-world-ai-audit-fixture.json');
+  await page.getByRole('button', { name: `근거 사건 ${source.id}` }).click();
+  await expect(page.getByRole('dialog')).toContainText(source.description);
+});

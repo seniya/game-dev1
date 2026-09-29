@@ -255,12 +255,12 @@ export class Simulation {
     const copy = structuredClone(npc); copy.memories = copy.memories.slice(-8); copy.relationships = copy.relationships.slice(-12);
     return { requestId: request.id, context: { npc: copy, event: structuredClone(event), allowedGoals: [...GOAL_KINDS], tick: w.tick } };
   }
-  applyInterpretation(requestId: string, input: unknown): boolean {
+  applyInterpretation(requestId: string, input: unknown, provenance?: { evidence: string[]; model: string }): boolean {
     const w = this.state, request = w.llm.queue.find(q => q.id === requestId);
     if (!request) return false;
     const npc = w.npcs.find(n => n.id === request.npcId)!;
     const result = validateInterpretation(input);
-    const valid = result && npc.alive && result.relationshipInterpretations.every(r => npc.relationships.some(existing => existing.npcId === r.npcId));
+    const valid = result && npc.alive && result.relationshipInterpretations.every(r => npc.relationships.some(existing => existing.npcId === r.npcId)) && (!provenance || (provenance.evidence.includes(request.eventId) && provenance.evidence.every(id => eventById(w, id) && (id === request.eventId || npc.memories.some(m => m.sourceEventId === id)))));
     w.llm.queue = w.llm.queue.filter(q => q.id !== requestId);
     if (!valid || !result) {
       w.llm.rejected++; appendEvent(w, { kind: 'llm', actorId: npc.id, causeId: request.eventId, importance: 10, description: '허용되지 않은 LLM 응답을 거부했다.' }); return false;
@@ -271,15 +271,25 @@ export class Simulation {
       npc.goals.push({ id: `g${w.nextId++}`, ...goal, createdAt: w.tick, sourceEventId: request.eventId });
       appendEvent(w, { kind: 'goal', actorId: npc.id, causeId: request.eventId, importance: 45, description: `${npc.identity.name}의 새 목표: ${GOAL_LABELS[goal.kind]}`, data: { kind: goal.kind, reason: goal.reason } });
     }
-    for (const meaning of result.relationshipInterpretations) relationship(npc, meaning.npcId).interpretation = meaning.meaning;
+    for (const meaning of result.relationshipInterpretations) {
+      const relation = relationship(npc, meaning.npcId); relation.interpretation = meaning.meaning;
+      if (!relation.evidence.includes(request.eventId)) relation.evidence.push(request.eventId);
+    }
     w.llm.completed++;
-    appendEvent(w, { kind: 'llm', actorId: npc.id, causeId: request.eventId, importance: 25, description: `${npc.identity.name}의 해석: ${result.interpretation}`, data: { result: JSON.stringify(result), requestId } });
+    appendEvent(w, { kind: 'llm', actorId: npc.id, causeId: request.eventId, importance: 25, description: `${npc.identity.name}의 해석: ${result.interpretation}`, data: { result: JSON.stringify(result), requestId, ...(provenance ?? {}) } });
     return true;
   }
-  failDecision(requestId: string, reason: string) {
+  recordDialogue(speakerId: string, listenerId: string, text: string, evidence: string[], requestId: string, model: string): boolean {
+    const w = this.state, speaker = w.npcs.find(n => n.id === speakerId), listener = w.npcs.find(n => n.id === listenerId);
+    if (!speaker?.alive || !listener?.alive || speakerId === listenerId || !text.trim() || text.length > 500 || !evidence.length || evidence.length > 8 || evidence.some(id => !eventById(w, id) || !speaker.memories.some(m => m.sourceEventId === id && m.relatedNpcIds.includes(listenerId)))) return false;
+    appendEvent(w, { kind: 'llm', actorId: speakerId, targetId: listenerId, causeId: evidence[0], importance: 30,
+      description: `${speaker.identity.name}가 ${listener.identity.name}에게 떠올린 말: ${text}`, data: { text, evidence, requestId, model, dialogue: true } });
+    return true;
+  }
+  failDecision(requestId: string, reason: string, retry = true) {
     const w = this.state, request = w.llm.queue.find(q => q.id === requestId); if (!request) return;
     request.attempts++;
-    if (request.attempts >= 3) { w.llm.failed++; w.llm.queue = w.llm.queue.filter(q => q.id !== requestId); }
+    if (!retry || request.attempts >= 3) { w.llm.failed++; w.llm.queue = w.llm.queue.filter(q => q.id !== requestId); }
     appendEvent(w, { kind: 'llm', actorId: request.npcId, causeId: request.eventId, importance: 5, description: `판단 처리 실패 (${request.attempts}/3): ${reason.slice(0, 160)}` });
   }
 }

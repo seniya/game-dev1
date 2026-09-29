@@ -1,5 +1,6 @@
 {
-  "generatedAt": "2026-09-29T07:33:01.425Z",
+  "generatedAt": "2026-09-29T08:23:03.654Z",
+  "measurementNotes": "elapsedMs includes independent replay, save validation, and continuation checks; processHeapMB includes multiple live simulation copies and garbage awaiting collection, not single-world memory.",
   "contract": "same seed + commands; all accounts conserve; save continuation and independent replay match",
   "cases": [
     {
@@ -7,6 +8,7 @@
       "days": 100,
       "condition": "normal",
       "population": 12,
+      "initialPopulation": 12,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 0,
@@ -66,16 +68,16 @@
       "minDailyFood": 106,
       "maxDailyFood": 2719,
       "bytes": 9204552,
-      "elapsedMs": 3461,
-      "sha256": "a990046788a17a8381981bdfe9cef9b58572c40fc9db53b3c2d2bc921a06c946",
-      "initialPopulation": 12,
-      "processHeapMB": 212
+      "elapsedMs": 3335,
+      "processHeapMB": 200,
+      "sha256": "a990046788a17a8381981bdfe9cef9b58572c40fc9db53b3c2d2bc921a06c946"
     },
     {
       "seed": 7,
       "days": 100,
       "condition": "drought",
       "population": 2,
+      "initialPopulation": 12,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 10,
@@ -267,16 +269,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 3131,
       "bytes": 1792731,
-      "elapsedMs": 446,
-      "sha256": "b35891b9ddd736c66dd643a658194e4f053de021a108d05cc28ae8884d514ace",
-      "initialPopulation": 12,
-      "processHeapMB": 217
+      "elapsedMs": 437,
+      "processHeapMB": 266,
+      "sha256": "b35891b9ddd736c66dd643a658194e4f053de021a108d05cc28ae8884d514ace"
     },
     {
       "seed": 7,
       "days": 100,
       "condition": "pressure",
       "population": 15,
+      "initialPopulation": 100,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 85,
@@ -1444,16 +1446,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 1513,
       "bytes": 14238644,
-      "elapsedMs": 8213,
-      "sha256": "15a2366f3dd66423b381a2339d7a94ed7aa63660e9b7753891b5e8842717cdba",
-      "initialPopulation": 100,
-      "processHeapMB": 401
+      "elapsedMs": 8115,
+      "processHeapMB": 388,
+      "sha256": "15a2366f3dd66423b381a2339d7a94ed7aa63660e9b7753891b5e8842717cdba"
     },
     {
       "seed": 7,
       "days": 365,
       "condition": "normal",
       "population": 12,
+      "initialPopulation": 12,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 0,
@@ -1514,16 +1516,16 @@
       "minDailyFood": 106,
       "maxDailyFood": 9357,
       "bytes": 34059550,
-      "elapsedMs": 12651,
-      "sha256": "465fa7688fcdb7a5fb36b9787f73e585a2c2e59517875d706ba1cead69c03bdc",
-      "initialPopulation": 12,
-      "processHeapMB": 1023
+      "elapsedMs": 12645,
+      "processHeapMB": 1016,
+      "sha256": "465fa7688fcdb7a5fb36b9787f73e585a2c2e59517875d706ba1cead69c03bdc"
     },
     {
       "seed": 7,
       "days": 365,
       "condition": "drought",
       "population": 2,
+      "initialPopulation": 12,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 10,
@@ -1715,16 +1717,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 12548,
       "bytes": 5177115,
-      "elapsedMs": 1178,
-      "sha256": "930f15afa2f996ea481aae0be772543e5a62334dfbb3155204eba5adfbf970f8",
-      "initialPopulation": 12,
-      "processHeapMB": 1085
+      "elapsedMs": 1194,
+      "processHeapMB": 1078,
+      "sha256": "930f15afa2f996ea481aae0be772543e5a62334dfbb3155204eba5adfbf970f8"
     },
     {
       "seed": 7,
       "days": 365,
       "condition": "pressure",
       "population": 15,
+      "initialPopulation": 100,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 85,
@@ -2892,16 +2894,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 5410,
       "bytes": 46068805,
-      "elapsedMs": 22967,
-      "sha256": "8a4a4e6482d5d1d42df986278b8ad8a7792bf4a080c1bfcdec3931f72411db1f",
-      "initialPopulation": 100,
-      "processHeapMB": 1048
+      "elapsedMs": 22866,
+      "processHeapMB": 1057,
+      "sha256": "8a4a4e6482d5d1d42df986278b8ad8a7792bf4a080c1bfcdec3931f72411db1f"
     },
     {
       "seed": 42,
       "days": 100,
       "condition": "normal",
       "population": 12,
+      "initialPopulation": 12,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 0,
@@ -2960,16 +2962,16 @@
       "minDailyFood": 111,
       "maxDailyFood": 2888,
       "bytes": 8569391,
-      "elapsedMs": 2631,
-      "sha256": "68c5c50e72134bbc58326b07676d5d30dcfb3a462483f9ca5df6559108678880",
-      "initialPopulation": 12,
-      "processHeapMB": 1201
+      "elapsedMs": 2647,
+      "processHeapMB": 1147,
+      "sha256": "68c5c50e72134bbc58326b07676d5d30dcfb3a462483f9ca5df6559108678880"
     },
     {
       "seed": 42,
       "days": 100,
       "condition": "drought",
       "population": 2,
+      "initialPopulation": 12,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 10,
@@ -3160,15 +3162,15 @@
       "maxDailyFood": 3830,
       "bytes": 1922928,
       "elapsedMs": 410,
-      "sha256": "dfeffe03a45cb9033de2fe150153a598b8fb8715b3c230e82c6c642bd70f8d04",
-      "initialPopulation": 12,
-      "processHeapMB": 1187
+      "processHeapMB": 1192,
+      "sha256": "dfeffe03a45cb9033de2fe150153a598b8fb8715b3c230e82c6c642bd70f8d04"
     },
     {
       "seed": 42,
       "days": 100,
       "condition": "pressure",
       "population": 19,
+      "initialPopulation": 100,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 81,
@@ -4284,16 +4286,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 266,
       "bytes": 21180783,
-      "elapsedMs": 14089,
-      "sha256": "ff00db42d94a86e99f4dff7a8cae5cc698b3fed90d31834a0fa53dc982733bc4",
-      "initialPopulation": 100,
-      "processHeapMB": 1728
+      "elapsedMs": 14093,
+      "processHeapMB": 1660,
+      "sha256": "ff00db42d94a86e99f4dff7a8cae5cc698b3fed90d31834a0fa53dc982733bc4"
     },
     {
       "seed": 42,
       "days": 365,
       "condition": "normal",
       "population": 12,
+      "initialPopulation": 12,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 0,
@@ -4353,16 +4355,16 @@
       "minDailyFood": 111,
       "maxDailyFood": 9278,
       "bytes": 31545657,
-      "elapsedMs": 10367,
-      "sha256": "03f896f70bdc24ae7410871954d2c4e3ba5cfe64383a0147bd619679f84d26c8",
-      "initialPopulation": 12,
-      "processHeapMB": 427
+      "elapsedMs": 10337,
+      "processHeapMB": 427,
+      "sha256": "03f896f70bdc24ae7410871954d2c4e3ba5cfe64383a0147bd619679f84d26c8"
     },
     {
       "seed": 42,
       "days": 365,
       "condition": "drought",
       "population": 2,
+      "initialPopulation": 12,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 10,
@@ -4552,16 +4554,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 15375,
       "bytes": 5640584,
-      "elapsedMs": 1212,
-      "sha256": "22ca932b4342eff9e3aff26410cedd464075d791f47eadb3b7fe303b65ef6469",
-      "initialPopulation": 12,
-      "processHeapMB": 529
+      "elapsedMs": 1222,
+      "processHeapMB": 488,
+      "sha256": "22ca932b4342eff9e3aff26410cedd464075d791f47eadb3b7fe303b65ef6469"
     },
     {
       "seed": 42,
       "days": 365,
       "condition": "pressure",
       "population": 19,
+      "initialPopulation": 100,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 81,
@@ -5677,16 +5679,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 566,
       "bytes": 75577268,
-      "elapsedMs": 41665,
-      "sha256": "b9d7488fd9c172118ccacefb38bf969e5697bebfe5012e40b6559afb0a852c67",
-      "initialPopulation": 100,
-      "processHeapMB": 1393
+      "elapsedMs": 41698,
+      "processHeapMB": 1710,
+      "sha256": "b9d7488fd9c172118ccacefb38bf969e5697bebfe5012e40b6559afb0a852c67"
     },
     {
       "seed": 123,
       "days": 100,
       "condition": "normal",
       "population": 12,
+      "initialPopulation": 12,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 0,
@@ -5746,16 +5748,16 @@
       "minDailyFood": 112,
       "maxDailyFood": 2505,
       "bytes": 16084997,
-      "elapsedMs": 4434,
-      "sha256": "f48c9d454deda91b529e3de54a4e7aa86dc65a1a6b91366d20745bad224aac34",
-      "initialPopulation": 12,
-      "processHeapMB": 1793
+      "elapsedMs": 4476,
+      "processHeapMB": 1932,
+      "sha256": "f48c9d454deda91b529e3de54a4e7aa86dc65a1a6b91366d20745bad224aac34"
     },
     {
       "seed": 123,
       "days": 100,
       "condition": "drought",
       "population": 2,
+      "initialPopulation": 12,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 10,
@@ -5946,16 +5948,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 789,
       "bytes": 3176056,
-      "elapsedMs": 632,
-      "sha256": "630ca56d3c712770e1d053c01b280001c3e7b31e7df7d5200449f649ed48f8e3",
-      "initialPopulation": 12,
-      "processHeapMB": 1803
+      "elapsedMs": 616,
+      "processHeapMB": 1923,
+      "sha256": "630ca56d3c712770e1d053c01b280001c3e7b31e7df7d5200449f649ed48f8e3"
     },
     {
       "seed": 123,
       "days": 100,
       "condition": "pressure",
       "population": 13,
+      "initialPopulation": 100,
       "day": 101,
       "elapsedDays": 100,
       "deaths": 87,
@@ -7149,16 +7151,16 @@
       "minDailyFood": 1,
       "maxDailyFood": 2094,
       "bytes": 17067932,
-      "elapsedMs": 7640,
-      "sha256": "eb839296dee18fb3cfcc673760ecbc9e6b006f8885cc242f57a9eac9a15cc869",
-      "initialPopulation": 100,
-      "processHeapMB": 2258
+      "elapsedMs": 7703,
+      "processHeapMB": 2322,
+      "sha256": "eb839296dee18fb3cfcc673760ecbc9e6b006f8885cc242f57a9eac9a15cc869"
     },
     {
       "seed": 123,
       "days": 365,
       "condition": "normal",
       "population": 12,
+      "initialPopulation": 12,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 0,
@@ -7218,16 +7220,16 @@
       "minDailyFood": 112,
       "maxDailyFood": 8658,
       "bytes": 58330146,
-      "elapsedMs": 21763,
-      "sha256": "f76fdfadbdbf876a7e0bbff95298dbb3cae622e4587c6153865709efb6d45b93",
-      "initialPopulation": 12,
-      "processHeapMB": 873
+      "elapsedMs": 23312,
+      "processHeapMB": 1303,
+      "sha256": "f76fdfadbdbf876a7e0bbff95298dbb3cae622e4587c6153865709efb6d45b93"
     },
     {
       "seed": 123,
       "days": 365,
       "condition": "drought",
       "population": 2,
+      "initialPopulation": 12,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 10,
@@ -7418,16 +7420,16 @@
       "minDailyFood": 0,
       "maxDailyFood": 3016,
       "bytes": 9849029,
-      "elapsedMs": 1890,
-      "sha256": "9f760f9fb325ecf8da3900a6de14dbfeb59565c7216f5de03922ce144ce9fc4b",
-      "initialPopulation": 12,
-      "processHeapMB": 984
+      "elapsedMs": 1953,
+      "processHeapMB": 1413,
+      "sha256": "9f760f9fb325ecf8da3900a6de14dbfeb59565c7216f5de03922ce144ce9fc4b"
     },
     {
       "seed": 123,
       "days": 365,
       "condition": "pressure",
       "population": 13,
+      "initialPopulation": 100,
       "day": 366,
       "elapsedDays": 365,
       "deaths": 87,
@@ -8621,10 +8623,9 @@
       "minDailyFood": 1,
       "maxDailyFood": 7554,
       "bytes": 53663849,
-      "elapsedMs": 22980,
-      "sha256": "f4f52061e6705cbd24953d2c8ba043a2d3d494ad2a356c358b74a7a8ac1c7345",
-      "initialPopulation": 100,
-      "processHeapMB": 1117
+      "elapsedMs": 24563,
+      "processHeapMB": 1078,
+      "sha256": "f4f52061e6705cbd24953d2c8ba043a2d3d494ad2a356c358b74a7a8ac1c7345"
     }
   ],
   "mock": {
@@ -8675,6 +8676,5 @@
       "failed": 0,
       "queued": 0
     }
-  },
-  "measurementNotes": "elapsedMs includes independent replay, save validation, and continuation checks; processHeapMB includes multiple live simulation copies and garbage awaiting collection, not single-world memory."
+  }
 }

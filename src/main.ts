@@ -36,6 +36,8 @@ let sim = new Simulation(42), coordinator = new DecisionCoordinator(sim, new Moc
 const cloudMode = new URLSearchParams(location.search).get('local') !== '1';
 let cloud: CloudClient | undefined;
 let cloudReady = false;
+interface AIStatus { configured: boolean; model: string | null; day: string; dailyLimit: number; maxOutputTokens: number; usage: { calls: number; inputTokens: number; outputTokens: number }; jobs: { id: string; epoch: string; kind: string; status: string; attempts: number; error: string | null; model: string }[] }
+let aiStatus: AIStatus | undefined;
 let journalKey = '', journalNext: number | null = null, journalEpoch = '', journalEvents: WorldEvent[] = [], journalRequest = 0;
 let lifeKey = '', lifeNext: number | null = null, lifeEvents: WorldEvent[] = [], lifeRequest = 0;
 let startupNote = '';
@@ -53,17 +55,17 @@ $('app').innerHTML = `
     <a class="brand" href="#" aria-label="Living Small World 홈"><span class="brand-icon">${icon('leaf', 27)}</span><span>living<br><b>small world<span class="brand-dot">.</span></b></span></a>
     <div class="sidebar-caption">작은 세계 관측소</div>
     <nav aria-label="주 메뉴">
-      <button class="nav-button active" data-view="world">${icon('world')}<span>세계 관찰</span><span class="nav-dot"></span></button>
-      <button class="nav-button" data-view="residents">${icon('people')}<span>마을 주민</span><span id="nav-population" class="nav-number">12</span></button>
-      <button class="nav-button" data-view="history">${icon('book')}<span>세계의 기록</span></button>
+      <button class="nav-button active" data-view="world" aria-label="세계 관찰" title="세계 관찰">${icon('world')}<span>세계 관찰</span><span class="nav-dot"></span></button>
+      <button class="nav-button" data-view="residents" aria-label="마을 주민" title="마을 주민">${icon('people')}<span>마을 주민</span><span id="nav-population" class="nav-number">12</span></button>
+      <button class="nav-button" data-view="history" aria-label="세계의 기록" title="세계의 기록">${icon('book')}<span>세계의 기록</span></button>
       <button class="nav-button" data-view="economy" aria-label="마을 경제">${icon('food')}<span>마을 경제</span></button>
-      <button class="nav-button" data-view="experiments">${icon('flask')}<span>관찰 실험실</span></button>
+      <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.3</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.4</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
-    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><span class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></header>
+    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></header>
     <div class="page-content">
       <section class="page-heading"><div><div class="eyebrow">LIVING SMALL WORLD</div><h1 id="page-title">이야기가 자라는 마을</h1><p id="page-subtitle">저마다의 하루가 만나, 이 세계만의 역사가 됩니다.</p></div><div class="world-status"><span id="running-dot" class="live-dot"></span><span id="running-status">세계가 살아가는 중</span><span class="seed-label">SEED <b id="seed-label">42</b></span></div></section>
       <section class="cloud-panel" aria-label="세계 저장 및 연결"><div><b>${cloudMode ? '서버에 이어지는 세계' : '이 기기의 세계'}</b><p id="cloud-status">${cloudMode ? '서버 세계를 불러오는 중…' : '이 기기에서만 진행하고 저장합니다.'}</p></div><div class="cloud-actions">${cloudMode ? '<label><input id="offline-toggle" type="checkbox" disabled/> 자리를 비워도 진행</label><button id="cloud-retry" class="button">연결 새로고침</button><a class="text-button" href="?local=1">기기 세계 관찰</a>' : '<a class="button" href="/">서버 세계로 돌아가기</a>'}</div>${cloudMode ? '<p class="cloud-policy">기본은 비접속 시 정지입니다. 켜면 재접속할 때 최대 게임 하루(144틱)만 반영합니다. 재생·정지·배속 설정은 모든 기기에 적용됩니다.</p>' : ''}</section><section class="stats-grid" aria-label="세계 현황" id="stats"></section>
@@ -77,7 +79,7 @@ $('app').innerHTML = `
       </div>
       <section id="economy-view" class="panel alternate-view" hidden></section>
       <section id="residents-view" class="panel alternate-view" hidden><div class="panel-heading"><h2>마을의 모든 주민</h2><span class="muted">주민을 선택해 삶의 흔적을 확인하세요.</span></div><div id="resident-grid" class="resident-grid"></div></section>
-      <section id="experiments-view" class="panel alternate-view" hidden><div class="panel-heading"><h2>조건을 바꾸고, 변화를 관찰하세요</h2><span class="muted">모든 개입은 세계의 기록에 남습니다.</span></div><div class="experiment-grid"><article><span class="experiment-icon">${icon('sun', 28)}</span><h3>비가 오지 않는다면</h3><p>3일 동안 가뭄을 만듭니다. 농장과 열매의 생산이 줄고 갈증은 빨라집니다. 식량이 부족해지면 주민들은 어떤 선택을 할까요?</p><button id="drought-button" class="button dark">3일 가뭄 시작</button></article><article><span class="experiment-icon">${icon('food', 28)}</span><h3>작은 도움의 시작</h3><p>공동 창고에 식량 24개를 보탭니다. 식량을 가져가는 사람과 이웃에게 나누는 사람, 그 뒤에 남는 관계를 관찰하세요.</p><button id="food-button" class="button dark">식량 24개 투입</button></article><article><span class="experiment-icon">${icon('world', 28)}</span><h3>다른 세계의 첫 아침</h3><p>같은 시드와 명령은 같은 결과를 만듭니다. 현재 세계는 자동 저장한 뒤 새 세계를 시작합니다.</p><form id="seed-form"><label for="seed-input">월드 시드</label><div class="input-group"><input id="seed-input" type="number" min="0" max="4294967295" step="1" value="42" required/><button class="button dark" type="submit">새로 시작</button></div></form></article></div><div class="experiment-settings"><label><input type="checkbox" id="llm-toggle" checked/> 중요한 사건의 Mock AI 해석 사용</label><p>끄더라도 주민의 생존·생산·사회 활동은 계속됩니다. AI는 목표와 해석만 제안합니다.</p><div id="llm-metrics"></div><button id="advance-day" class="button">하루 관찰 진행</button><p>144틱을 진행한 뒤 일시정지합니다. 경제 화면에서 생산·소비와 가격 변화를 확인하세요.</p></div></section>
+      <section id="experiments-view" class="panel alternate-view" hidden><div class="panel-heading"><h2>조건을 바꾸고, 변화를 관찰하세요</h2><span class="muted">모든 개입은 세계의 기록에 남습니다.</span></div><div class="experiment-grid"><article><span class="experiment-icon">${icon('sun', 28)}</span><h3>비가 오지 않는다면</h3><p>3일 동안 가뭄을 만듭니다. 농장과 열매의 생산이 줄고 갈증은 빨라집니다. 식량이 부족해지면 주민들은 어떤 선택을 할까요?</p><button id="drought-button" class="button dark">3일 가뭄 시작</button></article><article><span class="experiment-icon">${icon('food', 28)}</span><h3>작은 도움의 시작</h3><p>공동 창고에 식량 24개를 보탭니다. 식량을 가져가는 사람과 이웃에게 나누는 사람, 그 뒤에 남는 관계를 관찰하세요.</p><button id="food-button" class="button dark">식량 24개 투입</button></article><article><span class="experiment-icon">${icon('world', 28)}</span><h3>다른 세계의 첫 아침</h3><p>같은 시드와 명령은 같은 결과를 만듭니다. 현재 세계는 자동 저장한 뒤 새 세계를 시작합니다.</p><form id="seed-form"><label for="seed-input">월드 시드</label><div class="input-group"><input id="seed-input" type="number" min="0" max="4294967295" step="1" value="42" required/><button class="button dark" type="submit">새로 시작</button></div></form></article></div><div class="experiment-settings"><label ${cloudMode ? 'hidden' : ''}><input type="checkbox" id="llm-toggle" checked/> 중요한 사건의 Mock AI 해석 사용</label>${cloudMode ? '<div class="ai-settings"><label for="ai-mode">중요한 사건을 해석하는 방식</label><select id="ai-mode" disabled><option value="off">AI 끄기</option><option value="mock">Mock · 비용 없이 관찰</option><option value="remote" disabled>서버 모델 · 연결 설정 필요</option></select><p id="ai-status" role="status">모델 연결을 확인하고 있습니다.</p><div id="ai-usage" class="ai-usage"></div><details><summary>최근 모델 처리 기록</summary><div id="ai-audit"></div></details></div>' : ''}<p>끄더라도 주민의 생존·생산·사회 활동은 계속됩니다. AI는 목표와 해석만 제안합니다.</p><div id="llm-metrics"></div><button id="advance-day" class="button">하루 관찰 진행</button><p>144틱을 진행한 뒤 일시정지합니다. 경제 화면에서 생산·소비와 가격 변화를 확인하세요.</p></div></section>
       <section class="panel event-panel" id="event-panel"><div class="panel-heading"><div><h2>세계의 기록</h2><span class="record-badge">LIVE JOURNAL</span></div><button id="all-events-button" class="text-button">전체 기록 보기 ${icon('arrow', 14)}</button></div><div class="event-toolbar"><div class="event-filters">${[['important', '주요 사건'], ['social', '관계'], ['economy', '경제'], ['all', '모든 사건']].map(([value, text]) => `<button class="${value === 'important' ? 'active' : ''}" data-filter="${value}" aria-pressed="${value === 'important'}">${text}</button>`).join('')}</div><div class="event-search"><label><input id="selected-only" type="checkbox"/> 선택 주민</label><label class="search-box">${icon('search', 14)}<input id="event-search" placeholder="주민, 사건, ID 검색" aria-label="사건 검색"/></label></div></div><div class="journal-dates"><label>시작일 <input id="event-from" type="number" min="1" placeholder="전체" aria-label="기록 시작일"/></label><label>종료일 <input id="event-to" type="number" min="1" placeholder="전체" aria-label="기록 종료일"/></label></div><div id="events" class="event-list"></div><button id="more-events" class="more-button">이전 기록 더 보기</button></section>
       <footer class="page-footer"><span>${icon('leaf', 13)} 모든 이야기는 작은 선택에서 시작됩니다.</span><span id="save-status">자동 저장 대기 중 · 30초 간격</span></footer>
     </div>
@@ -110,8 +112,10 @@ function render() {
   $('npc-detail').scrollTop = inspectorScroll;
   if (view === 'residents') renderResidents();
   if (view === 'economy') $('economy-view').innerHTML = economyView(state, metric);
-  $('llm-metrics').innerHTML = `<span>요청 ${state.llm.requested}</span><span>완료 ${state.llm.completed}</span><span>대기 ${state.llm.queue.length}</span><span>거부 ${state.llm.rejected}</span><span>실패 ${state.llm.failed}</span><span>오늘 예산 ${state.llm.dailyTotal} / 12</span>`;
+  $('llm-metrics').innerHTML = `<span>요청 ${state.llm.requested}</span><span>완료 ${state.llm.completed}</span><span>대기 ${state.llm.queue.length}</span><span>거부 ${state.llm.rejected}</span><span>실패 ${state.llm.failed}</span><span>게임 하루 요청 ${state.llm.dailyTotal} / 12</span>`;
+  $('ai-badge').innerHTML = `${icon('spark', 13)} ${!state.llm.enabled ? '고차원 해석 꺼짐' : cloud?.world?.meta.aiMode === 'remote' ? '서버 AI · 근거 있는 해석' : 'Mock AI · API 없이 실행'}`;
   $<HTMLInputElement>('llm-toggle').checked = state.llm.enabled;
+  if (cloudMode) renderAI();
   document.querySelectorAll<HTMLButtonElement>('[data-tab]').forEach(b => { b.classList.toggle('active', b.dataset.tab === tab); b.setAttribute('aria-selected', String(b.dataset.tab === tab)); });
   // The summary is also available as a downloadable observational report.
   $('stats').title = `관측 ${summary.elapsedDays}일 · 전체 사건 ${cloudMode ? cloud?.world?.meta.eventCount ?? 0 : summary.events}건`;
@@ -121,7 +125,7 @@ function renderInspector() {
   $('npc-header').innerHTML = `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}"><span class="pixel-person"><i></i><b></b></span><span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <span>${n.identity.age}세</span></h3><p>${OCCUPATIONS[n.occupation]} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p><span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`;
   if (tab === 'life') { if (cloudMode) { renderCloudLife(); return; } $('npc-detail').innerHTML = lifeHistory(state, n, lifeLimit); return; }
   if (tab === 'relationships') {
-    $('npc-detail').innerHTML = `<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p><div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button></article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`;
+    $('npc-detail').innerHTML = `<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p><div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button>${cloudMode && n.alive && state.npcs.find(p => p.id === r.npcId)?.alive && n.memories.some(m => m.relatedNpcIds.includes(r.npcId)) ? `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" ${!state.llm.enabled || cloud?.world?.meta.dialogue ? 'disabled' : ''}>기억에 근거한 말 듣기</button>` : ''}</article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`;
     return;
   }
   if (tab === 'memories') {
@@ -234,7 +238,7 @@ $('file-input').onchange = async () => {
 };
 $('close-dialog').onclick = () => $<HTMLDialogElement>('detail-dialog').close();
 $('detail-dialog').onclick = event => { if (event.target === $('detail-dialog')) $<HTMLDialogElement>('detail-dialog').close(); };
-$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.3</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. Mock AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>현재는 한 마을의 경제·사회·기록을 관찰하는 단계이며 출생·세대 교체·다른 마을 이주와 실제 외부 LLM 연결은 포함하지 않습니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
+$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.4</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>현재는 한 마을의 경제·사회·기록을 관찰하는 단계이며 서버 모델을 연결하면 실제 AI의 해석과 기억에 근거한 말을 관찰할 수 있습니다. 출생·세대 교체·다른 마을 이주는 후속 단계입니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
 $('dialog-content').addEventListener('click', event => { if ((event.target as HTMLElement).closest('#export-report')) download('living-small-world-report.json', JSON.stringify(summarize(state), null, 2)); });
 document.querySelector('.brand')!.addEventListener('click', event => { event.preventDefault(); setView('world'); });
 
@@ -321,8 +325,35 @@ async function showCloudEvent(id: string) {
 async function cloudDownload(path: string, name: string) {
   try { download(name, JSON.stringify(await cloud!.get(path))); toast('서버의 세계 기록을 파일로 내보냈습니다.'); } catch (e) { cloudFailure(e); }
 }
+const aiLabels: Record<string, string> = { pending: '처리 대기', running: '응답 대기', ready: '저장 대기', applied: '반영 완료', rejected: '근거 변경으로 거부', failed: '처리 실패', stale: '세계 변경으로 취소' };
+function renderAI() {
+  if (!cloudMode) return;
+  const mode = cloud?.world?.meta.aiMode ?? (state.llm.enabled ? 'mock' : 'off');
+  $<HTMLSelectElement>('ai-mode').value = mode;
+  const option = document.querySelector<HTMLOptionElement>('#ai-mode option[value="remote"]')!;
+  option.disabled = !aiStatus?.configured;
+  option.textContent = aiStatus?.configured ? `서버 모델 · ${aiStatus.model}` : '서버 모델 · 연결 설정 필요';
+  $('ai-status').textContent = !aiStatus ? '모델 연결을 확인하고 있습니다.' : !aiStatus.configured ? '서버 모델 미연결 · 지금은 Mock 또는 AI 끄기로 관찰할 수 있습니다.' : mode === 'remote' ? `서버 모델 ${aiStatus.model} 사용 중 · 응답을 기다리는 동안에도 세계는 계속됩니다.` : `서버 모델 ${aiStatus.model} 연결됨 · 현재 ${mode === 'mock' ? 'Mock' : 'AI 끄기'} 모드`;
+  if (!aiStatus) return;
+  const { usage } = aiStatus;
+  $('ai-usage').textContent = `실제 날짜 ${aiStatus.day} UTC · 호출 ${usage.calls} / ${aiStatus.dailyLimit}회 · 보고된 입력 ${usage.inputTokens} / 출력 ${usage.outputTokens}토큰 · 응답당 최대 ${aiStatus.maxOutputTokens}토큰${usage.calls >= aiStatus.dailyLimit ? ' · 오늘 상한 도달, 다음 UTC 날짜까지 대기' : ''}`;
+  $('ai-audit').innerHTML = `<p class="inspector-footnote">세계 초기화에도 호출 예산은 유지됩니다. 실제 모델이 만든 해석과 말은 사실 자체가 아니며, 인용한 사건으로 근거를 확인할 수 있습니다.</p>${aiStatus.jobs.length ? aiStatus.jobs.map(j => `<button class="causal-button" data-ai-job="${esc(j.id)}"><b>${j.kind === 'dialogue' ? '기억에 근거한 말' : '중요 사건 해석'}</b><span>${esc(aiLabels[j.status] ?? j.status)} · ${j.attempts}/3회 · ${esc(j.model)}</span></button>`).join('') : '<p class="muted">실제 모델 호출 기록이 아직 없습니다.</p>'}`;
+}
+async function refreshAI() {
+  try { aiStatus = await cloud!.get<AIStatus>('ai'); renderAI(); }
+  catch { $('ai-status').textContent = '모델 상태를 불러오지 못했습니다. 연결 새로고침으로 다시 시도해 주세요.'; }
+}
+async function showAIJob(id: string) {
+  try {
+    const job = await cloud!.get<{ id: string; epoch: string; status: string; context: string; result: string | null; error: string | null }>(`ai/jobs/${encodeURIComponent(id)}`);
+    const result = job.result ? JSON.parse(job.result) : null;
+    const evidence: string[] = result?.ok ? result.value.evidence : [];
+    openDialog(`<div class="eyebrow">MODEL AUDIT</div><h2>모델 처리 기록</h2><p>${esc(aiLabels[job.status] ?? job.status)}${job.error ? ` · ${esc(job.error)}` : ''}</p><p>모델이 생성한 해석입니다. 인용한 원본 사건을 함께 확인하세요.</p>${job.epoch === cloud!.world!.epoch ? evidence.map(id => `<button class="causal-button" data-event="${esc(id)}">근거 사건 ${esc(id)}</button>`).join('') : '<p>이전 세계의 기록입니다. 해당 세계의 백업에서 근거 사건을 확인하세요.</p>'}<pre class="ai-result">${esc(JSON.stringify(result, null, 2))}</pre><button id="download-ai-job" class="button">판단 입력·결과 JSON 내보내기</button>`);
+    $('download-ai-job').onclick = () => download(`living-small-world-ai-${job.id}.json`, JSON.stringify(job, null, 2));
+  } catch (e) { cloudFailure(e); }
+}
 function startCloud() {
-  const controls = ['play-button', 'step-button', 'advance-day', 'drought-button', 'food-button', 'llm-toggle', 'offline-toggle', 'save-button', 'load-button', 'seed-input'];
+  const controls = ['play-button', 'step-button', 'advance-day', 'drought-button', 'food-button', 'llm-toggle', 'ai-mode', 'offline-toggle', 'save-button', 'load-button', 'seed-input'];
   const disable = (value: boolean) => controls.forEach(id => ($<HTMLButtonElement>(id).disabled = value));
   disable(true);
   let displayedRevision = -1;
@@ -342,19 +373,24 @@ function startCloud() {
     render();
     if (world.meta.catchupTicks) toast(`자리를 비운 동안 ${world.meta.catchupTicks}틱을 반영했습니다.${world.meta.skippedTicks ? ' 하루 상한을 넘긴 시간은 진행하지 않았습니다.' : ''}`);
   }, message => { $('cloud-status').textContent = message; });
-  const connect = async () => { try { await cloud!.connect(); } catch (e) { cloudFailure(e); } };
+  const connect = async () => { try { await cloud!.connect(); await refreshAI(); } catch (e) { cloudFailure(e); } };
   $('cloud-retry').onclick = () => { journalKey = ''; lifeKey = ''; void connect(); };
   void connect();
-  let polling = false;
+  let polling = false, lastAI = 0;
   setInterval(async () => {
     if (document.hidden || polling || !cloudReady) return;
     polling = true;
-    try { if (cloud!.world!.meta.running) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); }
+    try { if (cloud!.world!.meta.running) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); if (Date.now() - lastAI > 10_000) { lastAI = Date.now(); await refreshAI(); } }
     catch (e) { $('cloud-status').textContent = '연결이 끊겼습니다. 서버의 마지막 저장은 유지됩니다. 다시 연결하는 중…'; }
     finally { polling = false; }
   }, 2000);
   document.addEventListener('click', event => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!button) return;
+    if (button.dataset.dialogue) {
+      event.stopImmediatePropagation();
+      void cloud!.send({ type: 'dialogue', speakerId: selectedId, listenerId: button.dataset.dialogue }).then(() => { toast(cloud!.world!.meta.aiMode === 'remote' ? '말을 준비하고 있습니다. 완료되면 세계의 기록에 남습니다.' : '기억에 근거한 말을 세계의 기록에 남겼습니다.'); }).catch(cloudFailure); return;
+    }
+    if (button.dataset.aiJob) { event.stopImmediatePropagation(); void showAIJob(button.dataset.aiJob); return; }
     const actions: Record<string, CloudAction> = {
       'play-button': { type: 'play', running: !playing }, 'step-button': { type: 'step', ticks: 1 },
       'advance-day': { type: 'step', ticks: 144 }, 'drought-button': { type: 'experiment', kind: 'drought' }, 'food-button': { type: 'experiment', kind: 'food' },
@@ -376,6 +412,7 @@ function startCloud() {
     if (button.id === 'load-backup') void cloud!.get<WorldState>('export?backup=1').then(save => cloud!.send({ type: 'import', save: JSON.stringify(save) })).then(() => { $<HTMLDialogElement>('detail-dialog').close(); toast('서버 백업을 복원했습니다.'); }).catch(cloudFailure);
   }, true);
   $('seed-form').onsubmit = event => { event.preventDefault(); if (cloudReady) cloudCommand({ type: 'reset', seed: Number($<HTMLInputElement>('seed-input').value) }); };
+  $('ai-mode').onchange = () => { void cloud!.send({ type: 'ai-mode', mode: $<HTMLSelectElement>('ai-mode').value as 'off' | 'mock' | 'remote' }).then(refreshAI).catch(e => { renderAI(); cloudFailure(e); }); };
   $('llm-toggle').onchange = () => cloudCommand({ type: 'llm', enabled: $<HTMLInputElement>('llm-toggle').checked });
   $('offline-toggle').onchange = () => cloudCommand({ type: 'offline', enabled: $<HTMLInputElement>('offline-toggle').checked });
   $('file-input').onchange = async () => {

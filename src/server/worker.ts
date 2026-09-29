@@ -1,14 +1,16 @@
 import { summarize } from '../sim/engine';
-import type { D1Database, Fetcher } from '@cloudflare/workers-types';
+import type { D1Database, Fetcher, ExecutionContext } from '@cloudflare/workers-types';
 import { applyCommand, commandSchema, viewWorld } from './world';
 import { Conflict, WorldStore } from './store';
 import type { WorldEvent } from '../sim/types';
+import { aiStatus, processAI } from './ai';
+import { modelConfig, type ModelEnv } from './model';
 
-interface Env { DB: D1Database; ASSETS: Fetcher }
+interface Env extends ModelEnv { DB: D1Database; ASSETS: Fetcher }
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 const parseEvent = (row: { body: string }) => JSON.parse(row.body) as WorldEvent;
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, context?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request as never) as unknown as Promise<Response>;
     // The production Site's owner-only edge gate protects all paths, including /api.
@@ -16,9 +18,17 @@ export default {
     if (request.method !== 'GET' && (request.headers.get('Origin') !== url.origin || !request.headers.get('Content-Type')?.startsWith('application/json'))) return json({ error: '같은 사이트의 JSON 요청만 허용됩니다.' }, 403);
     if (!env.DB) return json({ error: '세계 저장소에 연결하지 못했습니다.' }, 503);
     const store = new WorldStore(env.DB);
+    const wakeAI = () => { if (context && modelConfig(env)) context.waitUntil(processAI(store, env).catch(() => { console.error('AI background processing failed'); })); };
     try {
       await store.init(Date.now());
-      if (url.pathname === '/api/world' && request.method === 'GET') return json(viewWorld(await store.read()));
+      if (url.pathname === '/api/world' && request.method === 'GET') { const world = await store.read(); wakeAI(); return json(viewWorld(world)); }
+      if (url.pathname === '/api/ai' && request.method === 'GET') return json(await aiStatus(env.DB, env));
+      if (url.pathname.startsWith('/api/ai/jobs/') && request.method === 'GET') {
+        const job = await env.DB.prepare('SELECT * FROM ai_jobs WHERE id=?').bind(decodeURIComponent(url.pathname.slice('/api/ai/jobs/'.length))).first();
+        if (!job) return json({ error: '판단 기록을 찾을 수 없습니다.' }, 404);
+        const calls = await env.DB.prepare('SELECT day,started,input_tokens,output_tokens,outcome FROM ai_calls WHERE job=? ORDER BY started').bind(job.id).all();
+        return json({ ...job, calls: calls.results });
+      }
       if (url.pathname === '/api/command' && request.method === 'POST') {
         if (Number(request.headers.get('Content-Length')) > 12_000_000) return json({ error: '서버 가져오기는 10MB까지 지원합니다.' }, 413);
         const body = await request.text();
@@ -26,18 +36,19 @@ export default {
         const parsed = commandSchema.safeParse(JSON.parse(body));
         if (!parsed.success) return json({ error: '명령 형식이 올바르지 않습니다.' }, 400);
         const command = parsed.data;
+        if (command.action.type === 'ai-mode' && command.action.mode === 'remote' && !modelConfig(env)) return json({ error: '서버 모델이 연결되지 않았습니다. 모델 주소와 이름을 먼저 설정해 주세요.' }, 400);
         const canonical = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(command))))).map(b => b.toString(16).padStart(2, '0')).join('');
         const previous = await store.command(command.id);
         if (previous) {
           if (previous.body !== canonical) return json({ error: '이미 사용된 명령 ID입니다.' }, 409);
-          return json(viewWorld(await store.read()));
+          wakeAI(); return json(viewWorld(await store.read()));
         }
         const current = await store.read();
         if (command.revision !== current.revision) return json({ error: '다른 기기의 최신 상태를 반영했습니다. 변경을 다시 선택해 주세요.', world: viewWorld(current) }, 409);
         const { world, events } = await applyCommand(current, command, Date.now());
         try { await store.commit(world, events, canonical, command.id); }
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
-        return json(viewWorld(world));
+        wakeAI(); return json(viewWorld(world));
       }
       if (url.pathname === '/api/export' && request.method === 'GET') {
         const current = await store.read(), epoch = url.searchParams.has('backup') ? current.meta.backupEpoch : current.epoch;

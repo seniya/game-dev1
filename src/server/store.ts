@@ -14,6 +14,11 @@ const schema = [
   'CREATE TABLE IF NOT EXISTS event_refs (epoch TEXT NOT NULL, source TEXT NOT NULL, target TEXT NOT NULL, PRIMARY KEY(epoch,source,target))',
   'CREATE TABLE IF NOT EXISTS commands (id TEXT PRIMARY KEY, body TEXT NOT NULL, revision INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS commit_guard (ok INTEGER CHECK(ok=1))',
+  'CREATE TABLE IF NOT EXISTS ai_jobs (id TEXT PRIMARY KEY, epoch TEXT NOT NULL, generation TEXT NOT NULL, request TEXT NOT NULL, kind TEXT NOT NULL, context TEXT NOT NULL, status TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, next_attempt INTEGER NOT NULL DEFAULT 0, result TEXT, error TEXT, model TEXT NOT NULL, created INTEGER NOT NULL, updated INTEGER NOT NULL, UNIQUE(epoch,generation,request))',
+  'CREATE INDEX IF NOT EXISTS ai_jobs_recent ON ai_jobs(created DESC)',
+  'CREATE TABLE IF NOT EXISTS ai_calls (id TEXT PRIMARY KEY, job TEXT NOT NULL, day TEXT NOT NULL, started INTEGER NOT NULL, input_tokens INTEGER NOT NULL DEFAULT 0, output_tokens INTEGER NOT NULL DEFAULT 0, outcome TEXT)',
+  'CREATE INDEX IF NOT EXISTS ai_calls_day ON ai_calls(day)',
+  'CREATE TABLE IF NOT EXISTS ai_lock (id INTEGER PRIMARY KEY CHECK(id=1), token TEXT NOT NULL, expires INTEGER NOT NULL)',
 ];
 const ready = new WeakMap<object, Promise<void>>();
 export class Conflict extends Error {}
@@ -26,6 +31,12 @@ export class WorldStore {
   }
   private async initialize(now: number) {
     await this.db.batch(schema.map(s => this.db.prepare(s)));
+    // Upgrade development checkpoints created before per-attempt outcomes were added.
+    const columns = await this.db.prepare('PRAGMA table_info(ai_calls)').all<{ name: string }>();
+    if (!columns.results.some(c => c.name === 'outcome')) {
+      try { await this.db.batch([this.db.prepare('ALTER TABLE ai_calls ADD COLUMN outcome TEXT')]); }
+      catch (error) { if (!/duplicate column name/i.test(String(error))) throw error; }
+    }
     const w = initialWorld(now);
     await this.db.batch([
       this.db.prepare('INSERT OR IGNORE INTO world VALUES(1,0,?,?)').bind(w.epoch, JSON.stringify(w.meta)),
@@ -62,7 +73,7 @@ export class WorldStore {
     return { revision: row.revision, epoch: row.epoch, meta: JSON.parse(row.meta), state: JSON.parse(result[1].results.map(r => r.body).join('')) };
   }
   async command(id: string) { return this.db.prepare('SELECT body FROM commands WHERE id=?').bind(id).first<{ body: string }>(); }
-  async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string) {
+  async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string, extra: D1PreparedStatement[] = []) {
     try {
       await this.db.batch([
         this.db.prepare('UPDATE world SET revision=?,epoch=?,meta=? WHERE id=1 AND revision=?').bind(w.revision, w.epoch, JSON.stringify(w.meta), w.revision - 1),
@@ -71,6 +82,7 @@ export class WorldStore {
         this.db.prepare('DELETE FROM snapshots WHERE epoch=?').bind(w.epoch),
         ...this.snapshotStatements(w.epoch, w.state), ...this.eventStatements(w.epoch, events, w.meta.eventCount - events.length),
         this.db.prepare('INSERT INTO commands VALUES(?,?,?)').bind(id, request, w.revision),
+        ...extra,
       ]);
     } catch (e) {
       if (/CHECK constraint|UNIQUE constraint/.test(String(e))) throw new Conflict('다른 기기에서 세계가 변경되었습니다. 최신 상태를 불러옵니다.');

@@ -27,3 +27,13 @@
 .journal-dates { display:flex; flex-wrap:wrap; gap:16px; padding:0 24px 16px; color:#68705e; font-size:12px; }
 .journal-dates input { width:76px; margin-left:5px; padding:6px; border:1px solid #d9e1cf; border-radius:6px; background:#fff; }
 @media(max-width:600px) { .cloud-panel { padding:14px; } .cloud-actions { gap:10px; } }
+/* Model controls follow the observatory's quiet, compact settings layout. */
+.ai-settings { max-width: 720px; margin: 20px 0; }
+.ai-settings > label { display: block; margin-bottom: 10px; font-weight: 600; }
+.ai-settings select { width: 100%; max-width: 420px; padding: 12px; border: 1px solid #d8dfd5; border-radius: 8px; background: #fff; color: #35463c; font: inherit; }
+.ai-settings select:focus-visible { outline: 2px solid #6f947c; outline-offset: 3px; }
+.ai-usage { font-size: 12px; line-height: 1.8; color: #637068; margin-bottom: 16px; }
+.ai-settings summary { cursor: pointer; padding: 8px 0; }
+.ai-settings .causal-button { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; width: 100%; }
+.ai-result { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; line-height: 1.8; max-height: 320px; overflow: auto; }
+.dialogue-button { display: block; margin-top: 12px; font-size: 12px; }
