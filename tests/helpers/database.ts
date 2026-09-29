@@ -2,7 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import type { D1Database } from '@cloudflare/workers-types';
 
 // Executes the actual D1 SQL with SQLite transactions, including rollback of a failed CAS.
-export function database() {
+export function database(trace?: (sql: string, values: (string | number)[]) => void) {
   const sqlite = new DatabaseSync(':memory:');
   class Statement {
     values: (string | number)[] = [];
@@ -16,7 +16,7 @@ export function database() {
     async batch(statements: Statement[]) {
       sqlite.exec('BEGIN');
       try {
-        const result = statements.map(s => ({ results: sqlite.prepare(s.sql).all(...s.values), success: true, meta: {} }));
+        const result = statements.map(s => { trace?.(s.sql, s.values); return { results: sqlite.prepare(s.sql).all(...s.values), success: true, meta: {} }; });
         sqlite.exec('COMMIT'); return result;
       } catch (e) { sqlite.exec('ROLLBACK'); throw e; }
     },

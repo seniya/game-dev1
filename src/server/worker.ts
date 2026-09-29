@@ -76,8 +76,9 @@ export default {
         }
         const current = await store.read();
         if (command.revision !== current.revision) return json({ error: '다른 기기의 최신 상태를 반영했습니다. 변경을 다시 선택해 주세요.', world: viewWorld(current) }, 409);
-        const { world, events } = await applyCommand(current, command, Date.now());
-        try { await store.commit(world, events, canonical, command.id); }
+        const acceptedAt = Date.now();
+        const { world, events } = await applyCommand(current, command, acceptedAt);
+        try { await store.commit(world, events, canonical, command.id, [], { action: command.action, at: acceptedAt }); }
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
         wakeAI(); return json(viewWorld(world));
       }
