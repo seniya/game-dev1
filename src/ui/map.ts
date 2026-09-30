@@ -1,6 +1,6 @@
 import { type WorldState, type NPC, type Position } from '../sim/types';
 import type { MotionTrace } from '../sim/motion';
-import { MotionPlayback } from './motion';
+import { MotionBuffer, MotionPlayback } from './motion';
 
 import { appearance, drawPerson } from './characters';
 import { ACTION_LABELS } from '../sim/types';
@@ -13,6 +13,7 @@ export class WorldMap {
   private scene = document.createElement('canvas');
   private sceneKey = '';
   private motion = new MotionPlayback();
+  private motionBuffer = new MotionBuffer();
   private displayed = new Map<string, Position>();
   private residents: NPC[] = [];
   private lastUpdate = 0;
@@ -43,7 +44,7 @@ export class WorldMap {
     });
   }
   setGrid(value: boolean) { this.grid = value; this.draw(); }
-  update(world: WorldState, selected: string, options: { playing?: boolean; trace?: MotionTrace; interval?: number } = {}) {
+  update(world: WorldState, selected: string, options: { playing?: boolean; trace?: MotionTrace; interval?: number; buffered?: boolean } = {}) {
     const now = performance.now(), previous = this.world;
     const rebuilt = !previous || previous.seed !== world.seed || previous.width !== world.width || previous.height !== world.height || this.terrainBuildings !== world.buildings.length;
     if (rebuilt) this.buildTerrain(world);
@@ -63,9 +64,11 @@ export class WorldMap {
     this.canvas.dataset.selected = selected;
     const advanced = !previous || previous.tick !== world.tick;
     const snap = rebuilt || changedFocus || !options.playing || this.reducedMotion.matches || document.hidden;
+    if (snap) this.motionBuffer.reset();
     if (advanced || snap) {
       const gap = now - this.lastUpdate;
-      const duration = snap || gap > 5000 ? 0 : Math.min(2500, Math.max(50, this.lastUpdate ? gap : options.interval ?? 700));
+      const duration = snap ? 0 : options.buffered ? this.motionBuffer.duration(now, options.interval ?? 2000)
+        : gap > 5000 ? 0 : Math.min(2500, Math.max(50, this.lastUpdate ? gap : options.interval ?? 700));
       const trace = options.trace?.fromTick === previous?.tick && options.trace?.toTick === world.tick ? options.trace : undefined;
       this.motion.update(previous?.npcs ?? [], world.npcs, trace, now, duration);
       if (advanced) this.lastUpdate = now;
@@ -76,13 +79,13 @@ export class WorldMap {
     this.animating = this.motion.active(now); this.draw(now);
   }
   animate(now: number, visible = true) {
-    if (!visible || document.hidden) { this.motion.finish(); this.animating = false; this.dirty = true; return; }
+    if (!visible || document.hidden) { this.motion.finish(); this.motionBuffer.reset(); this.animating = false; this.dirty = true; return; }
     if (this.reducedMotion.matches) this.motion.finish();
     const active = this.motion.active(now);
     if (active || this.animating || this.dirty) this.draw(now);
     this.animating = active; this.dirty = false;
   }
-  reset() { this.world = undefined; this.motion.clear(); this.lastUpdate = 0; this.sceneKey = ''; }
+  reset() { this.world = undefined; this.motion.clear(); this.motionBuffer.reset(); this.lastUpdate = 0; this.sceneKey = ''; }
   private buildTerrain(w: WorldState) {
     const c = this.cell; this.canvas.width = 32 * c; this.canvas.height = 24 * c; this.terrain.width = w.width * c; this.terrain.height = w.height * c; this.terrainBuildings = w.buildings.length;
     const ctx = this.terrain.getContext('2d')!;

@@ -132,7 +132,7 @@ function render() {
   const policyEditing = document.activeElement?.closest('#urban-policy');
   if (!policyEditing) { setHTML('civilization-panel', civilizationView(state)); if (urbanOpen) document.querySelector<HTMLDetailsElement>('#urban-overview')!.open = true; if (heritageOpen) document.querySelector<HTMLDetailsElement>('#heritage-overview')!.open = true; }
   $('village-title').textContent = map.viewMode === 'region' ? '세계 전체 · 정착지와 교역' : state.civilization.settlements.find(v => v.id === (map.viewMode === 'follow' ? selectedNPC().settlementId : state.civilization.focus))?.name ?? '정착지';
-  map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed }); presentationMotion = undefined; renderCharacterWatch(); renderInspector(); renderEvents();
+  map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed, buffered: cloudMode }); presentationMotion = undefined; renderCharacterWatch(); renderInspector(); renderEvents();
   for (const detail of document.querySelectorAll<HTMLDetailsElement>('#npc-detail details')) detail.open = openDetails.includes(detail.dataset.detailKey ?? detail.className);
   $('npc-detail').scrollTop = inspectorScroll;
   if (view === 'residents') renderResidents();
@@ -434,23 +434,35 @@ function startCloud() {
     $('cancel-day').hidden = remaining === 0;
     if (world.meta.catchupTicks) toast(`자리를 비운 동안 ${world.meta.catchupTicks}틱을 반영했습니다.${world.meta.skippedTicks ? ' 하루 상한을 넘긴 시간은 진행하지 않았습니다.' : ''}`);
   }, message => { $('cloud-status').textContent = message; });
-  let polling = false, lastAI = 0;
+  let polling = false, lastAI = 0, refreshingAI = false;
+  const refreshBackgroundAI = (force = false) => {
+    if (refreshingAI || !force && (Date.now() - lastAI <= 10_000 || !(view === 'experiments' || chromeRunner!.state.enabled))) return;
+    lastAI = Date.now(); refreshingAI = true;
+    void refreshAI().finally(() => { refreshingAI = false; });
+  };
   const connect = async () => {
     if (polling) return;
     polling = true;
-    try { await cloud!.connect(); await refreshAI(); }
+    try { await cloud!.connect(); refreshBackgroundAI(true); }
     catch (e) { cloudFailure(e); }
     finally { polling = false; }
   };
   $('cloud-retry').onclick = () => { journalKey = ''; lifeKey = ''; void connect(); };
   void connect();
-  setInterval(async () => {
-    if (document.hidden || polling) return;
+  const poll = async () => {
+    if (document.hidden || polling) { setTimeout(poll, 2000); return; }
+    const started = performance.now();
     polling = true;
-    try { if (cloudReady && (cloud!.world!.meta.running || cloud!.world!.meta.pendingTicks)) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); if ((view === 'experiments' || chromeRunner!.state.enabled) && Date.now() - lastAI > 10_000) { lastAI = Date.now(); await refreshAI(); } }
-    catch (e) { $('cloud-status').textContent = '연결이 끊겼습니다. 서버의 마지막 저장은 유지됩니다. 다시 연결하는 중…'; }
-    finally { polling = false; void chromeRunner!.tick(); }
-  }, 2000);
+    let failed = false;
+    try { if (cloudReady && (cloud!.world!.meta.running || cloud!.world!.meta.pendingTicks)) await cloud!.send({ type: 'sync' }); else await cloud!.connect(); refreshBackgroundAI(); }
+    catch (e) { failed = true; $('cloud-status').textContent = '연결이 끊겼습니다. 서버의 마지막 저장은 유지됩니다. 다시 연결하는 중…'; }
+    finally {
+      polling = false; void chromeRunner!.tick();
+      // Keep the start-to-start cadence without losing a whole interval on slow responses.
+      setTimeout(poll, failed ? 2000 : Math.max(100, 2000 - (performance.now() - started)));
+    }
+  };
+  setTimeout(poll, 2000);
   document.addEventListener('click', event => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!button) return;
     if (button.dataset.dialogue) {

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/sim/engine';
 import { motionTrace, movingTrace } from '../src/sim/motion';
-import { MotionPlayback } from '../src/ui/motion';
+import { MotionBuffer, MotionPlayback } from '../src/ui/motion';
 import { mergeLiveJournal, type EventPage } from '../src/ui/journal';
 import { initialWorld, applyCommand } from '../src/server/world';
 
@@ -36,6 +36,56 @@ test('motion follows confirmed corners, retargets continuously and snaps on paus
   m.update(third, first, undefined, 5100, 0); assert.deepEqual(m.position(first[0].id, 5100), { x: 1, y: 1 });
   m.update(first, third, undefined, 5200, 1000); assert.deepEqual(m.position(first[0].id, 5200), { x: 3, y: 2 }, 'unexplained relocation must not animate through obstacles');
   third[0].alive = false; m.update(first, third, undefined, 5300, 1000); assert.equal(m.position(first[0].id, 5300), undefined);
+});
+
+test('buffered confirmed routes stay in motion across jitter and slow responses without extrapolation', () => {
+  const buffer = new MotionBuffer(), playback = new MotionPlayback();
+  let residents = new Simulation(42).snapshot().npcs.slice(0, 1);
+  residents[0].position = { x: 1, y: 1 };
+  const id = residents[0].id;
+  playback.update([], residents, undefined, 0, 0);
+  let tick = 0;
+  for (const now of [2000, 4550, 6600, 9200, 12000, 15500, 18800]) {
+    const next = structuredClone(residents), x = residents[0].position.x;
+    next[0].position.x += 2;
+    const displayed = playback.position(id, now);
+    if (tick) {
+      assert.equal(playback.active(now), true, `buffer must cover the response at ${now}ms`);
+      assert.notDeepEqual(playback.position(id, now - 100), displayed, 'no artificial wait before the next response');
+    }
+    playback.update(residents, next, { fromTick: tick, toTick: tick + 2, paths: { [id]: [[x, 1], [x + 1, 1], [x + 2, 1]] } }, now, buffer.duration(now, 2000));
+    assert.deepEqual(playback.position(id, now), displayed, 'receiving a snapshot must not jump');
+    assert.ok(playback.position(id, now + 100)!.x <= next[0].position.x);
+    residents = next; tick += 2;
+  }
+  assert.deepEqual(playback.position(id, 60_000), residents[0].position, 'network loss stops at the last confirmed position');
+  assert.equal(buffer.duration(60_000, 2000), 0, 'long absence snaps to the recovered state');
+  buffer.reset(); assert.equal(buffer.duration(61_000, 2000), 2700);
+});
+
+test('retargeting near a tile boundary does not give the short remainder a full tile of playback time', () => {
+  const first = new Simulation(42).snapshot().npcs.slice(0, 1), id = first[0].id;
+  first[0].position = { x: 1, y: 1 };
+  const second = structuredClone(first); second[0].position = { x: 2, y: 2 };
+  const third = structuredClone(second); third[0].position = { x: 3, y: 2 };
+  const m = new MotionPlayback(); m.update([], first, undefined, 0, 0);
+  m.update(first, second, { fromTick: 0, toTick: 2, paths: { [id]: [[1, 1], [2, 1], [2, 2]] } }, 0, 2000);
+  m.update(second, third, { fromTick: 2, toTick: 3, paths: { [id]: [[2, 2], [3, 2]] } }, 1900, 1100);
+  assert.deepEqual(m.position(id, 2000), { x: 2, y: 2 });
+  assert.ok(Math.abs(m.position(id, 2100)!.x - 2.1) < 1e-10);
+  assert.equal(m.position(id, 2100)!.y, 2);
+});
+
+test('settings commands include confirmed motion even when the intervention advances the clock', async () => {
+  const w = initialWorld(1000); w.meta.running = true;
+  const result = await applyCommand(w, { id: crypto.randomUUID(), revision: 0, action: { type: 'speed', speed: 5 } }, 3800);
+  assert.equal(result.motion!.fromTick, w.state.tick);
+  assert.equal(result.motion!.toTick, result.world.state.tick);
+  assert.equal(result.world.state.tick, w.state.tick + 4);
+  for (const [id, path] of Object.entries(result.motion!.paths)) {
+    const target = result.world.state.npcs.find(n => n.id === id)!.position;
+    assert.deepEqual(path.at(-1), [target.x, target.y]);
+  }
 });
 
 test('live journal merges received events and keeps archive cursors correct without a refetch', () => {

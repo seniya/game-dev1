@@ -92,7 +92,8 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   let oldIds = new Set(current.state.events.map(e => e.id));
   let epoch = current.epoch, replaced = false;
   const a = command.action;
-  const motion = a.type === 'sync' ? motionTrace(current.state) : undefined;
+  // Settings and interventions can advance the clock too; preserve their actual routes.
+  const motion = !['step', 'reset', 'import'].includes(a.type) ? motionTrace(current.state) : undefined;
   // A visible observer sends a heartbeat every two seconds. Gaps over 15 seconds are offline.
   const gap = Math.max(0, now - meta.lastSeen), offline = gap > 15_000;
   const available = meta.running && (!offline || meta.offline) ? Math.floor(Math.max(0, now - meta.clock) * meta.speed / 700) : 0;
