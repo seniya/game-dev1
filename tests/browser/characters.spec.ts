@@ -88,3 +88,29 @@ test('children, retired residents and job seekers can be created with accurate s
   await page.getByRole('button',{name:'마을 주민',exact:true}).click();
   await page.getByLabel('주민 검색').fill('은퇴'); await expect(page.locator('.resident-card').first()).toContainText('은퇴');
 });
+
+test('personality charms update in the creator and directional relationship factors fit mobile', async ({page}) => {
+  await page.goto('/?local=1'); await page.getByRole('button',{name:'일시정지',exact:true}).click();
+  await expect(page.locator('#npc-detail .charm-point')).toHaveCount(3);
+  await page.getByRole('button',{name:'＋ NPC 만들기',exact:true}).click();
+  const before = await page.locator('#character-charms').innerText();
+  await page.locator('[name="personality.curiosity"]').fill('100');
+  await expect(page.locator('#character-charms')).toContainText('흥미로운 호기심');
+  expect(await page.locator('#character-charms').innerText()).not.toBe(before);
+  await page.getByLabel('첫 인사할 주민').selectOption('npc0');
+  await page.getByRole('button',{name:'이 세계에 입주시키기'}).click();
+  for(let i=0;i<30;i++) await page.getByRole('button',{name:'한 틱 진행',exact:true}).click();
+  await page.getByRole('tab',{name:'관계',exact:true}).click();
+  const detail = page.locator('#npc-detail .attraction-details').first();
+  await detail.locator('summary').click();
+  await expect(detail.locator('table')).toBeVisible();
+  for (const text of ['직업','나이','건강','외모 취향','자산','성격 궁합','매력 포인트']) await expect(detail.locator('tbody')).toContainText(text);
+  await expect(detail).toContainText('현재 상태로 계산한 대인 호감');
+  await page.getByRole('button',{name:'한 틱 진행',exact:true}).click();
+  await expect(detail.locator('table')).toBeVisible();
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  expect(await detail.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await detail.scrollIntoViewIfNeeded();
+  await page.screenshot({path:'test-results/attraction-mobile.png'});
+});

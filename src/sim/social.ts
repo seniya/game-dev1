@@ -29,7 +29,7 @@ export function changeRelationship(w: WorldState, n: NPC, targetId: string, chan
   for (const [key, amount] of Object.entries(changes)) {
     const k = key as keyof typeof changes, before = r[k];
     r[k] = clamp(before + amount);
-    if (r[k] !== before) actual.push(`${key} ${r[k] - before > 0 ? '+' : ''}${r[k] - before}`);
+    if (r[k] !== before) actual.push(`${key} ${r[k] - before > 0 ? '+' : ''}${Math.round((r[k] - before) * 100) / 100}`);
   }
   r.interpretation = meaning;
   if (!r.evidence.includes(cause.id)) r.evidence.push(cause.id);

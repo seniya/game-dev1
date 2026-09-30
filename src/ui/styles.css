@@ -144,3 +144,14 @@
 .living-person .muted { font-size:11px; line-height:1.7; }
 .living-person .need-row { margin:8px 0; }
 #living-overview small { color:var(--muted, #72786c); }
+
+.attraction-profile { margin: 16px 0; padding: 14px; border: 1px solid #dce5dc; border-radius: 12px; background: #f4f7ef; }
+.charm-points { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.charm-point { display: inline-flex; gap: 6px; padding: 5px 9px; border-radius: 16px; background: #e3ecda; color: #405a41; font-size: 12px; }
+.attraction-profile p, .attraction-details p { font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.attraction-details { margin: 10px 0; padding: 10px; border: 1px solid #e1e6dc; border-radius: 8px; }
+.attraction-details summary { cursor: pointer; font-size: 12px; line-height: 1.6; color: #456547; }
+.attraction-table-wrap { overflow-x: auto; }
+.attraction-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 10px 0; }
+.attraction-table th, .attraction-table td { padding: 6px 3px; text-align: right; border-bottom: 1px solid #e1e6dc; white-space: nowrap; }
+.attraction-table th:first-child { text-align: left; }

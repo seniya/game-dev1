@@ -1,3 +1,4 @@
+import { attraction, signed } from './attraction';
 import { canWork, syncEmployment } from './employment';
 import { livingTick, livingDay, homeProfile, buyConsumerGood } from './living';
 import type { Good } from './urban-types';
@@ -230,9 +231,15 @@ export class Simulation {
         if (!other || distance(n.position, other.position) > 1 || w.tick - other.lastTalk < 8) { this.fail(n, '대화 상대가 지금 바쁘다.'); break; }
         n.needs.social = clamp(n.needs.social + 32); other.needs.social = clamp(other.needs.social + 22); n.lastTalk = other.lastTalk = w.tick;
         for (const p of [n, other]) { const d = w.living.people[p.id].desires; d.belonging = clamp(d.belonging - 20); d.novelty = clamp(d.novelty - 10); }
-        const e = socialEvent(w, { kind: 'talk', actorId: n.id, targetId: other.id, importance: 35, data: { reason: a.reason, evidence: a.evidence ?? [] }, description: `${n.identity.name}과 ${other.identity.name}이 일상의 이야기를 나누었다.` });
-        changeRelationship(w, n, other.id, { familiarity: 5, affection: 2 }, e, '함께 이야기를 나눈 이웃이다.');
-        changeRelationship(w, other, n.id, { familiarity: 5, affection: 2 }, e, '함께 이야기를 나눈 이웃이다.');
+        const forward = attraction(w, n, other), reverse = attraction(w, other, n);
+        const e = socialEvent(w, { kind: 'talk', actorId: n.id, targetId: other.id, importance: 35, data: {
+          reason: a.reason, evidence: a.evidence ?? [], impression: forward.value, reverseImpression: reverse.value,
+          factors: forward.factors.map(f => `${f.label} ${signed(f.value)}: ${f.reason}`),
+          reverseFactors: reverse.factors.map(f => `${f.label} ${signed(f.value)}: ${f.reason}`),
+          affectionChange: forward.changes.affection, reverseAffectionChange: reverse.changes.affection,
+        }, description: `${n.identity.name}과 ${other.identity.name}이 일상의 이야기를 나누었다.` });
+        changeRelationship(w, n, other.id, forward.changes, e, `대화를 나누며 느낀 인상 ${signed(forward.value)} · ${forward.reason}`);
+        changeRelationship(w, other, n.id, reverse.changes, e, `대화를 나누며 느낀 인상 ${signed(reverse.value)} · ${reverse.reason}`);
         const sourceById = { get: (id: string) => eventById(w, id) };
         const knownRoots = new Set(other.knownRumors.map(id => sourceById.get(id)?.causeId));
         const rumorId = n.knownRumors.find(id => {

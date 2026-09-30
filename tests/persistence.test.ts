@@ -29,7 +29,7 @@ test('lossless change records handle arrays, deleted optional fields, Unicode an
   assert.throws(() => restoreChange({}, { version: 2 } as never), /버전/);
 });
 
-test('60 updates write two checkpoints and recover exactly with substantially fewer state bytes', async t => {
+test('60 updates keep checkpoints bounded and recover exactly with substantially fewer state bytes', async t => {
   let snapshotWrites = 0, writtenBytes = 0;
   const db = database((sql, values) => {
     if (sql === 'DELETE FROM snapshots WHERE epoch=?') snapshotWrites++;
@@ -47,8 +47,13 @@ test('60 updates write two checkpoints and recover exactly with substantially fe
     assert.deepEqual(await fresh.read(), expected, `restart after commit ${i}`);
     if (i === 1) assert.deepEqual(await db.prepare('SELECT body FROM snapshots ORDER BY part').all(), first, 'a normal sync never rewrites the snapshot');
   }
-  assert.equal(snapshotWrites, 2);
-  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM world_changes').first<{ n: number }>())!.n, 0);
+  // Richer decision/event explanations may hit the byte budget before commit 30.
+  // Verify the bounded journal against its actual checkpoint, not an exact tick.
+  assert.ok(snapshotWrites >= 2 && snapshotWrites <= 3, `checkpoint writes: ${snapshotWrites}`);
+  const checkpoint = (await db.prepare('SELECT revision FROM world_checkpoints WHERE epoch=?').bind(expected.epoch).first<{ revision: number }>())!;
+  const journalCount = (await db.prepare('SELECT COUNT(DISTINCT revision) AS n FROM world_changes WHERE epoch=?').bind(expected.epoch).first<{ n: number }>())!.n;
+  assert.equal(journalCount, expected.revision - checkpoint.revision);
+  assert.ok(journalCount < CHECKPOINT_COMMITS);
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM command_inputs').first<{ n: number }>())!.n, 61);
   assert.ok(writtenBytes < fullSnapshotBytes * .6, `${writtenBytes} vs ${fullSnapshotBytes}`);
   Simulation.load(JSON.stringify(await store.export(expected.epoch)));
