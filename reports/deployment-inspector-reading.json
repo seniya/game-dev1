@@ -1,0 +1,26 @@
+{
+  "id": "appgdep_6abcf23a2ae08191adfab4cebef9ed91",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_cdf7fa4428888191843248e1a0c9dd54",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 0,
+  "updated_at": "2026-09-30T11:28:03.649832+00:00",
+  "source_commit": "f4e6039ba42cff7aea23e216be0cc1827f405ee3",
+  "browser_scenarios_passed": 40,
+  "real_chrome_inference_skipped": 1,
+  "reading_regression_repetitions": 3,
+  "reading_regression_runs_passed": 12,
+  "production_smoke": {
+    "http_status": 200,
+    "asset_status": 200,
+    "asset_sha256_matches_build": true,
+    "api_status": 200
+  }
+}
