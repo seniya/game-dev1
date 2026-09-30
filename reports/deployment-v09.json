@@ -1,0 +1,32 @@
+{
+  "verifiedAt": "2026-09-30T01:12:52.711027+00:00",
+  "projectId": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "siteVersion": 14,
+  "sourceCommit": "2cd3e5ab16d350a4b026f3592e4453f63d30e6dc",
+  "versionId": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_469d5965ecb08191b68ab16bc864aac3",
+  "deploymentId": "appgdep_6abc620865308191b8bfb639dbec9a71",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "artifactHash": "sha256:4ce046db97318fa230ef7176ebf247fff5b0735f0114e6a931d202ec841ac318",
+  "checks": {
+    "ownerOnly": true,
+    "sourcePushed": true,
+    "productionBuild": true,
+    "existingWorldReset": false
+  },
+  "validation": {
+    "coreAndServer": 114,
+    "browser": 27,
+    "optionalRealChromeSkipped": 1,
+    "customResidentCases": [
+      "attributes, appearance and arrival asset accounting",
+      "atomic invalid input and housing reservations",
+      "real dialogue and reciprocal relationship evidence with AI off",
+      "compacted checkpoints and deterministic continuation",
+      "1000-resident city creation and 3000-resident cap",
+      "server idempotency, duplicate names, durable export and arrival archive",
+      "local and real Worker browser creation, reload, mobile and city following"
+    ],
+    "longRunRegressionRerun": false
+  }
+}
