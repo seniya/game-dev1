@@ -6,6 +6,11 @@ import { appendEvent } from './social';
 import { findPath } from './pathfinding';
 import { distance } from './random';
 
+// Old saves retain their original geography; new worlds reserve larger village plots.
+export function villageSize(w: WorldState) {
+  return w.civilization.settlements[0]?.center.x === 24 || !w.civilization.settlements.length && w.width === 48
+    ? { width: 48, height: 36 } : { width: 32, height: 24 };
+}
 export function village(w: WorldState, n: NPC): Settlement { return w.civilization.settlements.find(v => v.id === n.settlementId)!; }
 export function stocks(w: WorldState, id: string) { return id === 'v0' ? w.storage : w.civilization.settlements.find(v => v.id === id)!.storage; }
 export function market(w: WorldState, id: string) { return id === 'v0' ? w.market : w.civilization.settlements.find(v => v.id === id)!.market; }
@@ -16,7 +21,7 @@ export function capacity(b: Building) { return 2 + b.level * 2; }
 export function residents(w: WorldState, id: string) { return w.npcs.filter(n => n.alive && n.settlementId === id); }
 export function initializeCivilization(w: WorldState) {
   w.civilization ??= { settlements: [], journeys: [], focus: 'v0', detail: 'full' };
-  if (!w.civilization.settlements.length) w.civilization.settlements.push({ id: 'v0', name: '느티마을', center: { x: 16, y: 12 }, foundedAt: w.tick, storage: { food: 0, wood: 0 }, market: { food: 0, wood: 0, coins: 0, foodPrice: 3, woodPrice: 2 } });
+  if (!w.civilization.settlements.length) w.civilization.settlements.push({ id: 'v0', name: '느티마을', center: { x: villageSize(w).width / 2, y: villageSize(w).height / 2 }, foundedAt: w.tick, storage: { food: 0, wood: 0 }, market: { food: 0, wood: 0, coins: 0, foodPrice: 3, woodPrice: 2 } });
   for (const b of w.buildings) { b.settlementId ??= 'v0'; if (b.kind === 'home') b.ownerIds ??= w.npcs.filter(n => n.homeId === b.id && n.alive).map(n => n.id); }
   for (const n of w.npcs) {
     if (!n.life) n.life = { bornTick: w.tick - n.identity.age * YEAR_TICKS, parentIds: [], generation: 0, skill: 10, lastBirth: w.tick, lastMove: w.tick, estateSettled: !n.alive };
@@ -26,17 +31,19 @@ export function initializeCivilization(w: WorldState) {
   }
 }
 function expandMap(w: WorldState) {
-  if (w.width >= 128 && w.height >= 72) return;
+  const size = villageSize(w);
+  if (w.width >= size.width * 4 && w.height >= size.height * 3) return;
   const old = w.tiles, width = w.width, height = w.height;
-  w.width = 128; w.height = 72;
+  w.width = size.width * 4; w.height = size.height * 3;
   w.tiles = Array.from({ length: w.width * w.height }, (_, i) => {
     const x = i % w.width, y = Math.floor(i / w.width);
-    return x < width && y < height ? old[y * width + x] : y % 24 === 12 || x % 32 === 16 ? 'path' : 'grass';
+    return x < width && y < height ? old[y * width + x] : y % size.height === size.height / 2 || x % size.width === size.width / 2 ? 'path' : 'grass';
   });
 }
 function addVillage(w: WorldState): Settlement {
   expandMap(w);
-  const i = w.civilization.settlements.length, x = (i % 4) * 32 + 16, y = Math.floor(i / 4) * 24 + 12;
+  const size = villageSize(w);
+  const i = w.civilization.settlements.length, x = (i % 4) * size.width + size.width / 2, y = Math.floor(i / 4) * size.height + size.height / 2;
   const v: Settlement = { id: `v${i}`, name: ['느티마을', '강너머마을', '들녘마을', '솔바람마을'][i % 4] + (i >= 4 ? String(Math.floor(i / 4) + 1) : ''), center: { x, y }, foundedAt: w.tick, storage: { food: 0, wood: 0 }, market: { food: 0, wood: 0, coins: 0, foodPrice: 3, woodPrice: 2 } };
   w.civilization.settlements.push(v);
   const specs: [Building['kind'], number, number][] = [['storage', 0, -2], ['market', 1, 2], ['well', -4, -1], ['farm', 5, -5], ['home', -7, -6], ['home', -3, -7], ['home', 2, -8], ['home', -9, 4], ['home', -5, 6], ['home', 4, 6]];
@@ -129,17 +136,24 @@ export function startTrade(w: WorldState, from: Settlement, to: Settlement): boo
   w.civilization.journeys.push({ id: `j${w.nextId++}`, kind: 'trade', from: from.id, to: to.id, npcIds: [], path, progress: 0, food: amount, coins: cost, sourceEventId: e.id });
   return true;
 }
-export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' = 'home'): Building | undefined {
+export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' = 'home', observer = false): Building | undefined {
   const cost = kind === 'home' ? 12 : 16;
   const stock = stocks(w, v.id); if (stock.wood < cost) return;
   const occupied = new Set([...w.buildings, ...w.resources].map(b => `${b.position.x},${b.position.y}`));
-  for (let dy = -9; dy <= 8; dy += 3) for (let dx = -10; dx <= 10; dx += 3) {
-    const p = { x: v.center.x + dx, y: v.center.y + dy };
+  const sites: { x: number; y: number }[] = [];
+  for (let dy = -9; dy <= 8; dy += 3) for (let dx = -10; dx <= 10; dx += 3) sites.push({ x: v.center.x + dx, y: v.center.y + dy });
+  // Keep everyday destinations close, then use the newly available outskirts.
+  if (villageSize(w).width === 48) {
+    for (let dy = -15; dy <= 15; dy += 3) for (let dx = -22; dx <= 20; dx += 3) {
+      if (dy < -9 || dy > 8 || dx < -10 || dx > 10) sites.push({ x: v.center.x + dx, y: v.center.y + dy });
+    }
+  }
+  for (const p of sites) {
     if (p.x < 0 || p.y < 0 || p.x >= w.width || p.y >= w.height || occupied.has(`${p.x},${p.y}`) || w.tiles[p.y * w.width + p.x] !== 'grass' || !findPath(w, v.center, p)) continue;
     stock.wood -= cost; w.economy.totals.investedWood += cost;
     const b: Building = { id: `c${w.nextId++}`, kind, name: `${v.name} ${kind === 'home' ? '새집' : '새 농장'}`, position: p, level: 1, growth: 0, settlementId: v.id, ownerIds: [] }; w.buildings.push(b);
     if (kind === 'farm') { delete b.ownerIds; w.tiles[p.y * w.width + p.x] = 'farm'; }
-    appendEvent(w, { kind: 'construction', locationId: b.id, importance: 50, description: `${v.name}이 주거 부족에 대응하여 공동 목재 ${cost}개로 ${kind === 'home' ? capacity(b) + '인 주택' : '생산 농장'}을 지었다.`, data: { wood: cost, settlementId: v.id, capacity: kind === 'home' ? capacity(b) : 0 } });
+    appendEvent(w, { kind: 'construction', locationId: b.id, importance: 50, description: `${v.name}이 ${observer ? '관측자의 건설 선택으로' : '마을의 필요에 따라'} 공동 목재 ${cost}개로 ${kind === 'home' ? capacity(b) + '인 주택' : '생산 농장'}을 지었다.`, data: { observer, wood: cost, settlementId: v.id, capacity: kind === 'home' ? capacity(b) : 0 } });
     initializeUrban(w); if (w.heritage) initializeHeritage(w);
     return b;
   }

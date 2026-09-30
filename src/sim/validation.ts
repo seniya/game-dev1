@@ -18,7 +18,7 @@ const natural = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER);
 const id = z.string().min(1).max(100);
 const description = z.string().max(2000);
 const score = z.number().min(0).max(100);
-const pos = z.object({ x: natural.max(127), y: natural.max(127) }).strict();
+const pos = z.object({ x: natural.max(191), y: natural.max(191) }).strict();
 const resources = z.object({ food: natural, wood: natural }).strict();
 const goalKind = z.enum(GOAL_KINDS as [typeof GOAL_KINDS[number], ...typeof GOAL_KINDS[number][]]);
 const actionKind = z.enum(['Wash', 'Idle', 'Move', 'Sleep', 'Eat', 'Drink', 'Gather', 'Work', 'Talk', 'StoreItem', 'TakeItem', 'Share', 'Theft', 'Trade', 'Borrow', 'Repay']);
@@ -45,8 +45,8 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
-  version: z.literal(7), living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(128), height: natural.min(8).max(128),
-  tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(16384),
+  version: z.literal(7), living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
+  tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(24576),
   buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120), settlementId: id, ownerIds: z.array(id).max(30000).optional() }).strict()).max(4000),
   resources: z.array(z.object({ id, position: pos, kind: z.enum(['food', 'wood']), amount: natural, capacity: natural.min(1) }).strict()).max(1000),
   npcs: z.array(npc).min(10).max(30000), storage: resources, market: resources.extend({ coins: natural, foodPrice: natural.min(1).max(12), woodPrice: natural.min(1).max(3) }).strict(),

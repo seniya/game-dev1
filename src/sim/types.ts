@@ -1,7 +1,7 @@
 import type { RecollectionTopic } from './recollection';
 import type { Heritage } from './heritage';
 import type { UrbanState } from './urban-types';
-export const DEFAULT_POPULATION = 100;
+export const DEFAULT_POPULATION = 12;
 export const TICKS_PER_DAY = 144;
 export type Position = { x: number; y: number };
 export type Resources = { food: number; wood: number };

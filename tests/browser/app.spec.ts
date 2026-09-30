@@ -9,7 +9,7 @@ test('observe, pause, inspect, experiment, save and restore a world', async ({ p
   await page.locator('.utility-details summary').click(); await page.getByRole('button', { name: '한 틱 진행' }).click(); await expect(page.locator('.utility-details')).toHaveAttribute('open', '');
   await page.getByRole('button', { name: '다음 주민' }).click(); await expect(page.locator('#npc-header')).toContainText('서연');
   await page.getByRole('tab', { name: '관계', exact: true }).click(); await expect(page.locator('#npc-detail')).toContainText('사건으로 이어진 관계');
-  await page.getByRole('button', { name: '마을 주민' }).click(); await expect(page.locator('.resident-card')).toHaveCount(60);
+  await page.getByRole('button', { name: '마을 주민' }).click(); await expect(page.locator('.resident-card')).toHaveCount(12);
   await page.locator('.resident-card').nth(3).click(); await expect(page.locator('#npc-header')).toContainText('민서');
   await page.getByRole('button', { name: '관찰 실험실' }).click(); await page.getByRole('button', { name: '식량 24개 투입' }).click();
   await expect(page.locator('#events')).toContainText('외부 식량 24개');
@@ -257,7 +257,7 @@ test('map paints intermediate positions between server updates while avoiding re
   await page.waitForResponse(r => r.url().endsWith('/api/command'));
   const since = await page.evaluate(() => performance.now());
   await page.waitForTimeout(650);
-  const distinct = await page.evaluate(since => new Set((window as any).renderedPoints.filter((p: number[]) => p[0] > since && p[1] > 315 && p[1] < 345).map((p: number[]) => p[1].toFixed(2))).size, since);
+  const distinct = await page.evaluate(since => new Set((window as any).renderedPoints.filter((p: number[]) => p[0] > since && p[1] > 210 && p[1] < 230).map((p: number[]) => p[1].toFixed(2))).size, since);
   expect(distinct).toBeGreaterThan(5);
   await expect(page.locator('#events')).toContainText('이미 받은 세계 응답의 새 사건');
   await page.waitForTimeout(8500);

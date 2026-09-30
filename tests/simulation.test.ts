@@ -36,9 +36,9 @@ test('read snapshots and provider context cannot mutate engine state', () => {
   assert.notEqual(sim.snapshot().storage.food, 999); assert.notEqual(sim.snapshot().npcs[0].wealth, 999);
 });
 test('BFS routes around water, rejects blocked targets and returns no teleport', () => {
-  const w = createWorld(); const path = findPath(w, { x: 24, y: 5 }, { x: 30, y: 5 }); assert.ok(path); assert.ok(path.length > 6);
-  let from = { x: 24, y: 5 }; for (const p of path) { assert.equal(Math.abs(p.x - from.x) + Math.abs(p.y - from.y), 1); assert.notEqual(w.tiles[p.y * w.width + p.x], 'water'); from = p; }
-  assert.equal(findPath(w, { x: 5, y: 5 }, { x: 27, y: 5 }), null);
+  const w = createWorld(); const path = findPath(w, { x: 32, y: 11 }, { x: 38, y: 11 }); assert.ok(path); assert.ok(path.length > 6);
+  let from = { x: 32, y: 11 }; for (const p of path) { assert.equal(Math.abs(p.x - from.x) + Math.abs(p.y - from.y), 1); assert.notEqual(w.tiles[p.y * w.width + p.x], 'water'); from = p; }
+  assert.equal(findPath(w, { x: 5, y: 5 }, { x: 35, y: 11 }), null);
 });
 test('sharing transfers actual food and creates trust, memory and source trail', () => {
   const w = prepared(), [giver, receiver] = w.npcs; giver.position = receiver.position = { x: 12, y: 11 };
@@ -55,8 +55,8 @@ test('utility chooses aid from hunger and empathy without resident-specific scri
   const options = candidates(w, giver); assert.equal(options[0].kind, 'Share'); assert.equal(options[0].targetId, receiver.id);
 });
 test('theft moves resources and only nearby witnesses learn the culprit', () => {
-  const w = prepared(), [thief, witness, absent] = w.npcs; thief.position = { x: 16, y: 10 }; thief.dailyTaken = 3; thief.personality.greed = 100;
-  witness.position = { x: 16, y: 11 }; hold(witness, 'Idle'); hold(thief, 'Theft', 'b0', 1);
+  const w = prepared(), [thief, witness, absent] = w.npcs; thief.position = { ...w.buildings[0].position }; thief.dailyTaken = 3; thief.personality.greed = 100;
+  witness.position = { x: thief.position.x, y: thief.position.y + 1 }; hold(witness, 'Idle'); hold(thief, 'Theft', 'b0', 1);
   const total = w.storage.food + thief.inventory.food; const sim = load(w); sim.step(); const after = sim.snapshot();
   assert.equal(after.storage.food + after.npcs[0].inventory.food, total); assert.equal(after.stats.thefts, 1);
   assert.equal(after.npcs[1].relationships.find(r => r.npcId === thief.id)?.trust, 15);
@@ -73,7 +73,7 @@ test('rumors carry eyewitness source and apply a smaller indirect penalty', () =
   assert.equal(rumor.causeId, seen.id); assert.ok(after.npcs[1].knownRumors.includes(seen.id)); assert.equal(after.npcs[1].relationships.find(r => r.npcId === suspect.id)?.trust, 31);
 });
 test('market trades conserve money and food and recheck available stock', () => {
-  const w = prepared(), n = w.npcs[0]; n.position = { x: 17, y: 14 }; n.wealth = 30; n.inventory.food = 0; hold(n, 'Trade', 'buy', 1);
+  const w = prepared(), n = w.npcs[0]; n.position = { ...w.buildings.find(b => b.kind === 'market')!.position }; n.wealth = 30; n.inventory.food = 0; hold(n, 'Trade', 'buy', 1);
   const sim = load(w); sim.step(); const after = sim.snapshot();
   assert.equal(n.wealth + w.market.coins, after.npcs[0].wealth + after.market.coins);
   assert.equal(n.inventory.food + w.market.food, after.npcs[0].inventory.food + after.market.food);

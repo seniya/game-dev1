@@ -181,3 +181,19 @@
 .object-person:focus-visible, #object-picker:focus-visible { outline: 2px solid #597c4a; outline-offset: 3px; }
 #object-picker { max-width: 205px; }
 @media(max-width:760px) { .object-inspector-bar { padding: 14px; } .object-hero { padding: 17px; } .object-watch { flex-wrap: wrap; } .object-metrics b { font-size: 16px; } }
+
+.observation-board { padding: 22px; border-top: 1px solid var(--border, #e4e6de); background: #fafbf6; }
+.observation-heading, .village-projects { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.observation-heading h3 { margin: 6px 0; font-size: 17px; }
+.observation-heading p, .village-projects p, .observation-footnote { font-size: 12px; line-height: 1.7; color: #697361; }
+.observation-tasks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+.observation-task { border: 1px solid #e0e5d8; border-radius: 12px; padding: 14px; background: white; }
+.observation-task.complete { border-color: #a7bfa0; background: #f1f6ed; }
+.observation-task > div, .observation-task footer { display: flex; justify-content: space-between; gap: 6px; flex-wrap: wrap; font-size: 11px; }
+.observation-task b { font-size: 13px; }
+.observation-task p { font-size: 12px; line-height: 1.7; color: #697361; min-height: 60px; }
+.observation-task progress { display: block; width: 100%; height: 7px; accent-color: #6d8b64; margin: 12px 0; }
+.village-projects { padding-top: 16px; border-top: 1px solid #e0e5d8; }
+.village-projects > div:last-child { display: flex; gap: 8px; flex-wrap: wrap; }
+.observation-footnote { margin-bottom: 0; }
+@media (max-width: 1000px) { .observation-tasks { grid-template-columns: 1fr; } .observation-task p { min-height: 0; } }

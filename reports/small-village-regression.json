@@ -1,0 +1,408 @@
+{
+  "version": "0.11.0",
+  "model": "off",
+  "results": [
+    {
+      "seed": 7,
+      "project": "none",
+      "days": 30,
+      "continuationTicks": 10,
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 31,
+      "elapsedDays": 30.07,
+      "population": 12,
+      "deaths": 0,
+      "averageFood": 310.24,
+      "storage": {
+        "food": 375,
+        "wood": 73
+      },
+      "conflicts": 59,
+      "thefts": 16,
+      "shares": 17,
+      "strongestRelationship": {
+        "residents": "이안 ↔ 시우",
+        "score": 76.45000000000006
+      },
+      "weakestRelationship": {
+        "residents": "서연 ↔ 이안",
+        "score": -41.349999999999994
+      },
+      "events": 11330,
+      "economy": {
+        "producedFood": 1510,
+        "producedWood": 346,
+        "consumedFood": 1077,
+        "investedWood": 259,
+        "externalFood": 0,
+        "trades": 85,
+        "tradeVolume": 213,
+        "wages": 925,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 30
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "map": {
+        "width": 48,
+        "height": 36
+      },
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "relationshipPairs": 56,
+      "saveContinuation": true
+    },
+    {
+      "seed": 7,
+      "project": "observer-home",
+      "days": 30,
+      "continuationTicks": 10,
+      "settlements": 1,
+      "births": 2,
+      "generations": 1,
+      "journeys": 0,
+      "day": 31,
+      "elapsedDays": 30.07,
+      "population": 14,
+      "deaths": 0,
+      "averageFood": 372.47,
+      "storage": {
+        "food": 421,
+        "wood": 165
+      },
+      "conflicts": 35,
+      "thefts": 12,
+      "shares": 26,
+      "strongestRelationship": {
+        "residents": "새봄9054 ↔ 하루",
+        "score": 165.59999999999997
+      },
+      "weakestRelationship": {
+        "residents": "이안 ↔ 소율",
+        "score": -16
+      },
+      "events": 11333,
+      "economy": {
+        "producedFood": 1596,
+        "producedWood": 421,
+        "consumedFood": 1122,
+        "investedWood": 253,
+        "externalFood": 0,
+        "trades": 63,
+        "tradeVolume": 134,
+        "wages": 868,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 30
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "map": {
+        "width": 48,
+        "height": 36
+      },
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "relationshipPairs": 62,
+      "saveContinuation": true
+    },
+    {
+      "seed": 42,
+      "project": "none",
+      "days": 30,
+      "continuationTicks": 10,
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 31,
+      "elapsedDays": 30.07,
+      "population": 12,
+      "deaths": 0,
+      "averageFood": 647.19,
+      "storage": {
+        "food": 905,
+        "wood": 16
+      },
+      "conflicts": 27,
+      "thefts": 7,
+      "shares": 21,
+      "strongestRelationship": {
+        "residents": "소율 ↔ 수아",
+        "score": 102.45000000000003
+      },
+      "weakestRelationship": {
+        "residents": "이안 ↔ 수아",
+        "score": -9.399999999999999
+      },
+      "events": 12018,
+      "economy": {
+        "producedFood": 2103,
+        "producedWood": 305,
+        "consumedFood": 1073,
+        "investedWood": 254,
+        "externalFood": 0,
+        "trades": 134,
+        "tradeVolume": 283,
+        "wages": 918,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 30
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "map": {
+        "width": 48,
+        "height": 36
+      },
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "relationshipPairs": 54,
+      "saveContinuation": true
+    },
+    {
+      "seed": 42,
+      "project": "observer-home",
+      "days": 30,
+      "continuationTicks": 10,
+      "settlements": 1,
+      "births": 1,
+      "generations": 1,
+      "journeys": 0,
+      "day": 31,
+      "elapsedDays": 30.07,
+      "population": 13,
+      "deaths": 0,
+      "averageFood": 630.42,
+      "storage": {
+        "food": 959,
+        "wood": 67
+      },
+      "conflicts": 42,
+      "thefts": 12,
+      "shares": 15,
+      "strongestRelationship": {
+        "residents": "새봄9746 ↔ 소율",
+        "score": 159.04999999999998
+      },
+      "weakestRelationship": {
+        "residents": "이안 ↔ 나은",
+        "score": -16.9
+      },
+      "events": 12127,
+      "economy": {
+        "producedFood": 2182,
+        "producedWood": 369,
+        "consumedFood": 1107,
+        "investedWood": 258,
+        "externalFood": 0,
+        "trades": 111,
+        "tradeVolume": 227,
+        "wages": 856,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 30
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "map": {
+        "width": 48,
+        "height": 36
+      },
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "relationshipPairs": 57,
+      "saveContinuation": true
+    },
+    {
+      "seed": 123,
+      "project": "none",
+      "days": 30,
+      "continuationTicks": 10,
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 31,
+      "elapsedDays": 30.07,
+      "population": 12,
+      "deaths": 0,
+      "averageFood": 314.15,
+      "storage": {
+        "food": 405,
+        "wood": 63
+      },
+      "conflicts": 2646,
+      "thefts": 765,
+      "shares": 6,
+      "strongestRelationship": {
+        "residents": "서연 ↔ 도윤",
+        "score": 96.75000000000004
+      },
+      "weakestRelationship": {
+        "residents": "하루 ↔ 이안",
+        "score": -100
+      },
+      "events": 24263,
+      "economy": {
+        "producedFood": 1516,
+        "producedWood": 319,
+        "consumedFood": 1066,
+        "investedWood": 265,
+        "externalFood": 0,
+        "trades": 71,
+        "tradeVolume": 157,
+        "wages": 882,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 30
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "map": {
+        "width": 48,
+        "height": 36
+      },
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "relationshipPairs": 58,
+      "saveContinuation": true
+    },
+    {
+      "seed": 123,
+      "project": "observer-home",
+      "days": 30,
+      "continuationTicks": 10,
+      "settlements": 1,
+      "births": 0,
+      "generations": 0,
+      "journeys": 0,
+      "day": 31,
+      "elapsedDays": 30.07,
+      "population": 12,
+      "deaths": 0,
+      "averageFood": 267.65,
+      "storage": {
+        "food": 300,
+        "wood": 151
+      },
+      "conflicts": 2671,
+      "thefts": 787,
+      "shares": 2,
+      "strongestRelationship": {
+        "residents": "서연 ↔ 민서",
+        "score": 80.20000000000003
+      },
+      "weakestRelationship": {
+        "residents": "하루 ↔ 이안",
+        "score": -100
+      },
+      "events": 24092,
+      "economy": {
+        "producedFood": 1399,
+        "producedWood": 397,
+        "consumedFood": 1067,
+        "investedWood": 255,
+        "externalFood": 0,
+        "trades": 64,
+        "tradeVolume": 128,
+        "wages": 871,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        },
+        "foodPrice": 1,
+        "outstandingDebt": 0,
+        "samples": 30
+      },
+      "llm": {
+        "requested": 0,
+        "completed": 0,
+        "rejected": 0,
+        "failed": 0,
+        "queued": 0
+      },
+      "map": {
+        "width": 48,
+        "height": 36
+      },
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "relationshipPairs": 59,
+      "saveContinuation": true
+    }
+  ]
+}

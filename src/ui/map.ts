@@ -1,3 +1,4 @@
+import { villageSize } from '../sim/civilization';
 import { layoutMapLabels, type MapLabel, type LabelRect } from './map-labels';
 import { characterVisual } from './character-state';
 import { buildingBounds, drawBuilding, objectName, resourceStage, type ObjectSelection } from './objects';
@@ -94,13 +95,14 @@ export class WorldMap {
     const focus = world.civilization.settlements.find(v => v.id === world.civilization.focus)!;
     const changedFocus = previous?.civilization.focus !== world.civilization.focus;
     const chosen = world.npcs.find(n => n.id === selected);
-    this.zoom = this.mode === 'region' ? Math.min(32 / world.width, 24 / world.height) : this.objectFocus || this.mode === 'follow' || this.district !== 'all' ? 2 : 1;
-    this.origin = { x: Math.max(0, focus.center.x - 16), y: Math.max(0, focus.center.y - 12) };
+    const size = villageSize(world);
+    this.zoom = this.mode === 'region' ? Math.min(32 / world.width, 24 / world.height) : this.objectFocus || this.mode === 'follow' ? 2 : this.district !== 'all' ? 64 / size.width : 32 / size.width;
+    this.origin = { x: Math.max(0, focus.center.x - size.width / 2), y: Math.max(0, focus.center.y - size.height / 2) };
     if (this.mode === 'region') this.origin = { x: -(32 / this.zoom - world.width) / 2, y: -(24 / this.zoom - world.height) / 2 };
     else if (this.mode === 'follow' && chosen) this.origin = { x: Math.max(0, Math.min(world.width - 16, chosen.position.x - 8)), y: Math.max(0, Math.min(world.height - 12, chosen.position.y - 6)) };
     else {
-      if (this.district.endsWith('e')) this.origin.x += 16;
-      if (this.district.startsWith('s')) this.origin.y += 12;
+      if (this.district.endsWith('e')) this.origin.x += size.width / 2;
+      if (this.district.startsWith('s')) this.origin.y += size.height / 2;
     }
     if (this.objectFocus) this.origin = { x: Math.max(0, Math.min(world.width - 16, this.objectFocus.x - 8)), y: Math.max(0, Math.min(world.height - 12, this.objectFocus.y - 6)) };
     this.canvas.setAttribute('aria-label', this.mode === 'region' ? '세계 전체 지도' : this.mode === 'follow' ? `${chosen?.identity.name ?? ''} 따라보기 지도` : this.district === 'all' ? '마을 지도' : `${this.district === 'nw' ? '북서' : this.district === 'ne' ? '북동' : this.district === 'sw' ? '남서' : '남동'} 구역 지도`);
@@ -153,10 +155,16 @@ export class WorldMap {
       }
     }
     // Outlying trees frame the village, while actual resource nodes are drawn separately.
+    const offset = villageSize(w).width === 48 ? { x: 8, y: 6 } : { x: 0, y: 0 };
+    ctx.save(); ctx.translate(offset.x * c, offset.y * c);
     for (const [x, y] of [[1, 1], [8, 2], [3, 14], [1, 19], [23, 20], [24, 2], [30, 20], [29, 16], [17, 21], [9, 22], [22, 2]]) this.tree(ctx, x * c, y * c, .85);
     ctx.strokeStyle = '#847e5a'; ctx.lineWidth = 3;
     ctx.strokeRect(18.7 * c, 4.7 * c, 5.7 * c, 5.1 * c);
     for (let x = 19; x < 25; x++) { ctx.fillStyle = '#eee0b9'; ctx.fillRect(x * c, 4.6 * c, 4, 10); ctx.fillRect(x * c, 9.6 * c, 4, 10); }
+    ctx.restore();
+    for (let y = 2; y < w.height - 2; y += 3) for (let x = 2; x < w.width - 2; x += 3) {
+      if (w.tiles[y * w.width + x] === 'forest' && noise(x, y, w.seed) > .55 && !w.resources.some(r => Math.abs(r.position.x - x) + Math.abs(r.position.y - y) < 2)) this.tree(ctx, x*c, y*c, .8);
+    }
   }
   private tree(ctx: CanvasRenderingContext2D, x: number, y: number, scale = 1) {
     ctx.save(); ctx.translate(x + 15, y + 13); ctx.scale(scale, scale);
@@ -227,7 +235,7 @@ export class WorldMap {
       const x = b.position.x * c + c / 2, y = b.position.y * c + c / 2;
       const industry = industries.get(b.id);
       drawBuilding(ctx, b, w, industry);
-      if (this.zoom >= 1 && b.kind !== 'home') this.buildingLabels.push({ id: `object:${b.id}`, text: industry ? INDUSTRY_LABELS[industry] : b.name, x, y: y + 27, priority: 10 });
+      if (this.mode !== 'region' && b.kind !== 'home') this.buildingLabels.push({ id: `object:${b.id}`, text: industry ? INDUSTRY_LABELS[industry] : b.name, x, y: y + 27, priority: 10 });
     }
     ctx.restore();
   }

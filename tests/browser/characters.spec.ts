@@ -46,7 +46,7 @@ test('mobile creator fits the viewport, preserves input across ticks, and allows
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   const dialog=page.getByRole('dialog'); expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
   await page.screenshot({path:'test-results/character-mobile.png'});
-  await page.getByRole('button',{name:'닫기',exact:true}).click(); await expect(page.locator('#nav-population')).toHaveText('100');
+  await page.getByRole('button',{name:'닫기',exact:true}).click(); await expect(page.locator('#nav-population')).toHaveText('12');
 });
 
 test('server-backed creator survives reload and records arrival in the life archive', async ({page, request}) => {

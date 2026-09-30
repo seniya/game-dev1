@@ -23,9 +23,9 @@ test('server clock is bounded, paused by default and offline progression is opt-
   assert.equal(w.state.tick, 36);
   w = (await applyCommand(w, cmd({ type: 'offline', enabled: true }), 2_000_000)).world;
   w = (await applyCommand(w, cmd({ type: 'sync' }), 3_000_000)).world;
-  assert.equal(w.state.tick, 53); assert.equal(w.meta.catchupTicks, 17); assert.ok(w.meta.skippedTicks > 0);
+  assert.equal(w.state.tick, 180); assert.equal(w.meta.catchupTicks, 144); assert.ok(w.meta.skippedTicks > 0);
   w = (await applyCommand(w, cmd({ type: 'sync' }), 3_000_000)).world;
-  assert.equal(w.state.tick, 53);
+  assert.equal(w.state.tick, 180);
 });
 test('compacted checkpoints reproduce the unabridged engine and preserve reference validation', () => {
   const baseline = new Simulation(42); baseline.setLLM(false);
@@ -249,7 +249,7 @@ test('mode switches invalidate in-flight work and approved interpretation reprod
   const outcome = JSON.parse(saved.result).value;
   assert.ok(outcome.evidence.length);
   const context = JSON.parse(saved.context);
-  const replay = new Simulation(42, 100).snapshot();
+  const replay = new Simulation(42, 12).snapshot();
   const event = appendEvent(replay, { kind: 'scarcity', actorId: replay.npcs[0].id, description: '식량이 부족하다.', importance: 75 });
   gate(replay, replay.npcs[0], event);
   const sim = Simulation.load(JSON.stringify(replay));

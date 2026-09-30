@@ -21,6 +21,7 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('speed'), speed: z.union([z.literal(1), z.literal(5), z.literal(20)]) }).strict(),
     z.object({ type: z.literal('offline'), enabled: z.boolean() }).strict(),
     z.object({ type: z.literal('step'), ticks: z.union([z.literal(1), z.literal(144)]) }).strict(),
+    z.object({ type: z.literal('build'), settlementId: z.string().max(100), kind: z.enum(['home', 'farm']) }).strict(),
     z.object({ type: z.literal('experiment'), kind: z.enum(['food', 'drought']) }).strict(),
     z.object({ type: z.literal('llm'), enabled: z.boolean() }).strict(),
     z.object({ type: z.literal('ai-mode'), mode: z.enum(['off', 'mock', 'remote', 'chrome']) }).strict(),
@@ -123,6 +124,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   if (a.type === 'council') sim.setCouncil(a.settlementId, a.enabled);
   if (a.type === 'policy') sim.setPolicy(a.settlementId, a.taxRate, a.priority);
   if (a.type === 'detail') sim.setDetail(a.focus, a.detail);
+  if (a.type === 'build') sim.build(a.settlementId, a.kind);
   if (a.type === 'experiment') sim.experiment(a.kind);
   if (a.type === 'llm' || a.type === 'ai-mode') {
     meta.aiMode = a.type === 'ai-mode' ? a.mode : a.enabled ? 'mock' : 'off';

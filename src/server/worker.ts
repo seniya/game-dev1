@@ -129,7 +129,7 @@ export default {
       return json({ error: '지원하지 않는 요청입니다.' }, 404);
     } catch (error) {
       if (error instanceof SyntaxError) return json({ error: 'JSON 형식을 확인해 주세요.' }, 400);
-      if (error instanceof Error && /저장|주민|시드|도시 정책|역사 조회|도시 의회/.test(error.message)) return json({ error: error.message }, 400);
+      if (error instanceof Error && /저장|주민|시드|도시 정책|역사 조회|도시 의회|공동 목재|마을을 찾을|지원하지 않는 건물/.test(error.message)) return json({ error: error.message }, 400);
       console.error('World request failed', error instanceof Error ? error.message : 'unknown');
       return json({ error: '서버 처리에 실패했습니다. 세계는 마지막 저장 상태로 유지됩니다.' }, 503);
     }

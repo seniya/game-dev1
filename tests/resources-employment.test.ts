@@ -113,13 +113,13 @@ test('v6 queued server deltas replay before migration and checkpoint as v7 on th
   const restarted = await new WorldStore(db).read(); assert.deepEqual(restarted.state, JSON.parse(JSON.stringify(result.world.state))); valid(restarted.state);
 });
 
-test('the default server world starts with 100 residents and usable housing across three villages', async () => {
+test('the default server world starts with 12 residents and usable housing in a spacious village', async () => {
   const { initialWorld, applyCommand } = await import('../src/server/world');
   const { capacity } = await import('../src/sim/civilization');
   const current = initialWorld(0), w = current.state;
-  assert.equal(w.npcs.filter(n => n.alive).length, 100); assert.equal(w.civilization.settlements.length, 3);
+  assert.equal(w.npcs.filter(n => n.alive).length, 12); assert.equal(w.civilization.settlements.length, 1);
   for (const home of w.buildings.filter(b => b.kind === 'home')) assert.ok(w.npcs.filter(n => n.homeId === home.id).length <= capacity(home));
   assert.ok(w.npcs.some(n => workStatus(w, n) === 'child')); assert.ok(w.npcs.some(n => workStatus(w, n) === 'retired'));
   const reset = await applyCommand(current, { id: crypto.randomUUID(), revision: current.revision, action: { type: 'reset', seed: 7 } }, 0);
-  assert.equal(reset.world.state.npcs.length, 100); assert.equal(reset.world.meta.backupEpoch, current.epoch); valid(reset.world.state);
+  assert.equal(reset.world.state.npcs.length, 12); assert.equal(reset.world.meta.backupEpoch, current.epoch); valid(reset.world.state);
 });

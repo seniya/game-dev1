@@ -18,7 +18,7 @@ async function fixture(page: Page, customize?: (world: ReturnType<typeof initial
 }
 async function clickMap(page: Page, x: number, y: number) {
   const bounds = (await page.locator('#world-map').boundingBox())!;
-  await page.locator('#world-map').click({position:{x:x/960*bounds.width,y:y/720*bounds.height}});
+  await page.locator('#world-map').click({position:{x:x/1440*bounds.width,y:y/1080*bounds.height}});
 }
 
 test('canvas selects roofs and resources, keyboard selection opens live facts and residents remain reachable', async ({ page }) => {
@@ -114,7 +114,7 @@ test('crowded labels avoid each other at all zoom levels and on mobile, with sel
   await page.locator('#map-mode').selectOption('city');
   // Hovering a crowded building promotes its name without clicking or changing the world.
   const rect=(await page.locator('#world-map').boundingBox())!;
-  await page.locator('#world-map').hover({position:{x:15.5/32*rect.width,y:(10.5-1)/24*rect.height}});
+  await page.locator('#world-map').hover({position:{x:15.5/48*rect.width,y:(10.5-1)/36*rect.height}});
   expect((await check()).some(l=>l.text==='가까운 작업장 3')).toBe(true);
   await page.setViewportSize({width:390,height:844});
   await page.locator('#object-picker').selectOption('building:dense0');

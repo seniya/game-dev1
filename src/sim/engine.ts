@@ -1,3 +1,4 @@
+import { buildHouse } from './civilization';
 import { attraction, signed } from './attraction';
 import { canWork, syncEmployment } from './employment';
 import { livingTick, livingDay, homeProfile, buyConsumerGood } from './living';
@@ -304,6 +305,14 @@ export class Simulation {
     w.economy.totals.investedWood += 8;
     n.goals = n.goals.filter(g => g.id !== goal?.id);
     socialEvent(w, { kind: 'project', actorId: n.id, locationId: b.id, importance: 75, description: `${n.identity.name}이 목재 8개로 ${b.name}을 개선했다. (단계 ${b.level})`, causeId: goal?.sourceEventId, data: { woodCost: 8, personalWood: own, communalWood: 8 - own, level: b.level, growthMultiplier: b.kind === 'farm' ? 1 + (b.level - 1) * .35 : 1 } });
+  }
+  build(settlementId: string, kind: 'home' | 'farm') {
+    if (kind !== 'home' && kind !== 'farm') throw new Error('지원하지 않는 건물입니다.');
+    const v = this.state.civilization.settlements.find(v => v.id === settlementId);
+    if (!v) throw new Error('마을을 찾을 수 없습니다.');
+    const b = buildHouse(this.state, v, kind, true);
+    if (!b) throw new Error('공동 목재가 부족하거나 연결된 빈 건설 부지가 없습니다.');
+    return b.id;
   }
   experiment(kind: 'drought' | 'food') {
     const w = this.state;
