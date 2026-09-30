@@ -5,7 +5,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await page.goto('/?local=1'); await page.getByRole('button',{name:'일시정지',exact:true}).click();
   await page.getByRole('button',{name:'＋ NPC 만들기',exact:true}).click();
   const form=page.locator('#character-form'); await expect(form).toBeVisible();
-  await form.getByLabel('이름',{exact:true}).fill('도시의 해솔'); await form.getByLabel('나이 · 성인').fill('29');
+  await form.getByLabel('이름',{exact:true}).fill('도시의 해솔'); await form.getByLabel('나이',{exact:true}).fill('29');
   await form.getByLabel('옷 색상').fill('#2266aa'); await form.getByLabel('머리 모양').selectOption('curly'); await form.getByLabel('소품').selectOption('glasses');
   await form.getByLabel('배경 소개').fill('이웃과 도구를 나누는 목수 <script>');
   await form.getByLabel('직업',{exact:true}).selectOption('tailor');
@@ -22,7 +22,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await page.getByLabel('주민 검색',{exact:true}).fill('해솔'); await expect(page.locator('.resident-card')).toHaveCount(1); await page.locator('.resident-card').click();
   await page.getByRole('button',{name:'세계 저장',exact:true}).click();
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!));
-  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(6); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
+  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(7); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
   await page.reload(); await page.getByRole('button',{name:'마을 주민',exact:true}).click(); await page.getByLabel('내가 만든 주민만').check(); await expect(page.locator('.resident-card')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
@@ -46,7 +46,7 @@ test('mobile creator fits the viewport, preserves input across ticks, and allows
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   const dialog=page.getByRole('dialog'); expect(await dialog.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
   await page.screenshot({path:'test-results/character-mobile.png'});
-  await page.getByRole('button',{name:'닫기',exact:true}).click(); await expect(page.locator('#nav-population')).toHaveText('12');
+  await page.getByRole('button',{name:'닫기',exact:true}).click(); await expect(page.locator('#nav-population')).toHaveText('100');
 });
 
 test('server-backed creator survives reload and records arrival in the life archive', async ({page, request}) => {
@@ -64,7 +64,7 @@ test('server-backed creator survives reload and records arrival in the life arch
 
  test('expanded world overview and resident condition are readable on desktop and mobile', async ({page}) => {
   await page.goto('/?local=1'); await page.getByRole('button',{name:'일시정지',exact:true}).click();
-  await expect(page.locator('#living-overview')).toContainText('직업 14종');
+  await expect(page.locator('#living-overview')).toContainText('직업 26종');
   await expect(page.locator('#living-overview')).toContainText('단열주택');
   await expect(page.locator('#npc-detail')).toContainText('욕망과 생활 취향');
   await expect(page.locator('#npc-detail')).toContainText('신체 컨디션');
@@ -72,4 +72,19 @@ test('server-backed creator survives reload and records arrival in the life arch
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:'test-results/living-mobile.png',fullPage:true});
+});
+
+test('children, retired residents and job seekers can be created with accurate status labels', async ({page}) => {
+  await page.goto('/?local=1'); await page.getByRole('button',{name:'일시정지',exact:true}).click();
+  await expect(page.locator('#living-overview')).toContainText('기본 자원 14종');
+  await expect(page.locator('#living-overview')).toContainText('가공 상품 12종');
+  for (const [name, age, expected] of [['새 아이','8','아동·학생'],['은퇴 이웃','70','은퇴'],['구직 이웃','24','구직 중']]) {
+    await page.getByRole('button',{name:'＋ NPC 만들기',exact:true}).click();
+    await page.getByLabel('이름',{exact:true}).fill(name); await page.getByLabel('나이',{exact:true}).fill(age);
+    await page.getByLabel('직업',{exact:true}).selectOption(age === '24' ? 'none' : 'baker');
+    await page.getByRole('button',{name:'이 세계에 입주시키기'}).click();
+    await expect(page.locator('#npc-header')).toContainText(name); await expect(page.locator('#npc-header')).toContainText(expected);
+  }
+  await page.getByRole('button',{name:'마을 주민',exact:true}).click();
+  await page.getByLabel('주민 검색').fill('은퇴'); await expect(page.locator('.resident-card').first()).toContainText('은퇴');
 });

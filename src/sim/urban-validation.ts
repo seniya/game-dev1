@@ -1,17 +1,17 @@
 import { z } from 'zod';
 import type { WorldState } from './types';
-import { GOODS, INDUSTRIES, SERVICES } from './urban-types';
+import { GOODS, INDUSTRIES, SERVICES, MINERALS } from './urban-types';
 import { urbanBalance } from './urban';
 import { walkable } from './pathfinding';
 import { distance } from './random';
 const nat = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), score = z.number().min(0).max(100), id = z.string().min(1).max(100);
-const goods = z.object({ grain: nat, stone: nat, ore: nat, tools: nat, herbs: nat, fiber: nat, cloth: nat, clothes: nat, meals: nat, furniture: nat }).strict();
+const goods = z.object(Object.fromEntries(GOODS.map(g => [g, nat])) as Record<typeof GOODS[number], typeof nat>).strict();
 const services = z.object({ road: nat.max(3), water: nat.max(3), sanitation: nat.max(3), clinic: nat.max(3), school: nat.max(3) }).strict();
-const deposits = z.object({ stone: nat, ore: nat }).strict();
+const deposits = z.object({ stone: nat, ore: nat, clay: nat, salt: nat }).strict();
 export const urbanSchema = z.object({ since: nat,
   citizens: z.record(z.object({ education: score, nutrition: score, stress: score, housing: score, trust: score, disease: score, injury: score, preference: score, skills: z.object({ field: score, quarry: score, mine: score, mill: score, smith: score }).strict(), employer: id.optional(), healthEventId: id.optional(), income: nat, expenses: nat }).strict()),
   cities: z.array(z.object({ settlementId: id, fertility: score, deposits, initialDeposits: deposits, goods, treasury: nat, taxRate: nat.max(30), priority: z.enum(SERVICES), services, active: services, pollution: score, collected: nat, spent: nat, policyEventId: id.optional(), lastEventId: id.optional() }).strict()).max(12),
-  enterprises: z.array(z.object({ id, settlementId: id, buildingId: id, kind: z.enum(INDUSTRIES), capacity: nat.min(1).max(40), wage: nat.min(1).max(20), workers: z.array(id).max(40), output: nat, sourceEventId: id.optional() }).strict()).max(240),
+  enterprises: z.array(z.object({ id, settlementId: id, buildingId: id, kind: z.enum(INDUSTRIES), capacity: nat.min(1).max(40), wage: nat.min(1).max(20), workers: z.array(id).max(40), output: nat, sourceEventId: id.optional() }).strict()).max(480),
   freight: z.array(z.object({ id, from: id, to: id, good: z.enum(GOODS), amount: nat.min(1), coins: nat.min(1), fee: nat.min(1), path: z.array(z.object({ x: nat.max(127), y: nat.max(127) }).strict()).max(16384), progress: nat, sourceEventId: id }).strict()).max(1000),
   buildings: z.record(z.object({ condition: score, maintenance: nat.min(1).max(20) }).strict()),
   ledger: z.object({ opening: goods, produced: goods, consumed: goods }).strict(),
@@ -27,10 +27,10 @@ export function validateUrban(w: WorldState, ensure: (condition: unknown, messag
     ensure(villages.has(c.settlementId) && c.treasury === c.collected - c.spent, '도시 예산 보존');
     ensure(!c.lastEventId || events.has(c.lastEventId), '도시 원인 사건');
     ensure(!c.policyEventId || events.get(c.policyEventId)?.kind === 'policy', '정책 출처');
-    for (const key of ['ore', 'stone'] as const) ensure(c.deposits[key] <= c.initialDeposits[key], '매장 자원');
+    for (const key of MINERALS) ensure(c.deposits[key] <= c.initialDeposits[key], '매장 자원');
     for (const s of SERVICES) ensure(c.active[s] <= c.services[s], '공공 서비스 용량');
   }
-  for (const key of ['ore', 'stone'] as const) ensure(u.cities.reduce((s, c) => s + c.initialDeposits[key] - c.deposits[key], 0) === u.ledger.produced[key], '채굴 회계');
+  for (const key of MINERALS) ensure(u.cities.reduce((s, c) => s + c.initialDeposits[key] - c.deposits[key], 0) === u.ledger.produced[key], '채굴 회계');
   const employed = new Set<string>(), ids = new Set([...w.npcs, ...w.buildings, ...w.resources, ...w.events, ...w.loans, ...w.civilization.journeys].map(x => x.id));
   for (const e of u.enterprises) {
     ensure(!ids.has(e.id) && /^u\d+$/.test(e.id) && Number(e.id.slice(1)) < w.nextId, '사업체 ID'); ids.add(e.id);

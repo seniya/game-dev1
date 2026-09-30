@@ -1,3 +1,4 @@
+import { DEFAULT_POPULATION } from './sim/types';
 import { readFile, writeFile } from 'node:fs/promises';
 import { Simulation, summarize } from './sim/engine';
 import { DecisionCoordinator } from './llm/coordinator';
@@ -13,7 +14,7 @@ async function main() {
   const days = Number(options.get('--days') ?? 100);
   if (!Number.isInteger(days) || days < 1 || days > 10000) throw new Error('--days는 1~10000 정수여야 합니다.');
   const mode = options.get('--llm') ?? 'mock'; if (!['mock', 'off'].includes(mode)) throw new Error('--llm은 mock 또는 off입니다.');
-  const sim = options.has('--load') ? Simulation.load(await readFile(options.get('--load')!, 'utf8')) : new Simulation(Number(options.get('--seed') ?? 42), Number(options.get('--npcs') ?? 12));
+  const sim = options.has('--load') ? Simulation.load(await readFile(options.get('--load')!, 'utf8')) : new Simulation(Number(options.get('--seed') ?? 42), Number(options.get('--npcs') ?? DEFAULT_POPULATION));
   sim.setLLM(mode === 'mock'); const coordinator = new DecisionCoordinator(sim, new MockLLMProvider());
   const startTick = sim.tick, started = performance.now();
   for (let i = 0; i < days * 144; i++) { sim.step(); if (mode === 'mock' && sim.pending) await coordinator.drain(); }

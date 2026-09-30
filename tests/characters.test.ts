@@ -80,10 +80,10 @@ test('server creation persists through restart and export; retries, stale revisi
   const bad={...cmd,id:crypto.randomUUID(),revision:created.revision,action:{type:'create-character',character:{...defaultCharacter('b4'),wealth:1001}}};
   assert.equal((await request('command',bad)).status,400);
   const store=new WorldStore(db); await store.init(Date.now()); const durable=await store.read();
-  assert.equal(durable.state.npcs.length,13); assert.equal(durable.state.npcs.at(-1)!.id,id); assert.equal(durable.state.npcs.at(-1)!.profile!.commandId,cmd.id);
+  assert.equal(durable.state.npcs.length,101); assert.equal(durable.state.npcs.at(-1)!.id,id); assert.equal(durable.state.npcs.at(-1)!.profile!.commandId,cmd.id);
   const save=await (await request('export')).text(); assert.equal(Simulation.load(save).snapshot().npcs.at(-1)!.id,id);
   const events=await (await request(`events?npc=${id}&filter=life`)).json() as {events:{kind:string}[]}; assert.ok(events.events.some(e=>e.kind==='arrival'));
   const second=await request('command',{...cmd,id:crypto.randomUUID(),revision:created.revision}); assert.equal(second.status,200);
-  const retried=await (await request('command',cmd)).json() as WorldView; assert.equal(retried.state.npcs.length,14);
+  const retried=await (await request('command',cmd)).json() as WorldView; assert.equal(retried.state.npcs.length,102);
   assert.equal(retried.state.npcs.find(n=>n.profile?.commandId===cmd.id)!.id,id,'a retry after another creation still identifies the original resident');
 });

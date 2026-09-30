@@ -1,3 +1,4 @@
+import { syncEmployment } from './employment';
 import { newLivingPerson } from './living';
 import { newCitizen } from './urban';
 import { findPath } from './pathfinding';
@@ -42,7 +43,7 @@ export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
   const child: NPC = {
     id, identity: { name: `새봄${w.nextId}`, age: 0 }, position: { ...home.position }, homeId: home.id, settlementId: a.settlementId,
     life: { bornTick: w.tick, parentIds: [a.id, b.id], generation: Math.max(a.life.generation, b.life.generation) + 1, skill: 0, lastBirth: w.tick, lastMove: w.tick, estateSettled: false },
-    occupation: a.occupation, alive: true, needs: { hunger: 10, thirst: 0, fatigue: 0, health: 100, safety: 90, social: 80 }, personality,
+    occupation: 'none', alive: true, needs: { hunger: 10, thirst: 0, fatigue: 0, health: 100, safety: 90, social: 80 }, personality,
     inventory: { food: 0, wood: 0 }, wealth: 0, relationships: [], memories: [], goals: [], decision: { reason: '가족의 돌봄을 받으며 자란다.', candidates: [], tick: w.tick }, dailyTaken: 0, lastTalk: -100, knownRumors: []
   };
   w.npcs.push(child); w.living.people[child.id] = newLivingPerson(child);
@@ -110,7 +111,7 @@ export function die(w: WorldState, n: NPC, reason: 'age' | 'needs' | 'illness') 
   if (!n.alive) return;
   for (const e of w.urban.enterprises) e.workers = e.workers.filter(id => id !== n.id);
   delete w.urban.citizens[n.id].employer;
-  n.alive = false; n.needs.health = 0; n.currentAction = undefined; n.life.deathTick = w.tick; w.stats.deaths++;
+  n.alive = false; n.needs.health = 0; delete n.currentAction; n.life.deathTick = w.tick; w.stats.deaths++;
   const e = socialEvent(w, { kind: 'death', actorId: n.id, causeId: reason === 'illness' ? w.urban.citizens[n.id].healthEventId : undefined, participants: [n.id, ...w.npcs.filter(p => p.alive && (p.life.parentIds.includes(n.id) || p.id === n.life.partnerId)).map(p => p.id)], importance: 100, description: `${n.identity.name}이 ${reason === 'age' ? '노화' : reason === 'illness' ? '질병·부상과 건강 악화' : '생존 자원 부족'}로 ${n.identity.age}세에 세상을 떠났다.`, data: { reason, disease: w.urban.citizens[n.id].disease, injury: w.urban.citizens[n.id].injury, age: n.identity.age, hunger: n.needs.hunger, thirst: n.needs.thirst, fatigue: n.needs.fatigue, food: n.inventory.food, storageFood: stocks(w, n.settlementId).food, weather: w.weather } });
   n.life.deathEventId = e.id; settleEstate(w, n, e.id);
 }
@@ -122,9 +123,11 @@ export function lifeDay(w: WorldState) {
     if (n.identity.age >= 65) n.needs.health = Math.max(1, n.needs.health - (n.identity.age - 64) * .1);
     if (previous < 18 && n.identity.age >= 18) {
       const mentor = w.npcs.filter(p => p.alive && n.life.parentIds.includes(p.id)).sort((a, b) => b.life.skill - a.life.skill)[0];
-      if (mentor) n.occupation = mentor.occupation;
-      socialEvent(w, { kind: 'coming_of_age', actorId: n.id, targetId: mentor?.id, importance: 60, description: `${n.identity.name}이 성인이 되어 배운 기술로 일을 시작한다.`, data: { skill: n.life.skill, occupation: n.occupation }, causeId: n.life.birthEventId });
+      n.occupation = mentor?.previousOccupation ?? mentor?.occupation ?? 'none';
+      delete n.previousOccupation;
+      socialEvent(w, { kind: 'coming_of_age', actorId: n.id, targetId: mentor?.id, importance: 60, description: `${n.identity.name}이 성인이 되어 ${n.occupation === 'none' ? '일자리를 찾기 시작한다' : '배운 기술로 일을 시작한다'}.`, data: { skill: n.life.skill, occupation: n.occupation }, causeId: n.life.birthEventId });
     }
+    syncEmployment(w, n);
     if (n.identity.age < 18) {
       const mentor = w.npcs.filter(p => p.alive && p.homeId === n.homeId && p.identity.age >= 18).sort((a, b) => b.life.skill - a.life.skill)[0];
       if (mentor && n.needs.health > 50) {

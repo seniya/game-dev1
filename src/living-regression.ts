@@ -4,9 +4,9 @@ import { Simulation } from './sim/engine';
 import { compactWorld } from './server/world';
 import { balance } from './sim/economy';
 import { urbanBalance } from './sim/urban';
-import { GOODS } from './sim/urban-types';
-const cases = [];
-for (const [population, days, seed] of [[12, 60, 42], [72, 30, 7], [1000, 10, 42], [3000, 2, 123]]) {
+import { GOODS, type Goods } from './sim/urban-types';
+const cases: { population: number; days: number; seed: number; elapsedMs: number; alive: number; professions: string[]; enterprises: string[]; goodsProduced: Goods; goodsConsumed: Goods; observedConsumerEvents: number; balance: ReturnType<typeof balance>; goodsBalance: ReturnType<typeof urbanBalance>; saveBytes: number }[] = [];
+for (const [population, days, seed] of [[12, 60, 42], [100, 60, 7], [1000, 10, 42], [3000, 2, 123]]) {
   let sim = new Simulation(seed, population); sim.setLLM(false); sim.setDetail('v0', 'focused');
   const start = performance.now(); let consumption = 0;
   for (let day = 0; day < days; day++) {
@@ -21,5 +21,6 @@ for (const [population, days, seed] of [[12, 60, 42], [72, 30, 7], [1000, 10, 42
   console.log(`${population} residents / ${days} days: validated all ${GOODS.length} goods, accounting, checkpoints and continuation`);
 }
 assert.ok(cases.some(c => c.goodsProduced.clothes > 0 && c.goodsProduced.furniture > 0 && c.goodsProduced.meals > 0), 'new production chains must operate autonomously');
+assert.ok(GOODS.every(g => cases.some(c => c.goodsProduced[g] > 0)), 'every resource and product must be produced without injections');
 assert.ok(cases.some(c => c.observedConsumerEvents > 0), 'residents must actually consume new goods');
-await writeFile('reports/living-regression.json', JSON.stringify({ generatedAt: new Date().toISOString(), notes: 'Model off, no asset injections; daily validated compacted saves and exact continuation. Wall times describe this local environment.', cases }, null, 2));
+await writeFile('reports/resources-employment-regression.json', JSON.stringify({ generatedAt: new Date().toISOString(), notes: 'v7: 14 basic resources, 12 products, 26 professions; default population 100. Model off, no asset injections; daily validated compacted saves and exact continuation. Wall times describe this local environment.', cases }, null, 2));

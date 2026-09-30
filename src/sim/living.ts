@@ -44,9 +44,13 @@ export function livingDay(w: WorldState) {
     u.stress = clamp(u.stress + (l.body.cleanliness < 25 ? 2 : 0) + l.body.pain * .025 - l.traits.optimism * .012);
   }
 }
-export const CONSUMABLES = ['herbs', 'clothes', 'meals', 'furniture'] as const;
+export const CONSUMABLES = ['herbs', 'clothes', 'meals', 'furniture', 'vegetables', 'fruit', 'bread', 'dried_fish', 'cheese', 'stew', 'blankets', 'medicine', 'pottery'] as const;
 export function consumptionNeed(w: WorldState, n: NPC, good: Good): number {
   const l = w.living.people[n.id], u = w.urban.citizens[n.id];
+  if (good === 'medicine') return Math.max(l.body.pain, u.disease * 4, u.injury * 3);
+  if (good === 'pottery') return l.body.cleanliness < 50 ? 100 - l.body.cleanliness : 0;
+  if (good === 'blankets') return l.clothing < 40 ? 100 - l.body.warmth : 0;
+  if (['vegetables', 'fruit', 'bread', 'dried_fish', 'cheese', 'stew'].includes(good)) return n.needs.hunger > 40 ? n.needs.hunger : 0;
   if (good === 'herbs') return Math.max(l.body.pain, u.disease * 3, u.injury * 2);
   if (good === 'clothes') return l.clothing < 30 ? Math.max(45, 100 - l.body.warmth) : 0;
   if (good === 'meals') return n.needs.hunger > 30 || u.nutrition < 55 ? Math.max(n.needs.hunger, 100 - u.nutrition) : 0;
@@ -72,7 +76,7 @@ export function livingCandidates(w: WorldState, n: NPC, list: Candidate[]) {
   const c = city(w, n.settlementId), shop = localBuilding(w, n, 'market');
   for (const good of CONSUMABLES) {
     const need = consumptionNeed(w, n, good), price = GOOD_PRICES[good];
-    const reserve = good === 'herbs' || good === 'meals' ? 0 : Math.round(l.traits.frugality / 10) + market(w, n.settlementId).foodPrice * 2;
+    const reserve = !['clothes', 'furniture', 'blankets', 'pottery'].includes(good) ? 0 : Math.round(l.traits.frugality / 10) + market(w, n.settlementId).foodPrice * 2;
     if (need < 30 || !c.goods[good] || n.wealth < price + reserve) continue;
     list.push({ kind: 'Trade', score: Math.round(need * 1.15 + 10 - l.traits.frugality * .12 - distance(n.position, shop.position) * .6), reason: `${GOOD_LABELS[good]} ${price}코인 · 필요 ${Math.round(need)} · 검소함 ${Math.round(l.traits.frugality)} · 생활비 유보 ${reserve}`, target: { ...shop.position }, targetId: `goods:${good}` });
   }
@@ -88,6 +92,10 @@ export function buyConsumerGood(w: WorldState, n: NPC, good: Good): boolean {
   if (good === 'clothes') l.clothing = 100;
   if (good === 'meals') { n.needs.hunger = clamp(n.needs.hunger - 45); u.nutrition = clamp(u.nutrition + 12); }
   if (good === 'furniture') l.furnishings = 100;
+  if (good === 'blankets') { l.clothing = Math.max(l.clothing, 80); l.body.warmth = clamp(l.body.warmth + 25); }
+  if (good === 'pottery') l.body.cleanliness = clamp(l.body.cleanliness + 35);
+  if (good === 'medicine') { l.body.pain = clamp(l.body.pain - 30); u.disease = clamp(u.disease - 8); u.injury = clamp(u.injury - 5); }
+  if (['vegetables', 'fruit', 'bread', 'dried_fish', 'cheese', 'stew'].includes(good)) { n.needs.hunger = clamp(n.needs.hunger - (good === 'vegetables' || good === 'fruit' ? 25 : 45)); u.nutrition = clamp(u.nutrition + 8); }
   l.desires.comfort = clamp(l.desires.comfort - 15); l.desires.novelty = clamp(l.desires.novelty - 8);
   appendEvent(w, { kind: 'consumption', actorId: n.id, importance: 30, description: `${n.identity.name}이 ${GOOD_LABELS[good]} 1개를 ${price}코인에 구입해 생활에 사용했다.`, data: { settlementId: n.settlementId, good, amount: 1, price } });
   return true;

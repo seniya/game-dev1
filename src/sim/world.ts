@@ -1,3 +1,4 @@
+import { syncEmployment } from './employment';
 import { initializeHeritage } from './heritage';
 import { initializeUrban } from './urban';
 import { type WorldState, type NPC, type Tile, type Building } from './types';
@@ -8,7 +9,7 @@ import { random } from './random';
 export function createWorld(seed = 42, population = 12): WorldState {
   if (!Number.isSafeInteger(seed) || seed < 0 || seed > 4294967295) throw new Error('시드는 0~4294967295 정수여야 합니다.');
   if (!Number.isInteger(population) || population < 10 || population > 3000) throw new Error('주민 수는 10~3000명이어야 합니다.');
-  const w: WorldState = { version: 6, living: undefined as unknown as WorldState['living'], heritage: undefined as unknown as WorldState['heritage'], urban: undefined as unknown as WorldState['urban'], civilization: { settlements: [], journeys: [], focus: 'v0', detail: 'full' }, seed, rng: seed || 0x9e3779b9, tick: 36, nextId: 1, width: 32, height: 24,
+  const w: WorldState = { version: 7, living: undefined as unknown as WorldState['living'], heritage: undefined as unknown as WorldState['heritage'], urban: undefined as unknown as WorldState['urban'], civilization: { settlements: [], journeys: [], focus: 'v0', detail: 'full' }, seed, rng: seed || 0x9e3779b9, tick: 36, nextId: 1, width: 32, height: 24,
     tiles: [], buildings: [], resources: [], npcs: [], storage: { food: 28, wood: 12 },
     market: { food: 20, wood: 0, coins: 180, foodPrice: 3, woodPrice: 2 }, weather: 'sunny', droughtUntil: 0,
     economy: undefined as unknown as WorldState['economy'], events: [], loans: [], llm: { enabled: true, queue: [], gateKeys: [], dailyByNpc: {}, dailyTotal: 0, requested: 0, completed: 0, rejected: 0, failed: 0 },
@@ -47,9 +48,23 @@ export function createWorld(seed = 42, population = 12): WorldState {
       goals: [{ id: `initial${i}`, kind: i % 3 === 0 ? 'secure_food' : i % 3 === 1 ? 'help_neighbor' : 'earn_wealth', reason: '새로운 마을에서 삶의 기반을 만들고 싶다.', createdAt: w.tick }],
       decision: { reason: '아침의 첫 행동을 생각하고 있습니다.', candidates: [], tick: w.tick }, dailyTaken: 0, lastTalk: -100, knownRumors: [] });
   }
+  // A village includes dependants and adults seeking a first job from its first day.
+  for (let i = 0; i < w.npcs.length; i++) {
+    const n = w.npcs[i];
+    if (i % 12 === 9) { n.identity.age = 8; n.occupation = 'none'; }
+    if (i % 12 === 10) n.identity.age = 70;
+    if (i % 12 === 11) n.occupation = 'none';
+  }
   initializeCivilization(w);
   populateSettlements(w);
+  // Assign initial children to an actual household with an adult in the same village.
+  for (const n of w.npcs.filter(n => n.identity.age < 18)) {
+    if (w.npcs.some(p => p.homeId === n.homeId && p.identity.age >= 18)) continue;
+    const guardian = w.npcs.find(p => p.identity.age >= 18 && p.identity.age < 65 && p.settlementId === n.settlementId && w.npcs.filter(q => q.homeId === p.homeId).length < 2 + w.buildings.find(b => b.id === p.homeId)!.level * 2);
+    if (guardian) { for (const b of w.buildings) if (b.ownerIds) b.ownerIds = b.ownerIds.filter(id => id !== n.id); n.homeId = guardian.homeId; n.position = { ...w.buildings.find(b => b.id === n.homeId)!.position }; }
+  }
   initializeUrban(w); initializeHeritage(w, true);
+  for (const n of w.npcs) syncEmployment(w, n, false);
   w.economy = createEconomy(w);
   return w;
 }

@@ -32,7 +32,7 @@ function legacy(w: ReturnType<typeof funded>): any {
 }
 test('v5 saves gain deterministic living states without rewriting history, assets or RNG', () => {
   const old = legacy(funded()), w = valid(old).snapshot();
-  assert.equal(w.version, 6); assert.equal(w.rng, old.rng); assert.deepEqual(w.events, old.events); assert.deepEqual(holdings(w), holdings(old));
+  assert.equal(w.version, 7); assert.equal(w.rng, old.rng); assert.deepEqual(w.events, old.events); assert.deepEqual(holdings(w), holdings(old));
   assert.equal(Object.keys(w.living.people).length, w.npcs.length); assert.equal(new Set(Object.values(w.living.homes)).size, 5);
   assert.equal(valid(old).save(), valid(w).save()); assert.equal(valid(w).save(), JSON.stringify(w));
   for (const g of GOODS.slice(4)) assert.equal(city(w, 'v0').goods[g], 0);
@@ -63,11 +63,11 @@ test('all new recipes require real inputs and conserve wages, goods and material
 test('consumer purchases recheck location, money and stock, then apply actual benefits once', () => {
   const w = funded(), n = w.npcs[0], c = city(w, 'v0'), l = w.living.people[n.id], u = w.urban.citizens[n.id];
   n.wealth = 100; n.needs.hunger = 90; u.disease = 8; l.body.pain = 50;
-  for (const g of CONSUMABLES) { c.goods[g] = 1; w.urban.ledger.opening[g] = 1; }
+  for (const g of ['herbs', 'clothes', 'meals', 'furniture'] as const) { c.goods[g] = 1; w.urban.ledger.opening[g] = 1; }
   w.economy = createEconomy(w); const cash = holdings(w).coins;
   assert.equal(buyConsumerGood(w, n, 'clothes'), false);
   n.position = { ...w.buildings.find(b => b.kind === 'market')!.position };
-  for (const g of CONSUMABLES) { assert.equal(buyConsumerGood(w, n, g), true); const wealth = n.wealth; assert.equal(buyConsumerGood(w, n, g), false); assert.equal(n.wealth, wealth); }
+  for (const g of ['herbs', 'clothes', 'meals', 'furniture'] as const) { assert.equal(buyConsumerGood(w, n, g), true); const wealth = n.wealth; assert.equal(buyConsumerGood(w, n, g), false); assert.equal(n.wealth, wealth); }
   assert.equal(l.clothing, 100); assert.equal(l.furnishings, 100); assert.equal(n.needs.hunger, 45); assert.equal(u.disease, 6); assert.equal(l.body.pain, 32);
   assert.equal(holdings(w).coins, cash); assert.ok(Object.values(urbanBalance(w)).every(v => v === 0)); assert.deepEqual(balance(w), { food: 0, wood: 0, coins: 0 }); valid(w);
 });
@@ -89,11 +89,11 @@ test('custom residents persist expanded setup and reject corrupt values and miss
   assert.equal(characterSchema.safeParse({ ...input, body: { ...input.body, warmth: 101 } }).success, false);
   for (const mutate of [(x: typeof w) => { x.living.people.npc0.body.pain = -1; }, (x: typeof w) => { delete x.living.people.npc0; }, (x: typeof w) => { x.living.homes.missing = 'shared'; }, (x: typeof w) => { city(x, 'v0').goods.clothes++; }]) { const x = sim.snapshot(); mutate(x); assert.throws(() => valid(x)); }
 });
-test('v5 server journals replay before migration and commit a restartable v6 checkpoint', async () => {
+test('v5 server journals replay before migration and commit a restartable v7 checkpoint', async () => {
   const db = database(), store = new WorldStore(db); await store.init(0); const initial = await store.read();
   const before = legacy(initial.state), after = structuredClone(before); after.tick++;
   await db.batch([db.prepare('DELETE FROM snapshots'), db.prepare('INSERT INTO snapshots VALUES(?,?,?)').bind(initial.epoch, 0, JSON.stringify(before)), db.prepare('UPDATE world SET revision=1 WHERE id=1'), db.prepare('UPDATE world_checkpoints SET head_revision=1'), db.prepare('INSERT INTO world_changes VALUES(?,?,?,?)').bind(initial.epoch, 1, 0, JSON.stringify(stateChange(before, after)))]);
-  const fresh = new WorldStore(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 6); assert.equal(migrated.state.tick, after.tick); valid(migrated.state);
+  const fresh = new WorldStore(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 7); assert.equal(migrated.state.tick, after.tick); valid(migrated.state);
   const command = { id: crypto.randomUUID(), revision: 1, action: { type: 'step', ticks: 1 } } as const;
   const result = await applyCommand(migrated, command, 0); await fresh.commit(result.world, result.events, JSON.stringify(command), command.id);
   const restarted = await new WorldStore(db).read(); assert.deepEqual(restarted.state, JSON.parse(JSON.stringify(result.world.state))); valid(restarted.state);

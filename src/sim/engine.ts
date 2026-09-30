@@ -1,3 +1,4 @@
+import { canWork, syncEmployment } from './employment';
 import { livingTick, livingDay, homeProfile, buyConsumerGood } from './living';
 import type { Good } from './urban-types';
 import { createCharacter } from './characters';
@@ -87,6 +88,7 @@ export class Simulation {
       if (n.needs.health <= 0) {
         die(w, n, u.disease > 0 || u.injury > 0 ? 'illness' : 'needs'); continue;
       }
+      syncEmployment(w, n);
       if (careForChild(w, n) || isTravelling(w, n)) { updatePerson(w, n); continue; }
       const a = n.currentAction;
       if (a && ((n.needs.hunger > 88 && n.inventory.food > 0 && a.kind !== 'Eat') || (n.needs.thirst > 90 && a.kind !== 'Drink'))) n.currentAction = undefined;
@@ -167,15 +169,17 @@ export class Simulation {
       case 'Drink': n.needs.thirst = clamp(n.needs.thirst - 80); simple('consumption', `${n.identity.name}이 우물에서 물을 마셨다.`); break;
       case 'Sleep': n.needs.fatigue = clamp(n.needs.fatigue - (42 + homeProfile(w, n).comfort * .25 + w.living.people[n.id].furnishings * .08)); n.needs.health = clamp(n.needs.health + 3); simple('health', `${n.identity.name}이 잠을 자고 기운을 회복했다.`); break;
       case 'Gather': {
+        if (!canWork(w, n)) break;
         const r = w.resources.find(r => r.id === a.targetId);
         if (!r || distance(r.position, n.position) !== 0 || r.amount < 1) { this.fail(n, '채집 자원이 소진되었다.'); break; }
         const amount = Math.min(3, r.amount); r.amount -= amount; n.inventory[r.kind] += amount; w.economy.totals[r.kind === 'food' ? 'producedFood' : 'producedWood'] += amount;
         simple('production', `${n.identity.name}이 ${r.kind === 'food' ? '열매' : '목재'} ${amount}개를 모았다.`, 20, { resource: r.kind, amount }); break;
       }
       case 'Work': {
+        if (!canWork(w, n)) break;
         if (a.targetId?.startsWith('industry:')) { if (!industryWork(w, n)) this.fail(n, '고용·재료·임금 또는 시설 조건이 바뀌었다.'); break; }
         if (a.targetId?.includes(':')) { this.project(n); break; }
-        const farm = w.buildings.find(b => b.id === a.targetId && b.kind === 'farm');
+        const farm = w.buildings.find(b => b.id === a.targetId && b.kind === 'farm' && !w.urban.enterprises.some(e => e.buildingId === b.id));
         if (!farm || farm.growth < 3) { this.fail(n, '작물이 아직 자라지 않았다.'); break; }
         n.life.skill = Math.min(100, n.life.skill + .02);
         const amount = Math.min(4 + Math.floor(n.life.skill / 25) + useTool(w, n), Math.floor(farm.growth)); farm.growth -= amount; harvest(w, farm.settlementId!, amount); n.inventory.food += amount;

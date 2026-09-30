@@ -1,3 +1,4 @@
+import { occupationLabel } from '../sim/employment';
 import { TRAIT_LABELS, DESIRE_LABELS, BODY_LABELS, HOMES } from '../sim/living-types';
 import type { NPC, WorldState } from '../sim/types';
 import { GOAL_LABELS, OCCUPATIONS } from '../sim/types';
@@ -33,7 +34,7 @@ export function defaultCharacter(homeId: string): CharacterInput {
 }
 export function greetingOptions(w: WorldState, homeId: string) {
   const settlement = w.buildings.find(b => b.id === homeId)?.settlementId;
-  return '<option value="">스스로 이웃 만나기</option>' + w.npcs.filter(n => n.alive && n.settlementId === settlement && !w.civilization.journeys.some(j => j.npcIds.includes(n.id))).map(n => `<option value="${esc(n.id)}">${esc(n.identity.name)} · ${OCCUPATIONS[n.occupation]}</option>`).join('');
+  return '<option value="">스스로 이웃 만나기</option>' + w.npcs.filter(n => n.alive && n.settlementId === settlement && !w.civilization.journeys.some(j => j.npcIds.includes(n.id))).map(n => `<option value="${esc(n.id)}">${esc(n.identity.name)} · ${occupationLabel(w, n)}</option>`).join('');
 }
 export function characterForm(w: WorldState) {
   const homes = availableHomes(w), first = homes.find(h => h.vacant > 0 && h.home.settlementId === w.civilization.focus) ?? homes.find(h => h.vacant > 0);
@@ -41,7 +42,8 @@ export function characterForm(w: WorldState) {
   const options = (values: Record<string, string>, value: string) => Object.entries(values).map(([k, v]) => `<option value="${k}" ${k === value ? 'selected' : ''}>${v}</option>`).join('');
   const number = (key: string, title: string, value: number, min = 0, max = 100) => `<label>${title}<input name="${key}" type="number" min="${min}" max="${max}" step="1" value="${value}" required/></label>`;
   return `<div class="eyebrow">A NEW LIFE</div><h2>나만의 NPC 만들기</h2><p>기존 세계에 새 주민이 입주합니다. 성격과 능력에 따라 이웃과 관계를 맺고 스스로 생활합니다.</p>
-  <form id="character-form" class="character-form"><div class="character-intro"><div id="character-preview">${portrait(a.appearance)}</div><div class="character-fields"><label>이름<input name="name" maxlength="40" value="${a.name}" required/></label>${number('age', '나이 · 성인', a.age, 18, 80)}<label>직업<select aria-label="직업" name="occupation">${options(OCCUPATIONS, a.occupation)}</select></label><label>처음의 바람<select aria-label="처음의 바람" name="goal">${options(GOAL_LABELS, a.goal)}</select></label></div></div>
+  <form id="character-form" class="character-form"><div class="character-intro"><div id="character-preview">${portrait(a.appearance)}</div><div class="character-fields"><label>이름<input name="name" maxlength="40" value="${a.name}" required/></label>${number('age', '나이', a.age, 0, 80)}<label>직업<select aria-label="직업" name="occupation">${options(OCCUPATIONS, a.occupation)}</select></label><label>처음의 바람<select aria-label="처음의 바람" name="goal">${options(GOAL_LABELS, a.goal)}</select></label></div></div>
+  <p class="muted">0–17세는 아동·학생, 65세 이상은 은퇴 상태로 입주합니다. 건강 40 미만이면 요양합니다. 해당 주민의 직업은 자동으로 무직이 됩니다. 성인도 직업에서 무직을 선택해 구직자로 시작할 수 있습니다.</p>
   <fieldset><legend>외모</legend><div class="character-fields">${[['skin','피부색'], ['hair','머리색'], ['outfit','옷 색상']].map(([key,label]) => `<label>${label}<input type="color" name="${key}" value="${a.appearance[key as 'skin']}"/></label>`).join('')}<label>머리 모양<select aria-label="머리 모양" name="hairstyle">${options({ short: '짧은 머리', long: '긴 머리', curly: '곱슬머리', bald: '민머리' }, 'short')}</select></label><label>소품<select aria-label="소품" name="accessory">${options({ none: '없음', glasses: '안경', hat: '모자' }, 'none')}</select></label></div></fieldset>
   <fieldset><legend>어디서, 누구와</legend><label>입주할 집<select aria-label="입주할 집" name="homeId" required>${homes.map(({home, vacant}) => `<option value="${esc(home.id)}" ${home.id === a.homeId ? 'selected' : ''} ${!vacant ? 'disabled' : ''}>${esc(w.civilization.settlements.find(v => v.id === home.settlementId)!.name)} · ${esc(home.name)} (${HOMES[w.living.homes[home.id]].label}) · 빈자리 ${vacant}</option>`).join('')}</select></label><label>첫 인사할 주민<select aria-label="첫 인사할 주민" name="greetId">${greetingOptions(w, a.homeId)}</select></label><p class="muted">선택하면 실제로 걸어가 인사를 시도합니다. 상대의 이동·상태에 따라 성사 여부가 달라집니다.</p><label>배경 소개<textarea name="background" maxlength="300" rows="3" placeholder="어떤 삶을 시작하나요? 소개글은 프로필에 표시됩니다."></textarea></label></fieldset>
   <fieldset><legend>성격 · 0–100</legend><div class="character-fields">${Object.entries({ diligence: '근면', greed: '탐욕', sociability: '사교성', aggression: '공격성', empathy: '공감', curiosity: '호기심' }).map(([k,v]) => number(`personality.${k}`, v, a.personality[k as keyof typeof a.personality])).join('')}${Object.entries(TRAIT_LABELS).map(([k,v]) => number(`traits.${k}`, v, a.traits![k as keyof typeof a.traits])).join('')}</div></fieldset>

@@ -9,7 +9,7 @@ test('observe, pause, inspect, experiment, save and restore a world', async ({ p
   await page.locator('.utility-details summary').click(); await page.getByRole('button', { name: '한 틱 진행' }).click(); await expect(page.locator('.utility-details')).toHaveAttribute('open', '');
   await page.getByRole('button', { name: '다음 주민' }).click(); await expect(page.locator('#npc-header')).toContainText('서연');
   await page.getByRole('tab', { name: '관계', exact: true }).click(); await expect(page.locator('#npc-detail')).toContainText('사건으로 이어진 관계');
-  await page.getByRole('button', { name: '마을 주민' }).click(); await expect(page.locator('.resident-card')).toHaveCount(12);
+  await page.getByRole('button', { name: '마을 주민' }).click(); await expect(page.locator('.resident-card')).toHaveCount(60);
   await page.locator('.resident-card').nth(3).click(); await expect(page.locator('#npc-header')).toContainText('민서');
   await page.getByRole('button', { name: '관찰 실험실' }).click(); await page.getByRole('button', { name: '식량 24개 투입' }).click();
   await expect(page.locator('#events')).toContainText('외부 식량 24개');
@@ -320,5 +320,5 @@ test('server history retrieves original events and streamed save remains a valid
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: '세계 저장', exact: true }).click();
   const file = await download; expect(await file.failure()).toBeNull();
   const stream = await file.createReadStream(); const chunks = []; for await (const chunk of stream!) chunks.push(chunk);
-  const { Simulation } = await import('../../src/sim/engine'); const restored = Simulation.load(Buffer.concat(chunks).toString()).snapshot(); expect(restored.version).toBe(6); expect(restored.events.some(e => e.kind === 'ecology')).toBe(true);
+  const { Simulation } = await import('../../src/sim/engine'); const restored = Simulation.load(Buffer.concat(chunks).toString()).snapshot(); expect(restored.version).toBe(7); expect(restored.events.some(e => e.kind === 'ecology')).toBe(true);
 });

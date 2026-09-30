@@ -79,7 +79,7 @@ test('different relationships and remembered aid produce explainable partner cho
 });
 test('version 1 upgrades without fabricating old daily samples, new accounts reject tampering', () => {
   const old: any = new Simulation().snapshot(); old.version = 1; delete old.economy;
-  const sim = Simulation.load(JSON.stringify(old)); assert.equal(sim.snapshot().version, 6); assert.deepEqual(sim.snapshot().economy.daily, []);
+  const sim = Simulation.load(JSON.stringify(old)); assert.equal(sim.snapshot().version, 7); assert.deepEqual(sim.snapshot().economy.daily, []);
   sim.step(200); const good = sim.save(); assert.equal(Simulation.load(good).save(), good);
   for (const mutate of [(w: WorldState) => w.storage.food++, (w: WorldState) => w.npcs[0].wealth++, (w: WorldState) => w.economy.daily[0].eventId = 'missing']) {
     const w = JSON.parse(good); mutate(w); assert.throws(() => Simulation.load(JSON.stringify(w)));

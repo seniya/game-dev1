@@ -1,3 +1,5 @@
+import { migrateResources } from './employment';
+import { OCCUPATIONS, type Occupation } from './types';
 import { livingSchema } from './living-types';
 import { migrateLiving, CONSUMABLES } from './living';
 import { profileSchema } from './character-schema';
@@ -28,7 +30,8 @@ const npc = z.object({
   profile: profileSchema.optional(),
   id, identity: z.object({ name: z.string().min(1).max(80), age: natural.max(150) }).strict(), position: pos, homeId: id,
   settlementId: id, life: z.object({ bornTick: z.number().int().min(-300000).max(Number.MAX_SAFE_INTEGER), parentIds: z.array(id).max(2), partnerId: id.optional(), generation: natural.max(1000), skill: score, lastBirth: natural, lastMove: natural, deathTick: natural.optional(), birthEventId: id.optional(), deathEventId: id.optional(), estateSettled: z.boolean() }).strict(),
-  occupation: z.enum(['farmer', 'gatherer', 'woodcutter', 'carpenter', 'merchant', 'miner', 'mason', 'miller', 'smith', 'gardener', 'weaver', 'tailor', 'cook', 'furniture_maker']), alive: z.boolean(),
+  previousOccupation: z.enum(Object.keys(OCCUPATIONS) as [Occupation, ...Occupation[]]).optional(),
+  occupation: z.enum(Object.keys(OCCUPATIONS) as [Occupation, ...Occupation[]]), alive: z.boolean(),
   needs: z.object({ hunger: score, thirst: score, fatigue: score, health: score, safety: score, social: score }).strict(),
   personality: z.object({ diligence: score, greed: score, sociability: score, aggression: score, empathy: score, curiosity: score }).strict(),
   inventory: resources, wealth: natural, relationships: z.array(relationship).max(30000), memories: z.array(memory).max(40),
@@ -42,7 +45,7 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
-  version: z.literal(6), living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(128), height: natural.min(8).max(128),
+  version: z.literal(7), living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(128), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(16384),
   buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120), settlementId: id, ownerIds: z.array(id).max(30000).optional() }).strict()).max(4000),
   resources: z.array(z.object({ id, position: pos, kind: z.enum(['food', 'wood']), amount: natural, capacity: natural.min(1) }).strict()).max(1000),
@@ -82,8 +85,13 @@ export function validateSave(input: unknown): WorldState {
   }
   if (input && typeof input === 'object' && (input as { version?: number }).version === 5) {
     const legacy = structuredClone(input) as WorldState;
-    try { migrateLiving(legacy); legacy.version = 6; input = legacy; }
+    try { migrateLiving(legacy); (legacy as unknown as { version: number }).version = 6; input = legacy; }
     catch { throw new Error('저장 파일 형식 오류: 생활 다양성 변환에 실패했습니다.'); }
+  }
+  if (input && typeof input === 'object' && (input as { version?: number }).version === 6) {
+    const legacy = structuredClone(input) as WorldState;
+    try { migrateResources(legacy); legacy.version = 7; input = legacy; }
+    catch { throw new Error('저장 파일 형식 오류: 자원·고용 상태 변환에 실패했습니다.'); }
   }
   const parsed = world.safeParse(input);
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);

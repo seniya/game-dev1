@@ -1,3 +1,4 @@
+import { canWork } from './employment';
 import { livingCandidates } from './living';
 import { neighbours } from './spatial';
 import { canProduce } from './urban';
@@ -17,7 +18,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
   const home = w.buildings.find(b => b.id === n.homeId)!;
   const storage = localBuilding(w, n, 'storage');
   const market = localBuilding(w, n, 'market');
-  const farm = w.buildings.filter(b => b.kind === 'farm' && b.settlementId === n.settlementId && b.growth >= 3).sort((a, b) => distance(a.position, n.position) - distance(b.position, n.position))[0] ?? localBuilding(w, n, 'farm');
+  const farm = w.buildings.filter(b => b.kind === 'farm' && b.settlementId === n.settlementId && !w.urban.enterprises.some(e => e.buildingId === b.id) && b.growth >= 3).sort((a, b) => distance(a.position, n.position) - distance(b.position, n.position))[0] ?? w.buildings.find(b => b.kind === 'farm' && b.settlementId === n.settlementId && !w.urban.enterprises.some(e => e.buildingId === b.id))!;
   const well = localBuilding(w, n, 'well');
   const urban = w.urban.citizens[n.id];
   const night = w.tick % 144 >= 126 || w.tick % 144 < 30;
@@ -63,6 +64,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
     const lender = w.npcs.find(p => p.id === loan.lenderId);
     if (lender?.alive) add('Repay', 55 + n.personality.empathy * .4 + (w.tick >= loan.due - 72 ? 25 : 0), `${lender.identity.name}에게 남은 빚 ${loan.remaining}개 중 ${Math.min(loan.remaining, n.inventory.food - 1)}개 상환`, lender.position, loan.id);
   }
+  if (!canWork(w, n)) for (let i = list.length - 1; i >= 0; i--) if (list[i].kind === 'Work' || list[i].kind === 'Gather') list.splice(i, 1);
   livingCandidates(w, n, list);
   return list.sort((a, b) => b.score - a.score);
 }

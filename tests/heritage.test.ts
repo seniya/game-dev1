@@ -18,7 +18,7 @@ const cmd = (revision: number, action: Parameters<typeof applyCommand>[1]['actio
 
 test('v4 migration preserves owned resources and events; new ecology does not invent livestock or past history', () => {
   const old: any = new Simulation().snapshot(); old.version = 4; delete old.heritage;
-  const w = valid(old).snapshot(); assert.equal(w.version, 6); assert.deepEqual(holdings(w), holdings(old)); assert.deepEqual(w.events, old.events);
+  const w = valid(old).snapshot(); assert.equal(w.version, 7); assert.deepEqual(holdings(w), holdings(old)); assert.deepEqual(w.events, old.events);
   assert.equal(w.heritage.habitats[0].livestock, 0); assert.equal(w.heritage.since, w.tick);
 });
 test('seasonal harvest depletion, fallow recovery, feed and livestock output obey all stock ledgers', () => {
@@ -126,7 +126,7 @@ test('v4 checkpoints with queued deltas migrate before the next commit and resto
   const legacy: any = structuredClone(initial.state); legacy.version = 4; delete legacy.heritage;
   const after = structuredClone(legacy); after.tick++;
   await db.batch([db.prepare('DELETE FROM snapshots'), db.prepare('INSERT INTO snapshots VALUES(?,?,?)').bind(initial.epoch, 0, JSON.stringify(legacy)), db.prepare('UPDATE world SET revision=1 WHERE id=1'), db.prepare('UPDATE world_checkpoints SET head_revision=1'), db.prepare('INSERT INTO world_changes VALUES(?,?,?,?)').bind(initial.epoch, 1, 0, JSON.stringify(stateChange(legacy, after)))]);
-  const fresh = new WorldStore(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 6);
+  const fresh = new WorldStore(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 7);
   const next = await applyCommand(migrated, cmd(migrated.revision, { type: 'council', settlementId: 'v0', enabled: false }), 0); await fresh.commit(next.world, next.events, 'migration', randomUUID());
   assert.deepEqual(await new WorldStore(db).read(), next.world); assert.equal((await db.prepare('SELECT count(*) AS n FROM world_changes').first<{ n: number }>())!.n, 0);
 });

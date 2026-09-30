@@ -1,3 +1,4 @@
+import { syncEmployment } from './employment';
 import { newLivingPerson } from './living';
 import { characterSchema, type CharacterInput } from './character-schema';
 import { capacity, isTravelling } from './civilization';
@@ -38,6 +39,8 @@ export function createCharacter(w: WorldState, input: CharacterInput): NPC {
   w.npcs.push(n); indexPeople(w);
   w.living.people[id] = { ...newLivingPerson(n), ...(a.traits ? { traits: { ...a.traits } } : {}), ...(a.desires ? { desires: { ...a.desires } } : {}), ...(a.body ? { body: { ...a.body } } : {}) };
   w.urban.citizens[id] = { ...newCitizen(n), education: a.education, skills: { ...a.skills } };
+  syncEmployment(w, n, false);
+  if (a.age < 18) delete n.previousOccupation;
   const assets = w.economy.arrivals ??= { food: 0, wood: 0, coins: 0 };
   assets.food += a.food; assets.wood += a.wood; assets.coins += a.wealth;
   const event = socialEvent(w, { kind: 'arrival', actorId: id, locationId: home.id, importance: 60,

@@ -1,6 +1,7 @@
 import type { RecollectionTopic } from './recollection';
 import type { Heritage } from './heritage';
 import type { UrbanState } from './urban-types';
+export const DEFAULT_POPULATION = 100;
 export const TICKS_PER_DAY = 144;
 export type Position = { x: number; y: number };
 export type Resources = { food: number; wood: number };
@@ -24,20 +25,21 @@ export interface NPC {
   profile?: { commandId?: string; background: string; appearance: import('./character-schema').Appearance; createdAt: number; arrivalEventId: string };
   id: string; identity: { name: string; age: number }; position: Position; homeId: string;
   life: Life; settlementId: string;
-  occupation: 'farmer' | 'gatherer' | 'woodcutter' | 'carpenter' | 'merchant' | 'miner' | 'mason' | 'miller' | 'smith' | 'gardener' | 'weaver' | 'tailor' | 'cook' | 'furniture_maker'; alive: boolean;
+  occupation: Occupation; previousOccupation?: Occupation; alive: boolean;
   needs: Needs; personality: Personality; inventory: Resources; wealth: number;
   relationships: Relationship[]; memories: Memory[]; goals: Goal[];
   currentAction?: Action; decision: { reason: string; candidates: Candidate[]; tick: number };
   dailyTaken: number; lastTalk: number; knownRumors: string[];
 }
-export const OCCUPATIONS: Record<NPC['occupation'], string> = { farmer: '농부', gatherer: '채집가', woodcutter: '나무꾼', carpenter: '목수', merchant: '상인', miner: '광부', mason: '석공', miller: '제분사', smith: '대장장이', gardener: '원예사', weaver: '직조공', tailor: '재봉사', cook: '요리사', furniture_maker: '가구장인' };
+export type Occupation = 'farmer' | 'gatherer' | 'woodcutter' | 'carpenter' | 'merchant' | 'miner' | 'mason' | 'miller' | 'smith' | 'gardener' | 'weaver' | 'tailor' | 'cook' | 'furniture_maker' | 'vegetable_grower' | 'orchardist' | 'fisher' | 'herder' | 'clay_digger' | 'salt_worker' | 'baker' | 'preserver' | 'cheesemaker' | 'potter' | 'blanket_maker' | 'herbalist' | 'none';
+export const OCCUPATIONS: Record<NPC['occupation'], string> = { farmer: '농부', gatherer: '채집가', woodcutter: '나무꾼', carpenter: '목수', merchant: '상인', miner: '광부', mason: '석공', miller: '제분사', smith: '대장장이', gardener: '원예사', weaver: '직조공', tailor: '재봉사', cook: '요리사', furniture_maker: '가구장인', vegetable_grower: '채소농부', orchardist: '과수농부', fisher: '어부', herder: '목축업자', clay_digger: '점토채굴공', salt_worker: '소금채굴공', baker: '제빵사', preserver: '식품가공사', cheesemaker: '치즈장인', potter: '도공', blanket_maker: '담요장인', herbalist: '약제사', none: '무직' };
 export type EventKind = 'arrival' | 'production' | 'consumption' | 'storage' | 'trade' | 'loan' | 'repayment' | 'default' | 'share' | 'theft' | 'witness' | 'rumor' | 'talk' | 'scarcity' | 'health' | 'death' | 'weather' | 'relationship' | 'memory' | 'goal' | 'llm' | 'experiment' | 'failure' | 'project' | 'wage' | 'price' | 'family' | 'birth' | 'coming_of_age' | 'inheritance' | 'education' | 'construction' | 'settlement' | 'migration' | 'caravan' | 'occupation' | 'industry' | 'public_service' | 'tax' | 'urban' | 'policy' | 'freight' | 'ecology' | 'council' | 'diplomacy';
 export interface WorldEvent { id: string; tick: number; kind: EventKind; actorId?: string; targetId?: string; locationId?: string; participants: string[]; importance: number; description: string; causeId?: string; data: Record<string, string | number | boolean | string[]> }
 export interface Loan { id: string; lenderId: string; borrowerId: string; amount: number; remaining: number; due: number; status: 'active' | 'repaid' | 'defaulted'; sourceEventId: string }
 export interface DecisionRequest { id: string; npcId: string; eventId: string; tick: number; attempts: number }
 export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys: string[]; dailyByNpc: Record<string, number>; dailyTotal: number; requested: number; completed: number; rejected: number; failed: number }
 export interface WorldState {
-  version: 6; living: import('./living-types').LivingState; heritage: Heritage; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
+  version: 7; living: import('./living-types').LivingState; heritage: Heritage; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
   tiles: Tile[]; buildings: Building[]; resources: ResourceNode[]; npcs: NPC[];
   storage: Resources; market: Resources & { coins: number; foodPrice: number; woodPrice: number };
   weather: 'sunny' | 'rain' | 'cloudy' | 'drought'; droughtUntil: number;

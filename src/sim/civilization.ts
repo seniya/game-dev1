@@ -1,3 +1,4 @@
+import { canWork } from './employment';
 import { initializeHeritage } from './heritage';
 import { initializeUrban } from './urban';
 import { type WorldState, type NPC, type Settlement, type Building, YEAR_TICKS } from './types';
@@ -55,7 +56,7 @@ export function populateSettlements(w: WorldState) {
   const count = Math.min(12, Math.ceil(w.npcs.length / (w.npcs.length > 400 ? 250 : 36)));
   while (w.civilization.settlements.length < count) addVillage(w);
   if (count === 1) return;
-  if (w.npcs.length > 400) {
+  if (w.npcs.length > 36) {
     for (const v of w.civilization.settlements) {
       const target = Math.ceil(w.npcs.length / count);
       const occupied = new Set([...w.buildings, ...w.resources].map(b => `${b.position.x},${b.position.y}`));
@@ -79,7 +80,7 @@ export function populateSettlements(w: WorldState) {
     n.settlementId = v.id; n.homeId = home.id; n.position = { ...home.position }; home.ownerIds!.push(n.id);
   });
   // Initial endowments are part of opening accounts, never runtime production.
-  for (const v of w.civilization.settlements.slice(1).filter(() => w.npcs.length <= 400)) { v.storage.food = 28; v.storage.wood = 12; v.market.food = 20; v.market.coins = 180; }
+  for (const v of w.civilization.settlements.slice(1).filter(() => w.npcs.length <= 36)) { v.storage.food = 28; v.storage.wood = 12; v.market.food = 20; v.market.coins = 180; }
 }
 export function isTravelling(w: WorldState, n: NPC) { return w.civilization.journeys.some(j => j.kind === 'migration' && j.npcIds.includes(n.id)); }
 export function startMigration(w: WorldState, n: NPC, to: Settlement, causeId?: string): boolean {
@@ -172,7 +173,7 @@ export function regionalDay(w: WorldState) {
       if (migrant && better) startMigration(w, migrant, better);
     }
     // Labour follows actual local vacancies; retained skill records experience.
-    if (w.tick % YEAR_TICKS === 0) for (const n of people.filter(n => n.identity.age >= 18 && !isTravelling(w, n))) {
+    if (w.tick % YEAR_TICKS === 0) for (const n of people.filter(n => canWork(w, n) && !isTravelling(w, n))) {
       const farmers = people.filter(p => p.occupation === 'farmer').length;
       const job = farmers < people.length / 3 ? 'farmer' : stock.wood < 12 && !people.some(p => p.occupation === 'woodcutter') ? 'woodcutter' : n.occupation;
       if (job !== n.occupation && !w.urban.citizens[n.id]?.employer) { const previous = n.occupation; n.occupation = job; appendEvent(w, { kind: 'occupation', actorId: n.id, importance: 40, description: `${n.identity.name}이 마을의 생산 수요에 따라 직업을 바꾸었다.`, data: { previous, occupation: job, settlementId: v.id } }); }

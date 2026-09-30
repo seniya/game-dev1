@@ -1,3 +1,4 @@
+import { canWork } from './employment';
 import type { WorldState, NPC } from './types';
 import { TICKS_PER_DAY, DAYS_PER_YEAR } from './types';
 import { city, cityMetrics, setPolicy } from './urban';
@@ -33,7 +34,7 @@ export function ecologyDay(w: WorldState) {
   initializeHeritage(w);
   const season = seasonIndex(w);
   for (const h of w.heritage.habitats) {
-    const c = city(w, h.settlementId), people = w.npcs.filter(n => n.alive && n.settlementId === h.settlementId), farmers = people.filter(n => n.identity.age >= 18 && n.needs.health >= 40);
+    const c = city(w, h.settlementId), people = w.npcs.filter(n => n.alive && n.settlementId === h.settlementId), farmers = people.filter(n => canWork(w, n));
     const fields = w.buildings.filter(b => b.kind === 'farm' && b.settlementId === h.settlementId).length;
     const beforeSoil = h.soil;
     h.soil = clamp(h.soil + (w.weather === 'rain' ? 1.2 : .45) - h.harvest / Math.max(1, fields) * .018 - c.pollution * .002);

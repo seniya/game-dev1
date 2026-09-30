@@ -1,3 +1,4 @@
+import { DEFAULT_POPULATION } from '../sim/types';
 import { characterSchema } from '../sim/character-schema';
 import { RECOLLECTION_TOPICS, recollections, type RecollectionTopic } from '../sim/recollection';
 import { historyContext, HISTORY_TOPICS, type HistoryTopic } from '../sim/history';
@@ -43,7 +44,7 @@ export interface ClockState {
 export interface StoredWorld { revision: number; epoch: string; meta: ClockState; state: WorldState }
 export interface WorldView extends Omit<StoredWorld, 'state'> { state: WorldState; motion?: MotionTrace }
 export function initialWorld(now: number): StoredWorld {
-  const state = new Simulation(42).snapshot();
+  const state = new Simulation(42, DEFAULT_POPULATION).snapshot();
   return { revision: 0, epoch: 'initial', state, meta: { running: false, speed: 1, offline: false, clock: now, lastSeen: now, eventCount: state.events.length, socialCount: 0, catchupTicks: 0, skippedTicks: 0 } };
 }
 export function viewWorld(w: StoredWorld, motion?: MotionTrace): WorldView {
@@ -143,7 +144,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
     }
   }
   if (a.type === 'reset' || a.type === 'import') {
-    sim = a.type === 'reset' ? new Simulation(a.seed, a.population ?? 12) : Simulation.load(a.save);
+    sim = a.type === 'reset' ? new Simulation(a.seed, a.population ?? DEFAULT_POPULATION) : Simulation.load(a.save);
     // Cloud processing is bounded; larger local experiments remain available through the CLI.
     if (sim.snapshot().npcs.filter(n => n.alive).length > 3000) throw new Error('서버 세계는 생존 주민 3000명까지 지원합니다.');
     delete meta.createdCharacter;
