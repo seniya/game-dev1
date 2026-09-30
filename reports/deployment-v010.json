@@ -1,0 +1,42 @@
+{
+  "verifiedAt": "2026-09-30T02:12:19.990Z",
+  "projectId": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "siteVersion": 16,
+  "sourceCommit": "2ed8dfb1c9f519599d929eb3fd3eb9afa4ee71bb",
+  "versionId": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_5e44382b30888191a780cbfca6c35493",
+  "deploymentId": "appgdep_6abc6fa25628819198a2b2682f0fd735",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "artifactHash": "sha256:14234067165506c8e3bd283fbd9dc322bd217c4a4ccc84d4530e92213d11021c",
+  "checks": {
+    "ownerOnly": true,
+    "sourcePushed": true,
+    "productionBuild": true,
+    "existingWorldReset": true,
+    "resetRequestedByUser": true,
+    "previousWorldBackupEpoch": "initial"
+  },
+  "validation": {
+    "coreAndServer": 132,
+    "browser": 29,
+    "optionalRealChromeSkipped": 1,
+    "regression": "reports/resources-employment-regression.json"
+  },
+  "liveWorld": {
+    "revision": 2507,
+    "epoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+    "version": 7,
+    "population": 100,
+    "settlements": 3,
+    "goods": 25,
+    "tick": 36,
+    "backupEpoch": "initial",
+    "aiMode": "chrome",
+    "running": false,
+    "statuses": {
+      "children": 8,
+      "retired": 8,
+      "seeking": 8
+    }
+  }
+}
