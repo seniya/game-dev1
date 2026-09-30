@@ -1,0 +1,29 @@
+{
+  "verifiedAt": "2026-09-30T03:14:17.120Z",
+  "projectId": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "siteVersion": 19,
+  "sourceCommit": "2cf62dee824ba81303a02091d8556e8136fae420",
+  "versionId": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_424bc23327fc81918b197b10856b453e",
+  "deploymentId": "appgdep_6abc7e49d6a881918f23e2ea0b1c1460",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "artifactHash": "sha256:30ceb01cccd0627017ea26c8e328d5ce2f0f45123f79247f11a0e30c30ea6981",
+  "checks": {
+    "ownerOnly": true,
+    "sourcePushed": true,
+    "productionBuild": true,
+    "productionJsAndCssHashesMatch": true,
+    "worldReadable": true
+  },
+  "validation": {
+    "coreAndServer": 142,
+    "additionalObservationUnitTests": 2,
+    "browser": 24,
+    "notes": "Existing movement browser test now measures transformed canvas coordinates for the upgraded character geometry; its motion and request assertions pass."
+  },
+  "liveWorld": {
+    "revision": 2811,
+    "tick": 988,
+    "population": 100
+  }
+}
