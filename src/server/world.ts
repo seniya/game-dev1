@@ -1,3 +1,4 @@
+import { characterSchema } from '../sim/character-schema';
 import { RECOLLECTION_TOPICS, recollections, type RecollectionTopic } from '../sim/recollection';
 import { historyContext, HISTORY_TOPICS, type HistoryTopic } from '../sim/history';
 import { z } from 'zod';
@@ -10,6 +11,7 @@ import type { WorldState, WorldEvent } from '../sim/types';
 export const commandSchema = z.object({
   id: z.string().uuid(), revision: z.number().int().nonnegative(),
   action: z.discriminatedUnion('type', [
+    z.object({ type: z.literal('create-character'), character: characterSchema }).strict(),
     z.object({ type: z.literal('council'), settlementId: z.string().max(100), enabled: z.boolean() }).strict(),
     z.object({ type: z.literal('policy'), settlementId: z.string().max(100), taxRate: z.number().int().min(0).max(30), priority: z.enum(['road', 'water', 'sanitation', 'clinic', 'school']) }).strict(),
     z.object({ type: z.literal('detail'), focus: z.string().max(100), detail: z.enum(['full', 'focused']) }).strict(),
@@ -30,6 +32,7 @@ export const commandSchema = z.object({
 export type Command = z.infer<typeof commandSchema>;
 export interface ClockState {
   pendingTicks?: number;
+  createdCharacter?: { commandId: string; npcId: string };
   running: boolean; speed: 1 | 5 | 20; offline: boolean;
   clock: number; lastSeen: number; eventCount: number; socialCount: number;
   catchupTicks: number; skippedTicks: number; backupEpoch?: string;
@@ -51,6 +54,7 @@ export function compactWorld(w: WorldState): WorldState {
   const byId = new Map(w.events.map(e => [e.id, e]));
   const keep = new Set(w.events.slice(-100).map(e => e.id));
   for (const n of w.npcs) {
+    if (n.profile) keep.add(n.profile.arrivalEventId);
     if (w.urban?.citizens[n.id]?.healthEventId) keep.add(w.urban.citizens[n.id].healthEventId!);
     if (n.life?.birthEventId) keep.add(n.life.birthEventId);
     if (n.life?.deathEventId) keep.add(n.life.deathEventId);
@@ -113,6 +117,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
     meta.pendingTicks = a.ticks - work;
     for (let i = 0; i < work; i++) { sim.step(); if (useMock && sim.pending) await decisions.drain(); }
   }
+  if (a.type === 'create-character') meta.createdCharacter = { commandId: command.id, npcId: sim.createCharacter(a.character, command.id) };
   if (a.type === 'council') sim.setCouncil(a.settlementId, a.enabled);
   if (a.type === 'policy') sim.setPolicy(a.settlementId, a.taxRate, a.priority);
   if (a.type === 'detail') sim.setDetail(a.focus, a.detail);
@@ -141,6 +146,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
     sim = a.type === 'reset' ? new Simulation(a.seed, a.population ?? 12) : Simulation.load(a.save);
     // Cloud processing is bounded; larger local experiments remain available through the CLI.
     if (sim.snapshot().npcs.filter(n => n.alive).length > 3000) throw new Error('서버 세계는 생존 주민 3000명까지 지원합니다.');
+    delete meta.createdCharacter;
     epoch = command.id; replaced = true; oldIds = new Set();
     meta.backupEpoch = current.epoch; meta.running = false; meta.clock = now;
     meta.pendingTicks = 0; meta.eventCount = 0; meta.socialCount = 0; meta.catchupTicks = 0; meta.skippedTicks = 0;

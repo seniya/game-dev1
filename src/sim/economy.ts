@@ -16,7 +16,7 @@ export function createEconomy(w: WorldState): Economy {
 }
 export function balance(w: WorldState) {
   const h = holdings(w), e = w.economy, t = e.totals;
-  return { food: h.food - (e.openingFood + t.producedFood + t.externalFood - t.consumedFood), wood: h.wood - (e.openingWood + t.producedWood - t.investedWood), coins: h.coins - e.openingCoins };
+  return { food: h.food - (e.openingFood + (e.arrivals?.food ?? 0) + t.producedFood + t.externalFood - t.consumedFood), wood: h.wood - (e.openingWood + (e.arrivals?.wood ?? 0) + t.producedWood - t.investedWood), coins: h.coins - e.openingCoins - (e.arrivals?.coins ?? 0) };
 }
 // Daily integer quotes: bounded to 1..12 and at most one coin per day.
 export function updatePrices(w: WorldState) {

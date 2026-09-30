@@ -95,3 +95,47 @@
 .heritage-panel summary { cursor: pointer; font-weight: 600; }
 .heritage-panel summary span { display: inline-block; margin-left: 10px; font-size: 12px; font-weight: 400; color: #69716b; }
 .heritage-panel[open] summary { margin-bottom: 18px; }
+
+/* Character creation and observation work at both settlement and regional scales. */
+.character-portrait { width: 56px; height: 64px; display: block; flex-shrink: 0; }
+.avatar .character-portrait { width: 100%; height: 100%; }
+.resident-dot { background: transparent !important; width: 48px; height: 56px; }
+.resident-dot .character-portrait { width: 48px; height: 56px; }
+.character-form { display: grid; gap: 18px; }
+.character-form fieldset { min-width: 0; border: 1px solid #dedfce; border-radius: 12px; padding: 16px; display: grid; gap: 12px; }
+.character-form legend { padding: 0 8px; font-weight: 600; color: #3e5b4d; }
+.character-form label { display: grid; gap: 7px; font-size: 13px; color: #4b5e4c; }
+.character-form input, .character-form select, .character-form textarea, .resident-search input[type=search], .map-navigation select { min-width: 0; width: 100%; box-sizing: border-box; border: 1px solid #d8dccd; border-radius: 7px; padding: 9px; background: #fffef8; color: #34483b; font: inherit; }
+.character-form input[type=color] { height: 42px; padding: 4px; }
+.character-fields { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.character-intro { display: flex; gap: 20px; align-items: center; }
+.character-intro .character-fields { flex: 1; grid-template-columns: repeat(2,minmax(0,1fr)); }
+#character-preview .character-portrait { width: 100px; height: 110px; }
+.character-submit, .map-navigation, .resident-search, .watch-heading { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.character-submit { justify-content: space-between; font-size: 13px; }
+#character-error { color: #a04435; margin: 0; }
+.character-form details > summary { cursor: pointer; padding: 8px 0; font-weight: 600; }
+.character-form details fieldset { margin-top: 14px; }
+.character-background { background: #f3f1e6; padding: 12px; border-radius: 8px; overflow-wrap: anywhere; }
+.map-navigation { padding: 10px 18px; border-top: 1px solid #ececde; }
+.map-navigation label { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+.map-navigation select { width: auto; max-width: 200px; }
+.character-watch { padding: 14px 18px; background: #f6f5eb; border-top: 1px solid #e0e2d5; }
+.watch-heading .character-portrait { width: 38px; height: 44px; }
+.watch-heading > div { flex: 1; min-width: 100px; }
+.character-watch p { margin: 5px 0; font-size: 12px; line-height: 1.7; }
+.watch-events { display: grid; gap: 5px; margin-top: 8px; }
+.watch-events button { text-align: left; line-height: 1.6; }
+.resident-search { padding: 12px 24px; }
+.resident-search label { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.resident-search input[type=search] { max-width: 240px; }
+.character-form textarea { resize: vertical; }
+@media(max-width: 600px) {
+  .character-fields { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .character-intro { gap: 10px; }
+  #character-preview .character-portrait { width: 65px; height: 80px; }
+  .topbar-actions { flex-wrap: wrap; }
+  .map-navigation { padding: 10px; gap: 8px; }
+  .character-submit .button { width: 100%; }
+  .resident-search { padding: 12px; }
+}

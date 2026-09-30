@@ -21,6 +21,7 @@ export interface Action extends Candidate { path: Position[]; progress: number; 
 export interface Relationship { npcId: string; familiarity: number; trust: number; affection: number; fear: number; resentment: number; respect: number; family: boolean; interpretation: string; evidence: string[] }
 export interface Memory { id: string; type: 'personal' | 'social' | 'event' | 'economic' | 'trauma' | 'achievement'; description: string; importance: number; emotionalImpact: number; createdAt: number; relatedNpcIds: string[]; relatedLocationIds: string[]; sourceEventId: string; repetitions: number }
 export interface NPC {
+  profile?: { commandId?: string; background: string; appearance: import('./character-schema').Appearance; createdAt: number; arrivalEventId: string };
   id: string; identity: { name: string; age: number }; position: Position; homeId: string;
   life: Life; settlementId: string;
   occupation: 'farmer' | 'gatherer' | 'woodcutter' | 'carpenter' | 'merchant'; alive: boolean;
@@ -51,7 +52,7 @@ export interface DialogueResult { text: string }
 
 export interface EconomyFlow { producedFood: number; producedWood: number; consumedFood: number; investedWood: number; externalFood: number; trades: number; tradeVolume: number; wages: number }
 export interface DailySample extends EconomyFlow { day: number; tick: number; population: number; food: number; storageFood: number; foodPrice: number; coins: number; poorest: number; median: number; richest: number; shares: number; conflicts: number; eventId: string }
-export interface Economy { since: number; openingFood: number; openingWood: number; openingCoins: number; totals: EconomyFlow; daily: DailySample[]; last: EconomyFlow & { shares: number; conflicts: number } }
+export interface Economy { arrivals?: { food: number; wood: number; coins: number }; since: number; openingFood: number; openingWood: number; openingCoins: number; totals: EconomyFlow; daily: DailySample[]; last: EconomyFlow & { shares: number; conflicts: number } }
 
 export const DAYS_PER_YEAR = 12;
 export const YEAR_TICKS = DAYS_PER_YEAR * TICKS_PER_DAY;

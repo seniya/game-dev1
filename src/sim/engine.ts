@@ -1,3 +1,5 @@
+import { createCharacter } from './characters';
+import type { CharacterInput } from './character-schema';
 import { historyContext, validateHistorySelection, type HistoryTopic } from './history';
 import { cropMultiplier, ecologyDay, societyDay, harvest, setCouncil } from './heritage';
 import { indexPeople, updatePerson, person, neighbours } from './spatial';
@@ -34,6 +36,7 @@ export class Simulation {
     if (!this.state.civilization.settlements.some(v => v.id === focus)) throw new Error('관찰할 마을이 없습니다.');
     this.state.civilization.focus = focus; this.state.civilization.detail = detail;
   }
+  createCharacter(input: CharacterInput, commandId?: string) { const n = createCharacter(this.state, input); if (commandId) n.profile!.commandId = commandId; return n.id; }
   setCouncil(id: string, enabled: boolean) { setCouncil(this.state, id, enabled); }
   setPolicy(id: string, taxRate: number, priority: Service) { setPolicy(this.state, id, taxRate, priority); }
   recordHistory(topic: HistoryTopic, evidence: string[], requestId: string, model: string): boolean {

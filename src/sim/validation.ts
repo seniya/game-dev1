@@ -1,3 +1,4 @@
+import { profileSchema } from './character-schema';
 import { initializeHeritage } from './heritage';
 import { heritageSchema, validateHeritage } from './heritage-validation';
 import { initializeUrban } from './urban';
@@ -22,6 +23,7 @@ const action = candidate.extend({ path: z.array(pos).max(16384), progress: natur
 const relationship = z.object({ npcId: id, familiarity: score, trust: score, affection: score, fear: score, resentment: score, respect: score, family: z.boolean(), interpretation: description, evidence: z.array(id) }).strict();
 const memory = z.object({ id, type: z.enum(['personal', 'social', 'event', 'economic', 'trauma', 'achievement']), description, importance: score, emotionalImpact: z.number().min(-100).max(100), createdAt: natural, relatedNpcIds: z.array(id), relatedLocationIds: z.array(id), sourceEventId: id, repetitions: natural.min(1) }).strict();
 const npc = z.object({
+  profile: profileSchema.optional(),
   id, identity: z.object({ name: z.string().min(1).max(80), age: natural.max(150) }).strict(), position: pos, homeId: id,
   settlementId: id, life: z.object({ bornTick: z.number().int().min(-300000).max(Number.MAX_SAFE_INTEGER), parentIds: z.array(id).max(2), partnerId: id.optional(), generation: natural.max(1000), skill: score, lastBirth: natural, lastMove: natural, deathTick: natural.optional(), birthEventId: id.optional(), deathEventId: id.optional(), estateSettled: z.boolean() }).strict(),
   occupation: z.enum(['farmer', 'gatherer', 'woodcutter', 'carpenter', 'merchant']), alive: z.boolean(),
@@ -33,7 +35,7 @@ const npc = z.object({
 }).strict();
 const event = z.object({ id, tick: natural, kind: z.enum(['arrival', 'production', 'consumption', 'storage', 'trade', 'loan', 'repayment', 'default', 'share', 'theft', 'witness', 'rumor', 'talk', 'scarcity', 'health', 'death', 'weather', 'relationship', 'memory', 'goal', 'llm', 'experiment', 'failure', 'project', 'wage', 'price', 'family', 'birth', 'coming_of_age', 'inheritance', 'education', 'construction', 'settlement', 'migration', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'council', 'diplomacy']), actorId: id.optional(), targetId: id.optional(), locationId: id.optional(), participants: z.array(id).max(30000), importance: score, description, causeId: id.optional(), data: z.record(z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.array(id)])) }).strict();
 const flow = z.object({ producedFood: natural, producedWood: natural, consumedFood: natural, investedWood: natural, externalFood: natural, trades: natural, tradeVolume: natural, wages: natural }).strict();
-const economy = z.object({ since: natural, openingFood: natural, openingWood: natural, openingCoins: natural, totals: flow,
+const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict().optional(), since: natural, openingFood: natural, openingWood: natural, openingCoins: natural, totals: flow,
   last: flow.extend({ shares: natural, conflicts: natural }).strict(),
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
@@ -117,6 +119,8 @@ export function validateSave(input: unknown): WorldState {
     ensure(!e.locationId || buildings.has(e.locationId), '사건 위치'); ensure(e.participants.every(n => npcs.has(n)), '사건 참여자');
   }
   for (const n of w.npcs) {
+    if (n.profile) ensure(n.profile.createdAt <= w.tick && events.get(n.profile.arrivalEventId)?.tick === n.profile.createdAt && events.get(n.profile.arrivalEventId)?.actorId === n.id && events.get(n.profile.arrivalEventId)?.kind === 'arrival' && events.get(n.profile.arrivalEventId)?.data.createdCharacter === true, '생성 주민 출처');
+    if (n.id.startsWith('npc-created-')) ensure(Number(n.id.slice(12)) < w.nextId, '생성 ID 순서');
     if (n.id.startsWith('npc-born-')) ensure(Number(n.id.slice(9)) < w.nextId, '출생 ID 순서');
     ensure(walkable(w, n.position) && buildings.get(n.homeId)?.kind === 'home', '주민 위치/집');
     ensure(villages.has(n.settlementId) && buildings.get(n.homeId)?.settlementId === n.settlementId, '주민 소속 마을');

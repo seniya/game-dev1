@@ -22,10 +22,10 @@ export class CloudClient {
     this.status(`서버 저장 완료 · ${world.meta.eventCount.toLocaleString()}개 사건 · 다른 기기에서 이어보기 가능`);
   }
   async connect() { this.accept(await this.get<WorldView>('world')); }
-  send(action: CloudAction): Promise<void> {
+  send(action: CloudAction, commandId = crypto.randomUUID()): Promise<void> {
     const run = async () => {
       if (!this.world) throw new Error('서버 연결을 먼저 확인해 주세요.');
-      const command: Command = { id: crypto.randomUUID(), revision: this.world.revision, action };
+      const command: Command = { id: commandId, revision: this.world.revision, action };
       this.status('세계의 변화를 저장하는 중…');
       let response: Response | undefined;
       // A retry reuses the exact command ID and body after a lost response.
