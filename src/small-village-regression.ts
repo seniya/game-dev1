@@ -18,7 +18,7 @@ for (const seed of [7, 42, 123]) for (const project of [false, true]) {
   const resumed = Simulation.load(sim.save()); resumed.step(10); sim.step(10);
   assert.equal(sim.save(), resumed.save());
   const w = sim.snapshot();
-  results.push({ seed, project: project ? 'observer-home' : 'none', days: 30, continuationTicks: 10,
+  results.push({ project: project ? 'observer-home' : 'none', days: 30, continuationTicks: 10,
     ...summarize(w), map: {width:w.width,height:w.height}, balance: balance(w),
     relationshipPairs: new Set(w.npcs.flatMap(n=>n.relationships.map(r=>[n.id,r.npcId].sort().join(':')))).size,
     saveContinuation: true });
