@@ -1,0 +1,46 @@
+{
+  "verifiedAt": "2026-09-30T01:44:46.871Z",
+  "projectId": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "siteVersion": 15,
+  "sourceCommit": "eca902bb51448fa3fe2504d6d8c745f1e4eb236e",
+  "versionId": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_100a97f1d4cc8191a063c07fae5b4e0f",
+  "deploymentId": "appgdep_6abc694588308191ac57e1836a06e1c3",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "artifactHash": "sha256:377e062024cf6f87e1cc9786f91edca7df3ee3fce15eb06d5051cd9dff0f9693",
+  "checks": {
+    "ownerOnly": true,
+    "sourcePushed": true,
+    "productionBuild": true,
+    "existingWorldReset": false,
+    "htmlMatchesBuild": true
+  },
+  "before": {
+    "epoch": "initial",
+    "revision": 2117,
+    "version": 5,
+    "seed": 42,
+    "tick": 16197,
+    "population": 12,
+    "aiMode": "chrome"
+  },
+  "after": {
+    "epoch": "initial",
+    "revision": 2117,
+    "version": 6,
+    "seed": 42,
+    "tick": 16197,
+    "population": 12,
+    "aiMode": "chrome",
+    "livingPeople": 12,
+    "homeTypes": 5,
+    "goods": 10,
+    "htmlMatchesBuild": true
+  },
+  "validation": {
+    "coreAndServer": 124,
+    "browser": 28,
+    "optionalRealChromeSkipped": 1,
+    "regression": "reports/living-regression.json"
+  }
+}
