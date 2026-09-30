@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-09-30T04:05:54.136Z",
+  "projectId": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "siteVersion": 20,
+  "sourceCommit": "b48d77c0b7a8ff320c06fdd25a4e48a023024a47",
+  "versionId": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_3400be5e751c8191864ab529c63d706d",
+  "deploymentId": "appgdep_6abc8a66686c8191ad44c35cabf5b2d4",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "artifactHash": "sha256:ef44613749055397513016c60f09678766d792316e8346678ff15d19cdc21b17",
+  "checks": {
+    "ownerOnly": true,
+    "sourcePushed": true,
+    "productionBuild": true,
+    "productionJsAndCssHashesMatch": true
+  },
+  "validation": {
+    "targetedUnitTests": 11,
+    "targetedBrowserTests": 7,
+    "coverage": [
+      "Dense adjacent facility labels and character status badges do not overlap",
+      "Selected and hovered names take priority",
+      "Regional, city and focused map scales",
+      "Mobile layout, viewport edges and resize while paused",
+      "Existing selection, interpolation and city navigation"
+    ]
+  }
+}
