@@ -1,0 +1,30 @@
+{
+  "verifiedAt": "2026-09-30T02:58:10.740Z",
+  "projectId": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "siteVersion": 18,
+  "sourceCommit": "02791772e11a38eecee5e94f6b921ec7a0cd8b92",
+  "versionId": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_87508b88a6d48191970347fe95bd8432",
+  "deploymentId": "appgdep_6abc7a6aa1708191b2d3f92d41a19721",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "artifactHash": "sha256:c50f4f1a80acd3805e2adb78a8bb7befa224991de9d7eb180a672af5c32a644d",
+  "checks": {
+    "ownerOnly": true,
+    "sourcePushed": true,
+    "productionBuild": true,
+    "newBundleServed": true,
+    "worldReadable": true
+  },
+  "validation": {
+    "coreAndServer": 142,
+    "browser": 31,
+    "optionalRealChromeSkipped": 1,
+    "responseJitterMs": 600,
+    "slowResponseMs": 2300
+  },
+  "liveWorld": {
+    "revision": 2762,
+    "tick": 821,
+    "population": 100
+  }
+}
