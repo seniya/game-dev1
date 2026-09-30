@@ -1,3 +1,4 @@
+import { characterVisual, type CharacterVisual } from './character-state';
 import { charmPreview } from './attraction';
 import { occupationLabel } from '../sim/employment';
 import { TRAIT_LABELS, DESIRE_LABELS, BODY_LABELS, HOMES } from '../sim/living-types';
@@ -8,25 +9,53 @@ import { type Appearance, type CharacterInput, characterSchema } from '../sim/ch
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 import { appearance } from '../sim/appearance';
 export { appearance } from '../sim/appearance';
-export function portrait(a: Appearance) {
-  return `<svg viewBox="0 0 80 88" role="img" aria-label="캐릭터 외모" class="character-portrait"><rect x="1" y="1" width="78" height="86" rx="18" fill="${a.outfit}22"/>
+export function portrait(a: Appearance, state?: CharacterVisual) {
+  const resting = state?.sleeping || state?.tired || state?.key === 'departed';
+  return `<svg viewBox="0 0 80 88" role="img" aria-label="캐릭터 외모${state ? ` · ${state.label}` : ''}" data-state="${state?.key ?? 'preview'}" class="character-portrait"><rect x="1" y="1" width="78" height="86" rx="18" fill="${a.outfit}22"/>
   ${a.hairstyle === 'long' ? `<rect x="20" y="18" width="40" height="45" rx="16" fill="${a.hair}"/>` : ''}
   <path d="M16 84V64Q16 51 40 51Q64 51 64 64V84" fill="${a.outfit}"/><circle cx="40" cy="33" r="18" fill="${a.skin}"/>
   ${a.hairstyle === 'bald' ? '' : `<path d="M22 33V24Q22 9 40 13Q58 9 58 31L48 23L38 27L31 23Z" fill="${a.hair}"/>`}
   ${a.hairstyle === 'curly' ? [24, 33, 43, 54].map(x => `<circle cx="${x}" cy="19" r="8" fill="${a.hair}"/>`).join('') : ''}
-  <circle cx="33" cy="35" r="1.8" fill="#354038"/><circle cx="47" cy="35" r="1.8" fill="#354038"/><path d="M36 43Q40 46 44 43" fill="none" stroke="#8b6251" stroke-width="2"/>
+  ${resting ? '<path d="M29 35h7m8 0h7" stroke="#354038" stroke-width="2"/>' : '<circle cx="33" cy="35" r="1.8" fill="#354038"/><circle cx="47" cy="35" r="1.8" fill="#354038"/>'}<path d="${state?.key === 'unwell' || state?.key === 'hungry' ? 'M36 45Q40 41 44 45' : 'M36 43Q40 46 44 43'}" fill="none" stroke="#8b6251" stroke-width="2"/>
+  ${state?.key === 'unwell' ? '<path d="M25 24h14v5H25z" fill="#fff9e8"/>' : ''}
+  ${state && state.key !== 'calm' ? `<circle cx="65" cy="70" r="12" fill="${state.color}"/><text x="65" y="74" text-anchor="middle" font-size="13" fill="#fff" font-family="sans-serif">${state.symbol}</text>` : ''}
   ${a.accessory === 'glasses' ? '<g fill="none" stroke="#34443d" stroke-width="2"><rect x="26" y="30" width="13" height="10" rx="3"/><rect x="42" y="30" width="13" height="10" rx="3"/><path d="M39 34h3"/></g>' : a.accessory === 'hat' ? `<path d="M19 22h42M27 21V9h26v12" fill="${a.outfit}" stroke="${a.outfit}" stroke-width="6"/>` : ''}</svg>`;
 }
-export function drawPerson(ctx: CanvasRenderingContext2D, n: NPC, x: number, y: number) {
-  const a = appearance(n);
-  ctx.fillStyle = '#48574b'; ctx.fillRect(x - 4, y + 2, 3, 6); ctx.fillRect(x + 1, y + 2, 3, 6);
-  if (a.hairstyle === 'long') { ctx.fillStyle = a.hair; ctx.fillRect(x - 6, y - 16, 12, 14); }
-  ctx.fillStyle = a.outfit; ctx.beginPath(); ctx.roundRect(x - 6, y - 9, 12, 13, 3); ctx.fill();
-  ctx.fillStyle = a.skin; ctx.beginPath(); ctx.arc(x, y - 13, 5, 0, Math.PI * 2); ctx.fill();
-  if (a.hairstyle !== 'bald') { ctx.fillStyle = a.hair; ctx.beginPath(); ctx.arc(x, y - 15, 5, Math.PI, Math.PI * 2); ctx.fill(); }
-  if (a.hairstyle === 'curly') for (const dx of [-4, 0, 4]) { ctx.beginPath(); ctx.arc(x + dx, y - 17, 3, 0, Math.PI * 2); ctx.fill(); }
-  if (a.accessory === 'hat') { ctx.fillStyle = a.outfit; ctx.fillRect(x - 7, y - 18, 14, 2); ctx.fillRect(x - 4, y - 23, 8, 6); }
-  if (a.accessory === 'glasses') { ctx.strokeStyle = '#34443d'; ctx.lineWidth = 1; ctx.strokeRect(x - 5, y - 15, 4, 3); ctx.strokeRect(x + 1, y - 15, 4, 3); ctx.fillStyle = '#34443d'; ctx.fillRect(x - 1, y - 14, 2, 1); }
+export function drawPerson(ctx: CanvasRenderingContext2D, n: NPC, x: number, y: number, w?: WorldState, phase = 0) {
+  const a = appearance(n), v = characterVisual(n, w), child = n.identity.age < 16, elder = n.identity.age >= 65;
+  ctx.save(); ctx.translate(x, y); ctx.scale(child ? .78 : 1, child ? .78 : 1);
+  if (v.sleeping) { ctx.translate(0, -1); ctx.rotate(-.65); }
+  else if (v.tired || v.key === 'unwell') ctx.rotate(.12);
+  const step = v.moving ? Math.sin(phase) * 3 : 0;
+  ctx.fillStyle = '#43584d'; ctx.fillRect(-5, 1, 4, 7 + step); ctx.fillRect(1, 1, 4, 7 - step);
+  ctx.fillStyle = '#3a4942'; ctx.fillRect(-6, 6 + step, 5, 3); ctx.fillRect(1, 6 - step, 5, 3);
+  if (a.hairstyle === 'long') { ctx.fillStyle = a.hair; ctx.beginPath(); ctx.roundRect(-7, -19, 14, 18, 5); ctx.fill(); }
+  ctx.fillStyle = a.outfit; ctx.beginPath(); ctx.roundRect(-7, -10, 14, 14, 4); ctx.fill();
+  ctx.fillStyle = '#ffffff35'; ctx.fillRect(-5, -8, 3, 9);
+  ctx.fillStyle = a.skin; ctx.fillRect(-9, -7 + step / 2, 3, 8); ctx.fillRect(6, v.working ? -13 : -7 - step / 2, 3, 8);
+  ctx.beginPath(); ctx.arc(0, -16, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = a.hair;
+  if (a.hairstyle !== 'bald') { ctx.beginPath(); ctx.arc(0, -18, 6, Math.PI, Math.PI * 2); ctx.fill(); ctx.fillRect(-6, -18, 3, 5); }
+  if (a.hairstyle === 'curly') for (const dx of [-4, 0, 4]) { ctx.beginPath(); ctx.arc(dx, -21, 3, 0, Math.PI * 2); ctx.fill(); }
+  if (elder) { ctx.fillStyle = '#dbd7c8'; ctx.fillRect(-6, -18, 2, 4); ctx.fillRect(4, -18, 2, 4); }
+  ctx.fillStyle = '#35443c'; ctx.fillRect(-3, -16, 1.5, v.sleeping || v.tired ? 1 : 2); ctx.fillRect(2, -16, 1.5, v.sleeping || v.tired ? 1 : 2);
+  ctx.fillStyle = '#b87d66'; ctx.fillRect(-1, -12, 3, 1);
+  if (a.accessory === 'hat') { ctx.fillStyle = a.outfit; ctx.fillRect(-8, -21, 16, 3); ctx.fillRect(-5, -27, 10, 6); }
+  if (a.accessory === 'glasses') { ctx.strokeStyle = '#34443d'; ctx.lineWidth = 1; ctx.strokeRect(-5, -17, 4, 4); ctx.strokeRect(1, -17, 4, 4); ctx.fillStyle = '#34443d'; ctx.fillRect(-1, -16, 2, 1); }
+  if (v.working) {
+    ctx.fillStyle = '#d5bf93'; ctx.fillRect(-4, -7, 8, 9);
+    ctx.strokeStyle = '#795f43'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(9, 4); ctx.lineTo(12, -16); ctx.stroke();
+    ctx.fillStyle = '#a1aca2'; ctx.fillRect(7, -17, 11, 3);
+  }
+  if (n.currentAction?.kind === 'Eat' && !v.moving) { ctx.fillStyle = '#d8a45e'; ctx.beginPath(); ctx.ellipse(7, -10, 4, 3, 0, 0, Math.PI * 2); ctx.fill(); }
+  if (['Drink', 'Wash'].includes(n.currentAction?.kind ?? '') && !v.moving) { ctx.fillStyle = '#a6d1d3'; ctx.fillRect(6, -12, 5, 6); }
+  if (v.key === 'unwell') { ctx.fillStyle = '#fff9e6'; ctx.fillRect(-5, -21, 8, 3); }
+  if (v.key === 'cold') { ctx.fillStyle = '#e0be87'; ctx.fillRect(-7, -10, 14, 4); ctx.fillRect(3, -8, 4, 9); }
+  ctx.restore();
+  if (v.key !== 'calm' && v.key !== 'moving') {
+    ctx.fillStyle = '#fffdf1'; ctx.beginPath(); ctx.roundRect(x + 7, y - 34, 17, 15, 5); ctx.fill();
+    ctx.fillStyle = v.color; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(v.symbol, x + 15.5, y - 23);
+  }
 }
 export function defaultCharacter(homeId: string): CharacterInput {
   return { traits: { patience: 60, optimism: 65, frugality: 50, independence: 45 }, desires: { security: 35, belonging: 60, comfort: 30, mastery: 40, prosperity: 30, novelty: 40 }, body: { stamina: 85, cleanliness: 80, warmth: 80, pain: 0 }, name: '새이웃', age: 24, background: '', homeId, occupation: 'gatherer', goal: 'make_friend', appearance: { skin: '#ebcba4', hair: '#5d5345', outfit: '#76b4a3', hairstyle: 'short', accessory: 'none' }, needs: { hunger: 20, thirst: 15, fatigue: 10, health: 95, safety: 90, social: 30 }, personality: { diligence: 60, greed: 30, sociability: 80, aggression: 15, empathy: 75, curiosity: 65 }, skill: 20, education: 20, skills: { field: 20, quarry: 0, mine: 0, mill: 0, smith: 0 }, food: 3, wood: 0, wealth: 20 };

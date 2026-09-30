@@ -1,3 +1,5 @@
+import { objectInspector, objectName, type ObjectSelection } from './ui/objects';
+import { characterStatus, characterVisual } from './ui/character-state';
 import { attractionProfile, attractionRelation, charmPreview } from './ui/attraction';
 import { DEFAULT_POPULATION } from './sim/types';
 import { occupationLabel } from './sim/employment';
@@ -91,11 +93,11 @@ $('app').innerHTML = `
       <section class="cloud-panel" aria-label="세계 저장 및 연결"><div><b>${cloudMode ? '서버에 이어지는 세계' : '이 기기의 세계'}</b><p id="cloud-status">${cloudMode ? '서버 세계를 불러오는 중…' : '이 기기에서만 진행하고 저장합니다.'}</p></div><div class="cloud-actions">${cloudMode ? '<label><input id="offline-toggle" type="checkbox" disabled/> 자리를 비워도 진행</label><button id="cloud-retry" class="button">연결 새로고침</button><a class="text-button" href="?local=1">기기 세계 관찰</a>' : '<a class="button" href="/">서버 세계로 돌아가기</a>'}</div>${cloudMode ? '<p class="cloud-policy">기본은 비접속 시 정지입니다. 켜면 재접속할 때 최대 게임 하루(144틱)만 반영합니다. 재생·정지·배속 설정은 모든 기기에 적용됩니다.</p>' : ''}</section><section class="stats-grid" aria-label="세계 현황" id="stats"></section>
       <div id="world-view" class="world-layout">
         <section class="panel map-panel"><div class="panel-heading"><div><span class="small-dot"></span><h2 id="village-title">느티나무 마을</h2><span class="muted location-caption">NEUTINAMU VILLAGE</span></div><div class="weather-info" id="weather"></div></div>
-          <div class="map-controls"><div class="time-controls"><button id="play-button" class="play-button" aria-label="일시정지">${icon('pause', 17)}</button><button id="step-button" class="icon-button" aria-label="한 틱 진행">${icon('step', 17)}</button><span class="control-divider"></span><div class="speed-switch" aria-label="시뮬레이션 배속">${[1, 5, 20].map(s => `<button data-speed="${s}" class="${s === 1 ? 'active' : ''}" aria-pressed="${s === 1}">${s}×</button>`).join('')}</div></div><div class="game-clock" id="game-clock"></div></div><div class="map-navigation"><label>지도 범위 <select id="map-mode"><option value="city">정착지 전체</option><option value="region">세계 전체</option><option value="follow">선택 주민 따라보기</option></select></label><button id="follow-character" class="button">선택 주민 찾기</button><span id="map-scope" class="muted"></span></div><div class="map-wrap"><canvas id="world-map" aria-label="주민을 클릭해 자세히 볼 수 있는 마을 지도. 마을 주민 메뉴에서도 선택할 수 있습니다."></canvas><div class="map-badge"><i></i> 작은 세계 · <span id="map-size">32 × 24</span></div><button class="map-grid-button" id="grid-button" aria-label="지도 격자 표시" aria-pressed="false">${icon('grid', 17)}</button><div class="map-compass"><span>N</span>↑</div></div>
+          <div class="map-controls"><div class="time-controls"><button id="play-button" class="play-button" aria-label="일시정지">${icon('pause', 17)}</button><button id="step-button" class="icon-button" aria-label="한 틱 진행">${icon('step', 17)}</button><span class="control-divider"></span><div class="speed-switch" aria-label="시뮬레이션 배속">${[1, 5, 20].map(s => `<button data-speed="${s}" class="${s === 1 ? 'active' : ''}" aria-pressed="${s === 1}">${s}×</button>`).join('')}</div></div><div class="game-clock" id="game-clock"></div></div><div class="map-navigation"><label>지도 범위 <select id="map-mode"><option value="city">정착지 전체</option><option value="region">세계 전체</option><option value="follow">선택 주민 따라보기</option></select></label><button id="follow-character" class="button">선택 주민 찾기</button><label>시설·자원 선택 <select id="object-picker" aria-label="시설·자원 선택"><option value="">지도에서 고르기</option></select></label><span id="map-scope" class="muted"></span></div><div class="map-wrap"><canvas id="world-map" aria-label="주민을 클릭해 자세히 볼 수 있는 마을 지도. 마을 주민 메뉴에서도 선택할 수 있습니다."></canvas><div class="map-badge"><i></i> 작은 세계 · <span id="map-size">32 × 24</span></div><button class="map-grid-button" id="grid-button" aria-label="지도 격자 표시" aria-pressed="false">${icon('grid', 17)}</button><div class="map-compass"><span>N</span>↑</div></div>
           <div id="character-watch" class="character-watch" aria-live="off"></div><div id="civilization-panel" class="civilization-panel"></div>
-          <div class="map-footer"><span><i class="legend-dot citizen"></i> 주민</span><span><i class="legend-dot farm"></i> 농장</span><span><i class="legend-dot resource"></i> 자원</span><span class="map-tip">주민을 선택하면 마음을 들여다볼 수 있어요</span></div>
+          <div class="map-footer"><span><i class="legend-dot citizen"></i> 주민</span><span><i class="legend-dot farm"></i> 농장</span><span><i class="legend-dot resource"></i> 자원</span><span class="map-tip">주민·건물·자원을 선택해 살펴보세요</span></div>
         </section>
-        <aside class="panel inspector"><div class="inspector-title"><h2>주민 들여다보기</h2><span class="muted">AGENT INSPECTOR</span></div><div id="npc-header"></div><div class="inspector-tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="overview" class="active">일상</button><button role="tab" aria-selected="false" data-tab="relationships">관계</button><button role="tab" aria-selected="false" data-tab="memories">기억</button><button role="tab" aria-selected="false" data-tab="life">생애</button></div><div id="npc-detail" class="inspector-content"></div></aside>
+        <aside class="panel inspector"><div class="inspector-title"><h2 id="inspector-heading">주민 들여다보기</h2><span class="muted">AGENT INSPECTOR</span></div><div id="npc-header"></div><div class="inspector-tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="overview" class="active">일상</button><button role="tab" aria-selected="false" data-tab="relationships">관계</button><button role="tab" aria-selected="false" data-tab="memories">기억</button><button role="tab" aria-selected="false" data-tab="life">생애</button></div><div id="npc-detail" class="inspector-content"></div></aside>
       </div>
       <section id="economy-view" class="panel alternate-view" hidden></section>
       <section id="residents-view" class="panel alternate-view" hidden><div class="panel-heading"><h2>마을의 모든 주민</h2><span class="muted">주민을 선택해 삶의 흔적을 확인하세요.</span></div><div class="resident-search"><label>주민 검색<input id="resident-search" type="search" placeholder="이름 또는 직업"/></label><label><input id="custom-residents" type="checkbox"/> 내가 만든 주민만</label><span id="resident-count"></span></div><div id="resident-grid" class="resident-grid"></div></section>
@@ -105,13 +107,22 @@ $('app').innerHTML = `
     </div>
   </main><input type="file" id="file-input" accept=".json,application/json" hidden/><div id="toast" class="toast" role="status" hidden></div><dialog id="detail-dialog"><button id="close-dialog" class="dialog-close" aria-label="닫기">×</button><div id="dialog-content"></div></dialog>`;
 
-const map = new WorldMap($<HTMLCanvasElement>('world-map'), selectNPC);
+let selectedObject: ObjectSelection | undefined;
+const map = new WorldMap($<HTMLCanvasElement>('world-map'), selectNPC, selectObject);
+function selectObject(selection: ObjectSelection) {
+  const object = selection.kind === 'building' ? state.buildings.find(b => b.id === selection.id) : state.resources.find(r => r.id === selection.id);
+  if (!object) return;
+  $('npc-detail').scrollTop = 0; selectedObject = selection; map.focusObject(object.position); $<HTMLSelectElement>('map-mode').value = 'city'; render();
+  if (matchMedia('(max-width: 760px)').matches) document.querySelector('.inspector')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+}
 function toast(message: string) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => $('toast').hidden = true, 4500); }
 function selectedNPC() { return state.npcs.find(n => n.id === selectedId) ?? state.npcs[0]; }
-function selectNPC(id: string) { selectedId = id; map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; tab = 'overview'; lifeLimit = 40; setView('world'); render(); }
+function selectNPC(id: string) { selectedObject = undefined; selectedId = id; map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; tab = 'overview'; lifeLimit = 40; setView('world'); render(); }
 function actionText(n: NPC) { return !n.alive ? '세상을 떠남' : !n.currentAction ? '다음 행동을 생각하는 중' : `${n.currentAction.path.length ? '이동 중 · ' : ''}${ACTION_LABELS[n.currentAction.kind]}`; }
 function render() {
-  if (!cloudMode) state = sim.snapshot(); const living = state.npcs.filter(n => n.alive), socialCount = cloudMode ? cloud?.world?.meta.socialCount ?? 0 : state.events.filter(e => ['share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
+  if (!cloudMode) state = sim.snapshot();
+  if (selectedObject && !objectName(state, selectedObject)) selectedObject = undefined;
+  const living = state.npcs.filter(n => n.alive), socialCount = cloudMode ? cloud?.world?.meta.socialCount ?? 0 : state.events.filter(e => ['share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
   const averageHealth = Math.round(living.reduce((s, n) => s + n.needs.health, 0) / Math.max(1, living.length));
   setHTML('stats', [
     ['people', '함께 살아가는 주민', `${living.length}<small>명</small>`, `${state.npcs.length}개의 서로 다른 삶`, 'sage'],
@@ -131,8 +142,9 @@ function render() {
   const urbanOpen = document.querySelector<HTMLDetailsElement>('#urban-overview')?.open;
   const policyEditing = document.activeElement?.closest('#urban-policy');
   if (!policyEditing) { setHTML('civilization-panel', civilizationView(state)); if (urbanOpen) document.querySelector<HTMLDetailsElement>('#urban-overview')!.open = true; if (heritageOpen) document.querySelector<HTMLDetailsElement>('#heritage-overview')!.open = true; }
-  $('village-title').textContent = map.viewMode === 'region' ? '세계 전체 · 정착지와 교역' : state.civilization.settlements.find(v => v.id === (map.viewMode === 'follow' ? selectedNPC().settlementId : state.civilization.focus))?.name ?? '정착지';
-  map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed, buffered: cloudMode }); presentationMotion = undefined; renderCharacterWatch(); renderInspector(); renderEvents();
+  const objectVillage = selectedObject?.kind === 'building' ? state.buildings.find(b => b.id === selectedObject?.id)?.settlementId : undefined;
+  $('village-title').textContent = objectVillage ? state.civilization.settlements.find(v => v.id === objectVillage)?.name ?? '정착지' : map.viewMode === 'region' ? '세계 전체 · 정착지와 교역' : state.civilization.settlements.find(v => v.id === (map.viewMode === 'follow' ? selectedNPC().settlementId : state.civilization.focus))?.name ?? '정착지';
+  map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed, buffered: cloudMode, object: selectedObject }); presentationMotion = undefined; renderCharacterWatch(); renderInspector(); renderEvents();
   for (const detail of document.querySelectorAll<HTMLDetailsElement>('#npc-detail details')) detail.open = openDetails.includes(detail.dataset.detailKey ?? detail.className);
   $('npc-detail').scrollTop = inspectorScroll;
   if (view === 'residents') renderResidents();
@@ -146,8 +158,15 @@ function render() {
   $('stats').title = `관측 ${Number(((state.tick - 36) / 144).toFixed(2))}일 · 전체 사건 ${cloudMode ? cloud?.world?.meta.eventCount ?? 0 : state.events.length}건`;
 }
 function renderInspector() {
+  if (selectedObject && !objectName(state, selectedObject)) selectedObject = undefined;
+  $('inspector-heading').textContent = selectedObject ? '장소 들여다보기' : '주민 들여다보기';
+  document.querySelector<HTMLElement>('.inspector-tabs')!.hidden = !!selectedObject;
+  if (selectedObject) {
+    $('npc-header').innerHTML = `<div class="object-inspector-bar"><span>선택한 장소</span><button class="text-button" data-npc="${esc(selectedId)}">주민으로 돌아가기 ↗</button></div>`;
+    $('npc-detail').innerHTML = objectInspector(state, selectedObject); return;
+  }
   const n = selectedNPC();
-  $('npc-header').innerHTML = `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}">${portrait(appearance(n))}<span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <span>${n.identity.age}세${n.profile ? ' · 내 NPC' : ''}</span></h3><p>${occupationLabel(state, n)} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p><span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`;
+  $('npc-header').innerHTML = `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}">${portrait(appearance(n), characterVisual(n, state))}<span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <span>${n.identity.age}세${n.profile ? ' · 내 NPC' : ''}</span></h3><p>${occupationLabel(state, n)} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p>${characterStatus(n, state)}<span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`;
   if (tab === 'life') { if (cloudMode) { renderCloudLife(); return; } $('npc-detail').innerHTML = lifeHistory(state, n, lifeLimit); return; }
   if (tab === 'relationships') {
     $('npc-detail').innerHTML = `${attractionProfile(state, n)}<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p>${attractionRelation(state, n, r.npcId)}<div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button>${cloudMode && cloud?.world?.meta.aiMode !== 'chrome' && n.alive && state.npcs.find(p => p.id === r.npcId)?.alive && n.memories.some(m => m.relatedNpcIds.includes(r.npcId)) ? `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" ${!state.llm.enabled || cloud?.world?.meta.dialogue ? 'disabled' : ''}>기억에 근거한 말 듣기</button>${RECOLLECTION_TOPICS.filter(t => t !== 'shared' && recollections(n.memories, r.npcId, t).length).map(t => `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" data-recall="${t}" ${!state.llm.enabled || cloud?.world?.meta.dialogue || cloud?.world?.meta.history ? 'disabled' : ''}>${RECOLLECTION_LABELS[t]}</button>`).join('')}` : ''}</article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`;
@@ -171,7 +190,7 @@ function renderResidents() {
   const residents = state.npcs.filter(n => (!customResidents || n.profile) && `${n.identity.name} ${occupationLabel(state, n)}`.includes(residentSearch));
   $('resident-count').textContent = `${residents.length}명`;
   residentPage = Math.min(residentPage, Math.max(0, Math.ceil(residents.length / 60) - 1));
-  $('resident-grid').innerHTML = residents.slice(residentPage * 60, (residentPage + 1) * 60).map(n => `<button class="resident-card" data-npc="${esc(n.id)}"><span class="resident-dot">${portrait(appearance(n))}</span><div><h3>${esc(n.identity.name)}${n.profile ? ' <small>내 NPC</small>' : ''} <small>${occupationLabel(state, n)}</small></h3><p>${actionText(n)}</p><span>배고픔 ${n.needs.hunger.toFixed(0)} · 건강 ${n.needs.health.toFixed(0)} · 식량 ${n.inventory.food}</span></div>${icon('arrow', 16)}</button>`).join('') + (residents.length > 60 ? `<div class="resident-paging"><button class="button" data-resident-page="-1" ${residentPage === 0 ? 'disabled' : ''}>이전 주민</button><span>${residentPage + 1} / ${Math.ceil(residents.length / 60)}</span><button class="button" data-resident-page="1" ${(residentPage + 1) * 60 >= residents.length ? 'disabled' : ''}>다음 주민 목록</button></div>` : '');
+  $('resident-grid').innerHTML = residents.slice(residentPage * 60, (residentPage + 1) * 60).map(n => `<button class="resident-card" data-npc="${esc(n.id)}"><span class="resident-dot">${portrait(appearance(n), characterVisual(n, state))}</span><div><h3>${esc(n.identity.name)}${n.profile ? ' <small>내 NPC</small>' : ''} <small>${occupationLabel(state, n)}</small></h3><p>${actionText(n)}</p><span>배고픔 ${n.needs.hunger.toFixed(0)} · 건강 ${n.needs.health.toFixed(0)} · 식량 ${n.inventory.food}</span></div>${icon('arrow', 16)}</button>`).join('') + (residents.length > 60 ? `<div class="resident-paging"><button class="button" data-resident-page="-1" ${residentPage === 0 ? 'disabled' : ''}>이전 주민</button><span>${residentPage + 1} / ${Math.ceil(residents.length / 60)}</span><button class="button" data-resident-page="1" ${(residentPage + 1) * 60 >= residents.length ? 'disabled' : ''}>다음 주민 목록</button></div>` : '');
 }
 const kindLabels: Partial<Record<WorldEvent['kind'], string>> = { ecology: '생태 변화', council: '주민 공동결정', diplomacy: '도시 관계', industry: '산업 생산', public_service: '공공서비스', tax: '세금·임대', urban: '도시 관측', policy: '정책 변경', freight: '물자 운송', family: '가족 형성', birth: '출생', coming_of_age: '성년', inheritance: '상속', education: '기술 전승', construction: '건설', settlement: '새 정착지', migration: '이주', caravan: '마을 교역', occupation: '직업 변화', price: '가격 산정', wage: '노동 보상', share: '따뜻한 도움', theft: '식량 절도', witness: '목격', rumor: '소문', talk: '이웃의 대화', relationship: '관계 변화', memory: '새로운 기억', goal: '새로운 바람', weather: '마을의 날씨', scarcity: '식량 부족', health: '건강', death: '마지막 인사', production: '생산', consumption: '생활', storage: '공동 창고', trade: '거래', loan: '대여', repayment: '상환', default: '연체', experiment: '관찰 실험', project: '목표 달성', llm: '사건 해석', arrival: '이동', failure: '계획 변경' };
 function renderEvents() {
@@ -207,7 +226,7 @@ function setView(next: string) {
   document.querySelectorAll('[data-view]').forEach(el => el.classList.toggle('active', (el as HTMLElement).dataset.view === next));
   if (next === 'residents') renderResidents();
 }
-function replaceWorld(next: Simulation) { coordinator.dispose(); sim = next; coordinator = new DecisionCoordinator(sim, new MockLLMProvider()); state = sim.snapshot(); selectedId = state.npcs[0].id; lastSaveTick = sim.tick; map.reset(); accumulator = 0; eventLimit = 40; $<HTMLInputElement>('seed-input').value = String(state.seed); render(); }
+function replaceWorld(next: Simulation) { coordinator.dispose(); sim = next; coordinator = new DecisionCoordinator(sim, new MockLLMProvider()); state = sim.snapshot(); selectedId = state.npcs[0].id; lastSaveTick = sim.tick; selectedObject = undefined; map.reset(); accumulator = 0; eventLimit = 40; $<HTMLInputElement>('seed-input').value = String(state.seed); render(); }
 function localSave(showNotice = false) {
   if (cloudMode) return false;
   try { localStorage.setItem(STORAGE_KEY, sim.save()); lastSaveTick = sim.tick; $('save-status').textContent = `${dayOf(sim.tick)}일째 ${timeLabel(sim.tick)} · 이 기기에 저장됨`; if (showNotice) toast('세계의 상태와 모든 사건을 이 기기에 저장했습니다.'); return true; }
@@ -222,7 +241,7 @@ document.addEventListener('click', event => {
   if (button.id === 'export-observations') download(`living-small-world-observations-${state.seed}.json`, JSON.stringify({ seed: state.seed, since: state.economy.since, daily: state.economy.daily, urban: state.urban.samples }, null, 2));
   if (button.dataset.view) setView(button.dataset.view);
   if (button.dataset.npc) { $<HTMLDialogElement>('detail-dialog').close(); selectNPC(button.dataset.npc); }
-  if (button.dataset.tab) { tab = button.dataset.tab; render(); }
+  if (button.dataset.tab) { selectedObject = undefined; tab = button.dataset.tab; render(); }
   if (button.dataset.speed) { speed = Number(button.dataset.speed); document.querySelectorAll<HTMLElement>('[data-speed]').forEach(b => { b.classList.toggle('active', Number(b.dataset.speed) === speed); b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === speed)); }); }
   if (button.dataset.filter) { filter = button.dataset.filter; eventLimit = 40; document.querySelectorAll<HTMLElement>('[data-filter]').forEach(b => { b.classList.toggle('active', b.dataset.filter === filter); b.setAttribute('aria-pressed', String(b.dataset.filter === filter)); }); renderEvents(); }
   if (button.dataset.event) showEvent(button.dataset.event);
@@ -327,6 +346,7 @@ function renderJournal() {
   $('more-events').textContent = `이전 기록 더 보기 · 화면에 ${journalEvents.length}건`;
 }
 function renderCloudLife() {
+  if (selectedObject) return;
   const n = selectedNPC(), key = `${cloud?.world?.epoch}:${n.id}`;
   if (key !== lifeKey) { lifeKey = key; lifeEvents = []; lifeNext = null; void loadCloudLife(); }
   $('npc-detail').innerHTML = `${familyView(state, n)}<div class="section-label">삶의 기록 <span>서버 기록</span></div><p class="inspector-footnote">현재 재산 ${n.wealth}코인 · 식량 ${n.inventory.food}개</p>${lifeEvents.length ? lifeEvents.map(eventLink).join('') : '<p class="empty-state">생애 기록을 확인하고 있습니다.</p>'}${lifeNext !== null ? '<button class="more-button" id="more-life">이전 생애 기록 더 보기</button>' : ''}`;
@@ -340,7 +360,7 @@ async function loadCloudLife(more = false) {
     const result = await cloud.get<EventPage>(`events?${params}`);
     if (request !== lifeRequest || key !== lifeKey || result.epoch !== cloud.world.epoch) return;
     lifeEvents = (more ? [...lifeEvents, ...result.events] : result.events).slice(-400); lifeNext = result.next;
-    if (tab === 'life') { renderCloudLife(); if (!lifeEvents.length) $('npc-detail').innerHTML = '<p class="empty-state">아직 기록된 생애 사건이 없습니다.</p>'; }
+    if (tab === 'life' && !selectedObject) { renderCloudLife(); if (!lifeEvents.length) $('npc-detail').innerHTML = '<p class="empty-state">아직 기록된 생애 사건이 없습니다.</p>'; }
   } catch (e) { cloudFailure(e); }
 }
 let detailRequest = 0;
@@ -425,7 +445,7 @@ function startCloud() {
       else journalKey = '';
     }
     if (newEvents && lifeEvents.length <= 40 && tab === 'life') lifeKey = '';
-    if (changed) { lifeKey = ''; map.reset(); }
+    if (changed) { lifeKey = ''; selectedObject = undefined; map.reset(); }
     $('save-status').textContent = `${dayOf(state.tick)}일째 ${timeLabel(state.tick)} · 서버에 저장됨`;
     render();
     const remaining = world.meta.pendingTicks ?? 0;
@@ -512,7 +532,7 @@ async function focusVillage(focus: string, detail = state.civilization.detail) {
 }
 document.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-village]');
-  if (button) { map.setMode('city'); $<HTMLSelectElement>('map-mode').value = 'city'; void focusVillage(button.dataset.village!); }
+  if (button) { selectedObject = undefined; map.setMode('city'); $<HTMLSelectElement>('map-mode').value = 'city'; void focusVillage(button.dataset.village!); }
 });
 document.addEventListener('change', event => {
   const target = event.target as HTMLSelectElement;
@@ -532,7 +552,7 @@ document.addEventListener('submit', async event => {
 document.addEventListener('change', event => {
   const target = event.target as HTMLSelectElement;
   if (target.id === 'urban-layer') { setUrbanLayer(target.value); render(); }
-  if (target.id === 'urban-district') { map.setMode('city'); $<HTMLSelectElement>('map-mode').value = 'city'; setDistrict(target.value); map.setDistrict(target.value); render(); }
+  if (target.id === 'urban-district') { selectedObject = undefined; map.setMode('city'); $<HTMLSelectElement>('map-mode').value = 'city'; setDistrict(target.value); map.setDistrict(target.value); render(); }
 });
 
 document.addEventListener('click', event => { const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-resident-page]'); if (button) { residentPage += Number(button.dataset.residentPage); renderResidents(); } });
@@ -586,18 +606,26 @@ document.addEventListener('change', async event => {
 
 
 function renderCharacterWatch() {
+  const options = '<option value="">지도에서 고르기</option>' + state.civilization.settlements.map(v => `<optgroup label="${esc(v.name)}">${state.buildings.filter(b => b.settlementId === v.id).map(b => `<option value="building:${esc(b.id)}">${esc(b.name)} · ${b.position.x}, ${b.position.y}</option>`).join('')}</optgroup>`).join('') + `<optgroup label="자연 자원">${state.resources.map(r => `<option value="resource:${esc(r.id)}">${r.kind === 'wood' ? '목재 나무' : '열매 덤불'} · ${r.position.x}, ${r.position.y}</option>`).join('')}</optgroup>`;
+  setHTML('object-picker', options);
+  $<HTMLSelectElement>('object-picker').value = selectedObject ? `${selectedObject.kind}:${selectedObject.id}` : '';
+  if (selectedObject) {
+    $('map-scope').textContent = '선택한 장소 · 확대 관찰';
+    $('character-watch').innerHTML = `<div class="object-watch"><div><span class="object-eyebrow">지금 살펴보는 장소</span><b>${esc(objectName(state, selectedObject) ?? '장소')}</b><p>정보 패널에서 현재 상태와 관련 주민을 확인하세요.</p></div><button class="button" data-npc="${esc(selectedId)}">주민으로 돌아가기</button></div>`; return;
+  }
   const n = selectedNPC(), a = n.currentAction, target = state.npcs.find(p => p.id === a?.targetId?.replace('peer:', ''));
   const recent = state.events.filter(e => e.participants.includes(n.id) && ['talk','share','trade','loan','repayment','family','theft','relationship'].includes(e.kind)).slice(-3).reverse();
   $('map-scope').textContent = map.viewMode === 'region' ? `${state.civilization.settlements.length}개 정착지 · ${state.width}×${state.height}칸` : map.viewMode === 'follow' ? `${n.identity.name} · (${n.position.x}, ${n.position.y})` : '32×24칸 · 구역 확대 가능';
-  $('character-watch').innerHTML = `<div class="watch-heading">${portrait(appearance(n))}<div><b>${esc(n.identity.name)}${n.profile ? ' · 내가 만든 주민' : ''}</b><p>${actionText(n)}${target ? ` · 상대 <button class="text-button" data-npc="${esc(target.id)}">${esc(target.identity.name)}</button>` : ''}</p></div><button class="button" data-tab="relationships">관계 살펴보기</button></div><p>${esc(n.decision.reason)}</p><div class="watch-events">${recent.length ? recent.map(e => `<button class="evidence-link" data-event="${esc(e.id)}">${esc(e.description)}</button>`).join('') : '<span class="muted">재생하면 이웃과의 실제 만남과 행동을 관찰할 수 있습니다. 관계·기억 탭과 선택 주민 기록에서 이전 사건도 확인하세요.</span>'}</div>`;
+  $('character-watch').innerHTML = `<div class="watch-heading">${portrait(appearance(n), characterVisual(n, state))}<div><b>${esc(n.identity.name)}${n.profile ? ' · 내가 만든 주민' : ''}</b>${characterStatus(n, state)}<p>${actionText(n)}${target ? ` · 상대 <button class="text-button" data-npc="${esc(target.id)}">${esc(target.identity.name)}</button>` : ''}</p></div><button class="button" data-tab="relationships">관계 살펴보기</button></div><p>${esc(n.decision.reason)}</p><div class="watch-events">${recent.length ? recent.map(e => `<button class="evidence-link" data-event="${esc(e.id)}">${esc(e.description)}</button>`).join('') : '<span class="muted">재생하면 이웃과의 실제 만남과 행동을 관찰할 수 있습니다. 관계·기억 탭과 선택 주민 기록에서 이전 사건도 확인하세요.</span>'}</div>`;
 }
 $('create-character').onclick = () => {
   if (creatingCharacter) { toast('주민의 입주를 저장하고 있습니다.'); return; }
   if (cloudMode && !cloudReady) { toast('서버 연결을 먼저 확인해 주세요.'); return; }
   openDialog(characterForm(state));
 };
-$('map-mode').onchange = () => { map.setMode($<HTMLSelectElement>('map-mode').value as 'city' | 'region' | 'follow'); render(); };
-$('follow-character').onclick = () => { map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; render(); };
+$('object-picker').onchange = () => { const [kind, id] = $<HTMLSelectElement>('object-picker').value.split(':'); if (id && (kind === 'building' || kind === 'resource')) selectObject({ kind, id }); else selectNPC(selectedId); };
+$('map-mode').onchange = () => { selectedObject = undefined; map.setMode($<HTMLSelectElement>('map-mode').value as 'city' | 'region' | 'follow'); render(); };
+$('follow-character').onclick = () => { selectedObject = undefined; map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; render(); };
 $('resident-search').oninput = () => { residentSearch = $<HTMLInputElement>('resident-search').value.trim(); residentPage = 0; renderResidents(); };
 $('custom-residents').onchange = () => { customResidents = $<HTMLInputElement>('custom-residents').checked; residentPage = 0; renderResidents(); };
 function defaultCharmInputs(form: HTMLFormElement) {

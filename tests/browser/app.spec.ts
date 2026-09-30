@@ -232,7 +232,10 @@ test('map paints intermediate positions between server updates while avoiding re
     const points: number[][] = []; Object.assign(window, { renderedPoints: points });
     const arc = CanvasRenderingContext2D.prototype.arc;
     CanvasRenderingContext2D.prototype.arc = function (...args: Parameters<typeof arc>) {
-      if ((this.canvas as HTMLCanvasElement).id === 'world-map' && args[2] === 5) points.push([performance.now(), args[0], args[1]]);
+      if ((this.canvas as HTMLCanvasElement).id === 'world-map' && args[2] === 6) {
+        const point = this.getTransform().transformPoint({ x: args[0], y: args[1] });
+        points.push([performance.now(), point.x, point.y]);
+      }
       return arc.apply(this, args);
     };
   });

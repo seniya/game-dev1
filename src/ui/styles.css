@@ -155,3 +155,29 @@
 .attraction-table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 10px 0; }
 .attraction-table th, .attraction-table td { padding: 6px 3px; text-align: right; border-bottom: 1px solid #e1e6dc; white-space: nowrap; }
 .attraction-table th:first-child { text-align: left; }
+
+/* Places and people share the same inspection surface. */
+.inspector-tabs[hidden] { display: none; }
+.object-inspector-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 22px; font-size: 12px; border-bottom: 1px solid #e4e8da; }
+.object-hero { padding: 22px; border: 1px solid #d8e2cc; background: linear-gradient(135deg, #eff3e4, #fbf5e5); border-radius: 12px; }
+.object-eyebrow { display: block; font-size: 10px; font-weight: 600; letter-spacing: .1em; color: #617c51; margin-bottom: 8px; }
+.object-hero h3 { font-size: 22px; color: #365441; margin: 6px 0 12px; overflow-wrap: anywhere; }
+.object-hero p, .object-content p { font-size: 12px; line-height: 1.8; color: #64715d; }
+.object-metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; margin: 16px 0; }
+.object-metrics > div { display: grid; gap: 8px; background: #f5f5ec; border-radius: 9px; padding: 14px; }
+.object-metrics span { font-size: 11px; color: #697b5a; }
+.object-metrics b { font-size: 18px; font-weight: 600; color: #415b3a; overflow-wrap: anywhere; }
+.object-content h3 { font-size: 12px; color: #506e45; margin: 22px 0 10px; }
+.object-person { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 12px; margin: 5px 0; border: 1px solid #e0e6d8; border-radius: 8px; color: #3f6046; text-align: left; font-size: 13px; }
+.object-person:hover { background: #edf3e6; }
+.object-person span { font-size: 10px; color: #6a825e; }
+.object-stock-track { height: 8px; background: #e5e9db; border-radius: 8px; overflow: hidden; }
+.object-stock-track i { display: block; height: 100%; background: #88a26d; }
+.object-watch { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+.object-watch b { font-size: 15px; color: #3e5c45; }
+.character-status { display: inline-flex; align-items: center; gap: 5px; color: var(--state-color); font-size: 11px; margin: 4px 6px 5px 0; }
+.character-status i { display: inline-grid; place-items: center; min-width: 19px; height: 19px; padding: 0 3px; border-radius: 6px; color: #fffdf4; background: var(--state-color); font-style: normal; font-weight: 700; }
+.character-portrait[data-state="departed"] { filter: grayscale(1); opacity: .65; }
+.object-person:focus-visible, #object-picker:focus-visible { outline: 2px solid #597c4a; outline-offset: 3px; }
+#object-picker { max-width: 205px; }
+@media(max-width:760px) { .object-inspector-bar { padding: 14px; } .object-hero { padding: 17px; } .object-watch { flex-wrap: wrap; } .object-metrics b { font-size: 16px; } }
