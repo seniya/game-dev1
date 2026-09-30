@@ -1,3 +1,4 @@
+import { updateReadingPanel, withReadingPosition } from './ui/reading-panel';
 import { observationView } from './ui/observation';
 import { villageSize } from './sim/civilization';
 import { objectInspector, objectName, type ObjectSelection } from './ui/objects';
@@ -60,6 +61,7 @@ let aiStatus: AIStatus | undefined;
 let chromeRunner: ChromeRunner | undefined;
 let journalKey = '', journalNext: number | null = null, journalEpoch = '', journalEvents: WorldEvent[] = [], journalRequest = 0;
 let journalPage: EventPage | undefined;
+let lifeLoading = false, lifeLoaded = false;
 let lifeKey = '', lifeNext: number | null = null, lifeEvents: WorldEvent[] = [], lifeRequest = 0;
 let startupNote = '';
 try {
@@ -139,8 +141,6 @@ function render() {
   $('game-clock').innerHTML = `<b>${dayOf(state.tick)}일째</b><span>${Math.floor((dayOf(state.tick) - 1) / 12) + 1}년</span><span>${timeLabel(state.tick)}</span><span class="muted">${season}</span>`;
   $('running-status').textContent = playing ? '세계가 살아가는 중' : '잠시 멈춘 세계'; $('running-dot').classList.toggle('paused', !playing);
   $('play-button').innerHTML = icon(playing ? 'pause' : 'play', 17); $('play-button').setAttribute('aria-label', playing ? '일시정지' : '재생');
-  const openDetails = [...document.querySelectorAll<HTMLDetailsElement>('#npc-detail details[open]')].map(d => d.dataset.detailKey ?? d.className);
-  const inspectorScroll = $('npc-detail').scrollTop;
   const heritageOpen = document.querySelector<HTMLDetailsElement>('#heritage-overview')?.open;
   const urbanOpen = document.querySelector<HTMLDetailsElement>('#urban-overview')?.open;
   const policyEditing = document.activeElement?.closest('#urban-policy');
@@ -148,8 +148,6 @@ function render() {
   const objectVillage = selectedObject?.kind === 'building' ? state.buildings.find(b => b.id === selectedObject?.id)?.settlementId : undefined;
   $('village-title').textContent = objectVillage ? state.civilization.settlements.find(v => v.id === objectVillage)?.name ?? '정착지' : map.viewMode === 'region' ? '세계 전체 · 정착지와 교역' : state.civilization.settlements.find(v => v.id === (map.viewMode === 'follow' ? selectedNPC().settlementId : state.civilization.focus))?.name ?? '정착지';
   map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed, buffered: cloudMode, object: selectedObject }); presentationMotion = undefined; renderCharacterWatch(); renderInspector(); renderEvents();
-  for (const detail of document.querySelectorAll<HTMLDetailsElement>('#npc-detail details')) detail.open = openDetails.includes(detail.dataset.detailKey ?? detail.className);
-  $('npc-detail').scrollTop = inspectorScroll;
   if (view === 'residents') renderResidents();
   if (view === 'economy') $('economy-view').innerHTML = economyView(state, metric);
   $('llm-metrics').innerHTML = `<span>요청 ${state.llm.requested}</span><span>완료 ${state.llm.completed}</span><span>대기 ${state.llm.queue.length}</span><span>거부 ${state.llm.rejected}</span><span>실패 ${state.llm.failed}</span><span>게임 하루 요청 ${state.llm.dailyTotal} / 12</span>`;
@@ -160,33 +158,39 @@ function render() {
   // The summary is also available as a downloadable observational report.
   $('stats').title = `관측 ${Number(((state.tick - 36) / 144).toFixed(2))}일 · 전체 사건 ${cloudMode ? cloud?.world?.meta.eventCount ?? 0 : state.events.length}건`;
 }
-function renderInspector() {
+let localInspectorEpoch = 0;
+function inspectorIdentity(includeTab = true) {
+  return `${cloudMode ? cloud?.world?.epoch ?? 'loading' : localInspectorEpoch}:${selectedObject ? `${selectedObject.kind}:${selectedObject.id}` : selectedId}:${includeTab ? tab : 'header'}`;
+}
+function setInspectorHTML(html: string) { updateReadingPanel($('npc-detail'), html, inspectorIdentity()); }
+function renderInspector() { withReadingPosition($('npc-detail'), renderInspectorContent); }
+function renderInspectorContent() {
   if (selectedObject && !objectName(state, selectedObject)) selectedObject = undefined;
   $('inspector-heading').textContent = selectedObject ? '장소 들여다보기' : '주민 들여다보기';
   document.querySelector<HTMLElement>('.inspector-tabs')!.hidden = !!selectedObject;
   if (selectedObject) {
-    $('npc-header').innerHTML = `<div class="object-inspector-bar"><span>선택한 장소</span><button class="text-button" data-npc="${esc(selectedId)}">주민으로 돌아가기 ↗</button></div>`;
-    $('npc-detail').innerHTML = objectInspector(state, selectedObject); return;
+    updateReadingPanel($('npc-header'), `<div class="object-inspector-bar"><span>선택한 장소</span><button class="text-button" data-npc="${esc(selectedId)}">주민으로 돌아가기 ↗</button></div>`, inspectorIdentity(false));
+    setInspectorHTML(objectInspector(state, selectedObject)); return;
   }
   const n = selectedNPC();
-  $('npc-header').innerHTML = `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}">${portrait(appearance(n), characterVisual(n, state))}<span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <span>${n.identity.age}세${n.profile ? ' · 내 NPC' : ''}</span></h3><p>${occupationLabel(state, n)} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p>${characterStatus(n, state)}<span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`;
-  if (tab === 'life') { if (cloudMode) { renderCloudLife(); return; } $('npc-detail').innerHTML = lifeHistory(state, n, lifeLimit); return; }
+  updateReadingPanel($('npc-header'), `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}">${portrait(appearance(n), characterVisual(n, state))}<span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <span>${n.identity.age}세${n.profile ? ' · 내 NPC' : ''}</span></h3><p>${occupationLabel(state, n)} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p>${characterStatus(n, state)}<span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`, inspectorIdentity(false));
+  if (tab === 'life') { if (cloudMode) { renderCloudLife(); return; } setInspectorHTML(lifeHistory(state, n, lifeLimit)); return; }
   if (tab === 'relationships') {
-    $('npc-detail').innerHTML = `${attractionProfile(state, n)}<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p>${attractionRelation(state, n, r.npcId)}<div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button>${cloudMode && cloud?.world?.meta.aiMode !== 'chrome' && n.alive && state.npcs.find(p => p.id === r.npcId)?.alive && n.memories.some(m => m.relatedNpcIds.includes(r.npcId)) ? `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" ${!state.llm.enabled || cloud?.world?.meta.dialogue ? 'disabled' : ''}>기억에 근거한 말 듣기</button>${RECOLLECTION_TOPICS.filter(t => t !== 'shared' && recollections(n.memories, r.npcId, t).length).map(t => `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" data-recall="${t}" ${!state.llm.enabled || cloud?.world?.meta.dialogue || cloud?.world?.meta.history ? 'disabled' : ''}>${RECOLLECTION_LABELS[t]}</button>`).join('')}` : ''}</article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`;
+    setInspectorHTML(`${attractionProfile(state, n)}<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card" data-reading-key="relationship-${esc(r.npcId)}"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p>${attractionRelation(state, n, r.npcId)}<div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button>${cloudMode && cloud?.world?.meta.aiMode !== 'chrome' && n.alive && state.npcs.find(p => p.id === r.npcId)?.alive && n.memories.some(m => m.relatedNpcIds.includes(r.npcId)) ? `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" ${!state.llm.enabled || cloud?.world?.meta.dialogue ? 'disabled' : ''}>기억에 근거한 말 듣기</button>${RECOLLECTION_TOPICS.filter(t => t !== 'shared' && recollections(n.memories, r.npcId, t).length).map(t => `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" data-recall="${t}" ${!state.llm.enabled || cloud?.world?.meta.dialogue || cloud?.world?.meta.history ? 'disabled' : ''}>${RECOLLECTION_LABELS[t]}</button>`).join('')}` : ''}</article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`);
     return;
   }
   if (tab === 'memories') {
-    $('npc-detail').innerHTML = `<div class="section-label">마음에 남은 순간 <span>${n.memories.length} / 40</span></div>${n.memories.length ? [...n.memories].sort((a, b) => b.createdAt - a.createdAt).map(m => `<button class="memory-card" data-event="${esc(m.sourceEventId)}"><span class="memory-date">${dayOf(m.createdAt)}일째 · 중요도 ${Math.round(m.importance)}${m.repetitions > 1 ? ` · 반복 ${m.repetitions}회` : ''}</span><p>${esc(m.description)}</p><span class="evidence-link">실제 사건으로 돌아가기 ${icon('arrow', 12)}</span></button>`).join('') : '<div class="empty-state">아직 오래 간직할 기억이 없어요.<br>의미 있는 경험이 마음에 남습니다.</div>'}<p class="inspector-footnote">일상의 기억은 서서히 흐려집니다. 원래 사건은 세계의 기록에 남아 있습니다.</p>`;
+    setInspectorHTML(`<div class="section-label">마음에 남은 순간 <span>${n.memories.length} / 40</span></div>${n.memories.length ? [...n.memories].sort((a, b) => b.createdAt - a.createdAt).map(m => `<button class="memory-card" data-event="${esc(m.sourceEventId)}"><span class="memory-date">${dayOf(m.createdAt)}일째 · 중요도 ${Math.round(m.importance)}${m.repetitions > 1 ? ` · 반복 ${m.repetitions}회` : ''}</span><p>${esc(m.description)}</p><span class="evidence-link">실제 사건으로 돌아가기 ${icon('arrow', 12)}</span></button>`).join('') : '<div class="empty-state">아직 오래 간직할 기억이 없어요.<br>의미 있는 경험이 마음에 남습니다.</div>'}<p class="inspector-footnote">일상의 기억은 서서히 흐려집니다. 원래 사건은 세계의 기록에 남아 있습니다.</p>`);
     return;
   }
   const needLabels = [['hunger', '배고픔', false], ['thirst', '갈증', false], ['fatigue', '피로', false], ['health', '건강', true], ['social', '사회적 충족', true], ['safety', '안전감', true]] as const;
-  $('npc-detail').innerHTML = `<div class="action-box"><span class="section-label">지금 하고 있는 일</span><div>${icon(n.currentAction?.path.length ? 'arrow' : 'leaf', 17)}<b>${actionText(n)}</b><span class="small-live-dot"></span></div></div>
+  setInspectorHTML(`<div class="action-box"><span class="section-label">지금 하고 있는 일</span><div>${icon(n.currentAction?.path.length ? 'arrow' : 'leaf', 17)}<b>${actionText(n)}</b><span class="small-live-dot"></span></div></div>
     ${n.profile ? `<div class="character-background"><p>${esc(n.profile.background) || '이곳에서 새로운 삶을 시작한 주민입니다.'}</p><button class="evidence-link" data-event="${esc(n.profile.arrivalEventId)}">입주 기록 보기</button></div>` : ''}<div class="section-label needs-title">몸과 마음 <span>0 — 100</span></div><div class="needs-list">${needLabels.map(([key, label, positive]) => { const value = Math.round(n.needs[key]), danger = positive ? value < 35 : value > 75; return `<div class="need-row"><span>${label}</span><div class="need-track"><i style="width:${value}%;background:${danger ? '#c9826c' : positive ? '#7d9c86' : '#b7a275'}"></i></div><b>${value}</b></div>`; }).join('')}</div>
     <div class="section-label spaced">왜 이 행동을 할까요? ${icon('spark', 13)}</div><div class="reason-box">${esc(n.decision.reason)}<div class="reason-foot">Utility AI · ${timeLabel(n.decision.tick)} 판단</div></div>
     <details class="utility-details"><summary>행동 후보 점수 보기</summary><div>${n.decision.candidates.map(c => `<div class="utility-row"><span>${ACTION_LABELS[c.kind]}<small>${esc(c.reason)}</small>${(c.evidence ?? []).map(id => `<button class="evidence-link" data-event="${esc(id)}">${esc(id)}</button>`).join('')}</span><b>${c.score.toFixed(1)}</b></div>`).join('') || '<p>첫 틱이 지나면 판단을 확인할 수 있습니다.</p>'}</div></details>
-    <div class="section-label spaced">지금의 바람</div>${n.goals.map(g => `<div class="goal-row">${icon('leaf', 14)}<div><b>${GOAL_LABELS[g.kind]}</b><p>${esc(g.reason)}</p>${g.sourceEventId ? `<button class="evidence-link" data-event="${esc(g.sourceEventId)}">계기가 된 사건 보기</button>` : ''}</div></div>`).join('')}
+    <div class="section-label spaced">지금의 바람</div>${n.goals.map(g => `<div class="goal-row" data-reading-key="goal-${esc(g.id)}">${icon('leaf', 14)}<div><b>${GOAL_LABELS[g.kind]}</b><p>${esc(g.reason)}</p>${g.sourceEventId ? `<button class="evidence-link" data-event="${esc(g.sourceEventId)}">계기가 된 사건 보기</button>` : ''}</div></div>`).join('')}
     <div class="inventory-strip"><span>${icon('food', 14)} 식량 <b>${n.inventory.food}</b></span><span>목재 <b>${n.inventory.wood}</b></span><span>재산 <b>${n.wealth}</b></span></div>
-    ${attractionProfile(state, n)}${livingPersonView(state, n)}<details class="personality-details"><summary>성격과 생활 정보</summary><p>근면 ${n.personality.diligence.toFixed(0)} · 탐욕 ${n.personality.greed.toFixed(0)} · 사교 ${n.personality.sociability.toFixed(0)}<br>공격성 ${n.personality.aggression.toFixed(0)} · 공감 ${n.personality.empathy.toFixed(0)} · 호기심 ${n.personality.curiosity.toFixed(0)}</p><p>좌표 (${n.position.x}, ${n.position.y}) · 오늘 식량 인출 ${n.dailyTaken}/3<br>기억 ${n.memories.length} · 관계 ${n.relationships.length}</p></details>`;
+    ${attractionProfile(state, n)}${livingPersonView(state, n)}<details class="personality-details"><summary>성격과 생활 정보</summary><p>근면 ${n.personality.diligence.toFixed(0)} · 탐욕 ${n.personality.greed.toFixed(0)} · 사교 ${n.personality.sociability.toFixed(0)}<br>공격성 ${n.personality.aggression.toFixed(0)} · 공감 ${n.personality.empathy.toFixed(0)} · 호기심 ${n.personality.curiosity.toFixed(0)}</p><p>좌표 (${n.position.x}, ${n.position.y}) · 오늘 식량 인출 ${n.dailyTaken}/3<br>기억 ${n.memories.length} · 관계 ${n.relationships.length}</p></details>`);
 }
 let residentPage = 0, residentSearch = '', customResidents = false;
 function renderResidents() {
@@ -229,7 +233,7 @@ function setView(next: string) {
   document.querySelectorAll('[data-view]').forEach(el => el.classList.toggle('active', (el as HTMLElement).dataset.view === next));
   if (next === 'residents') renderResidents();
 }
-function replaceWorld(next: Simulation) { coordinator.dispose(); sim = next; coordinator = new DecisionCoordinator(sim, new MockLLMProvider()); state = sim.snapshot(); selectedId = state.npcs[0].id; lastSaveTick = sim.tick; selectedObject = undefined; map.reset(); accumulator = 0; eventLimit = 40; $<HTMLInputElement>('seed-input').value = String(state.seed); render(); }
+function replaceWorld(next: Simulation) { localInspectorEpoch++; coordinator.dispose(); sim = next; coordinator = new DecisionCoordinator(sim, new MockLLMProvider()); state = sim.snapshot(); selectedId = state.npcs[0].id; lastSaveTick = sim.tick; selectedObject = undefined; map.reset(); accumulator = 0; eventLimit = 40; $<HTMLInputElement>('seed-input').value = String(state.seed); render(); }
 function localSave(showNotice = false) {
   if (cloudMode) return false;
   try { localStorage.setItem(STORAGE_KEY, sim.save()); lastSaveTick = sim.tick; $('save-status').textContent = `${dayOf(sim.tick)}일째 ${timeLabel(sim.tick)} · 이 기기에 저장됨`; if (showNotice) toast('세계의 상태와 모든 사건을 이 기기에 저장했습니다.'); return true; }
@@ -351,20 +355,21 @@ function renderJournal() {
 function renderCloudLife() {
   if (selectedObject) return;
   const n = selectedNPC(), key = `${cloud?.world?.epoch}:${n.id}`;
-  if (key !== lifeKey) { lifeKey = key; lifeEvents = []; lifeNext = null; void loadCloudLife(); }
-  $('npc-detail').innerHTML = `${familyView(state, n)}<div class="section-label">삶의 기록 <span>서버 기록</span></div><p class="inspector-footnote">현재 재산 ${n.wealth}코인 · 식량 ${n.inventory.food}개</p>${lifeEvents.length ? lifeEvents.map(eventLink).join('') : '<p class="empty-state">생애 기록을 확인하고 있습니다.</p>'}${lifeNext !== null ? '<button class="more-button" id="more-life">이전 생애 기록 더 보기</button>' : ''}`;
+  if (key !== lifeKey) { lifeKey = key; lifeEvents = []; lifeNext = null; lifeLoaded = false; void loadCloudLife(); }
+  setInspectorHTML(`${familyView(state, n)}<div class="section-label">삶의 기록 <span>서버 기록</span></div><p class="inspector-footnote">현재 재산 ${n.wealth}코인 · 식량 ${n.inventory.food}개</p>${lifeEvents.length ? lifeEvents.map(eventLink).join('') : `<p class="empty-state">${lifeLoaded ? '아직 기록된 생애 사건이 없습니다.' : '생애 기록을 확인하고 있습니다.'}</p>`}${lifeNext !== null ? '<button class="more-button" id="more-life">이전 생애 기록 더 보기</button>' : ''}`);
 }
 async function loadCloudLife(more = false) {
   if (!cloud?.world) return;
-  const key = lifeKey, request = ++lifeRequest;
+  const key = lifeKey, request = ++lifeRequest; lifeLoading = true;
   const params = new URLSearchParams({ epoch: cloud.world.epoch, npc: selectedId, filter: 'life' });
   if (more && lifeNext !== null) params.set('before', String(lifeNext));
   try {
     const result = await cloud.get<EventPage>(`events?${params}`);
     if (request !== lifeRequest || key !== lifeKey || result.epoch !== cloud.world.epoch) return;
-    lifeEvents = (more ? [...lifeEvents, ...result.events] : result.events).slice(-400); lifeNext = result.next;
-    if (tab === 'life' && !selectedObject) { renderCloudLife(); if (!lifeEvents.length) $('npc-detail').innerHTML = '<p class="empty-state">아직 기록된 생애 사건이 없습니다.</p>'; }
+    lifeEvents = (more ? [...lifeEvents, ...result.events] : result.events).slice(0, 400); lifeNext = lifeEvents.length < 400 ? result.next : null; lifeLoaded = true;
+    if (tab === 'life' && !selectedObject) renderCloudLife();
   } catch (e) { cloudFailure(e); }
+  finally { if (request === lifeRequest) lifeLoading = false; }
 }
 let detailRequest = 0;
 async function showCloudEvent(id: string) {
@@ -447,7 +452,7 @@ function startCloud() {
       if (merged) { journalPage = merged; journalEvents = merged.events; journalNext = merged.next; renderJournal(); }
       else journalKey = '';
     }
-    if (newEvents && lifeEvents.length <= 40 && tab === 'life') lifeKey = '';
+    if (!changed && newEvents && lifeEvents.length <= 40 && tab === 'life' && !selectedObject && !lifeLoading && lifeKey === `${world.epoch}:${selectedId}`) void loadCloudLife();
     if (changed) { lifeKey = ''; selectedObject = undefined; map.reset(); }
     $('save-status').textContent = `${dayOf(state.tick)}일째 ${timeLabel(state.tick)} · 서버에 저장됨`;
     render();

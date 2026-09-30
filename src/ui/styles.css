@@ -197,3 +197,6 @@
 .village-projects > div:last-child { display: flex; gap: 8px; flex-wrap: wrap; }
 .observation-footnote { margin-bottom: 0; }
 @media (max-width: 1000px) { .observation-tasks { grid-template-columns: 1fr; } .observation-task p { min-height: 0; } }
+
+/* The reading panel retains its own visible anchor during live updates. */
+.inspector-content { overflow-anchor: none; }
