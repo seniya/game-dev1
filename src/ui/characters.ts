@@ -21,7 +21,7 @@ export function portrait(a: Appearance, state?: CharacterVisual) {
   ${state && state.key !== 'calm' ? `<circle cx="65" cy="70" r="12" fill="${state.color}"/><text x="65" y="74" text-anchor="middle" font-size="13" fill="#fff" font-family="sans-serif">${state.symbol}</text>` : ''}
   ${a.accessory === 'glasses' ? '<g fill="none" stroke="#34443d" stroke-width="2"><rect x="26" y="30" width="13" height="10" rx="3"/><rect x="42" y="30" width="13" height="10" rx="3"/><path d="M39 34h3"/></g>' : a.accessory === 'hat' ? `<path d="M19 22h42M27 21V9h26v12" fill="${a.outfit}" stroke="${a.outfit}" stroke-width="6"/>` : ''}</svg>`;
 }
-export function drawPerson(ctx: CanvasRenderingContext2D, n: NPC, x: number, y: number, w?: WorldState, phase = 0) {
+export function drawPerson(ctx: CanvasRenderingContext2D, n: NPC, x: number, y: number, w?: WorldState, phase = 0, showStatus = true) {
   const a = appearance(n), v = characterVisual(n, w), child = n.identity.age < 16, elder = n.identity.age >= 65;
   ctx.save(); ctx.translate(x, y); ctx.scale(child ? .78 : 1, child ? .78 : 1);
   if (v.sleeping) { ctx.translate(0, -1); ctx.rotate(-.65); }
@@ -52,7 +52,7 @@ export function drawPerson(ctx: CanvasRenderingContext2D, n: NPC, x: number, y: 
   if (v.key === 'unwell') { ctx.fillStyle = '#fff9e6'; ctx.fillRect(-5, -21, 8, 3); }
   if (v.key === 'cold') { ctx.fillStyle = '#e0be87'; ctx.fillRect(-7, -10, 14, 4); ctx.fillRect(3, -8, 4, 9); }
   ctx.restore();
-  if (v.key !== 'calm' && v.key !== 'moving') {
+  if (showStatus && v.key !== 'calm' && v.key !== 'moving') {
     ctx.fillStyle = '#fffdf1'; ctx.beginPath(); ctx.roundRect(x + 7, y - 34, 17, 15, 5); ctx.fill();
     ctx.fillStyle = v.color; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText(v.symbol, x + 15.5, y - 23);
   }

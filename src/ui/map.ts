@@ -1,3 +1,4 @@
+import { layoutMapLabels, type MapLabel, type LabelRect } from './map-labels';
 import { characterVisual } from './character-state';
 import { buildingBounds, drawBuilding, objectName, resourceStage, type ObjectSelection } from './objects';
 import { type WorldState, type NPC, type Position } from '../sim/types';
@@ -14,6 +15,10 @@ export class WorldMap {
   private terrain: HTMLCanvasElement = document.createElement('canvas');
   private scene = document.createElement('canvas');
   private sceneKey = '';
+  private buildingLabels: MapLabel[] = [];
+  private labels: MapLabel[] = [];
+  private labelScale = { x: 1, y: 1 };
+  private labelWidths = new Map<string, number>();
   private motion = new MotionPlayback();
   private motionBuffer = new MotionBuffer();
   private displayed = new Map<string, Position>();
@@ -41,6 +46,7 @@ export class WorldMap {
   private terrainBuildings = 0;
   constructor(private canvas: HTMLCanvasElement, onSelect: (id: string) => void, private onObject: (selection: ObjectSelection) => void = () => {}) {
     this.onSelect = onSelect;
+    new ResizeObserver(() => this.draw()).observe(canvas);
     const point = (event: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       return { x: (event.clientX - rect.left) / rect.width * (32 / this.zoom) + this.origin.x, y: (event.clientY - rect.top) / rect.height * (24 / this.zoom) + this.origin.y };
@@ -70,7 +76,7 @@ export class WorldMap {
   }
   private hitObject(p: Position): ObjectSelection | undefined {
     if (!this.world) return;
-    for (const b of [...this.world.buildings].sort((a,b) => b.position.y - a.position.y)) {
+    for (const b of [...this.world.buildings].sort((a,b) => a.position.y - b.position.y).reverse()) {
       const bounds = buildingBounds(b), dx = (p.x - b.position.x - .5) * this.cell, dy = (p.y - b.position.y - .5) * this.cell;
       if (Math.abs(dx) <= bounds.width / 2 && dy >= -bounds.height && dy <= 15) return { kind: 'building', id: b.id };
     }
@@ -159,10 +165,35 @@ export class WorldMap {
     ctx.fillStyle = '#557c62'; ctx.beginPath(); ctx.arc(-7, -8, 13, 0, Math.PI * 2); ctx.arc(8, -9, 13, 0, Math.PI * 2); ctx.arc(0, -21, 14, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = '#6e9370'; ctx.beginPath(); ctx.arc(-4, -22, 10, 0, Math.PI * 2); ctx.arc(-10, -11, 8, 0, Math.PI * 2); ctx.fill(); ctx.restore();
   }
-  private label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, dark = false) {
-    ctx.font = '500 11px sans-serif'; const width = ctx.measureText(text).width + 14;
-    ctx.fillStyle = dark ? '#31483d' : '#fffdf0dd'; ctx.beginPath(); ctx.roundRect(x - width / 2, y - 10, width, 19, 5); ctx.fill();
-    ctx.fillStyle = dark ? '#fff8e8' : '#445548'; ctx.textAlign = 'center'; ctx.fillText(text, x, y + 3);
+  private label(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, dark = false, priority = 10, id = text, color?: string, compact = false) {
+    const p = ctx.getTransform().transformPoint({ x, y });
+    this.labels.push({ id, text, x: p.x / this.labelScale.x, y: p.y / this.labelScale.y, dark, priority, color, compact });
+  }
+  private drawLabels(ctx: CanvasRenderingContext2D) {
+    const width = this.canvas.width / this.labelScale.x, height = this.canvas.height / this.labelScale.y;
+    const bounds = this.canvas.getBoundingClientRect();
+    const reserved: LabelRect[] = [...(this.canvas.parentElement?.querySelectorAll<HTMLElement>('.map-badge, .map-grid-button, .map-compass') ?? [])].map(el => {
+      const r = el.getBoundingClientRect(); return { x: r.left - bounds.left, y: r.top - bounds.top, width: r.width, height: r.height };
+    });
+    ctx.save(); ctx.scale(this.labelScale.x, this.labelScale.y); ctx.font = '500 12px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    const measure = (text: string) => {
+      let value = this.labelWidths.get(text);
+      if (value === undefined) { value = ctx.measureText(text).width; if (this.labelWidths.size > 2000) this.labelWidths.clear(); this.labelWidths.set(text, value); }
+      return value;
+    };
+    const labels = layoutMapLabels(this.labels, width, height, measure, reserved);
+    // Draw leaders first, so a displaced name can still be traced to its original anchor.
+    for (const l of labels) {
+      const r = l.rect, x = Math.max(r.x, Math.min(r.x + r.width, l.x)), y = Math.max(r.y, Math.min(r.y + r.height, l.y));
+      if (Math.hypot(x - l.x, y - l.y) < 5) continue;
+      ctx.strokeStyle = l.dark ? '#31483d' : '#fffdf0'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(l.x, l.y); ctx.lineTo(x, y); ctx.stroke();
+    }
+    for (const l of labels) {
+      const r = l.rect;
+      ctx.fillStyle = l.dark ? '#31483d' : '#fffdf0f2'; ctx.beginPath(); ctx.roundRect(r.x, r.y, r.width, r.height, 5); ctx.fill();
+      ctx.fillStyle = l.color ?? (l.dark ? '#fff8e8' : '#445548'); ctx.fillText(l.text, r.x + r.width / 2, r.y + r.height / 2);
+    }
+    ctx.restore();
   }
   private buildScene(w: WorldState) {
     this.scene.width = this.canvas.width; this.scene.height = this.canvas.height;
@@ -189,13 +220,14 @@ export class WorldMap {
         ctx.fillStyle = '#e1dec5'; ctx.fillRect(x*c+14,y*c+11,2,8);
       }
     }
+    this.buildingLabels = [];
     const industries = new Map(w.urban.enterprises.map(e => [e.buildingId, e.kind]));
     for (const b of [...w.buildings].sort((a,b) => a.position.y - b.position.y)) {
       if (!this.inView(b.position, 3)) continue;
       const x = b.position.x * c + c / 2, y = b.position.y * c + c / 2;
       const industry = industries.get(b.id);
       drawBuilding(ctx, b, w, industry);
-      if (this.zoom >= 1 && b.kind !== 'home' && b.id !== this.selectedObject?.id) this.label(ctx, industry ? INDUSTRY_LABELS[industry] : b.name, x, y + (industry ? 39 : 27));
+      if (this.zoom >= 1 && b.kind !== 'home') this.buildingLabels.push({ id: `object:${b.id}`, text: industry ? INDUSTRY_LABELS[industry] : b.name, x, y: y + 27, priority: 10 });
     }
     ctx.restore();
   }
@@ -203,9 +235,13 @@ export class WorldMap {
   private draw(now = performance.now()) {
     const w = this.world; if (!w) return;
     const ctx = this.canvas.getContext('2d')!, c = this.cell;
+    const bounds = this.canvas.getBoundingClientRect();
+    this.labelScale = { x: this.canvas.width / (bounds.width || this.canvas.width), y: this.canvas.height / (bounds.height || this.canvas.height) };
+    this.labels = [];
     ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     ctx.drawImage(this.scene, 0, 0);
     ctx.save(); ctx.scale(this.zoom, this.zoom); ctx.translate(-this.origin.x * c, -this.origin.y * c);
+    for (const l of this.buildingLabels) this.label(ctx, l.text, l.x, l.y, false, l.priority, l.id);
     const selected = w.npcs.find(n => n.id === this.selected);
     if (!this.selectedObject && selected?.currentAction?.path.length) {
       ctx.strokeStyle = '#fff9d0bb'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.beginPath(); const position = this.motion.position(selected.id, now) ?? selected.position; ctx.moveTo((position.x + .5) * c, (position.y + .5) * c);
@@ -219,7 +255,7 @@ export class WorldMap {
       const x = (obj.position.x + .5) * c, y = (obj.position.y + .5) * c;
       ctx.strokeStyle = target === this.selectedObject ? '#fff7ce' : '#fffdf099'; ctx.lineWidth = 3 / this.zoom;
       ctx.beginPath(); ctx.ellipse(x, y + 8, target.kind === 'building' ? 34 : 23, 13, 0, 0, Math.PI * 2); ctx.stroke();
-      if (target === this.selectedObject) this.label(ctx, objectName(w, target) ?? '', x, y - (target.kind === 'building' ? buildingBounds(obj as WorldState['buildings'][number]).height + 15 : 52), true);
+      this.label(ctx, objectName(w, target) ?? '', x, y - (target.kind === 'building' ? buildingBounds(obj as WorldState['buildings'][number]).height + 15 : 52), true, target === this.selectedObject ? 100 : 90, `object:${target.id}`);
     }
     const occupants = new Map<string, number>();
     this.displayed.clear();
@@ -230,8 +266,10 @@ export class WorldMap {
       this.displayed.set(n.id, { x: x / c, y: y / c });
       if (!this.selectedObject && n.id === this.selected) { ctx.strokeStyle = '#fff9de'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 5, 13, 7, 0, 0, Math.PI * 2); ctx.stroke(); }
       ctx.fillStyle = '#384f443a'; ctx.beginPath(); ctx.ellipse(x + 2, y + 6, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
-      drawPerson(ctx, n, x, y, w, this.reducedMotion.matches ? 0 : (p.x + p.y) * Math.PI * 2);
-      if (!this.selectedObject && n.id === this.selected) this.label(ctx, `${n.identity.name} · ${n.currentAction ? ACTION_LABELS[n.currentAction.kind] : '관찰 중'}`, x, y - 45, true);
+      drawPerson(ctx, n, x, y, w, this.reducedMotion.matches ? 0 : (p.x + p.y) * Math.PI * 2, false);
+      const status = characterVisual(n, w);
+      if (this.zoom >= 1 && status.key !== 'calm' && status.key !== 'moving') this.label(ctx, status.symbol, x + 15, y - 27, false, 5, `status:${n.id}`, status.color, true);
+      if (!this.selectedObject && n.id === this.selected) this.label(ctx, `${n.identity.name} · ${n.currentAction ? ACTION_LABELS[n.currentAction.kind] : '관찰 중'}`, x, y - 45, true, 100, `npc:${n.id}`);
 
     }
     if (!this.selectedObject && selected?.currentAction?.targetId && ['Talk', 'Share', 'Borrow', 'Trade'].includes(selected.currentAction.kind)) {
@@ -239,7 +277,7 @@ export class WorldMap {
       if (other && this.inView(selected.position) && this.inView(other.position)) {
         ctx.strokeStyle = '#fff1af'; ctx.lineWidth = 2 / this.zoom; ctx.setLineDash([4,4]); ctx.beginPath();
         ctx.moveTo((selected.position.x+.5)*c,(selected.position.y+.5)*c); ctx.lineTo((other.position.x+.5)*c,(other.position.y+.5)*c); ctx.stroke(); ctx.setLineDash([]);
-        this.label(ctx, `${other.identity.name} · ${selected.currentAction.path.length ? '만나러 가는 중' : '상호작용 중'}`, (other.position.x+.5)*c, (other.position.y+.5)*c-34, true);
+        this.label(ctx, `${other.identity.name} · ${selected.currentAction.path.length ? '만나러 가는 중' : '상호작용 중'}`, (other.position.x+.5)*c, (other.position.y+.5)*c-34, true, 70, `npc:${other.id}`);
       }
     }
     for (const f of [...w.urban.freight, ...w.civilization.journeys.filter(j => j.kind === 'trade')]) {
@@ -248,7 +286,7 @@ export class WorldMap {
     }
     if (this.mode === 'region') for (const v of w.civilization.settlements) {
       ctx.save(); ctx.translate((v.center.x)*c,(v.center.y-10)*c); ctx.scale(1/this.zoom,1/this.zoom);
-      this.label(ctx, `${v.name} · ${w.npcs.filter(n => n.alive && n.settlementId === v.id).length}명`,0,0,true); ctx.restore();
+      this.label(ctx, `${v.name} · ${w.npcs.filter(n => n.alive && n.settlementId === v.id).length}명`,0,0,true,60,`settlement:${v.id}`); ctx.restore();
     }
     ctx.restore();
     const objectVillage = this.selectedObject?.kind === 'building' ? w.buildings.find(b => b.id === this.selectedObject?.id)?.settlementId : undefined;
@@ -256,7 +294,7 @@ export class WorldMap {
     const city = w.urban.cities.find(c => c.settlementId === focusId);
     if (city && this.mode !== 'region') {
       const serviceText = Object.entries(city.services).filter(([,level]) => level > 0).map(([key,level]) => `${SERVICE_LABELS[key as keyof typeof SERVICE_LABELS]} ${level}`).join(' · ');
-      if (serviceText) this.label(ctx, `지역 시설 · ${serviceText}`, this.canvas.width/2, this.canvas.height-18, true);
+      if (serviceText) this.label(ctx, `지역 시설 · ${serviceText}`, this.canvas.width/2, this.canvas.height-18, true, 50, 'services');
     }
     const hour = (w.tick % 144) / 6;
     if (hour > 19 || hour < 6) { ctx.fillStyle = '#21334925'; ctx.fillRect(0, 0, this.canvas.width, this.canvas.height); }
@@ -270,5 +308,6 @@ export class WorldMap {
       for (let x=0;x<=w.width;x++) { ctx.beginPath(); ctx.moveTo(x*c,0); ctx.lineTo(x*c,w.height*c); ctx.stroke(); }
       for (let y=0;y<=w.height;y++) { ctx.beginPath(); ctx.moveTo(0,y*c); ctx.lineTo(w.width*c,y*c); ctx.stroke(); } ctx.restore();
     }
+    this.drawLabels(ctx);
   }
 }

@@ -6,8 +6,6 @@ import { INDUSTRY_LABELS, type Industry } from '../sim/urban-types';
 export type ObjectSelection = { kind: 'building' | 'resource'; id: string };
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 const names = { home: '주거', storage: '공동 창고', farm: '농장', market: '시장', well: '우물' };
-// Signs use short Korean names so every industry remains distinct even at city scale.
-const signs: Record<Industry, string> = { field: '곡물', quarry: '석재', mine: '광석', mill: '제분', smith: '도구', garden: '약초', weaving: '직조', tailoring: '재봉', kitchen: '요리', joinery: '가구', vegetable_farm: '채소', orchard: '과일', fishery: '생선', pasture: '목축', clay_pit: '점토', saltworks: '소금', bakery: '빵', preserving: '저장', dairy: '유제품', pottery: '도자기', blanket_workshop: '담요', cookhouse: '스튜', apothecary: '약방' };
 export function objectName(w: WorldState, selection: ObjectSelection) {
   return selection.kind === 'building' ? w.buildings.find(b => b.id === selection.id)?.name : w.resources.find(r => r.id === selection.id)?.kind === 'wood' ? '목재 나무' : w.resources.some(r => r.id === selection.id) ? '열매 덤불' : undefined;
 }
@@ -77,10 +75,6 @@ export function drawBuilding(ctx: CanvasRenderingContext2D, b: Building, w: Worl
     } else if (industry === 'pasture') {
       ellipse(-17, 3, 10, 6, '#f0e7cb'); ellipse(-8, 3, 4, 4, '#8e8168'); rect(-23, 6, 2, 5, '#71654f'); rect(-13, 6, 2, 5, '#71654f');
     }
-  }
-  if (industry) {
-    ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; const text = signs[industry]; const width = ctx.measureText(text).width + 10;
-    rect(-width / 2, 13, width, 14, '#fff5d9'); ctx.fillStyle = '#415a48'; ctx.fillText(text, 0, 23);
   }
   ctx.restore();
 }
