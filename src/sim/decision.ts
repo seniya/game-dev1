@@ -1,3 +1,4 @@
+import { livingCandidates } from './living';
 import { neighbours } from './spatial';
 import { canProduce } from './urban';
 import { INDUSTRY_LABELS } from './urban-types';
@@ -7,7 +8,7 @@ import { distance } from './random';
 import { affinity } from './affinity';
 import { findPath } from './pathfinding';
 
-const durations: Record<ActionKind, number> = { Idle: 2, Move: 1, Sleep: 8, Eat: 1, Drink: 1, Gather: 3, Work: 4, Talk: 2, StoreItem: 1, TakeItem: 1, Share: 1, Theft: 2, Trade: 1, Borrow: 1, Repay: 1 };
+const durations: Record<ActionKind, number> = { Wash: 3, Idle: 2, Move: 1, Sleep: 8, Eat: 1, Drink: 1, Gather: 3, Work: 4, Talk: 2, StoreItem: 1, TakeItem: 1, Share: 1, Theft: 2, Trade: 1, Borrow: 1, Repay: 1 };
 export function candidates(w: WorldState, n: NPC): Candidate[] {
   const list: Candidate[] = [];
   const stock = stocks(w, n.settlementId), localMarket = villageMarket(w, n.settlementId);
@@ -62,6 +63,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
     const lender = w.npcs.find(p => p.id === loan.lenderId);
     if (lender?.alive) add('Repay', 55 + n.personality.empathy * .4 + (w.tick >= loan.due - 72 ? 25 : 0), `${lender.identity.name}에게 남은 빚 ${loan.remaining}개 중 ${Math.min(loan.remaining, n.inventory.food - 1)}개 상환`, lender.position, loan.id);
   }
+  livingCandidates(w, n, list);
   return list.sort((a, b) => b.score - a.score);
 }
 export function plan(w: WorldState, n: NPC): { action: Action; candidates: Candidate[] } {

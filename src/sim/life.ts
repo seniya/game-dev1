@@ -1,3 +1,4 @@
+import { newLivingPerson } from './living';
 import { newCitizen } from './urban';
 import { findPath } from './pathfinding';
 import { type WorldState, type NPC, YEAR_TICKS, MAX_POPULATION } from './types';
@@ -44,7 +45,9 @@ export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
     occupation: a.occupation, alive: true, needs: { hunger: 10, thirst: 0, fatigue: 0, health: 100, safety: 90, social: 80 }, personality,
     inventory: { food: 0, wood: 0 }, wealth: 0, relationships: [], memories: [], goals: [], decision: { reason: '가족의 돌봄을 받으며 자란다.', candidates: [], tick: w.tick }, dailyTaken: 0, lastTalk: -100, knownRumors: []
   };
-  w.npcs.push(child); w.urban.citizens[child.id] = newCitizen(child); a.life.lastBirth = b.life.lastBirth = w.tick;
+  w.npcs.push(child); w.living.people[child.id] = newLivingPerson(child);
+  for (const key of Object.keys(w.living.people[child.id].traits) as (keyof typeof w.living.people[string]['traits'])[]) w.living.people[child.id].traits[key] = (w.living.people[a.id].traits[key] + w.living.people[b.id].traits[key]) / 2;
+  w.urban.citizens[child.id] = newCitizen(child); a.life.lastBirth = b.life.lastBirth = w.tick;
   const e = socialEvent(w, { kind: 'birth', actorId: child.id, participants: [child.id, a.id, b.id], locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}의 가족에 ${child.identity.name}이 태어났다.`, data: { parents: [a.id, b.id], generation: child.life.generation, consumedFood: 2 } }); child.life.birthEventId = e.id;
   for (const parent of [a, b]) { const r = relationship(parent, child.id), reverse = relationship(child, parent.id); r.family = reverse.family = true; r.trust = reverse.trust = 80; r.affection = reverse.affection = 70; r.evidence.push(e.id); reverse.evidence.push(e.id); }
   return child;

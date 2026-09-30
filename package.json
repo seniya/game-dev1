@@ -13,7 +13,8 @@
     "regression": "tsx src/regression.ts",
     "regression:civilization": "tsx src/civilization-regression.ts",
     "regression:heritage": "tsx src/heritage-regression.ts",
-    "regression:urban": "tsx src/urban-regression.ts"
+    "regression:urban": "tsx src/urban-regression.ts",
+    "regression:living": "tsx src/living-regression.ts"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.62.0",

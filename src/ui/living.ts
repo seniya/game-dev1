@@ -1,0 +1,18 @@
+import type { WorldState, NPC } from '../sim/types';
+import { OCCUPATIONS } from '../sim/types';
+import { TRAIT_LABELS, DESIRE_LABELS, BODY_LABELS, HOMES, HOME_KINDS } from '../sim/living-types';
+import { CONSUMABLES, consumptionNeed } from '../sim/living';
+import { GOOD_LABELS, GOOD_PRICES } from '../sim/urban-types';
+const num = (v: number) => Math.round(v);
+export function livingPersonView(w: WorldState, n: NPC) {
+  const l = w.living.people[n.id], home = HOMES[w.living.homes[n.homeId]];
+  const bars = (labels: Record<string, string>, values: Record<string, number>) => Object.entries(labels).map(([k, label]) => `<div class="need-row"><span>${label}</span><div class="need-track"><i style="width:${num(values[k])}%;background:${k === 'pain' ? '#c9826c' : '#7d9c86'}"></i></div><b>${num(values[k])}</b></div>`).join('');
+  return `<section class="living-person"><div class="section-label spaced">신체 컨디션 <span>0 — 100</span></div><p class="muted">체력·청결·온기는 높을수록 좋고, 통증은 낮을수록 좋습니다.</p><div class="needs-list">${bars(BODY_LABELS, l.body)}</div>
+  <details class="personality-details" open><summary>욕망과 생활 취향</summary><p class="muted">욕망은 높을수록 강한 미충족 바람입니다. 생활 여건과 경험에 따라 변합니다.</p><div class="needs-list">${bars(DESIRE_LABELS, l.desires)}</div><p>${Object.entries(TRAIT_LABELS).map(([k, label]) => `${label} ${num(l.traits[k as keyof typeof l.traits])}`).join(' · ')}</p></details>
+  <div class="family-card"><div class="section-label">나의 주거와 소비</div><p><b>${home.label}</b> · 안락 ${home.comfort} · 사생활 ${home.privacy} · 단열 ${home.insulation}<br>임차 성인 하루 최대 ${home.rent}코인 · 소유자 면제<br>옷 상태 ${num(l.clothing)} · 가구 상태 ${num(l.furnishings)}</p><p>${CONSUMABLES.map(g => `${GOOD_LABELS[g]} 필요 ${num(consumptionNeed(w, n, g))} (${GOOD_PRICES[g]}코인)`).join(' · ')}</p><p class="muted">재고·구매 여력·필요를 비교해 시장에서 구입합니다. 옷과 가구는 사용하면서 낡습니다.</p></div></section>`;
+}
+export function livingWorldView(w: WorldState) {
+  const id = w.civilization.focus, people = w.npcs.filter(n => n.alive && n.settlementId === id), homes = w.buildings.filter(b => b.kind === 'home' && b.settlementId === id);
+  const avg = (key: keyof typeof BODY_LABELS) => num(people.reduce((s, n) => s + w.living.people[n.id].body[key], 0) / Math.max(1, people.length));
+  return `<details class="urban-panel" id="living-overview" open><summary>생활의 다양성 <span>성격 10축 · 욕망 6축 · 직업 14종</span></summary><div class="urban-metrics">${Object.entries(BODY_LABELS).map(([k, label]) => `<span>평균 ${label} <b>${avg(k as keyof typeof BODY_LABELS)}</b></span>`).join('')}</div><div class="urban-columns"><section><h4>다섯 가지 주거</h4>${HOME_KINDS.map(k => `<p><b>${HOMES[k].label}</b> ${homes.filter(b => w.living.homes[b.id] === k).length}채 · 임대 ${HOMES[k].rent}코인/일<br><small>안락 ${HOMES[k].comfort} · 사생활 ${HOMES[k].privacy} · 단열 ${HOMES[k].insulation}</small></p>`).join('')}<p class="muted">주거 정원은 건물 단계에 따릅니다. 유형과 내구도는 주거 만족·수면·보온에 영향을 줍니다.</p></section><section><h4>마을의 직업 분포</h4>${Object.entries(OCCUPATIONS).map(([k, label]) => `<span class="living-job">${label} <b>${people.filter(n => n.identity.age >= 18 && n.occupation === k).length}</b></span>`).join('')}<h4>생활 소비재 생산망</h4><p>약초·섬유밭 → 약초와 섬유<br>섬유 → 직물 → 옷 → 보온<br>곡물 + 약초 → 요리 → 영양<br>목재 + 도구 → 가구 → 안락</p><p class="muted">성인은 숙련과 전문성을 바탕으로 취업합니다. 사업체는 인구·공동 목재에 따라 늘고, 재료·임금 기금이 있어야 생산합니다.</p></section></div></details>`;
+}

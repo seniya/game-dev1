@@ -320,5 +320,5 @@ test('server history retrieves original events and streamed save remains a valid
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: '세계 저장', exact: true }).click();
   const file = await download; expect(await file.failure()).toBeNull();
   const stream = await file.createReadStream(); const chunks = []; for await (const chunk of stream!) chunks.push(chunk);
-  const { Simulation } = await import('../../src/sim/engine'); const restored = Simulation.load(Buffer.concat(chunks).toString()).snapshot(); expect(restored.version).toBe(5); expect(restored.events.some(e => e.kind === 'ecology')).toBe(true);
+  const { Simulation } = await import('../../src/sim/engine'); const restored = Simulation.load(Buffer.concat(chunks).toString()).snapshot(); expect(restored.version).toBe(6); expect(restored.events.some(e => e.kind === 'ecology')).toBe(true);
 });

@@ -1,3 +1,4 @@
+import { newLivingPerson } from './living';
 import { characterSchema, type CharacterInput } from './character-schema';
 import { capacity, isTravelling } from './civilization';
 import { findPath } from './pathfinding';
@@ -35,6 +36,7 @@ export function createCharacter(w: WorldState, input: CharacterInput): NPC {
     decision: { reason: '새로운 이웃으로 이곳에서 삶을 시작합니다.', candidates: [], tick: w.tick }, dailyTaken: 0, lastTalk: -100, knownRumors: [],
   };
   w.npcs.push(n); indexPeople(w);
+  w.living.people[id] = { ...newLivingPerson(n), ...(a.traits ? { traits: { ...a.traits } } : {}), ...(a.desires ? { desires: { ...a.desires } } : {}), ...(a.body ? { body: { ...a.body } } : {}) };
   w.urban.citizens[id] = { ...newCitizen(n), education: a.education, skills: { ...a.skills } };
   const assets = w.economy.arrivals ??= { food: 0, wood: 0, coins: 0 };
   assets.food += a.food; assets.wood += a.wood; assets.coins += a.wealth;

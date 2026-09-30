@@ -139,3 +139,8 @@
   .character-submit .button { width: 100%; }
   .resident-search { padding: 12px; }
 }
+
+.living-job { display:inline-block; padding:5px 9px; margin:3px; border-radius:8px; background:#f0f2e9; font-size:12px; }
+.living-person .muted { font-size:11px; line-height:1.7; }
+.living-person .need-row { margin:8px 0; }
+#living-overview small { color:var(--muted, #72786c); }

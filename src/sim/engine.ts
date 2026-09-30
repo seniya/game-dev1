@@ -1,3 +1,5 @@
+import { livingTick, livingDay, homeProfile, buyConsumerGood } from './living';
+import type { Good } from './urban-types';
 import { createCharacter } from './characters';
 import type { CharacterInput } from './character-schema';
 import { historyContext, validateHistorySelection, type HistoryTopic } from './history';
@@ -76,6 +78,7 @@ export class Simulation {
       n.needs.safety = clamp(n.needs.safety + .06);
       const u = w.urban.citizens[n.id];
       n.needs.fatigue = clamp(n.needs.fatigue + u.injury * .005);
+      livingTick(w, n);
       const before = n.needs.health;
       if (n.needs.hunger > 92 || n.needs.thirst > 94 || n.needs.fatigue > 98) n.needs.health = clamp(n.needs.health - .7);
       else if (n.needs.hunger < 55 && n.needs.thirst < 65 && n.needs.fatigue < 70) n.needs.health = clamp(n.needs.health + .13);
@@ -121,6 +124,7 @@ export class Simulation {
     regionalDay(w);
     urbanDay(w);
     initializeUrban(w);
+    livingDay(w);
     societyDay(w);
     decayMemories(w);
   }
@@ -156,11 +160,12 @@ export class Simulation {
     switch (a.kind) {
       case 'Idle': n.needs.fatigue = clamp(n.needs.fatigue - 2); break;
       case 'Move': break;
+      case 'Wash': w.living.people[n.id].body.cleanliness = clamp(w.living.people[n.id].body.cleanliness + 65); w.urban.citizens[n.id].stress = clamp(w.urban.citizens[n.id].stress - 3); simple('health', `${n.identity.name}이 우물에서 씻고 청결을 회복했다.`); break;
       case 'Eat':
         if (n.inventory.food < 1) { this.fail(n, '먹을 식량이 없다.'); break; }
         n.inventory.food--; w.economy.totals.consumedFood++; n.needs.hunger = clamp(n.needs.hunger - 38); simple('consumption', `${n.identity.name}이 식량 1개를 먹었다.`, 15, { resource: 'food', amount: 1 }); break;
       case 'Drink': n.needs.thirst = clamp(n.needs.thirst - 80); simple('consumption', `${n.identity.name}이 우물에서 물을 마셨다.`); break;
-      case 'Sleep': n.needs.fatigue = clamp(n.needs.fatigue - 62); n.needs.health = clamp(n.needs.health + 3); simple('health', `${n.identity.name}이 잠을 자고 기운을 회복했다.`); break;
+      case 'Sleep': n.needs.fatigue = clamp(n.needs.fatigue - (42 + homeProfile(w, n).comfort * .25 + w.living.people[n.id].furnishings * .08)); n.needs.health = clamp(n.needs.health + 3); simple('health', `${n.identity.name}이 잠을 자고 기운을 회복했다.`); break;
       case 'Gather': {
         const r = w.resources.find(r => r.id === a.targetId);
         if (!r || distance(r.position, n.position) !== 0 || r.amount < 1) { this.fail(n, '채집 자원이 소진되었다.'); break; }
@@ -220,6 +225,7 @@ export class Simulation {
       case 'Talk': {
         if (!other || distance(n.position, other.position) > 1 || w.tick - other.lastTalk < 8) { this.fail(n, '대화 상대가 지금 바쁘다.'); break; }
         n.needs.social = clamp(n.needs.social + 32); other.needs.social = clamp(other.needs.social + 22); n.lastTalk = other.lastTalk = w.tick;
+        for (const p of [n, other]) { const d = w.living.people[p.id].desires; d.belonging = clamp(d.belonging - 20); d.novelty = clamp(d.novelty - 10); }
         const e = socialEvent(w, { kind: 'talk', actorId: n.id, targetId: other.id, importance: 35, data: { reason: a.reason, evidence: a.evidence ?? [] }, description: `${n.identity.name}과 ${other.identity.name}이 일상의 이야기를 나누었다.` });
         changeRelationship(w, n, other.id, { familiarity: 5, affection: 2 }, e, '함께 이야기를 나눈 이웃이다.');
         changeRelationship(w, other, n.id, { familiarity: 5, affection: 2 }, e, '함께 이야기를 나눈 이웃이다.');
@@ -238,6 +244,7 @@ export class Simulation {
         break;
       }
       case 'Trade': {
+        if (a.targetId?.startsWith('goods:')) { if (!buyConsumerGood(w, n, a.targetId.slice(6) as Good)) this.fail(n, '상품 재고·대금 또는 시장 위치가 바뀌었다.'); break; }
         const seller = a.targetId?.startsWith('peer:') ? w.npcs.find(p => p.id === a.targetId!.slice(5) && p.alive) : undefined;
         const buying = a.targetId === 'buy' || !!seller, resource = buying ? 'food' : 'wood';
         if (a.targetId?.startsWith('peer:') && (!seller || distance(n.position, seller.position) > 1 || (seller.relationships.find(r => r.npcId === n.id)?.trust ?? 35) < 20)) { this.fail(n, '판매자를 만나거나 거래 동의를 얻지 못했다.'); break; }

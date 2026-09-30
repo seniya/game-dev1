@@ -175,7 +175,7 @@ export function regionalDay(w: WorldState) {
     if (w.tick % YEAR_TICKS === 0) for (const n of people.filter(n => n.identity.age >= 18 && !isTravelling(w, n))) {
       const farmers = people.filter(p => p.occupation === 'farmer').length;
       const job = farmers < people.length / 3 ? 'farmer' : stock.wood < 12 && !people.some(p => p.occupation === 'woodcutter') ? 'woodcutter' : n.occupation;
-      if (job !== n.occupation) { const previous = n.occupation; n.occupation = job; appendEvent(w, { kind: 'occupation', actorId: n.id, importance: 40, description: `${n.identity.name}이 마을의 생산 수요에 따라 직업을 바꾸었다.`, data: { previous, occupation: job, settlementId: v.id } }); }
+      if (job !== n.occupation && !w.urban.citizens[n.id]?.employer) { const previous = n.occupation; n.occupation = job; appendEvent(w, { kind: 'occupation', actorId: n.id, importance: 40, description: `${n.identity.name}이 마을의 생산 수요에 따라 직업을 바꾸었다.`, data: { previous, occupation: job, settlementId: v.id } }); }
     }
   }
 }

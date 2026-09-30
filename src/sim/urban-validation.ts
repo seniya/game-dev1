@@ -5,7 +5,7 @@ import { urbanBalance } from './urban';
 import { walkable } from './pathfinding';
 import { distance } from './random';
 const nat = z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), score = z.number().min(0).max(100), id = z.string().min(1).max(100);
-const goods = z.object({ grain: nat, stone: nat, ore: nat, tools: nat }).strict();
+const goods = z.object({ grain: nat, stone: nat, ore: nat, tools: nat, herbs: nat, fiber: nat, cloth: nat, clothes: nat, meals: nat, furniture: nat }).strict();
 const services = z.object({ road: nat.max(3), water: nat.max(3), sanitation: nat.max(3), clinic: nat.max(3), school: nat.max(3) }).strict();
 const deposits = z.object({ stone: nat, ore: nat }).strict();
 export const urbanSchema = z.object({ since: nat,

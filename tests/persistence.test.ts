@@ -163,7 +163,7 @@ test('v3 checkpoint and queued v3 deltas upgrade atomically before the first v5 
     db.prepare('UPDATE world_checkpoints SET head_revision=1'),
     db.prepare('INSERT INTO world_changes VALUES(?,?,?,?)').bind(initial.epoch, 1, 0, JSON.stringify(stateChange(legacy, after))),
   ]);
-  const fresh = restart(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 5); assert.equal(migrated.state.tick, after.tick);
+  const fresh = restart(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 6); assert.equal(migrated.state.tick, after.tick);
   const changed = await send(fresh, { type: 'policy', settlementId: 'v0', taxRate: 20, priority: 'school' }, start + 2);
   const recovered = await restart(db).read(); assert.deepEqual(recovered, changed);
   assert.equal(recovered.state.urban.cities[0].taxRate, 20);

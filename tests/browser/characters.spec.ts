@@ -8,8 +8,9 @@ test('create a customized resident, follow real interactions, find them and rest
   await form.getByLabel('이름',{exact:true}).fill('도시의 해솔'); await form.getByLabel('나이 · 성인').fill('29');
   await form.getByLabel('옷 색상').fill('#2266aa'); await form.getByLabel('머리 모양').selectOption('curly'); await form.getByLabel('소품').selectOption('glasses');
   await form.getByLabel('배경 소개').fill('이웃과 도구를 나누는 목수 <script>');
-  await form.getByLabel('직업',{exact:true}).selectOption('carpenter'); await form.getByLabel('첫 인사할 주민').selectOption('npc0');
-  await form.locator('summary').click(); await form.getByLabel('도구 제작 숙련').fill('73'); await form.getByLabel('재산 · 코인').fill('123');
+  await form.getByLabel('직업',{exact:true}).selectOption('tailor');
+  await form.getByLabel('검소함',{exact:true}).fill('91'); await form.getByLabel('성취',{exact:true}).fill('88'); await form.getByLabel('첫 인사할 주민').selectOption('npc0');
+  await form.locator('summary').click(); await form.getByLabel('도구 제작 숙련').fill('73'); await form.getByLabel('재산 · 코인').fill('123'); await form.getByLabel('통증',{exact:true}).fill('23');
   await expect(page.locator('#character-preview svg')).toBeVisible();
   await form.getByRole('button',{name:'이 세계에 입주시키기'}).click();
   await expect(form).not.toBeVisible(); await expect(page.locator('#npc-header')).toContainText('도시의 해솔');
@@ -21,7 +22,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await page.getByLabel('주민 검색',{exact:true}).fill('해솔'); await expect(page.locator('.resident-card')).toHaveCount(1); await page.locator('.resident-card').click();
   await page.getByRole('button',{name:'세계 저장',exact:true}).click();
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!));
-  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
+  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(6); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
   await page.reload(); await page.getByRole('button',{name:'마을 주민',exact:true}).click(); await page.getByLabel('내가 만든 주민만').check(); await expect(page.locator('.resident-card')).toHaveCount(1);
   expect(errors).toEqual([]);
 });
@@ -59,4 +60,16 @@ test('server-backed creator survives reload and records arrival in the life arch
   await page.reload(); await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
   await page.getByRole('button',{name:'마을 주민',exact:true}).click(); await page.getByLabel('내가 만든 주민만').check(); await expect(page.locator('.resident-card')).toHaveCount(1);
   await page.locator('.resident-card').click(); await expect(page.locator('#npc-header')).toContainText('서버의 새주민');
+});
+
+ test('expanded world overview and resident condition are readable on desktop and mobile', async ({page}) => {
+  await page.goto('/?local=1'); await page.getByRole('button',{name:'일시정지',exact:true}).click();
+  await expect(page.locator('#living-overview')).toContainText('직업 14종');
+  await expect(page.locator('#living-overview')).toContainText('단열주택');
+  await expect(page.locator('#npc-detail')).toContainText('욕망과 생활 취향');
+  await expect(page.locator('#npc-detail')).toContainText('신체 컨디션');
+  await page.screenshot({path:'test-results/living-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:'test-results/living-mobile.png',fullPage:true});
 });

@@ -1,0 +1,298 @@
+{
+  "generatedAt": "2026-09-30T01:41:45.491Z",
+  "notes": "Model off, no asset injections; daily validated compacted saves and exact continuation. Wall times describe this local environment.",
+  "cases": [
+    {
+      "population": 12,
+      "days": 60,
+      "seed": 42,
+      "elapsedMs": 2451,
+      "alive": 13,
+      "professions": [
+        "farmer",
+        "miller",
+        "tailor",
+        "weaver",
+        "smith",
+        "cook",
+        "miner",
+        "mason",
+        "furniture_maker",
+        "gardener"
+      ],
+      "enterprises": [
+        "field",
+        "mill",
+        "quarry",
+        "mine",
+        "smith",
+        "garden",
+        "weaving",
+        "tailoring",
+        "kitchen",
+        "joinery"
+      ],
+      "goodsProduced": {
+        "grain": 278,
+        "stone": 247,
+        "ore": 105,
+        "tools": 51,
+        "herbs": 36,
+        "fiber": 36,
+        "cloth": 17,
+        "clothes": 8,
+        "meals": 32,
+        "furniture": 2
+      },
+      "goodsConsumed": {
+        "grain": 268,
+        "stone": 10,
+        "ore": 102,
+        "tools": 50,
+        "herbs": 16,
+        "fiber": 34,
+        "cloth": 16,
+        "clothes": 8,
+        "meals": 31,
+        "furniture": 2
+      },
+      "observedConsumerEvents": 40,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0
+      },
+      "saveBytes": 477468
+    },
+    {
+      "population": 72,
+      "days": 30,
+      "seed": 7,
+      "elapsedMs": 5061,
+      "alive": 57,
+      "professions": [
+        "mason",
+        "farmer",
+        "furniture_maker",
+        "miner",
+        "miller",
+        "smith",
+        "cook",
+        "gardener",
+        "tailor",
+        "weaver"
+      ],
+      "enterprises": [
+        "quarry",
+        "mine",
+        "field",
+        "smith",
+        "mill",
+        "garden",
+        "weaving",
+        "tailoring",
+        "kitchen",
+        "joinery"
+      ],
+      "goodsProduced": {
+        "grain": 322,
+        "stone": 465,
+        "ore": 258,
+        "tools": 126,
+        "herbs": 50,
+        "fiber": 50,
+        "cloth": 23,
+        "clothes": 11,
+        "meals": 16,
+        "furniture": 3
+      },
+      "goodsConsumed": {
+        "grain": 316,
+        "stone": 30,
+        "ore": 252,
+        "tools": 126,
+        "herbs": 8,
+        "fiber": 46,
+        "cloth": 22,
+        "clothes": 11,
+        "meals": 10,
+        "furniture": 3
+      },
+      "observedConsumerEvents": 24,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0
+      },
+      "saveBytes": 2678449
+    },
+    {
+      "population": 1000,
+      "days": 10,
+      "seed": 42,
+      "elapsedMs": 40837,
+      "alive": 1000,
+      "professions": [
+        "farmer",
+        "gatherer",
+        "woodcutter",
+        "carpenter",
+        "mason",
+        "merchant",
+        "miller",
+        "miner",
+        "smith",
+        "gardener",
+        "weaver",
+        "tailor",
+        "cook",
+        "furniture_maker"
+      ],
+      "enterprises": [
+        "field",
+        "quarry",
+        "mill",
+        "mine",
+        "smith",
+        "garden",
+        "weaving",
+        "tailoring",
+        "kitchen",
+        "joinery"
+      ],
+      "goodsProduced": {
+        "grain": 1087,
+        "stone": 2723,
+        "ore": 1704,
+        "tools": 764,
+        "herbs": 238,
+        "fiber": 238,
+        "cloth": 96,
+        "clothes": 32,
+        "meals": 22,
+        "furniture": 0
+      },
+      "goodsConsumed": {
+        "grain": 902,
+        "stone": 44,
+        "ore": 1528,
+        "tools": 764,
+        "herbs": 11,
+        "fiber": 192,
+        "cloth": 64,
+        "clothes": 32,
+        "meals": 22,
+        "furniture": 0
+      },
+      "observedConsumerEvents": 54,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0
+      },
+      "saveBytes": 20810320
+    },
+    {
+      "population": 3000,
+      "days": 2,
+      "seed": 123,
+      "elapsedMs": 25080,
+      "alive": 3000,
+      "professions": [
+        "mason",
+        "farmer",
+        "miner",
+        "miller",
+        "gatherer",
+        "woodcutter",
+        "carpenter",
+        "merchant"
+      ],
+      "enterprises": [
+        "quarry",
+        "field",
+        "mine",
+        "mill"
+      ],
+      "goodsProduced": {
+        "grain": 442,
+        "stone": 623,
+        "ore": 63,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0
+      },
+      "goodsConsumed": {
+        "grain": 106,
+        "stone": 12,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0
+      },
+      "observedConsumerEvents": 0,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0
+      },
+      "saveBytes": 19896226
+    }
+  ]
+}

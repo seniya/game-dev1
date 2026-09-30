@@ -1,3 +1,5 @@
+import { livingSchema } from './living-types';
+import { migrateLiving, CONSUMABLES } from './living';
 import { profileSchema } from './character-schema';
 import { initializeHeritage } from './heritage';
 import { heritageSchema, validateHeritage } from './heritage-validation';
@@ -17,7 +19,7 @@ const score = z.number().min(0).max(100);
 const pos = z.object({ x: natural.max(127), y: natural.max(127) }).strict();
 const resources = z.object({ food: natural, wood: natural }).strict();
 const goalKind = z.enum(GOAL_KINDS as [typeof GOAL_KINDS[number], ...typeof GOAL_KINDS[number][]]);
-const actionKind = z.enum(['Idle', 'Move', 'Sleep', 'Eat', 'Drink', 'Gather', 'Work', 'Talk', 'StoreItem', 'TakeItem', 'Share', 'Theft', 'Trade', 'Borrow', 'Repay']);
+const actionKind = z.enum(['Wash', 'Idle', 'Move', 'Sleep', 'Eat', 'Drink', 'Gather', 'Work', 'Talk', 'StoreItem', 'TakeItem', 'Share', 'Theft', 'Trade', 'Borrow', 'Repay']);
 const candidate = z.object({ kind: actionKind, score: z.number().finite(), reason: description, target: pos, targetId: id.optional(), evidence: z.array(id).max(12).optional() }).strict();
 const action = candidate.extend({ path: z.array(pos).max(16384), progress: natural, duration: natural.min(1).max(100) }).strict();
 const relationship = z.object({ npcId: id, familiarity: score, trust: score, affection: score, fear: score, resentment: score, respect: score, family: z.boolean(), interpretation: description, evidence: z.array(id) }).strict();
@@ -26,7 +28,7 @@ const npc = z.object({
   profile: profileSchema.optional(),
   id, identity: z.object({ name: z.string().min(1).max(80), age: natural.max(150) }).strict(), position: pos, homeId: id,
   settlementId: id, life: z.object({ bornTick: z.number().int().min(-300000).max(Number.MAX_SAFE_INTEGER), parentIds: z.array(id).max(2), partnerId: id.optional(), generation: natural.max(1000), skill: score, lastBirth: natural, lastMove: natural, deathTick: natural.optional(), birthEventId: id.optional(), deathEventId: id.optional(), estateSettled: z.boolean() }).strict(),
-  occupation: z.enum(['farmer', 'gatherer', 'woodcutter', 'carpenter', 'merchant']), alive: z.boolean(),
+  occupation: z.enum(['farmer', 'gatherer', 'woodcutter', 'carpenter', 'merchant', 'miner', 'mason', 'miller', 'smith', 'gardener', 'weaver', 'tailor', 'cook', 'furniture_maker']), alive: z.boolean(),
   needs: z.object({ hunger: score, thirst: score, fatigue: score, health: score, safety: score, social: score }).strict(),
   personality: z.object({ diligence: score, greed: score, sociability: score, aggression: score, empathy: score, curiosity: score }).strict(),
   inventory: resources, wealth: natural, relationships: z.array(relationship).max(30000), memories: z.array(memory).max(40),
@@ -40,7 +42,7 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
-  version: z.literal(5), heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(128), height: natural.min(8).max(128),
+  version: z.literal(6), living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(128), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(16384),
   buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120), settlementId: id, ownerIds: z.array(id).max(30000).optional() }).strict()).max(4000),
   resources: z.array(z.object({ id, position: pos, kind: z.enum(['food', 'wood']), amount: natural, capacity: natural.min(1) }).strict()).max(1000),
@@ -75,8 +77,13 @@ export function validateSave(input: unknown): WorldState {
   }
   if (input && typeof input === 'object' && (input as { version?: number }).version === 4) {
     const legacy = structuredClone(input) as WorldState;
-    try { initializeHeritage(legacy); legacy.version = 5; input = legacy; }
+    try { initializeHeritage(legacy); (legacy as unknown as { version: number }).version = 5; input = legacy; }
     catch { throw new Error('저장 파일 형식 오류: 생태·사회 변환에 실패했습니다.'); }
+  }
+  if (input && typeof input === 'object' && (input as { version?: number }).version === 5) {
+    const legacy = structuredClone(input) as WorldState;
+    try { migrateLiving(legacy); legacy.version = 6; input = legacy; }
+    catch { throw new Error('저장 파일 형식 오류: 생활 다양성 변환에 실패했습니다.'); }
   }
   const parsed = world.safeParse(input);
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
@@ -142,7 +149,7 @@ export function validateSave(input: unknown): WorldState {
       const a = n.currentAction; let previous = n.position;
       for (const p of a.path) { ensure(walkable(w, p) && distance(previous, p) === 1, '이동 경로'); previous = p; }
       ensure(distance(previous, a.target) === 0 && walkable(w, a.target) && a.progress < a.duration, '행동 진행');
-      const buildingKinds: Partial<Record<typeof a.kind, string>> = { Sleep: 'home', Drink: 'well', StoreItem: 'storage', TakeItem: 'storage', Theft: 'storage' };
+      const buildingKinds: Partial<Record<typeof a.kind, string>> = { Sleep: 'home', Wash: 'well', Drink: 'well', StoreItem: 'storage', TakeItem: 'storage', Theft: 'storage' };
       if (buildingKinds[a.kind]) ensure(w.buildings.some(b => b.kind === buildingKinds[a.kind] && distance(b.position, a.target) === 0), '행동 건물');
       if (a.kind === 'Gather') ensure(w.resources.some(r => r.id === a.targetId && distance(r.position, a.target) === 0), '채집 대상');
       if (a.kind === 'Work') ensure(w.buildings.some(b => b.id === (a.targetId?.startsWith('industry:') ? a.targetId.slice(9) : a.targetId?.split(':')[0]) && distance(b.position, a.target) === 0), '작업 대상');
@@ -150,6 +157,7 @@ export function validateSave(input: unknown): WorldState {
       if (a.kind === 'Repay') ensure(w.loans.some(l => l.id === a.targetId && l.borrowerId === n.id), '상환 대상');
       if (a.kind === 'Trade') {
         if (a.targetId?.startsWith('peer:')) ensure(npcs.has(a.targetId.slice(5)) && a.targetId.slice(5) !== n.id, '주민 거래 대상');
+        else if (a.targetId?.startsWith('goods:')) ensure(CONSUMABLES.some(g => a.targetId === `goods:${g}`) && w.buildings.some(b => b.kind === 'market' && b.settlementId === n.settlementId && distance(b.position, a.target) === 0), '생활 상품 거래 대상');
         else ensure((a.targetId === 'buy' || a.targetId === 'sell') && w.buildings.some(b => b.kind === 'market' && distance(b.position, a.target) === 0), '거래 유형/시장');
       }
       ensure(!a.evidence || a.evidence.every(id => events.has(id)), '행동 판단 근거');
@@ -166,6 +174,9 @@ export function validateSave(input: unknown): WorldState {
     ensure(d.poorest <= d.median && d.median <= d.richest, '재산 분포');
   }
   for (const key of Object.keys(w.economy.totals) as (keyof typeof w.economy.totals)[]) ensure(w.economy.last[key] <= w.economy.totals[key], '회계 누적량');
+  ensure(w.living.since <= w.tick, '생활 상태 시작 시간');
+  ensure(Object.keys(w.living.people).length === npcs.size && Object.keys(w.living.people).every(id => npcs.has(id)), '생활 주민 참조');
+  ensure(Object.keys(w.living.homes).length === w.buildings.filter(b => b.kind === 'home').length && Object.keys(w.living.homes).every(id => buildings.get(id)?.kind === 'home'), '주거 유형 참조');
   validateUrban(w, ensure);
   validateHeritage(w, ensure);
   // Keep the original property order so a save/load round trip is byte-identical.
