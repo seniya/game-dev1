@@ -1,0 +1,36 @@
+{
+  "verifiedAt": "2026-09-30T02:30:26.280Z",
+  "projectId": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "siteVersion": 17,
+  "sourceCommit": "ec6c9269cd7b0fb6317d111aa84242c34e3a0fcd",
+  "versionId": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_4c6b01e60cf481918fa226849ee47986",
+  "deploymentId": "appgdep_6abc73c1392c8191b608d642d0cccfad",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "artifactHash": "sha256:6c41ff54dd9cd5e9927f99c8e066047d27b5f6269b3a429c08964d8aed6436fe",
+  "checks": {
+    "ownerOnly": true,
+    "sourcePushed": true,
+    "productionBuild": true,
+    "liveHtmlReferencesBuild": true,
+    "liveJSAndCSSMatchBuild": true,
+    "existingWorldReset": false
+  },
+  "validation": {
+    "coreAndServer": 139,
+    "browser": 30,
+    "optionalRealChromeSkipped": 1,
+    "browserNote": "29 existing browser tests passed in the full run; the new test passed after its fixture was corrected to perform a real greeting before inspecting relationships.",
+    "newCoreTests": 7,
+    "checkpointWritesFor60Updates": 2,
+    "persistenceByteReductionPercent": 69.4
+  },
+  "liveWorld": {
+    "revision": 2507,
+    "epoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+    "version": 7,
+    "population": 100,
+    "tick": 36,
+    "aiMode": "chrome"
+  }
+}
