@@ -19,7 +19,7 @@ export function initializeUrban(w: WorldState) {
     const i = Number(v.id.slice(1)), ore = 600 + ((w.seed + i * 197) % 5) * 300, stone = 1200 + ((w.seed + i * 137) % 4) * 400;
     w.urban.cities.push({ settlementId: v.id, fertility: 45 + (w.seed + i * 29) % 56, deposits: { ore, stone, clay: 1200, salt: 800 }, initialDeposits: { ore, stone, clay: 1200, salt: 800 }, goods: emptyGoods(), treasury: 0, taxRate: 10, priority: 'water', services: { road: 0, water: 0, sanitation: 0, clinic: 0, school: 0 }, active: { road: 0, water: 0, sanitation: 0, clinic: 0, school: 0 }, pollution: 0, collected: 0, spent: 0 });
   }
-  if (w.version === 7) initializeLiving(w);
+  if ((w.version as number) >= 7) initializeLiving(w);
 }
 export function city(w: WorldState, id: string) { return w.urban.cities.find(c => c.settlementId === id)!; }
 export function cityMetrics(w: WorldState, id: string) {

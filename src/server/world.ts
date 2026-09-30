@@ -1,3 +1,4 @@
+import { REQUEST_CHOICES } from '../sim/requests-types';
 import { DEFAULT_POPULATION } from '../sim/types';
 import { characterSchema } from '../sim/character-schema';
 import { RECOLLECTION_TOPICS, recollections, type RecollectionTopic } from '../sim/recollection';
@@ -20,7 +21,8 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('play'), running: z.boolean() }).strict(),
     z.object({ type: z.literal('speed'), speed: z.union([z.literal(1), z.literal(5), z.literal(20)]) }).strict(),
     z.object({ type: z.literal('offline'), enabled: z.boolean() }).strict(),
-    z.object({ type: z.literal('step'), ticks: z.union([z.literal(1), z.literal(144)]) }).strict(),
+    z.object({ type: z.literal('step'), ticks: z.union([z.literal(1), z.literal(12), z.literal(144)]) }).strict(),
+    z.object({ type: z.literal('request'), requestId: z.string().min(1).max(100), choice: z.enum(REQUEST_CHOICES) }).strict(),
     z.object({ type: z.literal('build'), settlementId: z.string().max(100), kind: z.enum(['home', 'farm']) }).strict(),
     z.object({ type: z.literal('experiment'), kind: z.enum(['food', 'drought']) }).strict(),
     z.object({ type: z.literal('llm'), enabled: z.boolean() }).strict(),
@@ -76,6 +78,7 @@ export function compactWorld(w: WorldState): WorldState {
   w.heritage?.habitats.forEach(h => { if (h.lastEventId) keep.add(h.lastEventId); });
   w.heritage?.councils.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); });
   w.heritage?.accords.forEach(r => { if (r.lastEventId) keep.add(r.lastEventId); if (r.deliveryEventId) keep.add(r.deliveryEventId); });
+  w.requests?.items.forEach(r => { for (const id of [r.sourceEventId, r.lastEventId, r.decisionEventId, r.resultEventId]) if (id) keep.add(id); });
   w.loans.forEach(l => keep.add(l.sourceEventId));
   w.llm.queue.forEach(q => keep.add(q.eventId));
   w.economy.daily.forEach(d => keep.add(d.eventId));
@@ -124,6 +127,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   if (a.type === 'council') sim.setCouncil(a.settlementId, a.enabled);
   if (a.type === 'policy') sim.setPolicy(a.settlementId, a.taxRate, a.priority);
   if (a.type === 'detail') sim.setDetail(a.focus, a.detail);
+  if (a.type === 'request') sim.respondToRequest(a.requestId, a.choice);
   if (a.type === 'build') sim.build(a.settlementId, a.kind);
   if (a.type === 'experiment') sim.experiment(a.kind);
   if (a.type === 'llm' || a.type === 'ai-mode') {

@@ -32,7 +32,7 @@ function legacy(w: ReturnType<typeof funded>): any {
 }
 test('v5 saves gain deterministic living states without rewriting history, assets or RNG', () => {
   const old = legacy(funded()), w = valid(old).snapshot();
-  assert.equal(w.version, 7); assert.equal(w.rng, old.rng); assert.deepEqual(w.events, old.events); assert.deepEqual(holdings(w), holdings(old));
+  assert.equal(w.version, 8); assert.equal(w.rng, old.rng); assert.deepEqual(w.events, old.events); assert.deepEqual(holdings(w), holdings(old));
   assert.equal(Object.keys(w.living.people).length, w.npcs.length); assert.equal(new Set(Object.values(w.living.homes)).size, 5);
   assert.equal(valid(old).save(), valid(w).save()); assert.equal(valid(w).save(), JSON.stringify(w));
   for (const g of GOODS.slice(4)) assert.equal(city(w, 'v0').goods[g], 0);
@@ -93,7 +93,7 @@ test('v5 server journals replay before migration and commit a restartable v7 che
   const db = database(), store = new WorldStore(db); await store.init(0); const initial = await store.read();
   const before = legacy(initial.state), after = structuredClone(before); after.tick++;
   await db.batch([db.prepare('DELETE FROM snapshots'), db.prepare('INSERT INTO snapshots VALUES(?,?,?)').bind(initial.epoch, 0, JSON.stringify(before)), db.prepare('UPDATE world SET revision=1 WHERE id=1'), db.prepare('UPDATE world_checkpoints SET head_revision=1'), db.prepare('INSERT INTO world_changes VALUES(?,?,?,?)').bind(initial.epoch, 1, 0, JSON.stringify(stateChange(before, after)))]);
-  const fresh = new WorldStore(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 7); assert.equal(migrated.state.tick, after.tick); valid(migrated.state);
+  const fresh = new WorldStore(db), migrated = await fresh.read(); assert.equal(migrated.state.version, 8); assert.equal(migrated.state.tick, after.tick); valid(migrated.state);
   const command = { id: crypto.randomUUID(), revision: 1, action: { type: 'step', ticks: 1 } } as const;
   const result = await applyCommand(migrated, command, 0); await fresh.commit(result.world, result.events, JSON.stringify(command), command.id);
   const restarted = await new WorldStore(db).read(); assert.deepEqual(restarted.state, JSON.parse(JSON.stringify(result.world.state))); valid(restarted.state);

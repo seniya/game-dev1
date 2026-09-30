@@ -109,8 +109,8 @@ export default {
         if (p.get('cause')) { clauses.push('e.cause=?'); values.push(p.get('cause')!); }
         const filter = p.get('filter');
         if (filter === 'important') clauses.push("(json_extract(e.body,'$.importance')>=45 OR e.kind='weather')");
-        if (filter === 'social') clauses.push("e.kind IN ('share','talk','witness','rumor','relationship','memory','family','birth','coming_of_age','education','migration','death')");
-        if (filter === 'economy') clauses.push("e.kind IN ('production','storage','trade','loan','repayment','default','theft','scarcity','wage','price','project','consumption','experiment','inheritance','construction','settlement','caravan','occupation','industry','public_service','tax','urban','policy','freight','ecology','council','diplomacy')");
+        if (filter === 'social') clauses.push("e.kind IN ('request','share','talk','witness','rumor','relationship','memory','family','birth','coming_of_age','education','migration','death')");
+        if (filter === 'economy') clauses.push("e.kind IN ('production','storage','trade','loan','repayment','default','theft','scarcity','wage','price','project','consumption','experiment','inheritance','construction','settlement','caravan','occupation','industry','public_service','tax','urban','policy','freight','ecology','council','diplomacy','request')");
         if (filter === 'life') clauses.push("(e.kind NOT IN ('arrival','memory','failure') OR json_extract(e.body,'$.data.createdCharacter')=1)");
         const rows = await env.DB.prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();
         return json({ epoch: current.epoch, eventCount: current.meta.eventCount, cursors: Object.fromEntries(rows.results.slice(0, 40).map(r => [parseEvent(r).id, r.seq])), events: rows.results.slice(0, 40).map(parseEvent), next: rows.results.length > 40 ? rows.results[39].seq : null });
@@ -129,7 +129,7 @@ export default {
       return json({ error: '지원하지 않는 요청입니다.' }, 404);
     } catch (error) {
       if (error instanceof SyntaxError) return json({ error: 'JSON 형식을 확인해 주세요.' }, 400);
-      if (error instanceof Error && /저장|주민|시드|도시 정책|역사 조회|도시 의회|공동 목재|마을을 찾을|지원하지 않는 건물/.test(error.message)) return json({ error: error.message }, 400);
+      if (error instanceof Error && /저장|주민|시드|도시 정책|역사 조회|도시 의회|공동 목재|마을을 찾을|지원하지 않는 건물|부탁/.test(error.message)) return json({ error: error.message }, 400);
       console.error('World request failed', error instanceof Error ? error.message : 'unknown');
       return json({ error: '서버 처리에 실패했습니다. 세계는 마지막 저장 상태로 유지됩니다.' }, 503);
     }

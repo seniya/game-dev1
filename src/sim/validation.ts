@@ -1,3 +1,5 @@
+import { requestsSchema, emptyRequests } from './requests-types';
+import { validateRequests } from './requests-validation';
 import { migrateResources } from './employment';
 import { OCCUPATIONS, type Occupation } from './types';
 import { livingSchema } from './living-types';
@@ -38,14 +40,14 @@ const npc = z.object({
   goals: z.array(z.object({ id, kind: goalKind, reason: description, createdAt: natural, sourceEventId: id.optional() }).strict()).max(4),
   currentAction: action.optional(), decision: z.object({ reason: description, candidates: z.array(candidate).max(6), tick: natural }).strict(), dailyTaken: natural.max(3), lastTalk: z.number().int().min(-1000), knownRumors: z.array(id),
 }).strict();
-const event = z.object({ id, tick: natural, kind: z.enum(['arrival', 'production', 'consumption', 'storage', 'trade', 'loan', 'repayment', 'default', 'share', 'theft', 'witness', 'rumor', 'talk', 'scarcity', 'health', 'death', 'weather', 'relationship', 'memory', 'goal', 'llm', 'experiment', 'failure', 'project', 'wage', 'price', 'family', 'birth', 'coming_of_age', 'inheritance', 'education', 'construction', 'settlement', 'migration', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'council', 'diplomacy']), actorId: id.optional(), targetId: id.optional(), locationId: id.optional(), participants: z.array(id).max(30000), importance: score, description, causeId: id.optional(), data: z.record(z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.array(id)])) }).strict();
+const event = z.object({ id, tick: natural, kind: z.enum(['arrival', 'production', 'consumption', 'storage', 'trade', 'loan', 'repayment', 'default', 'share', 'theft', 'witness', 'rumor', 'talk', 'scarcity', 'health', 'death', 'weather', 'relationship', 'memory', 'goal', 'llm', 'experiment', 'failure', 'project', 'wage', 'price', 'family', 'birth', 'coming_of_age', 'inheritance', 'education', 'construction', 'settlement', 'migration', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'council', 'diplomacy', 'request']), actorId: id.optional(), targetId: id.optional(), locationId: id.optional(), participants: z.array(id).max(30000), importance: score, description, causeId: id.optional(), data: z.record(z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.array(id)])) }).strict();
 const flow = z.object({ producedFood: natural, producedWood: natural, consumedFood: natural, investedWood: natural, externalFood: natural, trades: natural, tradeVolume: natural, wages: natural }).strict();
 const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict().optional(), since: natural, openingFood: natural, openingWood: natural, openingCoins: natural, totals: flow,
   last: flow.extend({ shares: natural, conflicts: natural }).strict(),
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
-  version: z.literal(7), living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
+  version: z.literal(8), requests: requestsSchema, living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(24576),
   buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120), settlementId: id, ownerIds: z.array(id).max(30000).optional() }).strict()).max(4000),
   resources: z.array(z.object({ id, position: pos, kind: z.enum(['food', 'wood']), amount: natural, capacity: natural.min(1) }).strict()).max(1000),
@@ -90,8 +92,12 @@ export function validateSave(input: unknown): WorldState {
   }
   if (input && typeof input === 'object' && (input as { version?: number }).version === 6) {
     const legacy = structuredClone(input) as WorldState;
-    try { migrateResources(legacy); legacy.version = 7; input = legacy; }
+    try { migrateResources(legacy); (legacy as unknown as { version: number }).version = 7; input = legacy; }
     catch { throw new Error('저장 파일 형식 오류: 자원·고용 상태 변환에 실패했습니다.'); }
+  }
+  if (input && typeof input === 'object' && (input as { version?: number }).version === 7) {
+    const legacy = structuredClone(input) as WorldState;
+    legacy.version = 8; legacy.requests = emptyRequests(legacy.tick); input = legacy;
   }
   const parsed = world.safeParse(input);
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
@@ -185,6 +191,7 @@ export function validateSave(input: unknown): WorldState {
   ensure(w.living.since <= w.tick, '생활 상태 시작 시간');
   ensure(Object.keys(w.living.people).length === npcs.size && Object.keys(w.living.people).every(id => npcs.has(id)), '생활 주민 참조');
   ensure(Object.keys(w.living.homes).length === w.buildings.filter(b => b.kind === 'home').length && Object.keys(w.living.homes).every(id => buildings.get(id)?.kind === 'home'), '주거 유형 참조');
+  validateRequests(w, ensure, register);
   validateUrban(w, ensure);
   validateHeritage(w, ensure);
   // Keep the original property order so a save/load round trip is byte-identical.

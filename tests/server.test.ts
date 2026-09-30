@@ -79,6 +79,7 @@ test('cross-origin commands and malformed imports fail without changing persiste
 test('archive cursors preserve imported event order independently of event ID spelling', async () => {
   const h = harness(), initial = await h.get();
   const state = new Simulation(7).snapshot(), first = state.events[0];
+  state.requests.items = []; // This fixture replaces every source event with custom journal entries.
   state.events = Array.from({ length: 85 }, (_, i) => ({ ...first, id: `custom-record-${String(85 - i).padStart(3, '0')}`, description: `관측 ${i}` }));
   assert.equal((await h.send({ type: 'import', save: JSON.stringify(state) }, initial.revision)).status, 200);
   const exported = await (await h.request('export')).json(); assert.deepEqual(exported, JSON.parse(JSON.stringify(state)));

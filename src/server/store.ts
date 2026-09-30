@@ -113,7 +113,7 @@ export class WorldStore {
       state = restoreChange(state, JSON.parse(body) as StateChange); revision = next;
     }
     if (expected !== undefined && revision !== expected) throw new Error('세계 체크포인트와 변경 기록의 버전이 다릅니다.');
-    if ((state.version as number) !== 7) onUpgrade?.();
+    if ((state.version as number) !== 8) onUpgrade?.();
     return this.upgrade(state);
   }
   async read(): Promise<StoredWorld> {
@@ -133,7 +133,7 @@ export class WorldStore {
     this.baseline = { world: structuredClone(world), checkpoint, upgraded, journalBytes: changes.reduce((n, r) => n + new TextEncoder().encode(r.body).length, 0) };
     return world;
   }
-  private upgrade(state: WorldState): WorldState { return state.version === 7 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
+  private upgrade(state: WorldState): WorldState { return state.version === 8 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
   async command(id: string) { return this.db.prepare('SELECT body FROM commands WHERE id=?').bind(id).first<{ body: string }>(); }
   async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string, extra: D1PreparedStatement[] = [], input?: CommandInput) {
     if (this.baseline?.world.revision !== w.revision - 1) await this.read();

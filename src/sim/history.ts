@@ -4,9 +4,9 @@ export type HistoryTopic = typeof HISTORY_TOPICS[number];
 export const HISTORY_LABELS: Record<HistoryTopic, string> = { population: '인구와 세대는 어떻게 변했나?', economy: '재산과 생산은 어떻게 변했나?', ecology: '자연과 식량은 어떻게 변했나?', society: '공동결정과 도시 관계는 어떻게 변했나?' };
 export const HISTORY_KINDS: Record<HistoryTopic, string[]> = {
   population: ['birth', 'death', 'family', 'inheritance', 'migration', 'settlement'],
-  economy: ['inheritance', 'trade', 'industry', 'freight', 'tax', 'public_service', 'construction', 'scarcity'],
+  economy: ['request', 'inheritance', 'trade', 'industry', 'freight', 'tax', 'public_service', 'construction', 'scarcity'],
   ecology: ['ecology', 'weather', 'scarcity', 'health'],
-  society: ['council', 'diplomacy', 'policy', 'share', 'theft', 'migration'],
+  society: ['request', 'council', 'diplomacy', 'policy', 'share', 'theft', 'migration'],
 };
 export function historyMatches(w: WorldState, e: WorldEvent, topic: HistoryTopic, settlementId?: string, npcId?: string) {
   if (!HISTORY_KINDS[topic].includes(e.kind) || e.kind === 'health' && e.importance < 45) return false;

@@ -1,3 +1,5 @@
+import { requestsView, requestPrompt } from './ui/requests';
+import type { RequestChoice } from './sim/requests-types';
 import { updateReadingPanel, withReadingPosition } from './ui/reading-panel';
 import { observationView } from './ui/observation';
 import { villageSize } from './sim/civilization';
@@ -56,6 +58,7 @@ let sim = new Simulation(42, DEFAULT_POPULATION), coordinator = new DecisionCoor
 const cloudMode = new URLSearchParams(location.search).get('local') !== '1';
 let cloud: CloudClient | undefined;
 let cloudReady = false;
+let requestBusy = false;
 interface AIStatus { chrome?: { schedule?: { hourlyCalls: number; hourlyLimit: number }; dailyLimit: number; usage: { calls: number }; jobs: { id: string; epoch: string; status: string; attempts: number; error: string | null }[] }; configured: boolean; model: string | null; day: string; dailyLimit: number; maxOutputTokens: number; usage: { calls: number; inputTokens: number; outputTokens: number }; jobs: { id: string; epoch: string; kind: string; status: string; attempts: number; error: string | null; model: string }[] }
 let aiStatus: AIStatus | undefined;
 let chromeRunner: ChromeRunner | undefined;
@@ -88,7 +91,7 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.9</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.12</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
     <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="create-character" class="button dark">＋ NPC 만들기</button><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></header>
@@ -96,9 +99,10 @@ $('app').innerHTML = `
       <section class="page-heading"><div><div class="eyebrow">LIVING SMALL WORLD</div><h1 id="page-title">이야기가 자라는 마을</h1><p id="page-subtitle">저마다의 하루가 만나, 이 세계만의 역사가 됩니다.</p></div><div class="world-status"><span id="running-dot" class="live-dot"></span><span id="running-status">세계가 살아가는 중</span><span class="seed-label">SEED <b id="seed-label">42</b></span></div></section>
       <section class="cloud-panel" aria-label="세계 저장 및 연결"><div><b>${cloudMode ? '서버에 이어지는 세계' : '이 기기의 세계'}</b><p id="cloud-status">${cloudMode ? '서버 세계를 불러오는 중…' : '이 기기에서만 진행하고 저장합니다.'}</p></div><div class="cloud-actions">${cloudMode ? '<label><input id="offline-toggle" type="checkbox" disabled/> 자리를 비워도 진행</label><button id="cloud-retry" class="button">연결 새로고침</button><a class="text-button" href="?local=1">기기 세계 관찰</a>' : '<a class="button" href="/">서버 세계로 돌아가기</a>'}</div>${cloudMode ? '<p class="cloud-policy">기본은 비접속 시 정지입니다. 켜면 재접속할 때 최대 게임 하루(144틱)만 반영합니다. 재생·정지·배속 설정은 모든 기기에 적용됩니다.</p>' : ''}</section><section class="stats-grid" aria-label="세계 현황" id="stats"></section>
       <div id="world-view" class="world-layout">
+        <div id="requests-prompt" class="requests-prompt" aria-live="off"></div>
         <section class="panel map-panel"><div class="panel-heading"><div><span class="small-dot"></span><h2 id="village-title">느티나무 마을</h2><span class="muted location-caption">NEUTINAMU VILLAGE</span></div><div class="weather-info" id="weather"></div></div>
           <div class="map-controls"><div class="time-controls"><button id="play-button" class="play-button" aria-label="일시정지">${icon('pause', 17)}</button><button id="step-button" class="icon-button" aria-label="한 틱 진행">${icon('step', 17)}</button><span class="control-divider"></span><div class="speed-switch" aria-label="시뮬레이션 배속">${[1, 5, 20].map(s => `<button data-speed="${s}" class="${s === 1 ? 'active' : ''}" aria-pressed="${s === 1}">${s}×</button>`).join('')}</div></div><div class="game-clock" id="game-clock"></div></div><div class="map-navigation"><label>지도 범위 <select id="map-mode"><option value="city">정착지 전체</option><option value="region">세계 전체</option><option value="follow">선택 주민 따라보기</option></select></label><button id="follow-character" class="button">선택 주민 찾기</button><label>시설·자원 선택 <select id="object-picker" aria-label="시설·자원 선택"><option value="">지도에서 고르기</option></select></label><span id="map-scope" class="muted"></span></div><div class="map-wrap"><canvas id="world-map" aria-label="주민을 클릭해 자세히 볼 수 있는 마을 지도. 마을 주민 메뉴에서도 선택할 수 있습니다."></canvas><div class="map-badge"><i></i> 작은 세계 · <span id="map-size">48 × 36</span></div><button class="map-grid-button" id="grid-button" aria-label="지도 격자 표시" aria-pressed="false">${icon('grid', 17)}</button><div class="map-compass"><span>N</span>↑</div></div>
-          <section id="observation-board" class="observation-board" aria-label="마을 관찰 과제"></section><div id="character-watch" class="character-watch" aria-live="off"></div><div id="civilization-panel" class="civilization-panel"></div>
+          <section id="requests-panel" class="requests-panel" aria-label="주민의 부탁" aria-live="off"></section><section id="observation-board" class="observation-board" aria-label="마을 관찰 과제"></section><div id="character-watch" class="character-watch" aria-live="off"></div><div id="civilization-panel" class="civilization-panel"></div>
           <div class="map-footer"><span><i class="legend-dot citizen"></i> 주민</span><span><i class="legend-dot farm"></i> 농장</span><span><i class="legend-dot resource"></i> 자원</span><span class="map-tip">주민·건물·자원을 선택해 살펴보세요</span></div>
         </section>
         <aside class="panel inspector"><div class="inspector-title"><h2 id="inspector-heading">주민 들여다보기</h2><span class="muted">AGENT INSPECTOR</span></div><div id="npc-header"></div><div class="inspector-tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="overview" class="active">일상</button><button role="tab" aria-selected="false" data-tab="relationships">관계</button><button role="tab" aria-selected="false" data-tab="memories">기억</button><button role="tab" aria-selected="false" data-tab="life">생애</button></div><div id="npc-detail" class="inspector-content"></div></aside>
@@ -134,17 +138,17 @@ function render() {
     ['heart', '마을의 평균 건강', `${averageHealth}<small>/ 100</small>`, averageHealth > 75 ? '평온하게 이어지는 일상' : '주민들의 건강을 살펴보세요', 'rose'],
     ['book', '서로에게 남긴 이야기', `${socialCount}<small>건</small>`, `도움 ${state.stats.shares} · 갈등 ${state.stats.conflicts}`, 'blue'],
   ].map(([i, label, number, text, color]) => `<article class="stat-card"><span class="stat-icon ${color}">${icon(i, 21)}</span><div><div class="stat-label">${label}</div><div class="stat-number">${number}</div><div class="stat-note">${text}</div></div></article>`).join(''));
-  setHTML('observation-board', observationView(state));
+  updateReadingPanel($('requests-prompt'), requestPrompt(state), `request-prompt:${state.seed}`);
+  updateReadingPanel($('requests-panel'), requestsView(state, requestBusy || cloudMode && !cloudReady, playing), `requests:${cloud?.world?.epoch ?? state.seed}`);
+  updateReadingPanel($('observation-board'), `<details id="observation-details"><summary>마을 관찰 과제와 건설</summary>${observationView(state)}</details>`, `observation:${state.seed}`);
   $('nav-population').textContent = String(living.length); $('seed-label').textContent = String(state.seed); $('map-size').textContent = `${state.width} × ${state.height}`;
   const season = ['봄', '여름', '가을', '겨울'][Math.floor((dayOf(state.tick) - 1) / 3) % 4], weather = { sunny: '맑음', rain: '비', cloudy: '흐림', drought: '가뭄' }[state.weather];
   $('weather').innerHTML = `${icon('sun', 16)} ${season} <span>·</span> ${weather}`;
   $('game-clock').innerHTML = `<b>${dayOf(state.tick)}일째</b><span>${Math.floor((dayOf(state.tick) - 1) / 12) + 1}년</span><span>${timeLabel(state.tick)}</span><span class="muted">${season}</span>`;
   $('running-status').textContent = playing ? '세계가 살아가는 중' : '잠시 멈춘 세계'; $('running-dot').classList.toggle('paused', !playing);
   $('play-button').innerHTML = icon(playing ? 'pause' : 'play', 17); $('play-button').setAttribute('aria-label', playing ? '일시정지' : '재생');
-  const heritageOpen = document.querySelector<HTMLDetailsElement>('#heritage-overview')?.open;
-  const urbanOpen = document.querySelector<HTMLDetailsElement>('#urban-overview')?.open;
   const policyEditing = document.activeElement?.closest('#urban-policy');
-  if (!policyEditing) { setHTML('civilization-panel', civilizationView(state)); if (urbanOpen) document.querySelector<HTMLDetailsElement>('#urban-overview')!.open = true; if (heritageOpen) document.querySelector<HTMLDetailsElement>('#heritage-overview')!.open = true; }
+  if (!policyEditing) updateReadingPanel($('civilization-panel'), civilizationView(state), `civilization:${cloud?.world?.epoch ?? state.seed}`);
   const objectVillage = selectedObject?.kind === 'building' ? state.buildings.find(b => b.id === selectedObject?.id)?.settlementId : undefined;
   $('village-title').textContent = objectVillage ? state.civilization.settlements.find(v => v.id === objectVillage)?.name ?? '정착지' : map.viewMode === 'region' ? '세계 전체 · 정착지와 교역' : state.civilization.settlements.find(v => v.id === (map.viewMode === 'follow' ? selectedNPC().settlementId : state.civilization.focus))?.name ?? '정착지';
   map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed, buffered: cloudMode, object: selectedObject }); presentationMotion = undefined; renderCharacterWatch(); renderInspector(); renderEvents();
@@ -199,7 +203,7 @@ function renderResidents() {
   residentPage = Math.min(residentPage, Math.max(0, Math.ceil(residents.length / 60) - 1));
   $('resident-grid').innerHTML = residents.slice(residentPage * 60, (residentPage + 1) * 60).map(n => `<button class="resident-card" data-npc="${esc(n.id)}"><span class="resident-dot">${portrait(appearance(n), characterVisual(n, state))}</span><div><h3>${esc(n.identity.name)}${n.profile ? ' <small>내 NPC</small>' : ''} <small>${occupationLabel(state, n)}</small></h3><p>${actionText(n)}</p><span>배고픔 ${n.needs.hunger.toFixed(0)} · 건강 ${n.needs.health.toFixed(0)} · 식량 ${n.inventory.food}</span></div>${icon('arrow', 16)}</button>`).join('') + (residents.length > 60 ? `<div class="resident-paging"><button class="button" data-resident-page="-1" ${residentPage === 0 ? 'disabled' : ''}>이전 주민</button><span>${residentPage + 1} / ${Math.ceil(residents.length / 60)}</span><button class="button" data-resident-page="1" ${(residentPage + 1) * 60 >= residents.length ? 'disabled' : ''}>다음 주민 목록</button></div>` : '');
 }
-const kindLabels: Partial<Record<WorldEvent['kind'], string>> = { ecology: '생태 변화', council: '주민 공동결정', diplomacy: '도시 관계', industry: '산업 생산', public_service: '공공서비스', tax: '세금·임대', urban: '도시 관측', policy: '정책 변경', freight: '물자 운송', family: '가족 형성', birth: '출생', coming_of_age: '성년', inheritance: '상속', education: '기술 전승', construction: '건설', settlement: '새 정착지', migration: '이주', caravan: '마을 교역', occupation: '직업 변화', price: '가격 산정', wage: '노동 보상', share: '따뜻한 도움', theft: '식량 절도', witness: '목격', rumor: '소문', talk: '이웃의 대화', relationship: '관계 변화', memory: '새로운 기억', goal: '새로운 바람', weather: '마을의 날씨', scarcity: '식량 부족', health: '건강', death: '마지막 인사', production: '생산', consumption: '생활', storage: '공동 창고', trade: '거래', loan: '대여', repayment: '상환', default: '연체', experiment: '관찰 실험', project: '목표 달성', llm: '사건 해석', arrival: '이동', failure: '계획 변경' };
+const kindLabels: Partial<Record<WorldEvent['kind'], string>> = { request: '주민의 부탁', ecology: '생태 변화', council: '주민 공동결정', diplomacy: '도시 관계', industry: '산업 생산', public_service: '공공서비스', tax: '세금·임대', urban: '도시 관측', policy: '정책 변경', freight: '물자 운송', family: '가족 형성', birth: '출생', coming_of_age: '성년', inheritance: '상속', education: '기술 전승', construction: '건설', settlement: '새 정착지', migration: '이주', caravan: '마을 교역', occupation: '직업 변화', price: '가격 산정', wage: '노동 보상', share: '따뜻한 도움', theft: '식량 절도', witness: '목격', rumor: '소문', talk: '이웃의 대화', relationship: '관계 변화', memory: '새로운 기억', goal: '새로운 바람', weather: '마을의 날씨', scarcity: '식량 부족', health: '건강', death: '마지막 인사', production: '생산', consumption: '생활', storage: '공동 창고', trade: '거래', loan: '대여', repayment: '상환', default: '연체', experiment: '관찰 실험', project: '목표 달성', llm: '사건 해석', arrival: '이동', failure: '계획 변경' };
 function renderEvents() {
   if (cloudMode) { void loadJournal(); return; }
   const filtered = state.events.filter(e => {
@@ -208,8 +212,8 @@ function renderEvents() {
     if (selectedOnly && !e.participants.includes(selectedId)) return false;
     if (search && !`${e.description} ${e.id} ${e.causeId ?? ''} ${JSON.stringify(e.data)}`.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 'important') return e.importance >= 45 || e.kind === 'weather';
-    if (filter === 'social') return ['share', 'talk', 'witness', 'rumor', 'relationship', 'memory', 'family', 'birth', 'coming_of_age', 'education', 'migration', 'death'].includes(e.kind);
-    if (filter === 'economy') return ['production', 'storage', 'trade', 'loan', 'repayment', 'default', 'theft', 'scarcity', 'wage', 'price', 'project', 'consumption', 'experiment', 'inheritance', 'construction', 'settlement', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'council', 'diplomacy'].includes(e.kind);
+    if (filter === 'social') return ['request', 'share', 'talk', 'witness', 'rumor', 'relationship', 'memory', 'family', 'birth', 'coming_of_age', 'education', 'migration', 'death'].includes(e.kind);
+    if (filter === 'economy') return ['production', 'storage', 'trade', 'loan', 'repayment', 'default', 'theft', 'scarcity', 'wage', 'price', 'project', 'consumption', 'experiment', 'inheritance', 'construction', 'settlement', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'request', 'council', 'diplomacy'].includes(e.kind);
     return true;
   });
   const shown = filtered.slice(-eventLimit).reverse();
@@ -693,4 +697,33 @@ $('observation-board').addEventListener('click', async event => {
     toast(`${kind === 'home' ? '새집' : '농장'}을 지었습니다. 시설 선택에서 살펴보세요.`);
   } catch (error) { toast(error instanceof Error ? error.message : '건설하지 못했습니다.'); }
   finally { render(); }
+});
+
+$('requests-panel').addEventListener('click', async event => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!button || button.disabled || requestBusy) return;
+  const id = button.dataset.request, observe = button.hasAttribute('data-observe-request'), pause = button.hasAttribute('data-request-pause');
+  if (!id && !observe && !pause) return;
+  requestBusy = true; render();
+  try {
+    if (cloudMode) {
+      if (!cloudReady) throw new Error('서버 연결을 먼저 확인해 주세요.');
+      await cloud!.send(pause ? { type: 'play', running: false } : observe ? { type: 'step', ticks: 12 } : { type: 'request', requestId: id!, choice: button.dataset.choice as RequestChoice });
+    } else {
+      if (pause) { playing = false; accumulator = 0; }
+      else if (observe) {
+        playing = false; accumulator = 0;
+        const observed = sim, decisions = coordinator;
+        for (let i = 0; i < 12; i++) { if (sim !== observed) return; observed.step(); if (observed.pending) await decisions.drain(); }
+      } else sim.respondToRequest(id!, button.dataset.choice as RequestChoice);
+      render(); localSave();
+    }
+    toast(pause ? '시간을 멈췄습니다. 천천히 읽고 선택하세요.' : observe ? (cloud?.world?.meta.pendingTicks ? '2시간 관찰을 진행 중입니다. 남은 진행은 나누어 저장합니다.' : '2시간의 생활을 관찰했습니다. 부탁의 결과를 살펴보세요.') : '선택을 기록했습니다. 부탁 카드에서 다음 변화를 확인하세요.');
+  } catch (error) { toast(error instanceof Error ? error.message : '부탁을 처리하지 못했습니다.'); }
+  finally { requestBusy = false; render(); }
+});
+
+$('requests-prompt').addEventListener('click', () => {
+  $('requests-panel').scrollIntoView({ behavior: 'instant', block: 'start' });
+  $('requests-panel').querySelector<HTMLButtonElement>('button:not(:disabled)')?.focus({ preventScroll: true });
 });

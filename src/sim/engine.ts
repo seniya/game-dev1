@@ -1,3 +1,5 @@
+import { respondToRequest, updateRequests } from './requests';
+import type { RequestChoice } from './requests-types';
 import { buildHouse } from './civilization';
 import { attraction, signed } from './attraction';
 import { canWork, syncEmployment } from './employment';
@@ -27,12 +29,14 @@ export class Simulation {
   constructor(seed = 42, population = 12) {
     this.state = createWorld(seed, population);
     appendEvent(this.state, { kind: 'weather', importance: 20, description: '봄의 첫 아침. 작은 마을의 하루가 시작되었습니다.' });
+    updateRequests(this.state);
   }
   static load(json: string): Simulation {
     if (json.length > 150_000_000) throw new Error('저장 파일이 너무 큽니다.');
     const state = validateSave(JSON.parse(json));
     const sim = new Simulation(); sim.state = state; return sim;
   }
+  respondToRequest(id: string, choice: RequestChoice) { respondToRequest(this.state, id, choice); }
   snapshot(): WorldState { return structuredClone(this.state); }
   save(): string { return JSON.stringify(this.state); }
   get tick(): number { return this.state.tick; }
@@ -108,6 +112,7 @@ export class Simulation {
       const e = socialEvent(w, { kind: 'default', actorId: borrower.id, targetId: lender.id, importance: 75, causeId: loan.sourceEventId, description: `${borrower.identity.name}이 ${lender.identity.name}에게 빌린 남은 식량 ${loan.remaining}개를 기한 내 갚지 못했다.` });
       changeRelationship(w, lender, borrower.id, { trust: -18, resentment: 16 }, e, '빌려준 식량을 약속한 날 돌려받지 못했다.');
     }
+    updateRequests(w);
     w.stats.foodSum += this.totalFood(); w.stats.samples++;
   }
   private totalFood() { return holdings(this.state).food; }

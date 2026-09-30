@@ -1,0 +1,47 @@
+{
+  "applicationVersion": "0.12.0",
+  "saveVersion": 8,
+  "unitAndServerTests": {
+    "passed": 161,
+    "failed": 0
+  },
+  "browserTests": {
+    "passed": 43,
+    "failed": 0,
+    "skipped": 1,
+    "skipReason": "Real Chrome model inference remains separately opt-in; no new real inference success is claimed."
+  },
+  "requestRegression": {
+    "seeds": [
+      42,
+      7,
+      123
+    ],
+    "daysPerSeed": 30,
+    "population": 12,
+    "ai": "off",
+    "maximumActive": 2,
+    "maximumNewPerGameDay": 2,
+    "sameResidentKindCooldownTicks": 432,
+    "retainedRequests": 32,
+    "baseResourceBalanceErrors": 0,
+    "checks": [
+      "First food request at tick 36; supported result after 12 ticks",
+      "All six support choices debit local stock and conserve base and manufactured goods ledgers",
+      "No mutations on invalid, unaffordable, stale, duplicate or unavailable-site choices",
+      "One deferral, decline, natural resolution and expiry",
+      "Source, decision and result events retained through compaction",
+      "Byte-identical continued simulation after save/load",
+      "Version 7 checkpoint and pending deltas upgrade before new commands"
+    ]
+  },
+  "uiChecks": [
+    "1440px desktop and 390px mobile",
+    "Request shortcut keeps map visible; detailed costs and choices below map",
+    "Pause to read; observe 2 game hours then stop",
+    "Disclosure state retained through updates",
+    "Resident inspector reading, relationship reordering and pending life-history refresh regressions",
+    "No horizontal overflow",
+    "Existing world retained without reset"
+  ]
+}

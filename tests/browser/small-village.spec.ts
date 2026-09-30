@@ -5,6 +5,7 @@ test('small village preset, real construction, scene evidence and mobile observa
   await page.goto('/?local=1'); await page.getByRole('button',{name:'일시정지',exact:true}).click();
   await expect(page.locator('#nav-population')).toHaveText('12');
   await expect(page.locator('#map-size')).toHaveText('48 × 36');
+  await page.locator('#observation-details > summary').click();
   await expect(page.locator('#observation-board progress')).toHaveCount(3);
   await expect(page.getByRole('button',{name:'농장 짓기 · 목재 16',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'새집 짓기 · 목재 12',exact:true}).click();
@@ -13,6 +14,7 @@ test('small village preset, real construction, scene evidence and mobile observa
   expect(save.storage.wood).toBe(0); expect(save.buildings).toHaveLength(11);
   expect(save.events.some((e:any)=>e.kind==='construction' && e.data.observer)).toBe(true);
   await page.reload(); await page.getByRole('button',{name:'일시정지',exact:true}).click();
+  await page.locator('#observation-details > summary').click();
   await expect(page.getByRole('button',{name:'새집 짓기 · 목재 12',exact:true})).toBeDisabled();
   await page.getByRole('button',{name:'12명의 넓은 마을로 시작',exact:true}).click();
   await expect(page.getByRole('button',{name:'새집 짓기 · 목재 12',exact:true})).toBeEnabled();
@@ -39,6 +41,7 @@ test('server preset backs up the populated world and construction survives recon
   const reset=await request.post('/api/command',{headers:{Origin:'http://127.0.0.1:4173'},data:{id:crypto.randomUUID(),revision:initial.revision,action:{type:'reset',seed:42,population:100}}});
   expect(reset.ok()).toBe(true);
   await page.goto('/'); await expect(page.locator('#nav-population')).toHaveText('100');
+  await page.locator('#observation-details > summary').click();
   await page.getByRole('button',{name:'12명의 넓은 마을로 시작',exact:true}).click();
   await expect(page.locator('#nav-population')).toHaveText('12');
   await expect(page.locator('#map-size')).toHaveText('48 × 36');
@@ -46,6 +49,7 @@ test('server preset backs up the populated world and construction survives recon
   await page.getByRole('button',{name:'새집 짓기 · 목재 12',exact:true}).click();
   await expect(page.locator('#toast')).toContainText('새집을 지었습니다');
   await page.reload(); await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
+  await page.locator('#observation-details > summary').click();
   await expect(page.getByRole('button',{name:'새집 짓기 · 목재 12',exact:true})).toBeDisabled();
   const saved=await (await request.get('/api/export')).json(); expect(saved.buildings).toHaveLength(11);
   expect(saved.events.some((e:any)=>e.kind==='construction' && e.data.observer)).toBe(true);
