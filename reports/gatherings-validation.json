@@ -1,0 +1,20 @@
+{
+  "version": "0.15.0",
+  "unit_server_tests_passed": 188,
+  "browser_scenarios_passed": 50,
+  "browser_after_arrival_change_passed": 4,
+  "browser_final_place_reading_scenarios_passed": 2,
+  "real_chrome_inference_skipped": 1,
+  "production_build": true,
+  "regression_conditions": 6,
+  "regression_days_each": 365,
+  "comparison_days": [
+    100,
+    365
+  ],
+  "regression_report": "reports/gatherings-regression.json",
+  "total_completed_gatherings": 1860,
+  "peak_checkpoint_bytes": 18655625,
+  "production_compatibility_report": "reports/gatherings-production-compatibility.json",
+  "limits": "Local automated rule validation; real Chrome inference, human believability, invitation relay and production 365-day load not tested. Core end-to-end furniture production observation extended from 30 to 60 days; resource criteria unchanged."
+}

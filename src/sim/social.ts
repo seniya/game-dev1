@@ -43,6 +43,9 @@ export function remember(w: WorldState, n: NPC, event: WorldEvent, description =
   if (repeated) { repeated.repetitions++; repeated.importance = clamp(repeated.importance + 2); return; }
   const memory = { id: `m${w.nextId++}`, type: memoryType(event), description, importance: event.importance, emotionalImpact: ['theft', 'witness', 'rumor', 'default', 'scarcity', 'death'].includes(event.kind) ? -event.importance : event.importance * .6, createdAt: w.tick, relatedNpcIds: event.participants.filter(id => id !== n.id), relatedLocationIds: event.locationId ? [event.locationId] : [], sourceEventId: event.id, repetitions: 1 };
   n.memories.push(memory);
+  // A cancelled/declined appointment is not positive shared experience. Personal
+  // disappointment is retained without attributing a private reason to someone else.
+  if (event.kind === 'gathering' && ['cancelled', 'declined', 'withdrawn', 'missed'].includes(String(event.data.phase))) memory.emotionalImpact = event.data.phase === 'missed' ? -15 : 0;
   const memoryLimit = w.npcs.length > 400 ? 24 : 40;
   if (n.memories.length > memoryLimit) { n.memories.sort((a, b) => b.importance - a.importance || b.createdAt - a.createdAt); n.memories.length = memoryLimit; }
   appendEvent(w, { kind: 'memory', actorId: n.id, importance: 15, causeId: event.id, description: `${n.identity.name}의 기억: ${description}` });

@@ -1,3 +1,4 @@
+import { proposeGatherings, updateGatherings, gatheringCandidate } from './gatherings';
 import { respondToRequest, updateRequests } from './requests';
 import type { RequestChoice } from './requests-types';
 import { buildHouse } from './civilization';
@@ -85,6 +86,7 @@ export class Simulation {
     advanceJourneys(w);
     advanceFreight(w);
     indexPeople(w);
+    proposeGatherings(w);
     for (const farm of w.buildings.filter(b => b.kind === 'farm')) farm.growth = Math.min(120, farm.growth + (w.weather === 'drought' ? .025 : w.weather === 'rain' ? .24 : .14) * (1 + (farm.level - 1) * .35) * (city(w, farm.settlementId!)?.fertility ?? 70) / 70 * (w.urban.buildings[farm.id]?.condition ?? 100) / 100 * cropMultiplier(w, farm.settlementId!));
     for (let i = 0; i < w.npcs.length; i++) {
       const n = w.npcs[(i + w.tick) % w.npcs.length];
@@ -107,6 +109,9 @@ export class Simulation {
       }
       syncEmployment(w, n);
       if (careForChild(w, n) || isTravelling(w, n)) { updatePerson(w, n); continue; }
+      const appointment = gatheringCandidate(w, n);
+      if (appointment && n.currentAction?.kind !== 'Attend' && !['Work', 'Gather'].includes(n.currentAction?.kind ?? '') && (n.currentAction?.score ?? 0) < appointment.score) delete n.currentAction;
+      if (n.currentAction?.kind === 'Attend' && !appointment) delete n.currentAction;
       const a = n.currentAction;
       if (a && urgentNeed(n) && n.cognition?.plan?.interruption !== urgentNeed(n)) n.currentAction = undefined;
       if (a && ((n.needs.hunger > 88 && n.inventory.food > 0 && a.kind !== 'Eat') || (n.needs.thirst > 90 && a.kind !== 'Drink'))) n.currentAction = undefined;
@@ -124,6 +129,7 @@ export class Simulation {
       const e = socialEvent(w, { kind: 'default', actorId: borrower.id, targetId: lender.id, importance: 75, causeId: loan.sourceEventId, description: `${borrower.identity.name}이 ${lender.identity.name}에게 빌린 남은 식량 ${loan.remaining}개를 기한 내 갚지 못했다.` });
       changeRelationship(w, lender, borrower.id, { trust: -18, resentment: 16 }, e, '빌려준 식량을 약속한 날 돌려받지 못했다.');
     }
+    updateGatherings(w);
     updateRequests(w);
     w.stats.foodSum += this.totalFood(); w.stats.samples++;
   }
@@ -169,6 +175,7 @@ export class Simulation {
       if (a.path.length === 0) appendEvent(w, { kind: 'arrival', actorId: n.id, locationId: w.buildings.find(b => distance(b.position, a.target) === 0)?.id, importance: 5, description: `${n.identity.name}이 목적지에 도착했다.`, data: { action: a.kind } });
       return;
     }
+    if (a.kind === 'Attend') { a.progress = this.state.gatherings?.items.find(g => g.id === a.targetId)?.progress ?? 0; return; }
     if (++a.progress < a.duration) return;
     this.execute(n); n.currentAction = undefined;
   }

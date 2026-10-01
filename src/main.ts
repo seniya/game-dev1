@@ -1,3 +1,4 @@
+import { gatheringsView } from './ui/gatherings';
 import { dailyPlanView, cognitionMemoryView } from './ui/cognition';
 import { Observer } from './ui/observer';
 import { activityView } from './ui/activity';
@@ -138,7 +139,7 @@ function actionText(n: NPC) { return !n.alive ? '세상을 떠남' : !n.currentA
 function render() {
   if (!cloudMode) state = sim.snapshot();
   if (selectedObject && !objectName(state, selectedObject)) selectedObject = undefined;
-  const living = state.npcs.filter(n => n.alive), socialCount = cloudMode ? cloud?.world?.meta.socialCount ?? 0 : state.events.filter(e => ['share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
+  const living = state.npcs.filter(n => n.alive), socialCount = cloudMode ? cloud?.world?.meta.socialCount ?? 0 : state.events.filter(e => ['gathering', 'share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
   const averageHealth = Math.round(living.reduce((s, n) => s + n.needs.health, 0) / Math.max(1, living.length));
   setHTML('stats', [
     ['people', '함께 살아가는 주민', `${living.length}<small>명</small>`, `${state.npcs.length}개의 서로 다른 삶`, 'sage'],
@@ -201,7 +202,7 @@ function renderInspectorContent() {
     ${n.profile ? `<div class="character-background"><p>${esc(n.profile.background) || '이곳에서 새로운 삶을 시작한 주민입니다.'}</p><button class="evidence-link" data-event="${esc(n.profile.arrivalEventId)}">입주 기록 보기</button></div>` : ''}<div class="section-label needs-title">몸과 마음 <span>0 — 100</span></div><div class="needs-list">${needLabels.map(([key, label, positive]) => { const value = Math.round(n.needs[key]), danger = positive ? value < 35 : value > 75; return `<div class="need-row"><span>${label}</span><div class="need-track"><i style="width:${value}%;background:${danger ? '#c9826c' : positive ? '#7d9c86' : '#b7a275'}"></i></div><b>${value}</b></div>`; }).join('')}</div>
     <div class="section-label spaced">왜 이 행동을 할까요? ${icon('spark', 13)}</div><div class="reason-box">${esc(n.decision.reason)}<div class="reason-foot">Utility AI · ${timeLabel(n.decision.tick)} 판단</div></div>
     <details class="utility-details"><summary>행동 후보 점수 보기</summary><div>${n.decision.candidates.map(c => `<div class="utility-row"><span>${ACTION_LABELS[c.kind]}<small>${esc(c.reason)}</small>${(c.evidence ?? []).map(id => `<button class="evidence-link" data-event="${esc(id)}">${esc(id)}</button>`).join('')}</span><b>${c.score.toFixed(1)}</b></div>`).join('') || '<p>첫 틱이 지나면 판단을 확인할 수 있습니다.</p>'}</div></details>
-    ${dailyPlanView(state, n)}<div class="section-label spaced">지금의 바람</div>${n.goals.map(g => `<div class="goal-row" data-reading-key="goal-${esc(g.id)}">${icon('leaf', 14)}<div><b>${GOAL_LABELS[g.kind]}</b><p>${esc(g.reason)}</p>${g.sourceEventId ? `<button class="evidence-link" data-event="${esc(g.sourceEventId)}">계기가 된 사건 보기</button>` : ''}</div></div>`).join('')}
+    ${dailyPlanView(state, n)}${gatheringsView(state, n)}<div class="section-label spaced">지금의 바람</div>${n.goals.map(g => `<div class="goal-row" data-reading-key="goal-${esc(g.id)}">${icon('leaf', 14)}<div><b>${GOAL_LABELS[g.kind]}</b><p>${esc(g.reason)}</p>${g.sourceEventId ? `<button class="evidence-link" data-event="${esc(g.sourceEventId)}">계기가 된 사건 보기</button>` : ''}</div></div>`).join('')}
     <div class="inventory-strip"><span>${icon('food', 14)} 식량 <b>${n.inventory.food}</b></span><span>목재 <b>${n.inventory.wood}</b></span><span>재산 <b>${n.wealth}</b></span></div>
     ${attractionProfile(state, n)}${livingPersonView(state, n)}<details class="personality-details"><summary>성격과 생활 정보</summary><p>근면 ${n.personality.diligence.toFixed(0)} · 탐욕 ${n.personality.greed.toFixed(0)} · 사교 ${n.personality.sociability.toFixed(0)}<br>공격성 ${n.personality.aggression.toFixed(0)} · 공감 ${n.personality.empathy.toFixed(0)} · 호기심 ${n.personality.curiosity.toFixed(0)}</p><p>좌표 (${n.position.x}, ${n.position.y}) · 오늘 식량 인출 ${n.dailyTaken}/3<br>기억 ${n.memories.length} · 관계 ${n.relationships.length}</p></details>`);
 }
@@ -212,7 +213,7 @@ function renderResidents() {
   residentPage = Math.min(residentPage, Math.max(0, Math.ceil(residents.length / 60) - 1));
   $('resident-grid').innerHTML = residents.slice(residentPage * 60, (residentPage + 1) * 60).map(n => `<button class="resident-card" data-npc="${esc(n.id)}"><span class="resident-dot">${portrait(appearance(n), characterVisual(n, state))}</span><div><h3>${esc(n.identity.name)}${n.profile ? ' <small>내 NPC</small>' : ''} <small>${occupationLabel(state, n)}</small></h3><p>${actionText(n)}</p><span>배고픔 ${n.needs.hunger.toFixed(0)} · 건강 ${n.needs.health.toFixed(0)} · 식량 ${n.inventory.food}</span></div>${icon('arrow', 16)}</button>`).join('') + (residents.length > 60 ? `<div class="resident-paging"><button class="button" data-resident-page="-1" ${residentPage === 0 ? 'disabled' : ''}>이전 주민</button><span>${residentPage + 1} / ${Math.ceil(residents.length / 60)}</span><button class="button" data-resident-page="1" ${(residentPage + 1) * 60 >= residents.length ? 'disabled' : ''}>다음 주민 목록</button></div>` : '');
 }
-const kindLabels: Partial<Record<WorldEvent['kind'], string>> = { request: '주민의 부탁', ecology: '생태 변화', council: '주민 공동결정', diplomacy: '도시 관계', industry: '산업 생산', public_service: '공공서비스', tax: '세금·임대', urban: '도시 관측', policy: '정책 변경', freight: '물자 운송', family: '가족 형성', birth: '출생', coming_of_age: '성년', inheritance: '상속', education: '기술 전승', construction: '건설', settlement: '새 정착지', migration: '이주', caravan: '마을 교역', occupation: '직업 변화', price: '가격 산정', wage: '노동 보상', share: '따뜻한 도움', theft: '식량 절도', witness: '목격', rumor: '소문', talk: '이웃의 대화', relationship: '관계 변화', memory: '새로운 기억', goal: '새로운 바람', weather: '마을의 날씨', scarcity: '식량 부족', health: '건강', death: '마지막 인사', production: '생산', consumption: '생활', storage: '공동 창고', trade: '거래', loan: '대여', repayment: '상환', default: '연체', experiment: '관찰 실험', project: '목표 달성', llm: '사건 해석', arrival: '이동', failure: '계획 변경' };
+const kindLabels: Partial<Record<WorldEvent['kind'], string>> = { gathering: '함께하는 약속', request: '주민의 부탁', ecology: '생태 변화', council: '주민 공동결정', diplomacy: '도시 관계', industry: '산업 생산', public_service: '공공서비스', tax: '세금·임대', urban: '도시 관측', policy: '정책 변경', freight: '물자 운송', family: '가족 형성', birth: '출생', coming_of_age: '성년', inheritance: '상속', education: '기술 전승', construction: '건설', settlement: '새 정착지', migration: '이주', caravan: '마을 교역', occupation: '직업 변화', price: '가격 산정', wage: '노동 보상', share: '따뜻한 도움', theft: '식량 절도', witness: '목격', rumor: '소문', talk: '이웃의 대화', relationship: '관계 변화', memory: '새로운 기억', goal: '새로운 바람', weather: '마을의 날씨', scarcity: '식량 부족', health: '건강', death: '마지막 인사', production: '생산', consumption: '생활', storage: '공동 창고', trade: '거래', loan: '대여', repayment: '상환', default: '연체', experiment: '관찰 실험', project: '목표 달성', llm: '사건 해석', arrival: '이동', failure: '계획 변경' };
 function renderEvents() {
   if (cloudMode) { void loadJournal(); return; }
   const filtered = state.events.filter(e => {
@@ -221,7 +222,7 @@ function renderEvents() {
     if (selectedOnly && !e.participants.includes(selectedId)) return false;
     if (search && !`${e.description} ${e.id} ${e.causeId ?? ''} ${JSON.stringify(e.data)}`.toLowerCase().includes(search.toLowerCase())) return false;
     if (filter === 'important') return e.importance >= 45 || e.kind === 'weather';
-    if (filter === 'social') return ['request', 'share', 'talk', 'witness', 'rumor', 'relationship', 'memory', 'family', 'birth', 'coming_of_age', 'education', 'migration', 'death'].includes(e.kind);
+    if (filter === 'social') return ['gathering', 'request', 'share', 'talk', 'witness', 'rumor', 'relationship', 'memory', 'family', 'birth', 'coming_of_age', 'education', 'migration', 'death'].includes(e.kind);
     if (filter === 'economy') return ['production', 'storage', 'trade', 'loan', 'repayment', 'default', 'theft', 'scarcity', 'wage', 'price', 'project', 'consumption', 'experiment', 'inheritance', 'construction', 'settlement', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'request', 'council', 'diplomacy'].includes(e.kind);
     return true;
   });

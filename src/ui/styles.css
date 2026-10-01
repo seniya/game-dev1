@@ -293,3 +293,11 @@
 .reflection-card { margin-bottom: 10px; padding: 14px; background: #f6f3eb; border-radius: 10px; border-left: 3px solid #a6b896; }
 .reflection-card .evidence-link { margin-right: 10px; }
 .memory-retrieval .memory-card { display: grid; gap: 8px; font-size: 12px; }
+
+/* Resident appointments reuse the inspector reading-state contract. */
+.gatherings-panel { margin: 14px 0; border-top: 1px solid #dedfd6; padding-top: 12px; }
+.gatherings-panel summary { cursor: pointer; font-weight: 700; }
+.gathering-card { padding: 14px 0; border-bottom: 1px solid #e6e7dd; overflow-wrap: anywhere; }
+.gathering-card p { font-size: 12px; line-height: 1.65; margin: 7px 0; }
+.gathering-card ul { padding-left: 18px; font-size: 12px; }
+.gathering-card li { margin: 10px 0; }

@@ -1,3 +1,4 @@
+import { gatheringsSchema, validateGatherings } from './gatherings-validation';
 import { requestsSchema, emptyRequests } from './requests-types';
 import { cognitionSchema, validateCognition } from './cognition-validation';
 import { validateRequests } from './requests-validation';
@@ -24,7 +25,7 @@ const score = z.number().min(0).max(100);
 const pos = z.object({ x: natural.max(191), y: natural.max(191) }).strict();
 const resources = z.object({ food: natural, wood: natural }).strict();
 const goalKind = z.enum(GOAL_KINDS as [typeof GOAL_KINDS[number], ...typeof GOAL_KINDS[number][]]);
-const actionKind = z.enum(['Wash', 'Idle', 'Move', 'Sleep', 'Eat', 'Drink', 'Gather', 'Work', 'Talk', 'StoreItem', 'TakeItem', 'Share', 'Theft', 'Trade', 'Borrow', 'Repay']);
+const actionKind = z.enum(['Attend', 'Wash', 'Idle', 'Move', 'Sleep', 'Eat', 'Drink', 'Gather', 'Work', 'Talk', 'StoreItem', 'TakeItem', 'Share', 'Theft', 'Trade', 'Borrow', 'Repay']);
 const candidate = z.object({ kind: actionKind, score: z.number().finite(), reason: description, target: pos, targetId: id.optional(), evidence: z.array(id).max(12).optional() }).strict();
 const action = candidate.extend({ path: z.array(pos).max(16384), progress: natural, duration: natural.min(1).max(100) }).strict();
 const relationship = z.object({ npcId: id, familiarity: score, trust: score, affection: score, fear: score, resentment: score, respect: score, family: z.boolean(), interpretation: description, evidence: z.array(id) }).strict();
@@ -42,13 +43,14 @@ const npc = z.object({
   goals: z.array(z.object({ id, kind: goalKind, reason: description, createdAt: natural, sourceEventId: id.optional() }).strict()).max(4),
   currentAction: action.optional(), decision: z.object({ reason: description, candidates: z.array(candidate).max(6), tick: natural }).strict(), dailyTaken: natural.max(3), lastTalk: z.number().int().min(-1000), knownRumors: z.array(id),
 }).strict();
-const event = z.object({ id, tick: natural, kind: z.enum(['arrival', 'production', 'consumption', 'storage', 'trade', 'loan', 'repayment', 'default', 'share', 'theft', 'witness', 'rumor', 'talk', 'scarcity', 'health', 'death', 'weather', 'relationship', 'memory', 'goal', 'llm', 'experiment', 'failure', 'project', 'wage', 'price', 'family', 'birth', 'coming_of_age', 'inheritance', 'education', 'construction', 'settlement', 'migration', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'council', 'diplomacy', 'request']), actorId: id.optional(), targetId: id.optional(), locationId: id.optional(), participants: z.array(id).max(30000), importance: score, description, causeId: id.optional(), data: z.record(z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.array(id)])) }).strict();
+const event = z.object({ id, tick: natural, kind: z.enum(['arrival', 'production', 'consumption', 'storage', 'trade', 'loan', 'repayment', 'default', 'share', 'theft', 'witness', 'rumor', 'talk', 'scarcity', 'health', 'death', 'weather', 'relationship', 'memory', 'goal', 'llm', 'experiment', 'failure', 'project', 'wage', 'price', 'family', 'birth', 'coming_of_age', 'inheritance', 'education', 'construction', 'settlement', 'migration', 'caravan', 'occupation', 'industry', 'public_service', 'tax', 'urban', 'policy', 'freight', 'ecology', 'council', 'diplomacy', 'request', 'gathering']), actorId: id.optional(), targetId: id.optional(), locationId: id.optional(), participants: z.array(id).max(30000), importance: score, description, causeId: id.optional(), data: z.record(z.union([z.string().max(10000), z.number().finite(), z.boolean(), z.array(id)])) }).strict();
 const flow = z.object({ producedFood: natural, producedWood: natural, consumedFood: natural, investedWood: natural, externalFood: natural, trades: natural, tradeVolume: natural, wages: natural }).strict();
 const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict().optional(), since: natural, openingFood: natural, openingWood: natural, openingCoins: natural, totals: flow,
   last: flow.extend({ shares: natural, conflicts: natural }).strict(),
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
+  gatherings: gatheringsSchema.optional(),
   version: z.literal(9), observation: z.object({ watchIds: z.array(z.string().min(1).max(100)).max(12) }).strict(), requests: requestsSchema, living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(24576),
   buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120), settlementId: id, ownerIds: z.array(id).max(30000).optional() }).strict()).max(4000),
@@ -201,6 +203,7 @@ export function validateSave(input: unknown): WorldState {
   ensure(w.living.since <= w.tick, '생활 상태 시작 시간');
   ensure(Object.keys(w.living.people).length === npcs.size && Object.keys(w.living.people).every(id => npcs.has(id)), '생활 주민 참조');
   ensure(Object.keys(w.living.homes).length === w.buildings.filter(b => b.kind === 'home').length && Object.keys(w.living.homes).every(id => buildings.get(id)?.kind === 'home'), '주거 유형 참조');
+  validateGatherings(w, ensure, register);
   validateRequests(w, ensure, register);
   validateUrban(w, ensure);
   validateHeritage(w, ensure);

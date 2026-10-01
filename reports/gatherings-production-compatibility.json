@@ -1,0 +1,17 @@
+{
+  "source": "read-only production export",
+  "version": 9,
+  "tick": 3536,
+  "residents": 12,
+  "originalEvents": 9815,
+  "unchangedOnLoad": true,
+  "localContinuationDays": 1,
+  "exactContinuation": true,
+  "balance": {
+    "food": 0,
+    "wood": 0,
+    "coins": 0
+  },
+  "newGatherings": 1,
+  "productionMutated": false
+}

@@ -1,3 +1,4 @@
+import { gatheringEvidence } from '../sim/gatherings';
 import { REQUEST_CHOICES } from '../sim/requests-types';
 import { DEFAULT_POPULATION } from '../sim/types';
 import { characterSchema } from '../sim/character-schema';
@@ -83,6 +84,7 @@ export function compactWorld(w: WorldState): WorldState {
   w.heritage?.councils.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); });
   w.heritage?.accords.forEach(r => { if (r.lastEventId) keep.add(r.lastEventId); if (r.deliveryEventId) keep.add(r.deliveryEventId); });
   w.requests?.items.forEach(r => { for (const id of [r.sourceEventId, r.lastEventId, r.decisionEventId, r.resultEventId, r.followupStopped, ...(r.context?.evidence ?? []), ...(r.followups ?? []).flatMap(f => [f.eventId, ...f.evidence])]) if (id) keep.add(id); });
+  w.gatherings?.items.forEach(g => gatheringEvidence(g).forEach(id => keep.add(id)));
   w.loans.forEach(l => keep.add(l.sourceEventId));
   w.llm.queue.forEach(q => keep.add(q.eventId));
   w.economy.daily.forEach(d => keep.add(d.eventId));
@@ -168,6 +170,6 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   }
   const state = sim.snapshot(), events = state.events.filter(e => !oldIds.has(e.id));
   meta.eventCount += events.length;
-  meta.socialCount += events.filter(e => ['share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
+  meta.socialCount += events.filter(e => ['gathering', 'share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
   return { world: { revision: current.revision + 1, epoch, meta, state: compactWorld(state) }, events, replaced, ...(motion ? { motion: movingTrace(motion) } : {}) };
 }

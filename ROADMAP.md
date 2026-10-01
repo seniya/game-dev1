@@ -1,5 +1,10 @@
 # Living Small World — 개발 로드맵
 
+## v0.15 주민의 자발적인 약속과 공동 활동 — 2026-10-01
+
+사용자가 제안 1~5번 전체 개발·검증·기존 비공개 사이트 배포를 지시했다. 공동 활동 제안, 직접 초대와 일정 조율, 실제 참석·자원·관계·기억 반영, 지도와 사건 관찰, 3시드 × off/Mock의 100일·365일 비교까지 구현·검증했다. 규칙과 지원 경계는 [COMMUNITY_ACTIVITIES.md](COMMUNITY_ACTIVITIES.md), 실제 완료 결과는 TASKS.md와 reports/gatherings-regression.json을 따른다. v0.14의 기억·성찰·하루 계획 구현은 SMALLVILLE_RESEARCH.md에 보존한다.
+
+
 ## v0.13 주민의 후속 생활과 다시 찾는 마을 — 2026-10-01
 
 사용자가 제안 1~5번 전체의 개발·검증·기존 비공개 사이트 배포를 지시했다.

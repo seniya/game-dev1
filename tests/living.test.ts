@@ -110,8 +110,10 @@ test('public payroll uses collected funds and refuses unfunded production withou
   assert.equal(industryWork(w, n), true); assert.equal(c.treasury, 0); assert.equal(c.spent, 2); assert.equal(w.events.at(-1)!.data.publicWage, 2);
   assert.equal(industryWork(w, n), false); assert.equal(holdings(w).coins, cash); valid(w);
 });
-test('an ordinary village autonomously manufactures and consumes clothes, meals and furniture', () => {
-  const sim = new Simulation(42, 12); sim.setLLM(false); sim.step(144 * 30);
+test('an ordinary village autonomously manufactures and consumes clothes, meals and furniture within 60 days', () => {
+  // Shared activities change job timing: joinery has no worker at day 30 in this seed.
+  // Keep the end-to-end production/consumption requirement while allowing an adult to take the job.
+  const sim = new Simulation(42, 12); sim.setLLM(false); sim.step(144 * 60);
   const w = sim.snapshot();
   for (const good of ['clothes', 'meals', 'furniture'] as const) { assert.ok(w.urban.ledger.produced[good] > 0); assert.ok(w.urban.ledger.consumed[good] > 0); }
   assert.deepEqual(balance(w), { food: 0, wood: 0, coins: 0 }); assert.ok(Object.values(urbanBalance(w)).every(v => v === 0)); valid(w);

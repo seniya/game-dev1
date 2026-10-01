@@ -22,7 +22,7 @@ export function cognition(n: NPC): Cognition {
 const reflectionRules: { goal: GoalKind; kinds: string[]; text: string }[] = [
   { goal: 'secure_food', kinds: ['scarcity', 'health'], text: '먹거리와 몸 상태의 어려움이 반복되었다. 생활에 필요한 식량을 먼저 챙기고 싶다.' },
   { goal: 'help_neighbor', kinds: ['share', 'repayment'], text: '도움을 나누거나 약속을 지킨 경험이 쌓였다. 여유가 생기면 이웃을 돕고 싶다.' },
-  { goal: 'make_friend', kinds: ['talk', 'family', 'education'], text: '함께 이야기하고 배운 경험이 쌓였다. 가까운 사람들과 교류를 이어가고 싶다.' },
+  { goal: 'make_friend', kinds: ['talk', 'family', 'education', 'gathering'], text: '함께 이야기하고 배운 경험이 쌓였다. 가까운 사람들과 교류를 이어가고 싶다.' },
   { goal: 'secure_storage', kinds: ['witness'], text: '공동 자원이 사라지는 일을 거듭 목격했다. 창고를 더 안전하게 만들고 싶다.' },
   { goal: 'earn_wealth', kinds: ['trade', 'default'], text: '거래와 생계의 경험이 쌓였다. 생활에 필요한 재산을 마련하고 싶다.' },
 ];
@@ -32,7 +32,7 @@ export function reflect(w: WorldState, n: NPC) {
   const fresh = n.memories.filter(m => !c.consideredMemoryIds.includes(m.id));
   if (fresh.reduce((sum, m) => sum + m.importance, 0) < 180) return;
   // Every input was personally retained; rumor causes and private third-party events never enter synthesis.
-  const grounded = fresh.filter(m => eventById(w, m.sourceEventId)?.participants.includes(n.id));
+  const grounded = fresh.filter(m => { const e = eventById(w, m.sourceEventId); return e?.participants.includes(n.id) && (e.kind !== 'gathering' || e.data.phase === 'completed'); });
   const groups = reflectionRules.map(rule => ({ rule, memories: grounded.filter(m => rule.kinds.includes(eventById(w, m.sourceEventId)!.kind)) }))
     .filter(g => new Set(g.memories.map(m => m.sourceEventId)).size >= 2)
     .sort((a, b) => b.memories.reduce((s, m) => s + m.importance, 0) - a.memories.reduce((s, m) => s + m.importance, 0));

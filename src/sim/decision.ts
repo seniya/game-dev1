@@ -1,3 +1,4 @@
+import { gatheringCandidate } from './gatherings';
 import { canWork } from './employment';
 import { livingCandidates } from './living';
 import { neighbours } from './spatial';
@@ -10,7 +11,7 @@ import { affinity } from './affinity';
 import { findPath } from './pathfinding';
 import { applyPlan } from './cognition';
 
-const durations: Record<ActionKind, number> = { Wash: 3, Idle: 2, Move: 1, Sleep: 8, Eat: 1, Drink: 1, Gather: 3, Work: 4, Talk: 2, StoreItem: 1, TakeItem: 1, Share: 1, Theft: 2, Trade: 1, Borrow: 1, Repay: 1 };
+const durations: Record<ActionKind, number> = { Attend: 6, Wash: 3, Idle: 2, Move: 1, Sleep: 8, Eat: 1, Drink: 1, Gather: 3, Work: 4, Talk: 2, StoreItem: 1, TakeItem: 1, Share: 1, Theft: 2, Trade: 1, Borrow: 1, Repay: 1 };
 export function candidates(w: WorldState, n: NPC): Candidate[] {
   const list: Candidate[] = [];
   const stock = stocks(w, n.settlementId), localMarket = villageMarket(w, n.settlementId);
@@ -67,6 +68,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
   }
   if (!canWork(w, n)) for (let i = list.length - 1; i >= 0; i--) if (list[i].kind === 'Work' || list[i].kind === 'Gather') list.splice(i, 1);
   livingCandidates(w, n, list);
+  const appointment = gatheringCandidate(w, n); if (appointment) list.push(appointment);
   return list.sort((a, b) => b.score - a.score);
 }
 export function plan(w: WorldState, n: NPC): { action: Action; candidates: Candidate[] } {

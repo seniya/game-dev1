@@ -14,7 +14,7 @@ export function characterVisual(n: NPC, w?: WorldState): CharacterVisual {
   if ((body?.warmth ?? 100) < 30) return { ...base, key: 'cold', label: '몸이 추워요', symbol: '≈', color: '#729aa8' };
   if (moving) return { ...base, key: 'moving', label: `이동 중 · ${ACTION_LABELS[a!.kind]}`, symbol: '›', color: '#638b7d' };
   if (working) return { ...base, key: 'working', label: a!.kind === 'Gather' ? '자원 채집 중' : '열심히 일하는 중', symbol: '⌁', color: '#a17d4b' };
-  if (a && ['Talk', 'Share', 'Trade', 'Borrow', 'Repay'].includes(a.kind)) return { ...base, key: 'social', label: ACTION_LABELS[a.kind], symbol: '••', color: '#a77a8b' };
+  if (a && ['Attend', 'Talk', 'Share', 'Trade', 'Borrow', 'Repay'].includes(a.kind)) return { ...base, key: 'social', label: ACTION_LABELS[a.kind], symbol: '••', color: '#a77a8b' };
   if (a && ['Eat', 'Drink', 'Wash'].includes(a.kind)) return { ...base, key: 'restoring', label: ACTION_LABELS[a.kind], symbol: a.kind === 'Eat' ? '●' : '◒', color: '#689699' };
   return { ...base, key: 'calm', label: '평온한 일상', symbol: '·', color: '#6e926b' };
 }

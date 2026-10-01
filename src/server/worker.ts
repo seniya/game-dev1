@@ -111,7 +111,7 @@ export default {
         if (p.get('cause')) { clauses.push('e.cause=?'); values.push(p.get('cause')!); }
         const filter = p.get('filter');
         if (filter === 'important') clauses.push("(json_extract(e.body,'$.importance')>=45 OR e.kind='weather')");
-        if (filter === 'social') clauses.push("e.kind IN ('request','share','talk','witness','rumor','relationship','memory','family','birth','coming_of_age','education','migration','death')");
+        if (filter === 'social') clauses.push("e.kind IN ('gathering','request','share','talk','witness','rumor','relationship','memory','family','birth','coming_of_age','education','migration','death')");
         if (filter === 'economy') clauses.push("e.kind IN ('production','storage','trade','loan','repayment','default','theft','scarcity','wage','price','project','consumption','experiment','inheritance','construction','settlement','caravan','occupation','industry','public_service','tax','urban','policy','freight','ecology','council','diplomacy','request')");
         if (filter === 'life') clauses.push("(e.kind NOT IN ('arrival','memory','failure') OR json_extract(e.body,'$.data.createdCharacter')=1)");
         const rows = await env.DB.prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();

@@ -122,8 +122,8 @@ export class WorldMap {
       this.motion.update(previous?.npcs ?? [], world.npcs, trace, now, duration);
       if (advanced) this.lastUpdate = now;
     }
-    const completed = world.events.slice(-100).filter(e => e.actorId === selected && world.tick - e.tick <= 6 && (['production','industry','storage','project'].includes(e.kind) || e.kind === 'consumption' && e.data.action === 'Eat' || e.kind === 'request' && e.data.phase === 'supported')).at(-1);
-    this.completedActivity = !completed ? '' : completed.kind === 'request' ? '지원 반영 완료' : completed.kind === 'storage' ? '자원 운반 완료' : completed.kind === 'consumption' ? '식사 완료' : completed.kind === 'project' ? '시설 개선 완료' : '생산 완료';
+    const completed = world.events.slice(-100).filter(e => (e.actorId === selected || e.kind === 'gathering' && e.participants.includes(selected)) && world.tick - e.tick <= 6 && (e.kind === 'gathering' && e.data.phase === 'completed' || ['production','industry','storage','project'].includes(e.kind) || e.kind === 'consumption' && e.data.action === 'Eat' || e.kind === 'request' && e.data.phase === 'supported')).at(-1);
+    this.completedActivity = !completed ? '' : completed.kind === 'gathering' ? '함께한 활동 완료' : completed.kind === 'request' ? '지원 반영 완료' : completed.kind === 'storage' ? '자원 운반 완료' : completed.kind === 'consumption' ? '식사 완료' : completed.kind === 'project' ? '시설 개선 완료' : '생산 완료';
     this.world = world; this.selected = selected; this.residents = world.npcs.filter(n => n.alive);
     const key = JSON.stringify([world.seed, world.width, world.height, this.origin, this.zoom, selected, this.selectedObject, world.urban.cities.map(c => [c.services, c.active]), world.urban.enterprises.map(e => [e.buildingId, e.kind]), world.buildings.map(b => [b.id, b.kind, b.name, b.position, b.level, b.growth >= 20, world.living.homes[b.id]]), world.resources.map(r => [r.id, r.kind, r.position, resourceStage(r)])]);
     if (rebuilt || key !== this.sceneKey) { this.buildScene(world); this.sceneKey = key; }

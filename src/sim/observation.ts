@@ -1,8 +1,8 @@
 import type { WorldEvent, WorldState } from './types';
-export const STORY_KINDS = ['consumption','share','talk','relationship','theft','witness','rumor','loan','repayment','default','family','birth','coming_of_age','education','inheritance','migration','death','request'];
+export const STORY_KINDS = ['gathering','consumption','share','talk','relationship','theft','witness','rumor','loan','repayment','default','family','birth','coming_of_age','education','inheritance','migration','death','request'];
 export const DIGEST_GROUPS: Record<string, { label: string; kinds: string[] }> = {
   requests: { label: '부탁과 후속 관찰', kinds: ['request'] },
-  relations: { label: '도움과 관계', kinds: ['share','talk','relationship','theft','witness','rumor','loan','repayment','default'] },
+  relations: { label: '도움과 관계', kinds: ['gathering','share','talk','relationship','theft','witness','rumor','loan','repayment','default'] },
   family: { label: '가족과 삶', kinds: ['family','birth','coming_of_age','education','inheritance','migration','death'] },
   work: { label: '생산과 생활', kinds: ['production','industry','consumption','storage','trade','project','construction','freight'] },
   village: { label: '마을의 변화', kinds: ['weather','scarcity','health','ecology','council','diplomacy','policy','public_service'] },

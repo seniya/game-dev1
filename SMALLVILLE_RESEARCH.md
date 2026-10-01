@@ -42,3 +42,8 @@ Smallville은 Stanford와 Google 연구진의 **Generative Agents: Interactive S
 `npm test`, `npm run test:browser`, `npm run regression:cognition`, `npm run build`로 확인한다. 신규 검증은 검색 순위·조회 불변성, 성찰 중복 방지·근거, 사적 정보/소문 경계, 계획의 선택 영향·긴급 전환, 이전 저장 읽기, 압축 후 출처 보존, 위조 저장 거부, Chrome 계약, 모델 off 저장 연속성과 데스크톱·모바일 근거 조회를 포함한다. 장기 결과는 [reports/cognition-regression.json](reports/cognition-regression.json)에 기록한다.
 
 이번 구현은 연구 구조의 게임용 적용이다. 자유로운 한국어 대화, 재귀적인 생성형 성찰, 임베딩 검색, 주민이 자율적으로 새 행사를 만들고 초대하는 체계는 구현하지 않았다. 기존의 소문·대화 전달을 논문의 파티 실험 재현으로 주장하지 않는다. Chrome 실기기 추론 품질과 인간 평가자의 행동 신뢰성 평가는 이번 자동 검증에 포함하지 않는다. 기존 [CHROME_AI_VALIDATION.md](CHROME_AI_VALIDATION.md)의 실행 증거와 사용자 수용 결정을 유지한다.
+
+
+## v0.15 후속 적용
+
+v0.14 당시 미구현이었던 자발적인 공동 활동과 직접 초대를 v0.15에서 게임 규칙으로 추가했다. 참석·자원·관계·저장과 UI의 범위는 [COMMUNITY_ACTIVITIES.md](COMMUNITY_ACTIVITIES.md)를 따른다. 논문의 자유로운 생성형 행사나 초대 연쇄 전달을 그대로 재현했다고 주장하지 않는다. v0.14의 검증 결과는 위 기록과 기존 보고서에 보존한다.
