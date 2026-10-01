@@ -1,0 +1,31 @@
+{
+  "id": "appgdep_6abe0df7e51c81919ff16aca4f620f40",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_ca151e4973548191860bbd6f1a487bcd",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 0,
+  "updated_at": "2026-10-01T07:38:40.569988+00:00",
+  "source_commit": "cd820a233dd1a7441ac97a4b4c499bfae3f6a361",
+  "sites_version": 27,
+  "saved_archive_content_hash": "sha256:0e7dc7093e5952a6c99a9f8b0c93bb1a068f202e1db662da1e6f8947f655fa0b",
+  "validation_report": "reports/storage-policy-validation.json",
+  "benchmark_report": "reports/storage-policy-benchmark.json",
+  "owner_only": true,
+  "production_smoke": {
+    "tick": 4271,
+    "population": 13,
+    "eventCount": 11900,
+    "all_previous_events_unchanged": true,
+    "all_previous_residents_present": true,
+    "world_reset": false,
+    "assets_match_build": true,
+    "note": "Read-only export verification; did not advance or reset the production world."
+  }
+}
