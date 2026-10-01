@@ -13,8 +13,8 @@ export interface ObserverPage {
   events: WorldEvent[]; highlights: WorldEvent[]; counts: Record<string, number>; total: number;
 }
 export function involved(e: WorldEvent, ids: string[]) { return !ids.length || ids.some(id => e.actorId === id || e.targetId === id || e.participants.includes(id)); }
-export function localObserver(w: WorldState, epoch: string, from: number, to: number, ids: string[] = [], story = false, before?: number, through = w.events.length, after = 0): ObserverPage {
-  const rows = w.events.slice(0, through).map((e,i) => ({ e, seq:i+1 })).filter(({ e, seq }) => seq > after && e.tick >= from && e.tick <= to && involved(e, ids) && (story ? STORY_KINDS : DIGEST_KINDS).includes(e.kind) && (!story || e.kind !== 'consumption' || !!e.data.caregiver));
+export function localObserver(w: WorldState, epoch: string, from: number, to: number, ids: string[] = [], story = false, before?: number, through = w.events.length, after = 0, partner?: string): ObserverPage {
+  const rows = w.events.slice(0, through).map((e,i) => ({ e, seq:i+1 })).filter(({ e, seq }) => seq > after && e.tick >= from && e.tick <= to && involved(e, ids) && (!partner || involved(e,[partner])) && (story ? STORY_KINDS : DIGEST_KINDS).includes(e.kind) && (!story || e.kind !== 'consumption' || !!e.data.caregiver));
   const counts: Record<string,number> = {};
   rows.forEach(({e}) => counts[e.kind] = (counts[e.kind] ?? 0) + 1);
   const page = rows.filter(r => before === undefined || r.seq < before).reverse().slice(0,41);

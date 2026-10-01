@@ -15,6 +15,12 @@ export function validateGatherings(w: WorldState, ensure: (v: unknown, message: 
     ensure(source?.kind === 'gathering' && source.actorId === g.hostId && source.tick === g.createdAt && source.data.phase === 'proposed' && source.data.gatheringId === g.id && source.data.gatheringKind === g.kind && source.locationId === g.buildingId, '공동 활동 제안 출처');
     ensure(JSON.stringify(source?.data.evidence) === JSON.stringify(g.evidence) && g.evidence.every(id => { const e = events.get(id); return e && e.tick <= g.createdAt && e.participants.includes(g.hostId) && e.kind !== 'rumor'; }), '공동 활동 개인 근거');
     ensure(last?.kind === 'gathering' && last.data.gatheringId === g.id && last.tick <= w.tick, '공동 활동 마지막 기록');
+    if (g.recurring) {
+      ensure(g.recurring.partnerId!==g.hostId && people.has(g.recurring.partnerId) && source?.data.recurringPartner===g.recurring.partnerId && JSON.stringify(g.evidence)===JSON.stringify(g.recurring.evidence), '정기 모임 제안 연결');
+      ensure(new Set(g.recurring.evidence).size===g.recurring.evidence.length && g.recurring.evidence.every(id=>{
+        const e=events.get(id); return e?.kind==='gathering' && e.data.phase==='completed' && e.data.gatheringKind===g.kind && e.participants.includes(g.hostId) && e.participants.includes(g.recurring!.partnerId) && e.tick<=g.createdAt-3*144;
+      }), '정기 모임 실제 완료 근거');
+    }
     if (g.schedule) {
       const change = events.get(g.schedule.eventId), request = events.get(g.schedule.requestEventId);
       ensure(g.schedule.previousStart === g.createdAt + 36 && g.schedule.tick >= g.createdAt && g.schedule.tick < g.schedule.previousStart - 12 && g.schedule.tick <= w.tick, '약속 변경 시간');

@@ -17,10 +17,13 @@ export async function readObserver(store: WorldStore, current: StoredWorld, p: U
   const before = number('before', through + 1, through + 1);
   const ids = [...new Set(p.getAll('npc'))];
   if (ids.length > 12 || ids.some(id => !current.state.npcs.some(n => n.id === id))) throw new Error('관찰 주민을 찾을 수 없습니다.');
+  const partner=p.get('partner');
+  if(partner && (!ids.length || !current.state.npcs.some(n=>n.id===partner) || ids.includes(partner)))throw new Error('관계 상대를 확인해 주세요.');
   const kinds = p.get('mode') === 'story' ? STORY_KINDS : DIGEST_KINDS;
   const clauses = ['e.epoch=?','e.seq<=?','e.seq>?','e.tick>=?','e.tick<=?',`e.kind IN (${kinds.map(()=>'?').join(',')})`];
   const values: (string|number)[] = [current.epoch, through, after, from, to, ...kinds];
   if (ids.length) { clauses.push(`EXISTS(SELECT 1 FROM participants p WHERE p.epoch=e.epoch AND p.event=e.id AND p.npc IN (${ids.map(()=>'?').join(',')}))`); values.push(...ids); }
+  if(partner) { clauses.push('EXISTS(SELECT 1 FROM participants pair WHERE pair.epoch=e.epoch AND pair.event=e.id AND pair.npc=?)'); values.push(partner); }
   if (p.get('mode') === 'story') clauses.push("(e.kind<>'consumption' OR json_extract(e.body,'$.data.caregiver') IS NOT NULL)");
   const where = clauses.join(' AND ');
   const [totals, rows, highlights] = await Promise.all([

@@ -87,3 +87,15 @@ test('server creation persists through restart and export; retries, stale revisi
   const retried=await (await request('command',cmd)).json() as WorldView; assert.equal(retried.state.npcs.length,14);
   assert.equal(retried.state.npcs.find(n=>n.profile?.commandId===cmd.id)!.id,id,'a retry after another creation still identifies the original resident');
 });
+
+test('expanded appearance round trips without changing old profiles or allowing arbitrary SVG input',async()=>{
+  const {appearanceSchema}=await import('../src/sim/character-schema');const {defaultCharacter,portrait,LOOK_PRESETS}=await import('../src/ui/characters');
+  const {Simulation}=await import('../src/sim/engine');
+  const sim=new Simulation(42);const input=defaultCharacter('b4');input.appearance={...input.appearance,...LOOK_PRESETS.starlight.appearance,hairstyle:'braid',faceMark:'freckles'};
+  const id=sim.createCharacter(input);const restored=Simulation.load(sim.save());assert.deepEqual(restored.snapshot().npcs.find(n=>n.id===id)!.profile!.appearance,input.appearance);
+  assert.match(portrait(input.appearance),/#323f60/);
+  const old={skin:'#ebcba4',hair:'#5d5345',outfit:'#76b4a3',hairstyle:'short',accessory:'none'};
+  assert.deepEqual(appearanceSchema.parse(old),old);
+  assert.equal(appearanceSchema.safeParse({...input.appearance,accent:'url(javascript:bad)'}).success,false);
+  assert.equal(appearanceSchema.safeParse({...input.appearance,hairstyle:'<script>'}).success,false);
+});

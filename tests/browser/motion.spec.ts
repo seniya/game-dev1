@@ -21,6 +21,7 @@ test('server motion covers response jitter and slow syncs restart without an ext
     };
   });
   await page.route('**/api/**', async route => {
+    if (new URL(route.request().url()).pathname === '/api/personal-observation') return route.fulfill({json:{epoch:world.epoch,watchIds:[],tick:0,through:0,seen:false}});
     if (new URL(route.request().url()).pathname === '/api/session') return route.fulfill({ json: { name: '시험 소유자', role: 'owner', ownNpcIds: [], npcLimit: null, local: true } });
     const path = new URL(route.request().url()).pathname;
     if (path === '/api/world') return route.fulfill({ json: viewWorld(world) });

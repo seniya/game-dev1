@@ -208,3 +208,11 @@
 ## v0.17 약속의 연속성·공동 접속
 
 `social-continuity-regression.json`은 3시드 × off/Mock의 100/365일 결과다. `social-continuity-validation.json`에 코어·서버, 브라우저 전체 실행과 실패 수정 후 재검증, 빌드, 실제 운영 사본 호환성을 구분했다. `social-production-compatibility.json`은 주민 13명·원본 사건 11,900건의 무변경 읽기와 로컬 하루 연속성 결과다. 실제 외부 계정 로그인이나 production 장기 부하를 검증한 결과는 아니다. 배포는 `deployment-v017.json`을 따른다.
+
+## v0.18 개인 관찰·정기 모임·관계 타임라인·외형
+
+- `recurring-observation-validation.json`: 코어·서버 210개, 최종 브라우저 56개와 실기기 Chrome 추론 1개 건너뜀, 최초 브라우저 실패와 재검증의 구분.
+- `recurring-observation-regression.json`: 7/42/123 시드의 off/Mock 365일 실행과 100일/365일 비교, 실제 정기 제안 수·자원 회계·저장 연속성·원본 근거 검사. `npm run regression:social -- --seed 7`처럼 시드를 독립 실행한 뒤 결과를 합칠 수 있다.
+- `recurring-production-compatibility.json`: 보존된 이전 운영 사본 13명·12,339건을 읽어 144틱 압축/복원 연속성을 비교. 새 운영 내보내기나 운영 세계 진행을 의미하지 않는다.
+- `screenshots/v018-*`: 캐릭터 꾸미기, 개인 관찰, 관계 타임라인의 데스크톱·모바일 확인.
+- 사람의 실제 로그인과 새 실모델 추론 품질은 이번 완료 범위에서 제외한다. 배포 및 운영 메타데이터 보존 결과는 `deployment-v018.json`에 별도로 기록한다.

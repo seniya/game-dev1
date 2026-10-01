@@ -9,8 +9,8 @@ export function gatheringsView(w: WorldState, n: NPC) {
   const items = (w.gatherings?.items ?? []).filter(g => g.hostId === n.id || g.invitations.some(i => i.npcId === n.id)).slice(-6).reverse();
   return `<details class="gatherings-panel" data-reading-key="gatherings-${esc(n.id)}"><summary>함께하는 약속 · ${items.filter(g => g.status === 'planned').length}건 예정</summary>
     <p class="inspector-footnote">초대 전달 경로·시간 조율·실제 참석 기록입니다. 급한 생활 필요로 참여를 중단할 수 있습니다.</p>
-    ${circles.length ? `<section class="friendship-circles"><h4>반복해서 함께한 이웃</h4>${circles.map(c => `<p>${name(c.partnerId)} · ${GATHERING_LABELS[c.kind]} · 최근 공동 경험 ${c.meetings}회</p>${c.evidence.map(id => `<button class="evidence-link" data-event="${esc(id)}">함께한 근거</button>`).join('')}`).join('')}<p class="inspector-footnote">실제로 완료한 만남이 다음 초대 선호에 반영됩니다.</p></section>` : ''}
-    ${items.length ? items.map(g => `<article class="gathering-card" data-reading-key="gathering-${esc(g.id)}"><b>${GATHERING_LABELS[g.kind]} · ${{ planned: '예정', completed: '완료', cancelled: '취소' }[g.status]}</b>
+    ${circles.length ? `<section class="friendship-circles"><h4>반복해서 함께한 이웃</h4>${circles.map(c => `<p>${name(c.partnerId)} · ${GATHERING_LABELS[c.kind]} · 최근 공동 경험 ${c.meetings}회</p>${c.evidence.map(id => `<button class="evidence-link" data-event="${esc(id)}">함께한 근거</button>`).join('')}`).join('')}<p class="inspector-footnote">실제 공동 경험은 다음 초대 선호와 정기 모임 제안에 반영됩니다. 마지막 만남 3일 뒤부터 14일까지, 직접 만날 때 생활·자원·관계를 다시 확인합니다. 조건이 맞지 않으면 쉬어갑니다.</p></section>` : ''}
+    ${items.length ? items.map(g => `<article class="gathering-card" data-reading-key="gathering-${esc(g.id)}"><b>${g.recurring ? '정기 모임 · ' : ''}${GATHERING_LABELS[g.kind]} · ${{ planned: '예정', completed: '완료', cancelled: '취소' }[g.status]}</b>
       <p>${esc(w.npcs.find(p => p.id === g.hostId)?.identity.name ?? g.hostId)}의 제안 · ${date(g.startsAt)}–${date(g.endsAt)}</p><p>${esc(g.reason)}</p>
       <button class="evidence-link" data-place="${esc(g.buildingId)}">${esc(w.buildings.find(b => b.id === g.buildingId)?.name ?? '약속 장소')} 지도에서 보기 ↗</button>
       <button class="evidence-link" data-event="${esc(g.sourceEventId)}">제안과 근거 ↗</button>

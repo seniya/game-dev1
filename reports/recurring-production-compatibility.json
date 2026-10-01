@@ -1,0 +1,16 @@
+{
+  "version": "0.18.0",
+  "source": "preserved pre-v0.17 production export; compatibility replay only, not a fresh live export",
+  "tick": 4403,
+  "npcs": 13,
+  "events": 12339,
+  "originalUnchanged": true,
+  "compactContinuationTicks": 144,
+  "continuationMatches": true,
+  "balance": {
+    "food": 0,
+    "wood": 0,
+    "coins": 0
+  },
+  "productionAdvanced": false
+}

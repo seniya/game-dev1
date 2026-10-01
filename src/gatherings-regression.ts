@@ -10,13 +10,18 @@ import { DecisionCoordinator } from './llm/coordinator';
 import { MockLLMProvider } from './llm/provider';
 import type { WorldEvent } from './sim/types';
 
+const seedArg=process.argv.indexOf('--seed');
+const seeds=seedArg<0?[7,42,123]:[Number(process.argv[seedArg+1])];
+if(seeds.some(seed=>![7,42,123].includes(seed)))throw new Error('Regression seed must be 7, 42 or 123');
+const report=seedArg<0?'reports/recurring-observation-regression.json':`reports/recurring-observation-seed-${seeds[0]}.json`;
 const results: unknown[] = [], started = Date.now();
-for (const seed of [7, 42, 123]) for (const mode of ['off', 'mock'] as const) {
+for (const seed of seeds) for (const mode of ['off', 'mock'] as const) {
   const dir = mkdtempSync(`${tmpdir()}/lsw-gatherings-`), db = new DatabaseSync(`${dir}/events.sqlite`);
   db.exec('CREATE TABLE events(id TEXT PRIMARY KEY, body TEXT); CREATE TABLE refs(source TEXT,target TEXT);');
   const insert = db.prepare('INSERT OR IGNORE INTO events VALUES(?,?)'), ref = db.prepare('INSERT INTO refs VALUES(?,?)');
   let sim = new Simulation(seed); sim.setLLM(mode !== 'off');
   let known = new Set<string>(), peakBytes = 0, peakItems = 0, maximumStall = 0;
+  let recurringProposals=0;
   const phases: Record<string, number> = {}, kinds: Record<string, number> = {}, deaths: Record<string, number> = {};
   const proposals = new Set<string>(), cooldown = new Map<string, number>();
   const invitations = new Map<string, Set<string>>(), hosts = new Map<string, string>(), completed = new Set<string>();
@@ -30,6 +35,16 @@ for (const seed of [7, 42, 123]) for (const mode of ['off', 'mock'] as const) {
       if (e.kind !== 'gathering') continue;
       const phase = String(e.data.phase); phases[phase] = (phases[phase] ?? 0) + 1;
       if (phase === 'proposed') {
+        if(e.data.recurringPartner) {
+          recurringProposals++;
+          assert.ok(Array.isArray(e.data.evidence) && e.data.evidence.length>=2);
+          for(const id of e.data.evidence) {
+            const row=db.prepare('SELECT body FROM events WHERE id=?').get(id) as {body:string};
+            const previous=JSON.parse(row.body) as WorldEvent;
+            assert.equal(previous.data.phase,'completed');
+            assert.ok(previous.participants.includes(e.actorId!) && previous.participants.includes(String(e.data.recurringPartner)) && previous.tick<=e.tick-432);
+          }
+        }
         const key = `${Math.floor(e.tick / 144)}:${e.data.settlementId}`; assert.ok(!proposals.has(key)); proposals.add(key);
         assert.ok(e.tick - (cooldown.get(e.actorId!) ?? -Infinity) >= 432); cooldown.set(e.actorId!, e.tick);
         hosts.set(String(e.data.gatheringId), e.actorId!); invitations.set(String(e.data.gatheringId), new Set());
@@ -72,14 +87,14 @@ for (const seed of [7, 42, 123]) for (const mode of ['off', 'mock'] as const) {
     sim = Simulation.load(saved); assert.equal(sim.save(), saved); known = new Set(compact.events.map(e => e.id));
     if (day === 100 || day === 365) {
       assert.ok((phases.proposed ?? 0) > 0 && (phases.completed ?? 0) > 0);
-      results.push({ seed, mode, days: day, survivors: w.npcs.filter(n => n.alive).length, phases: { ...phases }, completedKinds: { ...kinds }, deathReasons: { ...deaths },
+      results.push({ seed, mode, days: day, recurringProposals, survivors: w.npcs.filter(n => n.alive).length, phases: { ...phases }, completedKinds: { ...kinds }, deathReasons: { ...deaths },
         peakItems, peakCheckpointBytes: peakBytes, maximumStallTicks: maximumStall, retainedReflections: w.npcs.reduce((s, n) => s + (n.cognition?.reflections.length ?? 0), 0),
         modelDecisions: w.llm.completed, balance: balance(w), goodsBalance: urbanBalance(w), dailyRestore: true, exactContinuation: true, missingEvidence: 0 });
       console.log(JSON.stringify({ seed, mode, day, phases, kinds, survivors: w.npcs.filter(n => n.alive).length }));
-      writeFileSync('reports/social-continuity-regression.json', JSON.stringify({ version: '0.17.0', completed: false, elapsedMs: Date.now() - started, results }, null, 2) + '\n');
+      writeFileSync(report, JSON.stringify({ version: '0.18.0', completed: false, elapsedMs: Date.now() - started, results }, null, 2) + '\n');
     }
   }
   db.close(); rmSync(dir, { recursive: true });
 }
-writeFileSync('reports/social-continuity-regression.json', JSON.stringify({ version: '0.17.0', completed: true, elapsedMs: Date.now() - started, results,
+writeFileSync(report, JSON.stringify({ version: '0.18.0', completed: true, elapsedMs: Date.now() - started, results,
   limits: 'Rule-based simulation on local CPU; no real Chrome inference, external API, human believability evaluation or production long-duration load test.' }, null, 2) + '\n');

@@ -131,6 +131,7 @@ test('AI settings distinguish unavailable models and grounded Mock dialogue open
   speaker.relationships.push({ npcId: listener.id, familiarity: 20, trust: 40, affection: 20, fear: 0, resentment: 0, respect: 20, family: false, interpretation: '도움이 기억난다.', evidence: [speaker.memories[0].sourceEventId] });
   world.meta.eventCount = world.state.events.length;
   await page.route('**/api/**', async route => {
+    if (new URL(route.request().url()).pathname === '/api/personal-observation') return route.fulfill({json:{epoch:world.epoch,watchIds:[],tick:0,through:0,seen:false}});
     if (new URL(route.request().url()).pathname === '/api/session') return route.fulfill({ json: { name: '시험 소유자', role: 'owner', ownNpcIds: [], npcLimit: null, local: true } });
     const url = new URL(route.request().url());
     if (url.pathname === '/api/world') return route.fulfill({ json: viewWorld(world) });
@@ -169,6 +170,7 @@ test('configured model audit displays escaped results, links evidence and export
   let world = initialWorld(Date.now());
   const source = world.state.events[0], job = { id: 'audit-fixture', epoch: world.epoch, status: 'applied', kind: 'interpretation', attempts: 1, model: 'fixture-model', context: JSON.stringify({ event: source }), result: JSON.stringify({ ok: true, value: { interpretation: '<img src=x onerror=alert(1)>', evidence: [source.id], newGoals: [], relationshipInterpretations: [] } }), error: null };
   await page.route('**/api/**', async route => {
+    if (new URL(route.request().url()).pathname === '/api/personal-observation') return route.fulfill({json:{epoch:world.epoch,watchIds:[],tick:0,through:0,seen:false}});
     if (new URL(route.request().url()).pathname === '/api/session') return route.fulfill({ json: { name: '시험 소유자', role: 'owner', ownNpcIds: [], npcLimit: null, local: true } });
     const url = new URL(route.request().url());
     if (url.pathname === '/api/world') return route.fulfill({ json: viewWorld(world) });
@@ -242,6 +244,7 @@ test('map paints intermediate positions between server updates while avoiding re
     };
   });
   await page.route('**/api/**', async route => {
+    if (new URL(route.request().url()).pathname === '/api/personal-observation') return route.fulfill({json:{epoch:world.epoch,watchIds:[],tick:0,through:0,seen:false}});
     if (new URL(route.request().url()).pathname === '/api/session') return route.fulfill({ json: { name: '시험 소유자', role: 'owner', ownNpcIds: [], npcLimit: null, local: true } });
     const path = new URL(route.request().url()).pathname; calls[path] = (calls[path] ?? 0) + 1;
     if (path === '/api/world') return route.fulfill({ json: viewWorld(world) });

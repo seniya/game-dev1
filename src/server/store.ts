@@ -12,6 +12,7 @@ interface ChangeRow { revision: number; part: number; body: string }
 export interface CommandInput { action: Command['action']; at: number; checkpoint?: boolean }
 
 const schema = [
+  'CREATE TABLE IF NOT EXISTS personal_observations(epoch TEXT NOT NULL,member TEXT NOT NULL,watch TEXT NOT NULL,tick INTEGER NOT NULL,through INTEGER NOT NULL,seen INTEGER NOT NULL,PRIMARY KEY(epoch,member))',
   "CREATE TABLE IF NOT EXISTS world_members(id TEXT PRIMARY KEY,email TEXT NOT NULL,name TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('owner','participant')),blocked INTEGER NOT NULL DEFAULT 0 CHECK(blocked IN (0,1)))",
   "CREATE UNIQUE INDEX IF NOT EXISTS world_one_owner ON world_members(role) WHERE role='owner'",
   'CREATE TABLE IF NOT EXISTS access_migrations(id TEXT PRIMARY KEY)',

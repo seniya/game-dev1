@@ -4,6 +4,7 @@ export const GATHERING_LABELS = { meal: '함께 식사', help: '이웃에게 식
 export const gatheringSchema = z.object({
   id, kind: z.enum(['meal', 'help', 'harvest']), hostId: id, settlementId: id, buildingId: id,
   createdAt: tick, startsAt: tick, endsAt: tick, status: z.enum(['planned', 'completed', 'cancelled']),
+  recurring: z.object({ partnerId:id, evidence:z.array(id).min(2).max(3) }).strict().optional(),
   schedule: z.object({ eventId: id, requestEventId: id, requestedBy: id, tick, previousStart: tick }).strict().optional(),
   reason: z.string().max(1000), sourceEventId: id, lastEventId: id, evidence: z.array(id).max(4),
   invitations: z.array(z.object({ npcId: id, deliveredAt: tick, invitationEventId: id, responseEventId: id,

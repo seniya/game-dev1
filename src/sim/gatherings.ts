@@ -18,7 +18,7 @@ function interruptionReason(w: WorldState, n: NPC, settlementId: string) {
 }
 const booked = (w: WorldState, id: string, except?: string) => w.gatherings?.items.some(g => isPlanned(g) && g.id !== except && (g.hostId === id || g.invitations.some(i => i.npcId === id && i.status === 'accepted')));
 export function gatheringEvidence(g: Gathering) {
-  return [g.sourceEventId, g.lastEventId, ...g.evidence, ...(g.schedule ? [g.schedule.eventId, g.schedule.requestEventId] : []), ...g.arrivals.map(a => a.eventId), ...g.invitations.flatMap(i => [i.invitationEventId, i.responseEventId, ...(i.scheduleEventId ? [i.scheduleEventId, i.scheduleResponseId!] : [])])];
+  return [g.sourceEventId, g.lastEventId, ...g.evidence, ...(g.recurring?.evidence ?? []), ...(g.schedule ? [g.schedule.eventId, g.schedule.requestEventId] : []), ...g.arrivals.map(a => a.eventId), ...g.invitations.flatMap(i => [i.invitationEventId, i.responseEventId, ...(i.scheduleEventId ? [i.scheduleEventId, i.scheduleResponseId!] : [])])];
 }
 function record(w: WorldState, g: Gathering, phase: string, description: string, participants: string[], causeId = g.sourceEventId) {
   const e = socialEvent(w, { kind: 'gathering', actorId: participants[0], participants, locationId: g.buildingId, importance: 55, causeId,
@@ -60,7 +60,7 @@ export function deliverInvitations(w: WorldState, g: Gathering) {
     const parent = g.invitations.find(i => i.npcId === sender.id);
     if (parent && !informed(g, parent)) continue;
     const nearby = w.npcs.filter(n => n.id !== host.id && n.id !== sender.id && eligible(w, n) && n.settlementId === g.settlementId && distance(sender.position, n.position) <= 4 && !g.invitations.some(i => i.npcId === n.id))
-      .sort((a, b) => invitationPreference(w, sender, b, g.kind) - invitationPreference(w, sender, a, g.kind) || a.id.localeCompare(b.id));
+      .sort((a, b) => (sender.id===g.hostId ? Number(b.id===g.recurring?.partnerId)-Number(a.id===g.recurring?.partnerId) : 0) || invitationPreference(w, sender, b, g.kind) - invitationPreference(w, sender, a, g.kind) || a.id.localeCompare(b.id));
     for (const n of nearby.slice(0, 3 - g.invitations.length)) {
       const invitation = record(w, g, 'invited', `${sender.identity.name}이 ${n.identity.name}에게 ${host.identity.name}의 ${GATHERING_LABELS[g.kind]} 약속을 직접 전했다.`, [sender.id, n.id], parent?.invitationEventId ?? g.sourceEventId);
       const circle = w.gatherings?.circles?.find(c => c.hostId === sender.id && c.partnerId === n.id && c.kind === g.kind);
@@ -105,6 +105,16 @@ function bond(n: NPC, other: NPC) {
   const r = n.relationships.find(r => r.npcId === other.id);
   return (r?.trust ?? 35) + (r?.affection ?? 0) * .3 - (r?.resentment ?? 0) + n.personality.sociability * .1;
 }
+/** A recurring proposal still needs a visible neighbour, resources and fresh consent. */
+export function recurringCircle(w: WorldState, host: NPC) {
+  return (w.gatherings?.circles ?? []).filter(c => c.hostId === host.id && w.tick-c.lastAt >= 3*144 && w.tick-c.lastAt <= 14*144)
+    .sort((a,b)=>a.lastAt-b.lastAt || a.partnerId.localeCompare(b.partnerId)).find(c=>{
+      const partner=w.npcs.find(n=>n.id===c.partnerId);
+      return partner && eligible(w,partner) && partner.settlementId===host.settlementId && distance(host.position,partner.position)<=4
+        && bond(host,partner)>=25 && !booked(w,partner.id)
+        && !w.gatherings?.items.some(g=>g.hostId===host.id && g.recurring?.partnerId===partner.id && w.tick-g.createdAt<3*144);
+    });
+}
 /** Called on a bounded daily cadence; proposals use personal memories and visible neighbours only. */
 export function proposeGatherings(w: WorldState) {
   const state = w.gatherings ??= { items: [], lastProposalDay: -1 };
@@ -116,26 +126,31 @@ export function proposeGatherings(w: WorldState) {
     if (state.items.some(g => isPlanned(g) && g.settlementId === village.id)) continue;
     const locals = w.npcs.filter(n => eligible(w, n) && n.settlementId === village.id && !urgentNeed(n) && !booked(w, n.id)
       && !state.items.some(g => g.hostId === n.id && w.tick - g.createdAt < 3 * 144));
-    const ranked = locals.sort((a, b) => (b.personality.sociability + b.personality.empathy + (100 - b.needs.social)) - (a.personality.sociability + a.personality.empathy + (100 - a.needs.social)) || a.id.localeCompare(b.id));
+    const due = new Map(locals.map(n=>[n.id,recurringCircle(w,n)]));
+    const ranked = locals.sort((a, b) => (due.get(b.id)?60:0)-(due.get(a.id)?60:0) + (b.personality.sociability + b.personality.empathy + (100 - b.needs.social)) - (a.personality.sociability + a.personality.empathy + (100 - a.needs.social)) || a.id.localeCompare(b.id));
     for (const host of ranked.slice(0, 24)) {
       const neighbours = w.npcs.filter(n => eligible(w, n) && n.id !== host.id && n.settlementId === village.id && distance(host.position, n.position) <= 4);
       if (!neighbours.length) continue;
-      const evidence = host.memories.filter(m => m.type === 'social' && eventById(w, m.sourceEventId)?.participants.includes(host.id) && eventById(w, m.sourceEventId)?.kind !== 'rumor').slice(-4).map(m => m.sourceEventId);
+      let evidence = host.memories.filter(m => m.type === 'social' && eventById(w, m.sourceEventId)?.participants.includes(host.id) && eventById(w, m.sourceEventId)?.kind !== 'rumor').slice(-4).map(m => m.sourceEventId);
       const needy = neighbours.find(n => n.inventory.food === 0 && n.needs.hunger > 55);
       const farm = w.buildings.find(b => b.kind === 'farm' && b.settlementId === village.id && b.growth >= 8 && !w.urban.enterprises.some(e => e.buildingId === b.id));
-      const kind = needy && host.inventory.food >= 3 && host.personality.empathy >= 45 ? 'help'
+      const circle = due.get(host.id);
+      const repeat = circle && (circle.kind === 'meal' ? host.inventory.food >= 2 : circle.kind === 'harvest' ? !!farm && canWork(w,host) : !!needy && host.inventory.food >= 3 && host.personality.empathy >= 45) ? circle : undefined;
+      if(repeat) evidence=[...repeat.evidence];
+      const kind = repeat?.kind ?? (needy && host.inventory.food >= 3 && host.personality.empathy >= 45 ? 'help'
         : farm && canWork(w, host) && host.inventory.food < 3 ? 'harvest'
-        : host.inventory.food >= 2 && (host.needs.social < 75 || evidence.length > 0) ? 'meal' : undefined;
+        : host.inventory.food >= 2 && (host.needs.social < 75 || evidence.length > 0) ? 'meal' : undefined);
       if (!kind) continue;
       const venue = kind === 'harvest' ? farm! : w.buildings.find(b => b.kind === 'market' && b.settlementId === village.id)!;
       const path = findPath(w, host.position, venue.position); if (!path || path.length > 30) continue;
-      const reason = kind === 'help' ? `눈앞의 ${needy!.identity.name}에게 식량이 없고 배고픔이 ${Math.round(needy!.needs.hunger)}이다. 내 식량 ${host.inventory.food}개 중 일부를 나누고 싶다.`
+      let reason = kind === 'help' ? `눈앞의 ${needy!.identity.name}에게 식량이 없고 배고픔이 ${Math.round(needy!.needs.hunger)}이다. 내 식량 ${host.inventory.food}개 중 일부를 나누고 싶다.`
         : kind === 'harvest' ? `내 식량은 ${host.inventory.food}개이고 마을 농장에 익은 작물 ${Math.floor(farm!.growth)}개가 있다. 함께 수확하고 싶다.`
         : `내 식량 ${host.inventory.food}개와 교류 충족 ${Math.round(host.needs.social)}, 기억한 만남 ${evidence.length}건을 바탕으로 함께 식사하고 싶다.`;
+      if(repeat) reason=`${w.npcs.find(n=>n.id===repeat.partnerId)!.identity.name}과 실제로 함께한 ${repeat.meetings}번의 경험을 바탕으로 정기 모임을 다시 제안한다. 매번 직접 초대하고 새로 수락받는다. ${reason}`;
       const g: Gathering = { id: `g${w.nextId++}`, kind, hostId: host.id, settlementId: village.id, buildingId: venue.id, createdAt: w.tick, startsAt: w.tick + 36, endsAt: w.tick + 60,
-        status: 'planned', reason, evidence, sourceEventId: '', lastEventId: '', invitations: [], progress: 0, attendance: [], arrivals: [] };
+        status: 'planned', ...(repeat ? {recurring:{partnerId:repeat.partnerId,evidence:[...repeat.evidence]}} : {}), reason, evidence, sourceEventId: '', lastEventId: '', invitations: [], progress: 0, attendance: [], arrivals: [] };
       const e = appendEvent(w, { kind: 'gathering', actorId: host.id, locationId: venue.id, importance: 55, description: `${host.identity.name}이 ${GATHERING_LABELS[kind]} 약속을 제안했다. ${reason}`,
-        data: { gatheringId: g.id, gatheringKind: kind, phase: 'proposed', startsAt: g.startsAt, endsAt: g.endsAt, evidence } });
+        data: { gatheringId: g.id, gatheringKind: kind, phase: 'proposed', ...(repeat ? {recurringPartner:repeat.partnerId} : {}), startsAt: g.startsAt, endsAt: g.endsAt, evidence } });
       g.sourceEventId = e.id; g.lastEventId = e.id; state.items.push(g); deliverInvitations(w, g); break;
     }
   }

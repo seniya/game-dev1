@@ -13,7 +13,7 @@ import { attractionProfile, attractionRelation, charmPreview } from './ui/attrac
 import { DEFAULT_POPULATION } from './sim/types';
 import { occupationLabel } from './sim/employment';
 import { livingPersonView } from './ui/living';
-import { defaultCharacter, characterForm, readCharacter, greetingOptions, appearance, portrait } from './ui/characters';
+import { LOOK_PRESETS, defaultCharacter, characterForm, readCharacter, greetingOptions, appearance, portrait } from './ui/characters';
 import { RECOLLECTION_LABELS, RECOLLECTION_TOPICS, recollections, type RecollectionTopic } from './sim/recollection';
 import { historyView, treeView, type HistoryPage } from './ui/heritage';
 import { historyMatches, type HistoryTopic } from './sim/history';
@@ -86,7 +86,7 @@ if (cloudMode) playing = false;
 let metric = 'food', lifeLimit = 40;
 let presentationMotion: MotionTrace | undefined;
 const observationEpoch = () => cloudMode ? cloud?.world?.epoch ?? 'loading' : `local:${localWorldKey}`;
-const observer = new Observer({ state:()=>state, epoch:observationEpoch, cloud:()=>cloudMode, get:path=>cloud!.get(path), open:openDialog, error:toast });
+const observer = new Observer({ state:()=>state, epoch:observationEpoch, cloud:()=>cloudMode, get:<T>(path:string)=>cloud!.get<T>(path), changed:()=>render(), ownIds:()=>cloudMode ? cloud?.session?.ownNpcIds.slice(-12) ?? [] : state.npcs.filter(n=>n.profile).slice(-12).map(n=>n.id), open:openDialog, error:toast });
 const markupCache = new Map<string, string>();
 function setHTML(id: string, html: string) { if (markupCache.get(id) !== html) { $(id).innerHTML = html; markupCache.set(id, html); } }
 let noticeTimer: ReturnType<typeof setTimeout>;
@@ -103,7 +103,7 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.17</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> Deterministic engine <span>v0.18</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
     <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></header>
@@ -191,7 +191,7 @@ function renderInspectorContent() {
     setInspectorHTML(objectInspector(state, selectedObject)); return;
   }
   const n = selectedNPC();
-  updateReadingPanel($('npc-header'), `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}">${portrait(appearance(n), characterVisual(n, state))}<span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <button class="watch-star" data-watch="${esc(n.id)}" aria-label="${state.observation.watchIds.includes(n.id) ? '관심 주민 해제' : '관심 주민 지정'}" aria-pressed="${state.observation.watchIds.includes(n.id)}">${state.observation.watchIds.includes(n.id) ? '★' : '☆'}</button><span>${n.identity.age}세${isOwnNPC(n) ? ' · 내 NPC' : n.profile ? ' · 참여자 NPC' : ''}</span></h3><p>${occupationLabel(state, n)} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p>${characterStatus(n, state)}<span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`, inspectorIdentity(false));
+  updateReadingPanel($('npc-header'), `<div class="npc-profile"><div class="avatar" style="--person-color:${npcColor(n)}">${portrait(appearance(n), characterVisual(n, state))}<span class="avatar-dot ${n.alive ? '' : 'dead'}"></span></div><div><h3>${esc(n.identity.name)} <button class="watch-star" data-watch="${esc(n.id)}" aria-label="${observer.watchIds(state).includes(n.id) ? '관심 주민 해제' : '관심 주민 지정'}" aria-pressed="${observer.watchIds(state).includes(n.id)}">${observer.watchIds(state).includes(n.id) ? '★' : '☆'}</button><span>${n.identity.age}세${isOwnNPC(n) ? ' · 내 NPC' : n.profile ? ' · 참여자 NPC' : ''}</span></h3><p>${occupationLabel(state, n)} <span>·</span> ${esc(state.buildings.find(b => b.id === n.homeId)?.name ?? '')}</p>${characterStatus(n, state)}<span class="personality-tag">${n.personality.empathy > 60 ? '다정한 이웃' : n.personality.greed > 65 ? '야심 있는 수집가' : n.personality.diligence > 55 ? '성실한 일꾼' : '느긋한 생활자'}</span></div><button id="next-npc" class="icon-button" aria-label="다음 주민">${icon('arrow', 17)}</button></div>`, inspectorIdentity(false));
   if (tab === 'life') { if (cloudMode) { renderCloudLife(); return; } setInspectorHTML(lifeHistory(state, n, lifeLimit)); return; }
   if (tab === 'relationships') {
     setInspectorHTML(`<button class="button" data-story="${esc(n.id)}">관계와 가족의 이야기</button>${attractionProfile(state, n)}<div class="section-label">사건으로 이어진 관계 <span>${n.relationships.length}</span></div>${n.relationships.length ? [...n.relationships].sort((a, b) => b.trust - a.trust).map(r => `<article class="relationship-card" data-reading-key="relationship-${esc(r.npcId)}"><div><button class="text-button" data-npc="${esc(r.npcId)}">${esc(state.npcs.find(p => p.id === r.npcId)?.identity.name ?? r.npcId)}</button><span>신뢰 <b>${Math.round(r.trust)}</b></span></div><p>${esc(r.interpretation)}</p>${attractionRelation(state, n, r.npcId)}<div class="relation-values">친밀 ${r.familiarity.toFixed(0)} · 애정 ${r.affection.toFixed(0)} · 존중 ${r.respect.toFixed(0)}<br>두려움 ${r.fear.toFixed(0)} · 불만 ${r.resentment.toFixed(0)}</div><button class="evidence-link" data-relation="${esc(r.npcId)}">관계의 근거 ${r.evidence.length}건 ${icon('arrow', 12)}</button>${cloudMode && cloud?.world?.meta.aiMode !== 'chrome' && n.alive && state.npcs.find(p => p.id === r.npcId)?.alive && n.memories.some(m => m.relatedNpcIds.includes(r.npcId)) ? `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" ${!state.llm.enabled || cloud?.world?.meta.dialogue ? 'disabled' : ''}>기억에 근거한 말 듣기</button>${RECOLLECTION_TOPICS.filter(t => t !== 'shared' && recollections(n.memories, r.npcId, t).length).map(t => `<button class="button dialogue-button" data-dialogue="${esc(r.npcId)}" data-recall="${t}" ${!state.llm.enabled || cloud?.world?.meta.dialogue || cloud?.world?.meta.history ? 'disabled' : ''}>${RECOLLECTION_LABELS[t]}</button>`).join('')}` : ''}</article>`).join('') : '<div class="empty-state">아직 서로를 알아가는 중이에요.<br>대화와 도움이 쌓이면 관계가 생깁니다.</div>'}`);
@@ -266,6 +266,7 @@ document.addEventListener('click', event => {
   if (button.dataset.story) void observer.story(button.dataset.story);
   if (button.dataset.storyMore) void observer.story(button.dataset.storyMore,true);
   if (button.dataset.digest) void observer.show(button.dataset.digest as 'today'|'yesterday'|'since');
+  if (button.hasAttribute('data-own-digest')) void observer.show('since',false,true);
   if (button.hasAttribute('data-watch-digest')) void observer.show('since',true);
   if (button.hasAttribute('data-digest-more')) void observer.load(true);
   if (button.dataset.watch) void toggleWatch(button.dataset.watch);
@@ -337,7 +338,7 @@ function frame(now: number) {
 }
 document.addEventListener('visibilitychange', () => { accumulator = 0; lastFrame = performance.now(); if (document.hidden && sim.tick !== lastSaveTick) localSave(); });
 window.addEventListener('pagehide', () => { observer.saveSeen(); if (sim.tick !== lastSaveTick) localSave(); });
-setInterval(() => { if (sim.tick !== lastSaveTick) localSave(); }, 30000);
+setInterval(() => { if (!document.hidden) observer.saveSeen(); if (sim.tick !== lastSaveTick) localSave(); }, 30000);
 document.addEventListener('visibilitychange', () => { if (document.hidden) observer.saveSeen(); });
 render(); if (startupNote) toast(startupNote); requestAnimationFrame(frame);
 
@@ -643,12 +644,11 @@ document.addEventListener('change', async event => {
 
 let watchBusy = false;
 async function toggleWatch(npcId: string) {
-  if (!isOwner()) { toast('공동 관심 목록은 소유자가 관리합니다. 내 NPC는 공동 세계 참여에서 확인할 수 있습니다.'); return; }
   if (watchBusy || cloudMode && !cloudReady) return;
   watchBusy = true;
   try {
-    const enabled = !state.observation.watchIds.includes(npcId);
-    if (cloudMode) await cloud!.send({ type:'watch',npcId,enabled });
+    const enabled = !observer.watchIds(state).includes(npcId);
+    if (cloudMode) { await observer.watch(npcId,enabled); render(); }
     else { sim.watchResident(npcId,enabled); render(); localSave(); }
     toast(enabled ? '관심 주민으로 기억합니다. 마을의 하루에서 다시 찾아보세요.' : '관심 주민에서 해제했습니다.');
   } catch(error) { toast((error as Error).message); }
@@ -688,13 +688,15 @@ function defaultCharmInputs(form: HTMLFormElement) {
 document.addEventListener('input', event => {
   const form = (event.target as HTMLElement).closest<HTMLFormElement>('#character-form'); if (!form) return;
   const data = new FormData(form);
-  const a = { skin: String(data.get('skin')), hair: String(data.get('hair')), outfit: String(data.get('outfit')), hairstyle: data.get('hairstyle'), accessory: data.get('accessory') } as ReturnType<typeof appearance>;
+  const a = Object.fromEntries(Object.keys(defaultCharacter('').appearance).map(k=>[k,String(data.get(k))])) as ReturnType<typeof appearance>;
+  form.querySelectorAll<HTMLButtonElement>('[data-hair]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.hair===a.hairstyle)));
   $('character-preview').innerHTML = portrait(a);
   const defaults = defaultCharmInputs(form);
   $('character-charms').innerHTML = charmPreview(defaults.personality, defaults.traits);
 });
 document.addEventListener('change', event => {
   const target = event.target as HTMLSelectElement;
+  if(target.id==='relationship-partner')void observer.story(target.dataset.storyPerson!,false,target.value);
   if (target.name === 'homeId' && target.closest('#character-form')) document.querySelector<HTMLSelectElement>('#character-form [name="greetId"]')!.innerHTML = greetingOptions(state, target.value);
 });
 let creatingCharacter = false;
@@ -771,7 +773,7 @@ function applyAccessUI() {
     const el = document.getElementById(id) as HTMLButtonElement | null;
     if (el && restricted) { el.disabled = true; el.title = '소유자가 관리하는 공동 세계 설정입니다.'; }
   }
-  document.querySelectorAll<HTMLButtonElement>('button[data-speed],button[data-build],button[data-request],button[data-watch],button[data-dialogue],#history-ai,#seed-form button,#urban-policy button').forEach(b => { if (restricted) b.disabled = true; });
+  document.querySelectorAll<HTMLButtonElement>('button[data-speed],button[data-build],button[data-request],button[data-dialogue],#history-ai,#seed-form button,#urban-policy button').forEach(b => { if (restricted) b.disabled = true; });
   document.querySelectorAll<HTMLInputElement>('#urban-policy input,#urban-policy select,#world-detail,#council-toggle').forEach(e => { if (restricted) e.disabled = true; });
   const session = cloud?.session;
   $('account-button').hidden = !cloudMode;
@@ -801,4 +803,12 @@ document.addEventListener('click', async event => {
     const response = await fetch('/api/members', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: button.dataset.member, blocked: button.dataset.blocked === '1' }) });
     const body = await response.json(); if (!response.ok) throw new Error(body.error); await showAccount();
   } catch (error) { cloudFailure(error); button.disabled = false; }
+});
+
+document.addEventListener('click',event=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-look],[data-hair]');
+  const form=button?.closest<HTMLFormElement>('#character-form'); if(!button||!form)return;
+  const values=button.dataset.look ? LOOK_PRESETS[button.dataset.look]?.appearance : {hairstyle:button.dataset.hair};
+  for(const [key,value] of Object.entries(values ?? {})) { const field=form.elements.namedItem(key) as HTMLInputElement|HTMLSelectElement|null; if(field)field.value=String(value); }
+  form.dispatchEvent(new Event('input',{bubbles:true}));
 });

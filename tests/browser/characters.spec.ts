@@ -6,7 +6,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await page.getByRole('button',{name:'＋ NPC 만들기',exact:true}).click();
   const form=page.locator('#character-form'); await expect(form).toBeVisible();
   await form.getByLabel('이름',{exact:true}).fill('도시의 해솔'); await form.getByLabel('나이',{exact:true}).fill('29');
-  await form.getByLabel('옷 색상').fill('#2266aa'); await form.getByLabel('머리 모양').selectOption('curly'); await form.getByLabel('소품').selectOption('glasses');
+  await form.getByLabel('옷 색상').fill('#2266aa'); await form.getByLabel('머리 모양',{exact:true}).selectOption('curly'); await form.getByLabel('소품').selectOption('glasses');
   await form.getByLabel('배경 소개').fill('이웃과 도구를 나누는 목수 <script>');
   await form.getByLabel('직업',{exact:true}).selectOption('tailor');
   await form.getByLabel('검소함',{exact:true}).fill('91'); await form.getByLabel('성취',{exact:true}).fill('88'); await form.getByLabel('첫 인사할 주민').selectOption('npc0');
@@ -54,7 +54,7 @@ test('server-backed creator survives reload and records arrival in the life arch
   const reset=await request.post('/api/command',{headers:{Origin:'http://127.0.0.1:4173'},data:{id:crypto.randomUUID(),revision:initial.revision,action:{type:'reset',seed:42,population:12}}}); expect(reset.ok()).toBe(true);
   await page.goto('/'); await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
   await page.getByRole('button',{name:'＋ NPC 만들기',exact:true}).click(); await page.getByLabel('이름',{exact:true}).fill('서버의 새주민');
-  await page.getByLabel('머리 모양').selectOption('long'); await page.getByRole('button',{name:'이 세계에 입주시키기'}).click();
+  await page.getByLabel('머리 모양',{exact:true}).selectOption('long'); await page.getByRole('button',{name:'이 세계에 입주시키기'}).click();
   await expect(page.locator('#npc-header')).toContainText('서버의 새주민'); await expect(page.locator('#world-map')).toHaveAttribute('data-mode','follow');
   await page.getByRole('tab',{name:'생애',exact:true}).click(); await expect(page.locator('#npc-detail')).toContainText('입주했다');
   await page.reload(); await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
@@ -113,4 +113,25 @@ test('personality charms update in the creator and directional relationship fact
   expect(await detail.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
   await detail.scrollIntoViewIfNeeded();
   await page.screenshot({path:'test-results/attraction-mobile.png'});
+});
+
+test('visual presets, hairstyles and wardrobe persist across save and reload on desktop and mobile',async({page})=>{
+  await page.goto('/?local=1');await page.getByRole('button',{name:'일시정지',exact:true}).click();
+  await page.locator('#create-character').click();
+  const form=page.locator('#character-form');await expect(form.locator('[data-hair]')).toHaveCount(9);
+  await form.locator('[data-look="starlight"]').click();
+  await expect(form.locator('[name="accessory"]')).toHaveValue('headphones');
+  await form.locator('[data-hair="braid"]').click();await expect(form.locator('[data-hair="braid"]')).toHaveAttribute('aria-pressed','true');
+  await form.getByLabel('얼굴 특징').selectOption('freckles');await form.getByLabel('기본 표정').selectOption('bright');
+  await form.getByLabel('이름',{exact:true}).fill('별빛 이웃');
+  await page.screenshot({path:'reports/screenshots/v018-creator-desktop.png'});
+  await page.setViewportSize({width:390,height:844});
+  expect(await form.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await page.screenshot({path:'reports/screenshots/v018-creator-mobile.png'});
+  await form.getByRole('button',{name:'이 세계에 입주시키기'}).click();
+  await page.getByRole('button',{name:'세계 저장',exact:true}).click();
+  const look=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!).npcs.find((n:any)=>n.identity.name==='별빛 이웃').profile.appearance);
+  expect(look).toMatchObject({hairstyle:'braid',accessory:'headphones',clothing:'vest',faceMark:'freckles',expression:'bright',backdrop:'night'});
+  await page.reload();await page.getByRole('button',{name:'마을 주민',exact:true}).click();await page.getByLabel('내가 만든 주민만').check();await page.locator('.resident-card').click();
+  await expect(page.locator('#npc-header')).toContainText('별빛 이웃');
 });

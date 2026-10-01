@@ -4,8 +4,13 @@ import { z } from 'zod';
 const score = z.number().int().min(0).max(100);
 export const appearanceSchema = z.object({
   skin: z.string().regex(/^#[0-9a-fA-F]{6}$/), hair: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  outfit: z.string().regex(/^#[0-9a-fA-F]{6}$/), hairstyle: z.enum(['short', 'long', 'curly', 'bald']),
-  accessory: z.enum(['none', 'glasses', 'hat']),
+  outfit: z.string().regex(/^#[0-9a-fA-F]{6}$/), hairstyle: z.enum(['short', 'long', 'curly', 'bald', 'bob', 'ponytail', 'bun', 'braid', 'spiky']),
+  accent: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  clothing: z.enum(['plain','stripes','overalls','vest','dress']).optional(),
+  expression: z.enum(['smile','calm','bright']).optional(),
+  faceMark: z.enum(['none','freckles','blush','beard']).optional(),
+  backdrop: z.enum(['meadow','sunset','night']).optional(),
+  accessory: z.enum(['none', 'glasses', 'hat', 'scarf', 'earrings', 'flower', 'headphones']),
 }).strict();
 export const characterSchema = z.object({
   name: z.string().trim().min(1).max(40), age: z.number().int().min(0).max(80),

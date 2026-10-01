@@ -47,6 +47,7 @@ test('server life refresh retains old records while a response is pending', asyn
   let recordVersion=1, release:(()=>void)|undefined, delayed=false;
   const records=()=>[{id:`life-${recordVersion}`,tick:36,kind:'talk',actorId:'npc0',participants:['npc0'],importance:50,description:`생애 기록 ${recordVersion}`,data:{}}];
   await page.route('**/api/**',async route=>{
+    if (new URL(route.request().url()).pathname === '/api/personal-observation') return route.fulfill({json:{epoch:world.epoch,watchIds:[],tick:0,through:0,seen:false}});
     if (new URL(route.request().url()).pathname === '/api/session') return route.fulfill({ json: { name: '시험 소유자', role: 'owner', ownNpcIds: [], npcLimit: null, local: true } });
     const url=new URL(route.request().url());
     if(url.pathname==='/api/world') return route.fulfill({json:viewWorld(world)});
@@ -77,6 +78,7 @@ test('relationship reordering keeps the same open card and the visible reading p
   const world=initialWorld(Date.now()); world.meta.running=false;
   world.state.npcs[0].relationships=['npc1','npc2','npc3'].map((npcId,i)=>({npcId,trust:70-i*10,familiarity:30,affection:10,fear:0,resentment:0,respect:10,family:false,interpretation:'함께 살아온 이웃입니다.',evidence:[]}));
   await page.route('**/api/**', async route=>{
+    if (new URL(route.request().url()).pathname === '/api/personal-observation') return route.fulfill({json:{epoch:world.epoch,watchIds:[],tick:0,through:0,seen:false}});
     if (new URL(route.request().url()).pathname === '/api/session') return route.fulfill({ json: { name: '시험 소유자', role: 'owner', ownNpcIds: [], npcLimit: null, local: true } });
     const path=new URL(route.request().url()).pathname;
     if(path==='/api/world') return route.fulfill({json:viewWorld(world)});

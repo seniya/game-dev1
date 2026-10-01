@@ -128,3 +128,19 @@ test('repeated unresolved needs schedule three, six and nine days without mintin
     assert.deepEqual(balance(w),{food:0,wood:0,coins:0});
   }
 });
+
+test('pair timelines query both participants before pagination, match the archive and preserve real evidence order',async()=>{
+  const {readObserver}=await import('../src/server/observation');const {relationshipTimeline}=await import('../src/ui/relationship-timeline');
+  const db=database(),store=new WorldStore(db);await store.init(0);const before=await store.read(),w=structuredClone(before.state);
+  for(let i=0;i<90;i++){w.tick++;appendEvent(w,{kind:i%3===0?'share':'talk',actorId:'npc0',targetId:i%2===0?'npc1':'npc2',importance:50,description:`만남 ${i}`});}
+  const newEvents=w.events.slice(before.state.events.length);const saved={...before,state:compactWorld(w),revision:before.revision+1,meta:{...before.meta,eventCount:w.events.length}};
+  await store.commit(saved,newEvents,'pair-test',crypto.randomUUID());
+  const params=new URLSearchParams({epoch:saved.epoch,npc:'npc0',partner:'npc1',mode:'story',from:'0'});
+  const first=await readObserver(store,saved,params),local=localObserver(w,saved.epoch,0,w.tick,['npc0'],true,undefined,w.events.length,0,'npc1');
+  assert.deepEqual(first,local);assert.equal(first.total,45);assert.equal(first.events.length,40);
+  params.set('before',String(first.next));const second=await readObserver(store,saved,params);assert.equal(second.events.length,5);
+  assert.ok(first.events.every(e=>e.participants.includes('npc0')&&e.participants.includes('npc1')));
+  const html=relationshipTimeline([...first.events,...second.events]);assert.ok(html.indexOf('만남 0')<html.indexOf('만남 88'));
+  const spoof={...first.events[0],kind:'rumor' as const,description:'<script>fake</script>'};const escaped=relationshipTimeline([spoof]);assert.match(escaped,/전해 들은/);assert.ok(!escaped.includes('<script>'));
+  assert.deepEqual(await store.read(),saved);
+});

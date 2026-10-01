@@ -1,3 +1,4 @@
+import { personalObservation } from './personal-observation';
 import { identity, memberFor, claimLegacyResidents, requireOwner, authorizeCommand, sessionView, checkCreation, creationStatements, AccessError, type AccessEnv } from './access';
 import { readObserver } from './observation';
 import { readHistory, streamWorld } from './history';
@@ -32,6 +33,14 @@ export default {
       const member = await memberFor(env.DB, principal);
       await claimLegacyResidents(env.DB, member, () => store.read());
       if (url.pathname === '/api/session' && request.method === 'GET') return json(await sessionView(env.DB, member, await store.read(), principal.local));
+      if (url.pathname === '/api/personal-observation') {
+        if (request.method === 'GET') return json(await personalObservation(env.DB, member, await store.read()));
+        if (request.method === 'POST') {
+          const body = await request.text();
+          if (body.length > 2000) return json({ error:'관찰 요청이 너무 큽니다.' },413);
+          return json(await personalObservation(env.DB, member, await store.read(), JSON.parse(body)));
+        }
+      }
       if (url.pathname === '/api/members') {
         requireOwner(member);
         if (request.method === 'GET') return json({ members: (await env.DB.prepare('SELECT id,name,email,role,blocked FROM world_members ORDER BY role,name LIMIT 200').all()).results });

@@ -44,3 +44,22 @@ test('late family history cannot replace another open event or a closed dialog',
   await page.locator('#character-watch [data-story]').click();await expect(page.getByRole('dialog')).toContainText('불러오고');await page.getByRole('button',{name:'닫기',exact:true}).click();release();
   await page.waitForResponse(r=>r.url().includes('mode=story'));await expect(page.getByRole('dialog')).not.toBeVisible();
 });
+
+test('a pair relationship timeline orders recorded encounters and opens their original evidence',async({page})=>{
+  const {appendEvent}=await import('../../src/sim/social');
+  const sim=new Simulation(42),w=sim.snapshot();w.llm.enabled=false;
+  const a=w.npcs[0],b=w.npcs[1];
+  a.relationships.push({npcId:b.id,trust:40,familiarity:20,affection:10,fear:0,resentment:0,respect:20,family:false,interpretation:'이웃',evidence:[]});
+  const first=appendEvent(w,{kind:'talk',actorId:a.id,targetId:b.id,importance:50,description:'타임라인 첫 인사'});
+  w.tick++;const help=appendEvent(w,{kind:'share',actorId:a.id,targetId:b.id,importance:60,description:'타임라인 식량 도움',causeId:first.id});
+  w.tick++;appendEvent(w,{kind:'talk',actorId:a.id,targetId:'npc2',importance:50,description:'다른 이웃과의 만남'});
+  await page.addInitScript(save=>localStorage.setItem('living-small-world-v1',save),JSON.stringify(w));
+  await page.goto('/?local=1');await page.getByRole('button',{name:'일시정지',exact:true}).click();
+  await page.locator('#character-watch [data-story]').click();await page.locator('#relationship-partner').selectOption('npc1');
+  const timeline=page.locator('.relationship-timeline');await expect(timeline).toContainText('타임라인 식량 도움');await expect(timeline).not.toContainText('다른 이웃과의 만남');
+  const text=await timeline.innerText();expect(text.indexOf('타임라인 첫 인사')).toBeLessThan(text.indexOf('타임라인 식량 도움'));
+  await page.screenshot({path:'reports/screenshots/v018-relationship-desktop.png'});
+  await page.setViewportSize({width:390,height:844});expect(await page.getByRole('dialog').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await page.screenshot({path:'reports/screenshots/v018-relationship-mobile.png'});
+  await timeline.locator(`[data-event="${help.id}"]`).click();await expect(page.getByRole('dialog')).toContainText('타임라인 식량 도움');
+});

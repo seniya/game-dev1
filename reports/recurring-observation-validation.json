@@ -1,0 +1,38 @@
+{
+  "version": "0.18.0",
+  "coreServer": {
+    "passed": 210,
+    "failed": 0,
+    "command": "npm test",
+    "rerunAfterFinalInvitationPriorityChange": true
+  },
+  "browser": {
+    "passed": 56,
+    "failed": 0,
+    "skippedRealChromeInference": 1,
+    "command": "npx playwright test --workers=1",
+    "initialRun": {
+      "passed": 50,
+      "failed": 5,
+      "skipped": 1,
+      "resolution": "Added personal-observation API responses to page fixtures and exact hairstyle select locators. Full rerun passed, including the Chrome timeout test."
+    }
+  },
+  "productionCompatibility": "reports/recurring-production-compatibility.json",
+  "humanValidation": "Excluded by user instruction; mocked/local authenticated headers are not another person logging into ChatGPT.",
+  "externalApiUsed": false,
+  "screenshots": [
+    "reports/screenshots/v018-creator-desktop.png",
+    "reports/screenshots/v018-creator-mobile.png",
+    "reports/screenshots/v018-personal-observer-mobile.png",
+    "reports/screenshots/v018-relationship-desktop.png",
+    "reports/screenshots/v018-relationship-mobile.png"
+  ],
+  "regression": {
+    "report": "reports/recurring-observation-regression.json",
+    "conditions": 6,
+    "days": 365,
+    "missingEvidence": 0,
+    "allResourceBalanceErrors": 0
+  }
+}

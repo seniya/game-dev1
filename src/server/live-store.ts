@@ -127,7 +127,7 @@ export class LiveWorldStore extends WorldStore {
     result.push(db.prepare(`DELETE FROM commands WHERE id IN (${oldCommands})`).bind(now - 30 * DAY),
       db.prepare(`DELETE FROM command_inputs WHERE id IN (${oldCommands})`).bind(now - 30 * DAY));
     const backup = w.meta.backupEpoch ?? w.epoch;
-    for (const table of ['snapshots', 'world_changes', 'world_checkpoints', 'events', 'participants', 'event_refs', 'npc_creators']) {
+    for (const table of ['snapshots', 'world_changes', 'world_checkpoints', 'events', 'participants', 'event_refs', 'npc_creators', 'personal_observations']) {
       result.push(db.prepare(`DELETE FROM ${table} WHERE rowid IN (SELECT rowid FROM ${table} WHERE epoch NOT IN (?,?) LIMIT 1000)`).bind(w.epoch, backup));
     }
     for (const table of ['ai_jobs', 'chrome_jobs']) {

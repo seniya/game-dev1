@@ -45,3 +45,25 @@ test('invited visitors create and observe in the same world with isolated owners
     await other.screenshot({path:'reports/screenshots/v017-participant-mobile.png', fullPage:true});
   } finally { await visitor.close(); }
 });
+
+test('personal stars and last observation follow the same account across contexts without affecting another account',async({page,browser})=>{
+  await page.goto('/');await expect(page.locator('#account-button')).toContainText('소유자');
+  const w=await(await page.request.get('/api/world')).json();
+  const response=await page.request.post('/api/command',{headers:{Origin:'http://127.0.0.1:4173'},data:{id:crypto.randomUUID(),revision:w.revision,action:{type:'reset',seed:42,population:12}}});expect(response.ok()).toBe(true);
+  const identity={'oai-authenticated-user-id':`personal-${crypto.randomUUID()}`,'oai-authenticated-user-email':'personal@example.test'};
+  const one=await browser.newContext({extraHTTPHeaders:identity});const two=await browser.newContext({extraHTTPHeaders:identity});
+  try{
+    const guest=await one.newPage();await guest.goto('/');
+    await expect(guest.locator('#observer-heading')).toContainText('관심 주민 0/12명');
+    await expect(guest.locator('[data-watch="npc0"]')).toBeEnabled();await guest.locator('[data-watch="npc0"]').click();
+    await expect(guest.locator('#watch-list')).toContainText('하루');
+    await page.reload();await expect(page.locator('#watch-list')).toBeEmpty();
+    const other=await two.newPage();await other.goto('/');await expect(other.locator('#watch-list')).toContainText('하루');
+    const state=await(await guest.request.get('/api/world')).json();
+    await guest.request.post('/api/personal-observation',{headers:{Origin:'http://127.0.0.1:4173'},data:{type:'seen',epoch:state.epoch,tick:state.state.tick,through:state.meta.eventCount}});
+    await other.reload();await other.locator('[data-digest="since"]').click();await expect(other.locator('.observer-period')).toContainText('기록 0건');
+    await other.locator('[data-own-digest]').click();await expect(other.locator('.observer-period')).toContainText('내 NPC');
+    await other.setViewportSize({width:390,height:844});expect(await other.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await other.locator('.observer-panel').screenshot({path:'reports/screenshots/v018-personal-observer-mobile.png'});
+  }finally{await one.close();await two.close();}
+});

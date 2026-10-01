@@ -173,3 +173,28 @@ test('repeated real completions form bounded circles, affect future invitations 
   const bad = structuredClone(w); bad.gatherings!.circles![0].evidence[0] = bad.events[0].id;
   assert.throws(() => Simulation.load(JSON.stringify(bad)), /친교 모임/);
 });
+
+test('recurring gatherings need two real completions, wait three days and pause for distance, conflict or resources', async()=>{
+  const {recurringCircle}=await import('../src/sim/gatherings');
+  const f=fixture(); attend(f);
+  for(let i=0;i<6;i++){updateGatherings(f.w);f.w.tick++;}
+  const {w,host,guest}=f; w.tick=60+3*144; host.inventory.food=guest.inventory.food=3; host.needs.hunger=guest.needs.hunger=20; host.needs.social=20; w.economy.openingFood+=balance(w).food;
+  proposeGatherings(w); const second=w.gatherings!.items.find(g=>g.status==='planned'&&g.hostId===host.id)!;
+  assert.ok(second); attend({...f,g:second});
+  for(let i=0;i<6;i++){updateGatherings(w);w.tick++;}
+  const circle=w.gatherings!.circles!.find(c=>c.hostId===host.id&&c.partnerId===guest.id)!;
+  assert.ok(circle); assert.equal(recurringCircle(w,host),undefined);
+  w.tick=60+7*144; host.inventory.food=3; guest.inventory.food=3; w.economy.openingFood+=balance(w).food;
+  const original={...guest.position}; guest.position={x:0,y:0}; assert.equal(recurringCircle(w,host),undefined); guest.position=original;
+  const relation=relationship(host,guest.id);const resentment=relation.resentment;relation.resentment=100; assert.equal(recurringCircle(w,host),undefined);relation.resentment=resentment;
+  for(const other of w.npcs.slice(2,5)){ other.position={...host.position}; other.identity.age=30; other.life.bornTick=w.tick-30*1728; other.inventory.food=3; relationship(host,other.id).trust=100; }
+  w.economy.openingFood+=balance(w).food;
+  proposeGatherings(w);const recurring=w.gatherings!.items.find(g=>g.recurring)!;
+  assert.ok(recurring); assert.equal(recurring.invitations[0].npcId,guest.id); assert.deepEqual(recurring.recurring!.evidence,circle.evidence); assert.equal(recurring.status,'planned');
+  assert.equal(recurring.progress,0); assert.equal(recurring.arrivals.length,0);
+  const saved=JSON.stringify(compactWorld(w));const restored=Simulation.load(saved);assert.equal(restored.save(),saved);
+  const forged=JSON.parse(saved);forged.gatherings.items.find((g:Gathering)=>g.recurring).recurring.evidence=[recurring.sourceEventId,recurring.sourceEventId];
+  assert.throws(()=>Simulation.load(JSON.stringify(forged)),/정기 모임/);
+  attend({...f,g:recurring});host.inventory.food=0;w.economy.openingFood+=balance(w).food;
+  for(let i=0;i<6;i++){updateGatherings(w);w.tick++;} assert.notEqual(recurring.status,'completed');assert.deepEqual(balance(w),{food:0,wood:0,coins:0});
+});
