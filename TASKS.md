@@ -308,4 +308,4 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - [x] 서버·화면 UTF-8 10MB 일치, 적용 전 미리보기, 취소·오래된 선택 거부.
 - [x] 기존 epoch의 사건·생성자·개인 기록을 보존하며 백업 복원. 현재 대기 진행의 백업, 한 번의 트랜잭션·중복/동시성·손상 검사.
 - [x] 코어/서버 232개·브라우저 66개 통과, 실제 Chrome 1개 건너뜀. 신규 화면 3개 별도 통과. TypeScript/production build 통과. 원본 기록: reports/storage-operations-validation.json.
-- 배포는 같은 custom 프로젝트에 수행하고 최종 상태·소스·아티팩트·운영 보존을 별도 보고서에 기록한다.
+- [x] 같은 custom 프로젝트 **Sites 버전 32 succeeded**. 소스 `698739a2c3e0bc055af94fe1b312d4b9c1de9641`에서 만든 빌드·운영 JS/CSS 일치, 확정 세계 행·접근 정책 유지, 배포 직전/직후 미확정 진행 없음. 최초 잘못된 아카이브 경로의 거부와 수정도 reports/deployment-v021.json에 기록.

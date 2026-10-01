@@ -1,0 +1,73 @@
+{
+  "id": "appgdep_6abedc4e9c40819199db1ac1a0dbffda",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_8bbd02ffd7588191b9a1b832a549683a",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-01T22:19:09.808961+00:00",
+  "source_commit": "698739a2c3e0bc055af94fe1b312d4b9c1de9641",
+  "sites_version": 32,
+  "saved_archive_content_hash": "sha256:5ebcd49cb8a1504ce8d188c1859c937f16acdc6eb0a62a306e2b080deb9e4923",
+  "validation_report": "reports/storage-operations-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "artifact": "living-small-world-v021-deployment.tar.gz",
+    "built_from_pushed_commit": true
+  },
+  "packaging_retry": "Initial archive rooted at server/ was rejected before saving. Repacked the same committed build under dist/server with root .openai/hosting.json; version 32 was then saved and deployed.",
+  "production_preservation": {
+    "same_confirmed_world_row": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3779,
+    "confirmed_meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790892021779,
+      "lastSeen": 1790892022083,
+      "eventCount": 15507,
+      "socialCount": 602,
+      "catchupTicks": 0,
+      "skippedTicks": 0,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790892024739
+    },
+    "world_reset": false,
+    "explicit_save_before_deploy": false,
+    "pending_row_count_before": 0,
+    "pending_row_count_after": 0,
+    "explanation": "The existing Sites bypass did not provide an application owner identity: session probe returned 401. No identity headers were fabricated and no production world command was submitted. There was no pending clock row immediately before deployment. Confirmed metadata matched byte-for-byte afterward; complete archive/snapshot bodies were not rehashed."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "assets": [
+      {
+        "file": "index-BO8Du1ka.js",
+        "status": 200,
+        "matches": true
+      },
+      {
+        "file": "index-Dc7Es4KH.css",
+        "status": 200,
+        "matches": true
+      }
+    ],
+    "unauthenticated_world_status": 403,
+    "authenticated_browser_smoke": false,
+    "limits": "Automated browser tests used local Worker/D1; real invited-person login and real Chrome inference were not performed."
+  }
+}

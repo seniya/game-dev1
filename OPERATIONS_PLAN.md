@@ -20,8 +20,10 @@
 - [x] 저장 상태 및 용량 안내
 - [x] 검증된 가져오기 미리보기
 - [x] 서버 백업 복원
-- [ ] 회귀·빌드·기존 사이트 배포
+- [x] 회귀·빌드·기존 사이트 배포
 
 ## 검증 결과
 
-코어·서버 232개, 전체 브라우저 66개 통과. 실제 Chrome 선택 시험 1개 건너뜀. 신규 브라우저 3개 별도 통과, TypeScript/production build 통과. 큰 아카이브는 3,500개 추가 사건의 합성 SQLite 조건으로 10MB 초과를 확인했다. 로컬 Worker 브라우저 복원도 통과했다. [검증 보고서](reports/storage-operations-validation.json). 배포 결과는 완료 후 별도 기록한다.
+코어·서버 232개, 전체 브라우저 66개 통과. 실제 Chrome 선택 시험 1개 건너뜀. 신규 브라우저 3개 별도 통과, TypeScript/production build 통과. 큰 아카이브는 3,500개 추가 사건의 합성 SQLite 조건으로 10MB 초과를 확인했다. 로컬 Worker 브라우저 복원도 통과했다. [검증 보고서](reports/storage-operations-validation.json). 소스 `698739a2c3e0bc055af94fe1b312d4b9c1de9641`과 해당 빌드를 기존 프로젝트 **Sites 버전 32**에 배포하여 `succeeded`를 확인했다. 운영 JS/CSS가 빌드와 일치하고 custom 접근 정책·확정 세계 행(revision 3779, 사건 15,507건)이 동일하며, 배포 전후 미확정 진행은 없었다. [배포 보고서](reports/deployment-v021.json).
+
+[배포된 게임 열기](https://living-small-world-observatory.seniya2.chatgpt.site). 소유자 애플리케이션 세션 확인은 401로 거부되어 운영 세계에 명령을 보내지 않았다. 인증된 운영 브라우저 검증·실기기 Chrome·실제 초대 로그인은 완료로 계산하지 않는다.
