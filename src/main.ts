@@ -1,4 +1,7 @@
 import { DiscoveryWalk } from './ui/discovery';
+import { inspectSave } from './sim/save-inspection';
+import { storageView, importPreview } from './ui/storage';
+import type { StorageStatus } from './server/storage-status';
 import { Biography, lifeIntroductionView } from './ui/biography';
 import type { BiographyMode } from './sim/biography';
 import { gatheringsView } from './ui/gatherings';
@@ -554,6 +557,24 @@ function startCloud() {
     }
   };
   setTimeout(poll, 2000);
+  let pendingImport: { save: string; epoch: string; revision: number } | undefined;
+  const previewImport = (save: string) => {
+    const summary = inspectSave(save), world = cloud!.world!;
+    pendingImport = { save, epoch: world.epoch, revision: world.revision };
+    openDialog(importPreview(summary));
+  };
+  $('detail-dialog').addEventListener('close', () => { pendingImport = undefined; });
+  const loadStorage = async () => {
+    const target = document.getElementById('storage-status'); if (!target) return;
+    target.textContent = '저장 상태를 확인하는 중…';
+    try {
+      const status = await cloud!.get<StorageStatus>('storage');
+      if (!target.isConnected) return;
+      target.innerHTML = storageView(status);
+      const button = document.getElementById('load-backup') as HTMLButtonElement | null;
+      if (button) { button.disabled = status.worlds.length < 2; button.dataset.epoch = status.worlds[1]?.epoch ?? ''; button.dataset.revision = String(status.revision); button.dataset.world = status.epoch; }
+    } catch (e) { if (target.isConnected) target.textContent = (e as Error).message; }
+  };
   document.addEventListener('click', event => {
     const button = (event.target as HTMLElement).closest<HTMLButtonElement>('button'); if (!button) return;
     if (button.dataset.dialogue) {
@@ -570,7 +591,7 @@ function startCloud() {
       event.stopImmediatePropagation(); if (!cloudReady) return;
       cloudCommand(button.dataset.speed ? { type: 'speed', speed: Number(button.dataset.speed) as 1 | 5 | 20 } : actions[button.id]); return;
     }
-    const intercept = ['more-events', 'more-life', 'save-button', 'load-button', 'load-local', 'load-backup', 'export-observations', 'export-report'];
+    const intercept = ['more-events', 'more-life', 'save-button', 'load-button', 'load-local', 'load-backup', 'storage-refresh', 'apply-import', 'export-observations', 'export-report'];
     if (!intercept.includes(button.id)) return;
     event.stopImmediatePropagation();
     if (button.id === 'more-events') void loadJournal(true);
@@ -578,9 +599,21 @@ function startCloud() {
     if (button.id === 'save-button') { void cloud!.send({ type: 'save' }).then(() => { const a = document.createElement('a'); a.href = '/api/export-stream'; a.download = ''; a.click(); }).catch(cloudFailure); }
     if (button.id === 'export-report') void cloudDownload('report', 'living-small-world-report.json');
     if (button.id === 'export-observations') void cloudDownload('observations', 'living-small-world-observations.json');
-    if (button.id === 'load-button') openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>서버에 이어지는 작은 세계</h2><p>서버 세계는 같은 계정의 모든 기기에 반영됩니다. 교체 전 세계는 서버 백업으로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button">서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">서버 가져오기: 10MB 이하, 생존 주민 3,000명까지. 더 큰 파일은 기기 세계에서 열 수 있습니다.</p>`);
-    if (button.id === 'load-local') { try { const save = localStorage.getItem(STORAGE_KEY); if (!save) throw new Error('이 기기에 저장된 세계가 없습니다.'); void cloud!.send({ type: 'import', save }).then(() => { $<HTMLDialogElement>('detail-dialog').close(); toast('기기의 저장을 서버 세계로 가져왔습니다.'); }).catch(cloudFailure); } catch (e) { cloudFailure(e); } }
-    if (button.id === 'load-backup') void cloud!.get<WorldState>('export?backup=1').then(save => cloud!.send({ type: 'import', save: JSON.stringify(save) })).then(() => { $<HTMLDialogElement>('detail-dialog').close(); toast('서버 백업을 복원했습니다.'); }).catch(cloudFailure);
+    if (button.id === 'load-button') {
+      pendingImport = undefined;
+      openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>저장과 복원</h2><p>서버 세계는 함께 관찰하는 모든 계정에 반영됩니다. 교체 전 세계는 직전 백업 1개로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button" disabled>서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">파일 가져오기: UTF-8 기준 10MB 이하, 생존 주민 3,000명까지. 적용 전에 내용을 확인합니다.</p><section id="storage-status" aria-live="polite"></section><button id="storage-refresh" class="button">저장 상태 새로 확인</button>`);
+      void loadStorage();
+    }
+    if (button.id === 'storage-refresh') void loadStorage();
+    if (button.id === 'load-local') { try { const save = localStorage.getItem(STORAGE_KEY); if (!save) throw new Error('이 기기에 저장된 세계가 없습니다.'); previewImport(save); } catch (e) { cloudFailure(e); } }
+    if (button.id === 'apply-import' && pendingImport) {
+      const pending = pendingImport; button.disabled = true;
+      void cloud!.send({ type: 'import', save: pending.save }, crypto.randomUUID(), pending).then(() => { pendingImport = undefined; $<HTMLDialogElement>('detail-dialog').close(); toast('저장된 세계를 서버로 가져왔습니다.'); }).catch(e => { button.disabled = false; cloudFailure(e); });
+    }
+    if (button.id === 'load-backup' && button.dataset.epoch) {
+      const expected = { epoch: button.dataset.world!, revision: Number(button.dataset.revision) }; button.disabled = true;
+      void cloud!.send({ type: 'restore-backup', epoch: button.dataset.epoch }, crypto.randomUUID(), expected).then(() => { $<HTMLDialogElement>('detail-dialog').close(); toast('서버 백업을 복원했습니다. 방금 전 세계는 직전 백업으로 보관했습니다.'); }).catch(e => { cloudFailure(e); void loadStorage(); });
+    }
   }, true);
   $('seed-form').onsubmit = event => { event.preventDefault(); if (cloudReady) cloudCommand({ type: 'reset', seed: Number($<HTMLInputElement>('seed-input').value), population: Number($<HTMLInputElement>('population-input').value) }); };
   $('ai-mode').onchange = () => { void cloud!.send({ type: 'ai-mode', mode: $<HTMLSelectElement>('ai-mode').value as 'off' | 'mock' | 'remote' }).then(refreshAI).catch(e => { renderAI(); cloudFailure(e); }); };
@@ -588,7 +621,7 @@ function startCloud() {
   $('offline-toggle').onchange = () => cloudCommand({ type: 'offline', enabled: $<HTMLInputElement>('offline-toggle').checked });
   $('file-input').onchange = async () => {
     const input = $<HTMLInputElement>('file-input'), file = input.files?.[0]; if (!file) return;
-    try { if (file.size > 10_000_000) throw new Error('서버 가져오기는 10MB까지 지원합니다.'); await cloud!.send({ type: 'import', save: await file.text() }); $<HTMLDialogElement>('detail-dialog').close(); toast('저장된 세계를 서버로 가져왔습니다.'); }
+    try { if (file.size > 10_000_000) throw new Error('서버 가져오기는 10MB까지 지원합니다.'); previewImport(await file.text()); }
     catch (e) { cloudFailure(e); } finally { input.value = ''; }
   };
 }

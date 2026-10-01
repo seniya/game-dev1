@@ -1,4 +1,6 @@
 import { personalObservation } from './personal-observation';
+import { storageStatus } from './storage-status';
+import { WorldStore } from './store';
 import { readBiography } from './biography';
 import { identity, memberFor, claimLegacyResidents, requireOwner, authorizeCommand, sessionView, checkCreation, creationStatements, AccessError, type AccessEnv } from './access';
 import { readObserver } from './observation';
@@ -33,6 +35,7 @@ export default {
       await store.init(Date.now());
       const member = await memberFor(env.DB, principal);
       await claimLegacyResidents(env.DB, member, () => store.read());
+      if (url.pathname === '/api/storage' && request.method === 'GET') { requireOwner(member); return json(await storageStatus(new WorldStore(env.DB))); }
       if (url.pathname === '/api/session' && request.method === 'GET') return json(await sessionView(env.DB, member, await store.read(), principal.local));
       if (url.pathname === '/api/personal-observation') {
         if (request.method === 'GET') return json(await personalObservation(env.DB, member, await store.read()));
@@ -115,7 +118,9 @@ export default {
         if (command.revision !== current.revision) return json({ error: '다른 기기의 최신 상태를 반영했습니다. 변경을 다시 선택해 주세요.', world: viewWorld(current) }, 409);
         if (command.action.type === 'create-character') await checkCreation(env.DB, member, current);
         const acceptedAt = Date.now();
-        const { world, events, motion } = await applyCommand(current, command, acceptedAt);
+        const { world, events, motion } = command.action.type === 'restore-backup'
+          ? { world: await store.restoreBackup(current, command, acceptedAt), events: [], motion: undefined }
+          : await applyCommand(current, command, acceptedAt);
         try { await store.commit(world, events, canonical, command.id, creationStatements(env.DB, member, world, command), { action: command.action, at: acceptedAt }); }
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
         wakeAI(); return json(viewWorld(world, motion));

@@ -96,6 +96,7 @@ export class LiveWorldStore extends WorldStore {
     if (!this.saved) await this.read();
     const now = input?.at ?? Date.now();
     const replaced = w.epoch !== this.saved.epoch;
+    if (replaced) w.meta.backupEventCount = this.current.meta.eventCount;
     // A reset must first preserve the complete previous world as its one backup.
     const backup: D1PreparedStatement[] = replaced && this.current.live ? [
       this.db.prepare('DELETE FROM snapshots WHERE epoch=?').bind(this.saved.epoch),
@@ -110,6 +111,28 @@ export class LiveWorldStore extends WorldStore {
       ...this.guard(), this.db.prepare('DELETE FROM world_live'), ...backup, ...extra, ...this.retention(w, now),
     ], { action: input?.action ?? { type: 'save' }, at: now, checkpoint: true });
     this.pending = []; this.head = null; this.saved = structuredClone(w); cache.delete(this.db);
+  }
+
+  async restoreBackup(current: StoredWorld, command: Command, now: number): Promise<StoredWorld> {
+    if (command.action.type !== 'restore-backup' || command.action.epoch !== current.meta.backupEpoch || command.action.epoch === current.epoch) throw new Error('저장된 백업이 변경되었습니다. 다시 확인해 주세요.');
+    const epoch = command.action.epoch;
+    const state = Simulation.load(JSON.stringify(await this.checkpoint(epoch))).snapshot();
+    const stats = await this.db.prepare("SELECT count(*) AS n,count(DISTINCT seq) AS uniqueSeq,coalesce(min(seq),1) AS first,coalesce(max(seq),0) AS last,sum(CASE WHEN kind IN ('gathering','share','talk','witness','rumor') THEN 1 ELSE 0 END) AS social FROM events WHERE epoch=?").bind(epoch).first<{ n: number; uniqueSeq: number; first: number; last: number; social: number }>();
+    if (!stats || stats.n !== stats.last || stats.uniqueSeq !== stats.n || stats.first !== 1 || current.meta.backupEventCount !== undefined && stats.n !== current.meta.backupEventCount) throw new Error('저장된 백업의 사건 기록이 누락되었습니다.');
+    const missing = await this.db.prepare('SELECT id FROM events e WHERE e.epoch=? AND e.cause IS NOT NULL AND NOT EXISTS(SELECT 1 FROM events p WHERE p.epoch=e.epoch AND p.id=e.cause) LIMIT 1').bind(epoch).first();
+    const missingRef = await this.db.prepare('SELECT source FROM event_refs r WHERE r.epoch=? AND (NOT EXISTS(SELECT 1 FROM events e WHERE e.epoch=r.epoch AND e.id=r.source) OR NOT EXISTS(SELECT 1 FROM events e WHERE e.epoch=r.epoch AND e.id=r.target)) LIMIT 1').bind(epoch).first();
+    if (missing || missingRef) throw new Error('저장된 백업의 원인 기록이 누락되었습니다.');
+    // Required engine evidence, including the end of the archive, must still exist.
+    for (let i = 0; i < state.events.length; i += 100) {
+      const ids = state.events.slice(i, i + 100).map(e => e.id);
+      const found = await this.db.prepare('SELECT count(*) AS n FROM events WHERE epoch=? AND id IN (SELECT value FROM json_each(?))').bind(epoch, JSON.stringify(ids)).first<{ n: number }>();
+      if (found?.n !== ids.length) throw new Error('저장된 백업의 근거 사건이 누락되었습니다.');
+    }
+    return { epoch, revision: current.revision + 1, state: compactWorld(state), meta: {
+      running: false, speed: current.meta.speed, offline: current.meta.offline, clock: now, lastSeen: now,
+      eventCount: stats.n, socialCount: stats.social ?? 0, catchupTicks: 0, skippedTicks: 0, pendingTicks: 0,
+      backupEpoch: current.epoch, aiMode: state.llm.enabled ? 'mock' : 'off', aiGeneration: command.id,
+    } };
   }
 
   override async export(epoch: string) {

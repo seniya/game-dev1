@@ -1,6 +1,6 @@
 # Living Small World — 개발 로드맵
 
-정리: 2026-10-02. 현재 앱 **v0.20.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
+정리: 2026-10-02. 현재 앱 **v0.21.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
 
 v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPEAL_ROADMAP.md)에 기록한다. 지도 중심 화면, 실제 상태 기반 이야기 산책, 첫 관찰 안내와 몰입 보기를 구현했다.
 
@@ -10,6 +10,7 @@ v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPE
 
 | 버전 | 완료 범위 | 규칙·근거 |
 | --- | --- | --- |
+| v0.21 | 저장량 안내·파일 가져오기 미리보기·큰 사건 이력의 서버 백업 복원 | [계획과 결과](OPERATIONS_PLAN.md) |
 | MVP·v0.2 | 생존·경제·사회 선택·관찰·장기 회귀 | [시뮬레이션](SIMULATION_DESIGN.md), [초기 납품](MVP_SPEC.md) |
 | v0.3 | Worker/D1의 지속 세계와 다중 기기 관찰 | [서버 세계](SERVER_WORLD.md) |
 | v0.4 | 외부 모델 어댑터, 검증·예산·감사·회상 | [LLM](LLM_ARCHITECTURE.md) |

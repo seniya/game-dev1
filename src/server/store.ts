@@ -109,8 +109,9 @@ export class WorldStore {
     }
     return statements;
   }
-  private restore(parts: { body: string }[], checkpoint: Checkpoint, changes: ChangeRow[], expected?: number, onUpgrade?: () => void): WorldState {
+  private restore(parts: { body: string; part?: number }[], checkpoint: Checkpoint, changes: ChangeRow[], expected?: number, onUpgrade?: () => void): WorldState {
     if (!parts.length) throw new Error('저장된 세계가 없습니다.');
+    if (parts.some((p, i) => p.part !== undefined && p.part !== i)) throw new Error('저장된 세계 조각이 누락되었습니다.');
     let state = JSON.parse(parts.map(r => r.body).join('')) as WorldState, revision = checkpoint.revision;
     for (let i = 0; i < changes.length;) {
       const next = changes[i].revision;
@@ -146,6 +147,16 @@ export class WorldStore {
   private upgrade(state: WorldState): WorldState { return state.version === 9 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
   async command(id: string) { return this.db.prepare('SELECT body FROM commands WHERE id=?').bind(id).first<{ body: string }>(); }
   archive() { return this.db; }
+  /** Read only the execution checkpoint, never materialize the full event archive. */
+  async checkpoint(epoch: string): Promise<WorldState> {
+    const result = await this.db.batch([
+      this.db.prepare('SELECT part,body FROM snapshots WHERE epoch=? ORDER BY part').bind(epoch),
+      this.db.prepare('SELECT revision,created,head_revision FROM world_checkpoints WHERE epoch=?').bind(epoch),
+      this.db.prepare('SELECT revision,part,body FROM world_changes WHERE epoch=? ORDER BY revision,part').bind(epoch),
+    ]);
+    const cp = result[1].results[0] as unknown as Checkpoint | undefined;
+    return this.restore(result[0].results as unknown as { part: number; body: string }[], cp ?? { revision: 0, created: 0, head_revision: 0 }, result[2].results as unknown as ChangeRow[], cp?.head_revision);
+  }
   async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string, extra: D1PreparedStatement[] = [], input?: CommandInput) {
     if (this.baseline?.world.revision !== w.revision - 1) await this.read();
     const base = this.baseline!;

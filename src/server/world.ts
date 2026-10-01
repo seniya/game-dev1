@@ -5,6 +5,7 @@ import { characterSchema } from '../sim/character-schema';
 import { RECOLLECTION_TOPICS, recollections, type RecollectionTopic } from '../sim/recollection';
 import { historyContext, HISTORY_TOPICS, type HistoryTopic } from '../sim/history';
 import { z } from 'zod';
+import { SERVER_IMPORT_BYTES } from '../sim/save-inspection';
 import { Simulation } from '../sim/engine';
 import { DecisionCoordinator } from '../llm/coordinator';
 import { MockLLMProvider } from '../llm/provider';
@@ -21,6 +22,7 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('detail'), focus: z.string().max(100), detail: z.enum(['full', 'focused']) }).strict(),
     z.object({ type: z.literal('sync') }).strict(),
     z.object({ type: z.literal('save') }).strict(),
+    z.object({ type: z.literal('restore-backup'), epoch: z.string().min(1).max(100) }).strict(),
     z.object({ type: z.literal('play'), running: z.boolean() }).strict(),
     z.object({ type: z.literal('speed'), speed: z.union([z.literal(1), z.literal(5), z.literal(20)]) }).strict(),
     z.object({ type: z.literal('offline'), enabled: z.boolean() }).strict(),
@@ -33,11 +35,12 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('history-ai'), topic: z.enum(HISTORY_TOPICS) }).strict(),
     z.object({ type: z.literal('dialogue'), speakerId: z.string().max(100), listenerId: z.string().max(100), topic: z.enum(RECOLLECTION_TOPICS).optional() }).strict(),
     z.object({ type: z.literal('reset'), seed: z.number().int().min(0).max(4294967295), population: z.number().int().min(10).max(3000).optional() }).strict(),
-    z.object({ type: z.literal('import'), save: z.string().max(10_000_000) }).strict(),
+    z.object({ type: z.literal('import'), save: z.string().max(SERVER_IMPORT_BYTES).refine(s => new TextEncoder().encode(s).length <= SERVER_IMPORT_BYTES, '서버 가져오기는 UTF-8 기준 10MB까지 지원합니다.') }).strict(),
   ]),
 }).strict();
 export type Command = z.infer<typeof commandSchema>;
 export interface ClockState {
+  backupEventCount?: number;
   savedAt?: number;
   pendingTicks?: number;
   createdCharacter?: { commandId: string; npcId: string };
@@ -100,6 +103,7 @@ export function compactWorld(w: WorldState): WorldState {
   return { ...w, events: w.events.filter(e => keep.has(e.id)) };
 }
 export async function applyCommand(current: StoredWorld, command: Command, now: number): Promise<{ world: StoredWorld; events: WorldEvent[]; replaced: boolean; motion?: MotionTrace }> {
+  if (command.action.type === 'restore-backup') throw new Error('저장된 서버 백업은 서버 저장소에서 복원해야 합니다.');
   const meta = { ...current.meta };
   let sim = Simulation.load(JSON.stringify(current.state));
   let oldIds = new Set(current.state.events.map(e => e.id));

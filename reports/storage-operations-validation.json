@@ -1,0 +1,55 @@
+{
+  "date": "2026-10-02",
+  "version": "0.21.0",
+  "scope": "On-demand storage inspection, validated import preview, archive-preserving server backup restore",
+  "plan": "OPERATIONS_PLAN.md",
+  "unit": {
+    "command": "npm test",
+    "passed": 232,
+    "failed": 0,
+    "new_operations_tests": 7
+  },
+  "browser_full": {
+    "command": "npm run test:browser",
+    "passed": 66,
+    "failed": 0,
+    "skipped": 1,
+    "skip_reason": "Optional real Chrome inference was not enabled; mock Chrome regression passed."
+  },
+  "browser_targeted": {
+    "command": "npx playwright test tests/browser/storage-operations.spec.ts",
+    "passed": 3,
+    "failed": 0
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true
+  },
+  "verified": [
+    "UTF-8 import byte limit and engine validation before preview",
+    "Exact serialized export byte count and read-only diagnostics; pending clock remains unchanged",
+    "Archive exceeding 10MB restored without selecting all event bodies into Worker memory (synthetic SQLite fixture, 3500 additional events)",
+    "Current live predecessor becomes backup atomically; creator and personal records retain their original epoch",
+    "Missing archive and stale backup rejected; concurrent live clock causes transaction rollback",
+    "Owner-only diagnostics and restore, command retry does not duplicate restore",
+    "Local Worker/D1 browser restore does not request export or download old backup",
+    "Preview cancel leaves world untouched; explicit import works; stale and malformed files cannot replace newer world",
+    "390px storage dialog and existing complete browser regressions"
+  ],
+  "screenshots": [
+    "screenshots/v021-storage-mobile.png"
+  ],
+  "initial_test_adjustment": "First focused run: 6 passed, 1 assertion failed comparing optional undefined properties against serialized JSON. Normalize the expected persisted snapshot; subsequent full run passed all 232 tests. No archive content difference was found.",
+  "boundaries": {
+    "physical_database_size_measured": false,
+    "cpu_or_billing_measured": false,
+    "storage_thresholds": "100MB notice / 500MB warning for retained world JSON bodies only; not service quotas",
+    "large_external_file_upload": false,
+    "actual_chrome_inference": false,
+    "real_invited_person_login": false,
+    "authenticated_production_browser_smoke": false,
+    "production_session_probe_status": 401,
+    "long_run_simulation": "Not rerun: physical simulation rules unchanged. Existing full tests include scale and deterministic persistence checks.",
+    "historical_screenshots": "Browser-generated changes to earlier screenshots were restored; new storage screenshot kept."
+  }
+}

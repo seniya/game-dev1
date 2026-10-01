@@ -1,6 +1,6 @@
 # 구현 작업
 
-현재 앱은 **v0.19.0**이다. 최신 검증은 [biography-validation.json](reports/biography-validation.json), 최신 저장된 배포 결과는 [Sites 버전 30](reports/deployment-v019.json)을 따른다. 문서 탐색은 [DOCUMENTATION](DOCUMENTATION.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)을 참고한다.
+현재 앱은 **v0.21.0**이다. 최신 추가 개발 범위는 [OPERATIONS_PLAN](OPERATIONS_PLAN.md), 실행·배포 결과는 [보고서 안내](reports/README.md)를 따른다. 문서 탐색은 [DOCUMENTATION](DOCUMENTATION.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)을 참고한다.
 
 아래 목록은 도입 순서의 누적 기록이다. 테스트 개수·상한·접근 정책은 당시 기준이며 현재 상태와 혼동하지 않는다. 구현·검증 완료 시 실제 결과로 갱신하고 실패·재검증·건너뜀도 보존한다.
 
@@ -300,3 +300,12 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 상세 결과는 `reports/appeal-validation.json`. 배포 성공과 운영 보존 결과는 배포 후 별도 기록한다. 엔진 규칙과 서버 저장·AI 정책은 변경하지 않았다. 실제 타인 로그인·실모델 추론·사람의 흥미 평가는 수행하지 않았다.
 
 - [x] 소스 `b760ef51f0d862b6ae41cf9d65b88bc69482a392`를 기존 Sites 저장소에 push, 해당 production 아티팩트를 **Sites 버전 31**로 배포해 `succeeded` 확인. 운영 JS/CSS가 빌드와 동일하며 custom 접근과 초대 목록을 유지했다. 배포 전후 세계 행(epoch·revision 3777·사건 15,063건·재생/배속/비접속/Chrome 설정)이 동일했고 미확정 진행은 없었다. 인증된 운영 브라우저 검사는 미실행이며 무인증 세계 요청은 403. `reports/deployment-v020.json`.
+
+## v0.21 · 저장 확인과 안전한 복원 — 2026-10-02
+
+- [x] 추가 후보 비교와 범위 결정: OPERATIONS_PLAN.md. 본문 저장량/파일 한도 안내, 적용 전 검증·미리보기, 큰 사건 아카이브의 서버 백업 복원.
+- [x] 필요할 때만 저장 본문 바이트를 집계하고 확정/대기 진행을 구별. 물리 DB/CPU/요금과 구분.
+- [x] 서버·화면 UTF-8 10MB 일치, 적용 전 미리보기, 취소·오래된 선택 거부.
+- [x] 기존 epoch의 사건·생성자·개인 기록을 보존하며 백업 복원. 현재 대기 진행의 백업, 한 번의 트랜잭션·중복/동시성·손상 검사.
+- [x] 코어/서버 232개·브라우저 66개 통과, 실제 Chrome 1개 건너뜀. 신규 화면 3개 별도 통과. TypeScript/production build 통과. 원본 기록: reports/storage-operations-validation.json.
+- 배포는 같은 custom 프로젝트에 수행하고 최종 상태·소스·아티팩트·운영 보존을 별도 보고서에 기록한다.

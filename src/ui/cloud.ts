@@ -25,9 +25,10 @@ export class CloudClient {
     this.status(world.live ? `진행 중 · 최대 5분마다 자동 저장 · ${world.meta.eventCount.toLocaleString()}개 사건` : `서버 저장 완료 · ${world.meta.eventCount.toLocaleString()}개 사건 · 다른 기기에서 이어보기 가능`);
   }
   async connect() { this.session = await this.get<SessionView>('session'); this.accept(await this.get<WorldView>('world')); }
-  send(action: CloudAction, commandId = crypto.randomUUID()): Promise<void> {
+  send(action: CloudAction, commandId = crypto.randomUUID(), expected?: { epoch: string; revision: number }): Promise<void> {
     const run = async () => {
       if (!this.world) throw new Error('서버 연결을 먼저 확인해 주세요.');
+      if (expected && (this.world.epoch !== expected.epoch || this.world.revision !== expected.revision)) throw new Error('세계가 변경되었습니다. 가져올 내용을 다시 확인해 주세요.');
       const command: Command = { id: commandId, revision: this.world.revision, action };
       if (action.type !== 'sync') this.status('세계의 변화를 저장하는 중…');
       let response: Response | undefined;
@@ -42,7 +43,7 @@ export class CloudClient {
         if (response!.status === 409 && action.type === 'sync') return;
         throw new Error(result.error ?? '서버에 저장하지 못했습니다.');
       }
-      if (action.type === 'create-character') this.session = await this.get<SessionView>('session');
+      if (['create-character', 'reset', 'import', 'restore-backup'].includes(action.type)) this.session = await this.get<SessionView>('session');
       this.accept(result);
     };
     const result = this.queue.then(run);
