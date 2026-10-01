@@ -1,0 +1,19 @@
+{
+  "version": "0.16.0",
+  "unit_tests": {
+    "passed": 196,
+    "failed": 0
+  },
+  "browser_tests": {
+    "passed": 51,
+    "skipped": 1,
+    "note": "Real Chrome model inference skipped; mock and capability checks are separate."
+  },
+  "final_targeted_tests": {
+    "passed": 33,
+    "failed": 0,
+    "scope": "live persistence and server tests after build-change AI lease invalidation fix"
+  },
+  "benchmark": "reports/storage-policy-benchmark.json",
+  "production_build": "TypeScript and Vite Worker/client build passed; rebuilt from source commit for deployment"
+}

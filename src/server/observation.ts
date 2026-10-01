@@ -24,9 +24,9 @@ export async function readObserver(store: WorldStore, current: StoredWorld, p: U
   if (p.get('mode') === 'story') clauses.push("(e.kind<>'consumption' OR json_extract(e.body,'$.data.caregiver') IS NOT NULL)");
   const where = clauses.join(' AND ');
   const [totals, rows, highlights] = await Promise.all([
-    store.db.prepare(`SELECT e.kind,count(*) AS n FROM events e WHERE ${where} GROUP BY e.kind`).bind(...values).all<{kind:string;n:number}>(),
-    store.db.prepare(`SELECT e.body,e.seq FROM events e WHERE ${where} AND e.seq<? ORDER BY e.seq DESC LIMIT 41`).bind(...values,before).all<{body:string;seq:number}>(),
-    store.db.prepare(`SELECT e.body FROM events e WHERE ${where} AND json_extract(e.body,'$.importance')>=45 ORDER BY json_extract(e.body,'$.importance') DESC,e.seq DESC LIMIT 3`).bind(...values).all<{body:string}>(),
+    store.archive().prepare(`SELECT e.kind,count(*) AS n FROM events e WHERE ${where} GROUP BY e.kind`).bind(...values).all<{kind:string;n:number}>(),
+    store.archive().prepare(`SELECT e.body,e.seq FROM events e WHERE ${where} AND e.seq<? ORDER BY e.seq DESC LIMIT 41`).bind(...values,before).all<{body:string;seq:number}>(),
+    store.archive().prepare(`SELECT e.body FROM events e WHERE ${where} AND json_extract(e.body,'$.importance')>=45 ORDER BY json_extract(e.body,'$.importance') DESC,e.seq DESC LIMIT 3`).bind(...values).all<{body:string}>(),
   ]);
   return { highlights: highlights.results.map(r=>JSON.parse(r.body) as WorldEvent), epoch: current.epoch, from, to, through, counts: Object.fromEntries(totals.results.map(r=>[r.kind,r.n])), total: totals.results.reduce((sum,r)=>sum+r.n,0), events: rows.results.slice(0,40).map(r=>JSON.parse(r.body) as WorldEvent), next: rows.results.length>40 ? rows.results[39].seq : null };
 }

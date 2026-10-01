@@ -9,12 +9,14 @@ export const CHECKPOINT_INTERVAL_MS = 60_000;
 export const JOURNAL_BYTE_LIMIT = 1_000_000;
 interface Checkpoint { revision: number; created: number; head_revision: number }
 interface ChangeRow { revision: number; part: number; body: string }
-interface CommandInput { action: Command['action']; at: number }
+export interface CommandInput { action: Command['action']; at: number; checkpoint?: boolean }
 
 const schema = [
+  'CREATE TABLE IF NOT EXISTS world_live (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, sequence INTEGER NOT NULL, body TEXT NOT NULL)',
   'CREATE TABLE IF NOT EXISTS world_checkpoints (epoch TEXT PRIMARY KEY, revision INTEGER NOT NULL, created INTEGER NOT NULL, head_revision INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS world_changes (epoch TEXT NOT NULL, revision INTEGER NOT NULL, part INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY(epoch,revision,part))',
   'CREATE TABLE IF NOT EXISTS command_inputs (id TEXT PRIMARY KEY, input TEXT NOT NULL, accepted INTEGER NOT NULL)',
+  'CREATE INDEX IF NOT EXISTS command_inputs_accepted ON command_inputs(accepted)',
   'CREATE TABLE IF NOT EXISTS chrome_jobs (id TEXT PRIMARY KEY, epoch TEXT NOT NULL, generation TEXT NOT NULL, request TEXT NOT NULL, context TEXT NOT NULL, hash TEXT NOT NULL, status TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0, token TEXT, expires INTEGER NOT NULL DEFAULT 0, result TEXT, error TEXT, created INTEGER NOT NULL, updated INTEGER NOT NULL, UNIQUE(epoch,generation,request))',
   'CREATE INDEX IF NOT EXISTS chrome_jobs_recent ON chrome_jobs(created DESC)',
   'CREATE TABLE IF NOT EXISTS chrome_calls (token TEXT PRIMARY KEY, job TEXT NOT NULL, day TEXT NOT NULL, started INTEGER NOT NULL, outcome TEXT)',
@@ -135,14 +137,15 @@ export class WorldStore {
   }
   private upgrade(state: WorldState): WorldState { return state.version === 9 ? state : Simulation.load(JSON.stringify(state)).snapshot(); }
   async command(id: string) { return this.db.prepare('SELECT body FROM commands WHERE id=?').bind(id).first<{ body: string }>(); }
+  archive() { return this.db; }
   async commit(w: StoredWorld, events: WorldEvent[], request: string, id: string, extra: D1PreparedStatement[] = [], input?: CommandInput) {
     if (this.baseline?.world.revision !== w.revision - 1) await this.read();
     const base = this.baseline!;
     if (base.world.revision !== w.revision - 1) throw new Conflict('다른 기기에서 세계가 변경되었습니다. 최신 상태를 불러옵니다.');
     const now = input?.at ?? Date.now(), replaced = base.world.epoch !== w.epoch;
-    const body = replaced ? '' : JSON.stringify(stateChange(base.world.state, w.state));
+    const body = replaced || input?.checkpoint ? '' : JSON.stringify(stateChange(base.world.state, w.state));
     const bytes = new TextEncoder().encode(body).length;
-    const checkpoint = base.upgraded || replaced || w.revision - base.checkpoint.revision >= CHECKPOINT_COMMITS || now - base.checkpoint.created >= CHECKPOINT_INTERVAL_MS || base.journalBytes + bytes >= JOURNAL_BYTE_LIMIT;
+    const checkpoint = input?.checkpoint || base.upgraded || replaced || w.revision - base.checkpoint.revision >= CHECKPOINT_COMMITS || now - base.checkpoint.created >= CHECKPOINT_INTERVAL_MS || base.journalBytes + bytes >= JOURNAL_BYTE_LIMIT;
     const persistence: D1PreparedStatement[] = [];
     if (checkpoint) {
       persistence.push(this.db.prepare('DELETE FROM snapshots WHERE epoch=?').bind(w.epoch), ...this.snapshotStatements(w.epoch, w.state),
@@ -167,8 +170,10 @@ export class WorldStore {
         this.db.prepare('INSERT INTO commit_guard VALUES(changes())'),
         this.db.prepare('DELETE FROM commit_guard'),
         ...persistence, ...this.eventStatements(w.epoch, events, w.meta.eventCount - events.length),
-        this.db.prepare('INSERT INTO commands VALUES(?,?,?)').bind(id, request, w.revision),
-        this.db.prepare('INSERT INTO command_inputs VALUES(?,?,?)').bind(id, JSON.stringify(action), now),
+        ...(input?.checkpoint && input.action.type === 'sync' ? [] : [
+          this.db.prepare('INSERT INTO commands VALUES(?,?,?)').bind(id, request, w.revision),
+          this.db.prepare('INSERT INTO command_inputs VALUES(?,?,?)').bind(id, JSON.stringify(action), now),
+        ]),
         ...extra,
       ]);
       this.baseline = { world: structuredClone(w), checkpoint: checkpoint ? { revision: w.revision, created: now, head_revision: w.revision } : { ...base.checkpoint, head_revision: w.revision }, journalBytes: checkpoint ? 0 : base.journalBytes + bytes };

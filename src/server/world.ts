@@ -20,6 +20,7 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('policy'), settlementId: z.string().max(100), taxRate: z.number().int().min(0).max(30), priority: z.enum(['road', 'water', 'sanitation', 'clinic', 'school']) }).strict(),
     z.object({ type: z.literal('detail'), focus: z.string().max(100), detail: z.enum(['full', 'focused']) }).strict(),
     z.object({ type: z.literal('sync') }).strict(),
+    z.object({ type: z.literal('save') }).strict(),
     z.object({ type: z.literal('play'), running: z.boolean() }).strict(),
     z.object({ type: z.literal('speed'), speed: z.union([z.literal(1), z.literal(5), z.literal(20)]) }).strict(),
     z.object({ type: z.literal('offline'), enabled: z.boolean() }).strict(),
@@ -37,6 +38,7 @@ export const commandSchema = z.object({
 }).strict();
 export type Command = z.infer<typeof commandSchema>;
 export interface ClockState {
+  savedAt?: number;
   pendingTicks?: number;
   createdCharacter?: { commandId: string; npcId: string };
   running: boolean; speed: 1 | 5 | 20; offline: boolean;
@@ -46,7 +48,7 @@ export interface ClockState {
   history?: { id: string; topic: HistoryTopic };
   dialogue?: { id: string; speakerId: string; listenerId: string; topic?: RecollectionTopic };
 }
-export interface StoredWorld { revision: number; epoch: string; meta: ClockState; state: WorldState }
+export interface StoredWorld { revision: number; epoch: string; meta: ClockState; state: WorldState; live?: { sequence: number; savedAt: number; observedAt: number } }
 export interface WorldView extends Omit<StoredWorld, 'state'> { state: WorldState; motion?: MotionTrace }
 export function initialWorld(now: number): StoredWorld {
   const state = new Simulation(42, DEFAULT_POPULATION).snapshot();

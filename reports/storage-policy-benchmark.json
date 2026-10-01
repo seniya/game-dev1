@@ -1,0 +1,55 @@
+{
+  "sample": {
+    "source": "previously exported production JSON, local copy",
+    "tick": 3536,
+    "population": 12,
+    "initialEvents": 9815,
+    "seconds": 300,
+    "syncs": 150,
+    "speed": 1,
+    "ai": "chrome mode, no model execution",
+    "finalExplicitSave": true
+  },
+  "before": {
+    "checkpoints": 6,
+    "stateBytes": 11329882,
+    "clockBytes": 0,
+    "eventBytes": 372815,
+    "commandBytes": 25115,
+    "newEvents": 1223,
+    "measuredBodyBytes": 11727812,
+    "finalTick": 3964,
+    "eventCount": 11038,
+    "coldSavedReadMs": 20,
+    "rows": {
+      "world_live": 0,
+      "snapshots": 28,
+      "world_changes": 34,
+      "events": 11040,
+      "commands": 154,
+      "command_inputs": 154
+    }
+  },
+  "after": {
+    "checkpoints": 2,
+    "stateBytes": 1655217,
+    "clockBytes": 66656,
+    "eventBytes": 372815,
+    "commandBytes": 165,
+    "newEvents": 1223,
+    "measuredBodyBytes": 2094853,
+    "finalTick": 3964,
+    "eventCount": 11038,
+    "coldSavedReadMs": 7,
+    "rows": {
+      "world_live": 0,
+      "snapshots": 28,
+      "world_changes": 0,
+      "events": 11040,
+      "commands": 4,
+      "command_inputs": 4
+    }
+  },
+  "bodyByteReductionPercent": 82.1,
+  "limits": "UTF-8 application bodies only; excludes indexes, SQLite pages, world metadata, SQL overhead and provider billing. Does not measure production latency."
+}

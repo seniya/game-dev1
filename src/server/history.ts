@@ -19,13 +19,13 @@ export async function readHistory(store: WorldStore, current: StoredWorld, p: UR
     if (!current.state.civilization.settlements.some(v => v.id === settlement)) throw new Error('역사 조회 도시가 없습니다.');
     clauses.push("(json_extract(e.body,'$.data.settlementId')=? OR json_extract(e.body,'$.data.from')=? OR json_extract(e.body,'$.data.to')=?)"); values.push(settlement, settlement, settlement);
   }
-  const rows = await store.db.prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();
+  const rows = await store.archive().prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();
   let comparison: { first: WorldEvent; last: WorldEvent } | undefined;
   if (settlement && !npc) {
     const bounds = ['epoch=?', "kind='urban'", "json_extract(body,'$.data.settlementId')=?", 'seq<=?'], boundValues: (string | number)[] = [current.epoch, settlement, current.meta.eventCount];
     if (p.has('from')) { bounds.push('tick>=?'); boundValues.push(Number(p.get('from'))); }
     if (p.has('to')) { bounds.push('tick<=?'); boundValues.push(Number(p.get('to'))); }
-    const rows = await store.db.batch<{ body: string }>(['ASC', 'DESC'].map(order => store.db.prepare(`SELECT body FROM events WHERE ${bounds.join(' AND ')} ORDER BY seq ${order} LIMIT 1`).bind(...boundValues)));
+    const rows = await store.archive().batch<{ body: string }>(['ASC', 'DESC'].map(order => store.archive().prepare(`SELECT body FROM events WHERE ${bounds.join(' AND ')} ORDER BY seq ${order} LIMIT 1`).bind(...boundValues)));
     if (rows[0].results.length && rows[1].results.length) comparison = { first: JSON.parse(rows[0].results[0].body), last: JSON.parse(rows[1].results[0].body) };
   }
   return { comparison, epoch: current.epoch, topic, events: rows.results.slice(0, 40).map(r => JSON.parse(r.body) as WorldEvent), next: rows.results.length > 40 ? rows.results[39].seq : null, throughTick: current.state.tick, note: '표시된 사건은 해당 조건의 기록입니다. 시간 순서만으로 인과관계를 단정하지 않으며 원인 링크가 있는 경우에만 연결합니다.' };
@@ -40,7 +40,7 @@ export function streamWorld(store: WorldStore, current: StoredWorld): Response {
       try {
         if (!started) { started = true; controller.enqueue(encoder.encode(JSON.stringify(state).slice(0, -1) + ',"events":[')); return; }
         if (finished) { controller.close(); return; }
-        const rows = await store.db.prepare('SELECT body,seq FROM events WHERE epoch=? AND seq>? AND seq<=? ORDER BY seq LIMIT 100').bind(current.epoch, cursor, current.meta.eventCount).all<{ body: string; seq: number }>();
+        const rows = await store.archive().prepare('SELECT body,seq FROM events WHERE epoch=? AND seq>? AND seq<=? ORDER BY seq LIMIT 100').bind(current.epoch, cursor, current.meta.eventCount).all<{ body: string; seq: number }>();
         if (!rows.results.length) {
           if (cursor !== current.meta.eventCount) throw new Error('사건 아카이브가 누락되어 내보내기를 중단했습니다.');
           controller.enqueue(encoder.encode(']}')); finished = true; return;

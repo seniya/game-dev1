@@ -3,7 +3,8 @@ import { readHistory, streamWorld } from './history';
 import { summarize } from '../sim/engine';
 import type { D1Database, Fetcher, ExecutionContext } from '@cloudflare/workers-types';
 import { applyCommand, commandSchema, viewWorld } from './world';
-import { Conflict, WorldStore } from './store';
+import { Conflict } from './store';
+import { LiveWorldStore } from './live-store';
 import type { WorldEvent } from '../sim/types';
 import { aiStatus, processAI } from './ai';
 import { claimChrome, processChrome, submitChrome, chromeSubmissionSchema } from './chrome';
@@ -22,8 +23,8 @@ export default {
     // JSON-only, same-origin writes also prevent cross-site form submissions.
     if (request.method !== 'GET' && (request.headers.get('Origin') !== url.origin || !request.headers.get('Content-Type')?.startsWith('application/json'))) return json({ error: '같은 사이트의 JSON 요청만 허용됩니다.' }, 403);
     if (!env.DB) return json({ error: '세계 저장소에 연결하지 못했습니다.' }, 503);
-    const store = new WorldStore(env.DB);
-    const wakeAI = () => { if (context) context.waitUntil(Promise.all([processChrome(store), processAI(store, env)]).catch(() => { console.error('AI background processing failed'); })); };
+    const store = new LiveWorldStore(env.DB);
+    const wakeAI = () => { if (context) context.waitUntil(Promise.all([processChrome(new LiveWorldStore(env.DB)), processAI(new LiveWorldStore(env.DB), env)]).catch(() => { console.error('AI background processing failed'); })); };
     try {
       await store.init(Date.now());
       if (url.pathname === '/api/world' && request.method === 'GET') { const world = await store.read(); wakeAI(); return json(viewWorld(world)); }
@@ -70,6 +71,12 @@ export default {
         if (!parsed.success) return json({ error: '명령 형식이 올바르지 않습니다.' }, 400);
         const command = parsed.data;
         if ((command.action.type === 'history-ai' || command.action.type === 'ai-mode' && command.action.mode === 'remote') && !modelConfig(env)) return json({ error: '서버 모델이 연결되지 않았습니다. 모델 주소와 이름을 먼저 설정해 주세요.' }, 400);
+        if (command.action.type === 'sync') {
+          try {
+            const result = await store.sync(command, Date.now());
+            wakeAI(); return json(viewWorld(result.world, result.motion));
+          } catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
+        }
         const canonical = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(command))))).map(b => b.toString(16).padStart(2, '0')).join('');
         const previous = await store.command(command.id);
         if (previous) {
@@ -84,22 +91,23 @@ export default {
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
         wakeAI(); return json(viewWorld(world, motion));
       }
-      if (url.pathname === '/api/observer' && request.method === 'GET') return json(await readObserver(store, await store.read(), url.searchParams));
-      if (url.pathname === '/api/history' && request.method === 'GET') return json(await readHistory(store, await store.read(), url.searchParams));
-      if (url.pathname === '/api/export-stream' && request.method === 'GET') return streamWorld(store, await store.read());
+      const observed = await store.read(), archive = store.archive();
+      if (url.pathname === '/api/observer' && request.method === 'GET') return json(await readObserver(store, observed, url.searchParams));
+      if (url.pathname === '/api/history' && request.method === 'GET') return json(await readHistory(store, observed, url.searchParams));
+      if (url.pathname === '/api/export-stream' && request.method === 'GET') return streamWorld(store, observed);
       if (url.pathname === '/api/export' && request.method === 'GET') {
-        const current = await store.read(), epoch = url.searchParams.has('backup') ? current.meta.backupEpoch : current.epoch;
+        const current = observed, epoch = url.searchParams.has('backup') ? current.meta.backupEpoch : current.epoch;
         if (!epoch) return json({ error: '초기화 전 백업이 없습니다.' }, 404);
         return json(await store.export(epoch));
       }
       if (url.pathname === '/api/report' && request.method === 'GET') {
-        const w = await store.read(); return json({ ...summarize(w.state), events: w.meta.eventCount });
+        const w = observed; return json({ ...summarize(w.state), events: w.meta.eventCount });
       }
       if (url.pathname === '/api/observations' && request.method === 'GET') {
-        const w = await store.read(); return json({ seed: w.state.seed, since: w.state.economy.since, daily: w.state.economy.daily, urban: w.state.urban.samples });
+        const w = observed; return json({ seed: w.state.seed, since: w.state.economy.since, daily: w.state.economy.daily, urban: w.state.urban.samples });
       }
       if (url.pathname === '/api/events' && request.method === 'GET') {
-        const current = await store.read(), p = url.searchParams;
+        const current = observed, p = url.searchParams;
         if (p.get('epoch') && p.get('epoch') !== current.epoch) return json({ error: '세계가 교체되었습니다. 새로고침해 주세요.' }, 409);
         const clauses = ['e.epoch=?', 'e.seq<=?'], values: (string | number)[] = [current.epoch, current.meta.eventCount];
         const npc = p.get('npc');
@@ -114,18 +122,18 @@ export default {
         if (filter === 'social') clauses.push("e.kind IN ('gathering','request','share','talk','witness','rumor','relationship','memory','family','birth','coming_of_age','education','migration','death')");
         if (filter === 'economy') clauses.push("e.kind IN ('production','storage','trade','loan','repayment','default','theft','scarcity','wage','price','project','consumption','experiment','inheritance','construction','settlement','caravan','occupation','industry','public_service','tax','urban','policy','freight','ecology','council','diplomacy','request')");
         if (filter === 'life') clauses.push("(e.kind NOT IN ('arrival','memory','failure') OR json_extract(e.body,'$.data.createdCharacter')=1)");
-        const rows = await env.DB.prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();
+        const rows = await archive.prepare(`SELECT e.body,e.seq FROM events e WHERE ${clauses.join(' AND ')} ORDER BY e.seq DESC LIMIT 41`).bind(...values).all<{ body: string; seq: number }>();
         return json({ epoch: current.epoch, eventCount: current.meta.eventCount, cursors: Object.fromEntries(rows.results.slice(0, 40).map(r => [parseEvent(r).id, r.seq])), events: rows.results.slice(0, 40).map(parseEvent), next: rows.results.length > 40 ? rows.results[39].seq : null });
       }
       if (url.pathname.startsWith('/api/events/') && request.method === 'GET') {
-        const current = await store.read(), id = decodeURIComponent(url.pathname.slice('/api/events/'.length));
+        const current = observed, id = decodeURIComponent(url.pathname.slice('/api/events/'.length));
         if (url.searchParams.get('epoch') !== current.epoch) return json({ error: '세계가 교체되었습니다. 최신 세계에서 다시 선택해 주세요.' }, 409);
-        const find = async (id: string) => { const r = await env.DB.prepare('SELECT body FROM events WHERE epoch=? AND id=?').bind(current.epoch, id).first<{ body: string }>(); return r ? parseEvent(r) : undefined; };
+        const find = async (id: string) => { const r = await archive.prepare('SELECT body FROM events WHERE epoch=? AND id=?').bind(current.epoch, id).first<{ body: string }>(); return r ? parseEvent(r) : undefined; };
         const event = await find(id); if (!event) return json({ error: '이 사건을 찾을 수 없습니다.' }, 404);
         const related: WorldEvent[] = [event]; let cursor = event;
         for (let i = 0; cursor.causeId && i < 40; i++) { const parent = await find(cursor.causeId); if (!parent) break; related.push(parent); cursor = parent; }
         if (Array.isArray(event.data.evidence)) for (const id of event.data.evidence.slice(0, 40)) { const e = await find(id); if (e) related.push(e); }
-        const effects = await env.DB.prepare(`SELECT body FROM events WHERE epoch=? AND (cause=? OR id IN (SELECT target FROM event_refs WHERE epoch=? AND source=?)) ORDER BY seq LIMIT 61`).bind(current.epoch, id, current.epoch, id).all<{ body: string }>();
+        const effects = await archive.prepare(`SELECT body FROM events WHERE epoch=? AND (cause=? OR id IN (SELECT target FROM event_refs WHERE epoch=? AND source=?)) ORDER BY seq LIMIT 61`).bind(current.epoch, id, current.epoch, id).all<{ body: string }>();
         return json({ epoch: current.epoch, event, related: [...new Map([...related, ...effects.results.map(parseEvent)].map(e => [e.id, e])).values()] });
       }
       return json({ error: '지원하지 않는 요청입니다.' }, 404);

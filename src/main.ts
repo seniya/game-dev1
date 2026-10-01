@@ -477,7 +477,7 @@ function startCloud() {
     }
     if (!changed && newEvents && lifeEvents.length <= 40 && tab === 'life' && !selectedObject && !lifeLoading && lifeKey === `${world.epoch}:${selectedId}`) void loadCloudLife();
     if (changed) { lifeKey = ''; selectedObject = undefined; map.reset(); }
-    $('save-status').textContent = `${dayOf(state.tick)}일째 ${timeLabel(state.tick)} · 서버에 저장됨`;
+    $('save-status').textContent = `${dayOf(state.tick)}일째 ${timeLabel(state.tick)} · ${world.live ? '진행 중 · 5분 자동 저장' : '서버에 저장됨'}`;
     render();
     const remaining = world.meta.pendingTicks ?? 0;
     $<HTMLButtonElement>('advance-day').disabled = remaining > 0;
@@ -535,7 +535,7 @@ function startCloud() {
     event.stopImmediatePropagation();
     if (button.id === 'more-events') void loadJournal(true);
     if (button.id === 'more-life') void loadCloudLife(true);
-    if (button.id === 'save-button') { const a = document.createElement('a'); a.href = '/api/export-stream'; a.download = ''; a.click(); }
+    if (button.id === 'save-button') { void cloud!.send({ type: 'save' }).then(() => { const a = document.createElement('a'); a.href = '/api/export-stream'; a.download = ''; a.click(); }).catch(cloudFailure); }
     if (button.id === 'export-report') void cloudDownload('report', 'living-small-world-report.json');
     if (button.id === 'export-observations') void cloudDownload('observations', 'living-small-world-observations.json');
     if (button.id === 'load-button') openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>서버에 이어지는 작은 세계</h2><p>서버 세계는 같은 계정의 모든 기기에 반영됩니다. 교체 전 세계는 서버 백업으로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button">서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">서버 가져오기: 10MB 이하, 생존 주민 3,000명까지. 더 큰 파일은 기기 세계에서 열 수 있습니다.</p>`);
