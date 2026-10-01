@@ -1,0 +1,58 @@
+{
+  "id": "appgdep_6abdff6f698c8191ab82ea6fec14c2dc",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_36b2552ed9bc8191b34ca6ce8dfa9f49",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 0,
+  "updated_at": "2026-10-01T06:36:41.064830+00:00",
+  "source_commit": "2030c50b5421db346ef5f932b7f9667be2e02f2d",
+  "sites_version": 26,
+  "archive_sha256": "f94eb6f208155bc884d2458e4b3d3ce107d1e88b50721832174b8bcd3019f261",
+  "saved_archive_content_hash": "sha256:eabc38517b1249076f4b02cebc7037f8d0c35bef46329566470eb29080405c9c",
+  "validation_report": "reports/gatherings-validation.json",
+  "regression_report": "reports/gatherings-regression.json",
+  "production_smoke": {
+    "http_status": 200,
+    "api_status": 200,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "tick": 3536,
+    "revision": 3706,
+    "version": 9,
+    "aiMode": "chrome",
+    "running": true,
+    "population": 12,
+    "eventCount": 9815,
+    "gatherings": 0,
+    "assets": [
+      {
+        "path": "/assets/index-CVLDkml-.js",
+        "status": 200,
+        "sha256": "17891f730e1da8e0f026c544cf6d5133079ddbb88eec91c814f24083c68e2f88",
+        "sha256_matches_build": true
+      },
+      {
+        "path": "/assets/index-DThRKY8M.css",
+        "status": 200,
+        "sha256": "c6fae330acc5edc5c8d35f8979d758ce5818cded6c1a420c8afb37520084eb41",
+        "sha256_matches_build": true
+      }
+    ],
+    "same_world_epoch": true,
+    "all_prior_npc_ids_present": true,
+    "same_ai_mode": true,
+    "same_running_setting": true,
+    "world_reset": false,
+    "all_prior_events_preserved": true,
+    "preserved_event_count": 9815,
+    "social_api_status": 200,
+    "owner_only": true,
+    "note": "Read-only production verification. Existing world was not advanced or reset; appointments initialize on the next simulation tick. Original event contents were compared with the complete archive."
+  }
+}

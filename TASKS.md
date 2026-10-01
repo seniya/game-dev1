@@ -207,3 +207,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 
 - [x] 5. **3시드 × off/Mock의 6조건 × 365일** 완료, 100일/365일 비교 기록. 매일 회계·저장 복원·상태 상한, 초대 전달·중복 완료·원인 무결성, 30일 간격의 압축 전 엔진 대 독립 복원 엔진의 다음 하루 일치 확인. 자원/상품 회계 오차와 아카이브 근거 누락 모두 0. `reports/gatherings-regression.json`.
 - [x] 최종 검증 요약: `reports/gatherings-validation.json`. 장기 실행은 로컬 측정이며 기존 3,000명 장기 보고서나 실제 Chrome 추론을 새로 성공한 것으로 계산하지 않는다.
+
+- [x] 소스 `2030c50b5421db346ef5f932b7f9667be2e02f2d`와 그 production 빌드를 기존 소유자 전용 사이트 **Sites 버전 26**으로 배포, `succeeded` 확인. 운영 JS/CSS 해시 일치, 화면·세계·사회 기록 API 200, 같은 세계·주민 12명·기존 원본 사건 9,815건의 내용·Chrome 모드·재생 설정 유지 확인. 진행이나 초기화를 강제하지 않았으며 다음 틱부터 공동 활동 상태를 생성한다. `reports/deployment-v015.json`.
