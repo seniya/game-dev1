@@ -1,0 +1,33 @@
+{
+  "scope": "Local spatial-index microbenchmark; same positions and exact neighbour results. Does not measure full server request latency.",
+  "rows": [
+    {
+      "population": 12,
+      "iterations": 500,
+      "baselineMs": 1.0067289999999787,
+      "reuseMs": 1.6597739999999988,
+      "speedup": 0.6065458309384165
+    },
+    {
+      "population": 300,
+      "iterations": 500,
+      "baselineMs": 25.922688000000022,
+      "reuseMs": 10.046138000000013,
+      "speedup": 2.580363518796973
+    },
+    {
+      "population": 1000,
+      "iterations": 500,
+      "baselineMs": 90.18185199999999,
+      "reuseMs": 44.42557099999999,
+      "speedup": 2.0299536949114287
+    },
+    {
+      "population": 3000,
+      "iterations": 500,
+      "baselineMs": 301.28572800000006,
+      "reuseMs": 120.74440099999993,
+      "speedup": 2.495235601027995
+    }
+  ]
+}

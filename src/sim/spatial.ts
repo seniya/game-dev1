@@ -4,8 +4,10 @@ interface Index { buckets: Map<string, Set<NPC>>; order: Map<string, number>; ce
 const indexes = new WeakMap<WorldState, Index>();
 const key = (x: number, y: number) => `${Math.floor(x / 8)},${Math.floor(y / 8)}`;
 export function indexPeople(w: WorldState) {
-  const i: Index = { buckets: new Map(), order: new Map(), cells: new Map() }; indexes.set(w, i);
-  w.npcs.forEach((n, order) => { i.order.set(n.id, order); updatePerson(w, n); });
+  // Reuse buckets between ticks; positions are updated in place. Rebuild only when membership changes.
+  let i=indexes.get(w);
+  if(!i||i.order.size!==w.npcs.length||w.npcs.some(n=>!i!.order.has(n.id))) { i={buckets:new Map(),order:new Map(),cells:new Map()}; indexes.set(w,i); }
+  w.npcs.forEach((n, order) => { i!.order.set(n.id, order); updatePerson(w, n); });
 }
 export function updatePerson(w: WorldState, n: NPC) {
   const i = indexes.get(w); if (!i) return;

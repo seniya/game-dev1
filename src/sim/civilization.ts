@@ -1,3 +1,4 @@
+import { buildPosition } from './frontier';
 import { canWork } from './employment';
 import { initializeHeritage } from './heritage';
 import { initializeUrban } from './urban';
@@ -136,7 +137,9 @@ export function startTrade(w: WorldState, from: Settlement, to: Settlement): boo
   w.civilization.journeys.push({ id: `j${w.nextId++}`, kind: 'trade', from: from.id, to: to.id, npcIds: [], path, progress: 0, food: amount, coins: cost, sourceEventId: e.id });
   return true;
 }
-export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' = 'home', observer = false): Building | undefined {
+export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' = 'home', observer = false, position?: {x:number;y:number}): Building | undefined {
+  if(w.buildings.length>=4000)return;
+  if(position&&!buildPosition(w,v.id,position))return;
   const cost = kind === 'home' ? 12 : 16;
   const stock = stocks(w, v.id); if (stock.wood < cost) return;
   const occupied = new Set([...w.buildings, ...w.resources].map(b => `${b.position.x},${b.position.y}`));
@@ -148,7 +151,7 @@ export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' =
       if (dy < -9 || dy > 8 || dx < -10 || dx > 10) sites.push({ x: v.center.x + dx, y: v.center.y + dy });
     }
   }
-  for (const p of sites) {
+  for (const p of position ? [position] : sites) {
     if (p.x < 0 || p.y < 0 || p.x >= w.width || p.y >= w.height || occupied.has(`${p.x},${p.y}`) || w.tiles[p.y * w.width + p.x] !== 'grass' || !findPath(w, v.center, p)) continue;
     stock.wood -= cost; w.economy.totals.investedWood += cost;
     const b: Building = { id: `c${w.nextId++}`, kind, name: `${v.name} ${kind === 'home' ? '새집' : '새 농장'}`, position: p, level: 1, growth: 0, settlementId: v.id, ownerIds: [] }; w.buildings.push(b);

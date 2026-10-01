@@ -109,7 +109,7 @@ export class LiveWorldStore extends WorldStore {
     w.meta.savedAt = now; delete w.live;
     await super.commit(w, allEvents, request, id, [
       ...this.guard(), this.db.prepare('DELETE FROM world_live'), ...backup, ...extra, ...this.retention(w, now),
-    ], { action: input?.action ?? { type: 'save' }, at: now, checkpoint: true });
+    ], { action: input?.action ?? { type: 'save' }, at: now, checkpoint: true, replay: {ticks:this.current.state.tick-this.saved.state.tick,meta:this.current.meta,...(input?{command:{id,revision:this.current.revision,action:input.action}}:{})} });
     this.pending = []; this.head = null; this.saved = structuredClone(w); cache.delete(this.db);
   }
 
@@ -149,6 +149,10 @@ export class LiveWorldStore extends WorldStore {
     const oldCommands = "SELECT id FROM command_inputs WHERE accepted<? OR json_extract(input,'$.type')='sync' LIMIT 1000";
     result.push(db.prepare(`DELETE FROM commands WHERE id IN (${oldCommands})`).bind(now - 30 * DAY),
       db.prepare(`DELETE FROM command_inputs WHERE id IN (${oldCommands})`).bind(now - 30 * DAY));
+    for(const table of ['upload_parts','upload_states','upload_events']) result.push(db.prepare(`DELETE FROM ${table} WHERE rowid IN (SELECT rowid FROM ${table} WHERE upload IN (SELECT id FROM uploads WHERE expires<?) LIMIT 1000)`).bind(now));
+    result.push(db.prepare('DELETE FROM uploads WHERE expires<? AND NOT EXISTS(SELECT 1 FROM upload_parts WHERE upload=uploads.id) AND NOT EXISTS(SELECT 1 FROM upload_states WHERE upload=uploads.id) AND NOT EXISTS(SELECT 1 FROM upload_events WHERE upload=uploads.id)').bind(now));
+    result.push(db.prepare('DELETE FROM replay_parts WHERE EXISTS(SELECT 1 FROM replay_session WHERE created<?)').bind(now-30*DAY),db.prepare('DELETE FROM replay_session WHERE created<?').bind(now-30*DAY));
+    result.push(db.prepare('DELETE FROM expressions WHERE created<?').bind(now-7*DAY));
     const backup = w.meta.backupEpoch ?? w.epoch;
     for (const table of ['snapshots', 'world_changes', 'world_checkpoints', 'events', 'participants', 'event_refs', 'npc_creators', 'personal_observations']) {
       result.push(db.prepare(`DELETE FROM ${table} WHERE rowid IN (SELECT rowid FROM ${table} WHERE epoch NOT IN (?,?) LIMIT 1000)`).bind(w.epoch, backup));

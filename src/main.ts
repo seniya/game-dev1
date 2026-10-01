@@ -1,3 +1,7 @@
+import { landQuote } from './sim/frontier';
+import { generateExpression } from './ui/expressions';
+import { uploadSave, postJSON } from './ui/uploads';
+import type { OperationsStatus } from './server/operations';
 import { DiscoveryWalk } from './ui/discovery';
 import { inspectSave } from './sim/save-inspection';
 import { storageView, importPreview } from './ui/storage';
@@ -194,7 +198,7 @@ let localInspectorEpoch = 0;
 function inspectorIdentity(includeTab = true) {
   return `${cloudMode ? cloud?.world?.epoch ?? 'loading' : localInspectorEpoch}:${selectedObject ? `${selectedObject.kind}:${selectedObject.id}` : selectedId}:${includeTab ? tab : 'header'}`;
 }
-function setInspectorHTML(html: string) { updateReadingPanel($('npc-detail'), html, inspectorIdentity()); }
+function setInspectorHTML(html: string) { if(cloudMode && !selectedObject && isOwner() && selectedNPC().alive) html += `<div class="expression-controls"><button class="button" data-expression="dialogue">주민에게 물어보기</button><button class="button" data-expression="reflection">기억 돌아보기</button></div>`; updateReadingPanel($('npc-detail'), html, inspectorIdentity()); }
 function renderInspector() { withReadingPosition($('npc-detail'), renderInspectorContent); }
 function renderInspectorContent() {
   if (selectedObject && !objectName(state, selectedObject)) selectedObject = undefined;
@@ -557,7 +561,7 @@ function startCloud() {
     }
   };
   setTimeout(poll, 2000);
-  let pendingImport: { save: string; epoch: string; revision: number } | undefined;
+  let pendingImport: { save?: string; upload?: string; epoch: string; revision: number } | undefined;
   const previewImport = (save: string) => {
     const summary = inspectSave(save), world = cloud!.world!;
     pendingImport = { save, epoch: world.epoch, revision: world.revision };
@@ -571,6 +575,8 @@ function startCloud() {
       const status = await cloud!.get<StorageStatus>('storage');
       if (!target.isConnected) return;
       target.innerHTML = storageView(status);
+      const ops = await cloud!.get<OperationsStatus>('operations');
+      if (target.isConnected) target.innerHTML += `<h3>운영 상태</h3><p>최근 요청 ${ops.samples}건 · 처리 시간 95백분위 ${ops.p95Ms ?? '측정 전'}ms · 서버 오류 ${ops.errors}건</p><p>물리 DB ${ops.databaseBytes === null ? '이 환경에서 제공하지 않음' : (ops.databaseBytes / 1_000_000).toFixed(2) + ' MB'} · DB 조회 ${ops.databaseQueryMs ?? '미제공'}ms</p>${ops.warnings.map(w => `<p role="alert">${esc(w)}</p>`).join('')}<p class="muted">현재 Worker의 최근 1시간·최대 256건 표본입니다. 재시작하면 표본이 초기화됩니다. CPU·메모리는 실행 환경에서 제공하지 않아 별도 운영 측정이 필요합니다.</p><button id="replay-start" class="button">검증 기록 시작 · 이전 기록 교체</button><button id="replay-stop" class="button">검증 기록 중지</button><button id="replay-check" class="button">기록 재생 검증</button><button id="replay-export" class="button">검증 기록 내려받기</button><p id="replay-status" aria-live="polite"></p>`;
       const button = document.getElementById('load-backup') as HTMLButtonElement | null;
       if (button) { button.disabled = status.worlds.length < 2; button.dataset.epoch = status.worlds[1]?.epoch ?? ''; button.dataset.revision = String(status.revision); button.dataset.world = status.epoch; }
     } catch (e) { if (target.isConnected) target.textContent = (e as Error).message; }
@@ -591,7 +597,7 @@ function startCloud() {
       event.stopImmediatePropagation(); if (!cloudReady) return;
       cloudCommand(button.dataset.speed ? { type: 'speed', speed: Number(button.dataset.speed) as 1 | 5 | 20 } : actions[button.id]); return;
     }
-    const intercept = ['more-events', 'more-life', 'save-button', 'load-button', 'load-local', 'load-backup', 'storage-refresh', 'apply-import', 'export-observations', 'export-report'];
+    const intercept = ['more-events', 'more-life', 'save-button', 'load-button', 'load-local', 'load-backup', 'storage-refresh', 'replay-start', 'replay-stop', 'replay-check', 'replay-export', 'apply-import', 'export-observations', 'export-report'];
     if (!intercept.includes(button.id)) return;
     event.stopImmediatePropagation();
     if (button.id === 'more-events') void loadJournal(true);
@@ -601,14 +607,15 @@ function startCloud() {
     if (button.id === 'export-observations') void cloudDownload('observations', 'living-small-world-observations.json');
     if (button.id === 'load-button') {
       pendingImport = undefined;
-      openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>저장과 복원</h2><p>서버 세계는 함께 관찰하는 모든 계정에 반영됩니다. 교체 전 세계는 직전 백업 1개로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button" disabled>서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">파일 가져오기: UTF-8 기준 10MB 이하, 생존 주민 3,000명까지. 적용 전에 내용을 확인합니다.</p><section id="storage-status" aria-live="polite"></section><button id="storage-refresh" class="button">저장 상태 새로 확인</button>`);
+      openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>저장과 복원</h2><p>서버 세계는 함께 관찰하는 모든 계정에 반영됩니다. 교체 전 세계는 직전 백업 1개로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button" disabled>서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">파일 가져오기: UTF-8 기준 24MB 이하, 생존 주민 3,000명까지. 10MB 초과 파일은 분할 전송하며 24시간 안에 같은 파일로 재개할 수 있습니다. 적용 전에 내용을 확인합니다.</p><section id="storage-status" aria-live="polite"></section><button id="storage-refresh" class="button">저장 상태 새로 확인</button>`);
       void loadStorage();
     }
+    if (button.id.startsWith('replay-')) { void postJSON<{message:string}>('replay', {type:button.id.slice(7)}).then(r=>{ if(button.id==='replay-export') download('world-replay.json', JSON.stringify(r)); else {const el=document.getElementById('replay-status');if(el)el.textContent=r.message;} }).catch(cloudFailure); }
     if (button.id === 'storage-refresh') void loadStorage();
     if (button.id === 'load-local') { try { const save = localStorage.getItem(STORAGE_KEY); if (!save) throw new Error('이 기기에 저장된 세계가 없습니다.'); previewImport(save); } catch (e) { cloudFailure(e); } }
     if (button.id === 'apply-import' && pendingImport) {
       const pending = pendingImport; button.disabled = true;
-      void cloud!.send({ type: 'import', save: pending.save }, crypto.randomUUID(), pending).then(() => { pendingImport = undefined; $<HTMLDialogElement>('detail-dialog').close(); toast('저장된 세계를 서버로 가져왔습니다.'); }).catch(e => { button.disabled = false; cloudFailure(e); });
+      void cloud!.send(pending.upload ? { type: 'import-upload', upload: pending.upload } : { type: 'import', save: pending.save! }, crypto.randomUUID(), pending).then(() => { pendingImport = undefined; $<HTMLDialogElement>('detail-dialog').close(); toast('저장된 세계를 서버로 가져왔습니다.'); }).catch(e => { button.disabled = false; cloudFailure(e); });
     }
     if (button.id === 'load-backup' && button.dataset.epoch) {
       const expected = { epoch: button.dataset.world!, revision: Number(button.dataset.revision) }; button.disabled = true;
@@ -621,7 +628,7 @@ function startCloud() {
   $('offline-toggle').onchange = () => cloudCommand({ type: 'offline', enabled: $<HTMLInputElement>('offline-toggle').checked });
   $('file-input').onchange = async () => {
     const input = $<HTMLInputElement>('file-input'), file = input.files?.[0]; if (!file) return;
-    try { if (file.size > 10_000_000) throw new Error('서버 가져오기는 10MB까지 지원합니다.'); previewImport(await file.text()); }
+    try { if (file.size <= 10_000_000) previewImport(await file.text()); else { openDialog('<h2>큰 세계 가져오기</h2><p id="upload-progress" aria-live="polite">파일을 준비하고 있습니다…</p>'); const uploadTarget=document.getElementById('upload-progress'); const uploaded=await uploadSave(file,text=>{ const el=document.getElementById('upload-progress'); if(el)el.textContent=text; }); if(!uploadTarget?.isConnected || !$<HTMLDialogElement>('detail-dialog').open)return; pendingImport={upload:uploaded.id,epoch:uploaded.epoch,revision:uploaded.revision}; openDialog(importPreview(uploaded.summary)); } }
     catch (e) { cloudFailure(e); } finally { input.value = ''; }
   };
 }
@@ -843,7 +850,7 @@ function applyAccessUI() {
     const el = document.getElementById(id) as HTMLButtonElement | null;
     if (el && restricted) { el.disabled = true; el.title = '소유자가 관리하는 공동 세계 설정입니다.'; }
   }
-  document.querySelectorAll<HTMLButtonElement>('button[data-speed],button[data-build],button[data-request],button[data-dialogue],#history-ai,#seed-form button,#urban-policy button').forEach(b => { if (restricted) b.disabled = true; });
+  document.querySelectorAll<HTMLButtonElement>('button[data-speed],button[data-build],button[data-request],button[data-dialogue],#build-position,#land-market,#history-ai,#seed-form button,#urban-policy button').forEach(b => { if (restricted) b.disabled = true; });
   document.querySelectorAll<HTMLInputElement>('#urban-policy input,#urban-policy select,#world-detail,#council-toggle').forEach(e => { if (restricted) e.disabled = true; });
   const session = cloud?.session;
   $('account-button').hidden = !cloudMode;
@@ -881,4 +888,31 @@ document.addEventListener('click',event=>{
   const values=button.dataset.look ? LOOK_PRESETS[button.dataset.look]?.appearance : {hairstyle:button.dataset.hair};
   for(const [key,value] of Object.entries(values ?? {})) { const field=form.elements.namedItem(key) as HTMLInputElement|HTMLSelectElement|null; if(field)field.value=String(value); }
   form.dispatchEvent(new Event('input',{bubbles:true}));
+});
+
+document.addEventListener('click',event=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-expression]');if(!button)return;
+  const npc=selectedNPC(),kind=button.dataset.expression==='reflection'?'reflection':'dialogue';
+  openDialog(`<h2>${esc(npc.identity.name)}의 ${kind==='reflection'?'기억 돌아보기':'이야기'}</h2><form id="expression-form"><label>어떤 이야기가 궁금한가요?<textarea id="expression-question" maxlength="200" required>${kind==='reflection'?'최근의 기억을 돌아보면 어떤 생각이 들어?':'마음에 남아 있는 일이 있어?'}</textarea></label><p>주민이 아는 기억만 전달합니다. AI의 표현과 실제 사건을 함께 확인하세요. 표현은 행동이나 관계 수치를 직접 바꾸지 않습니다.</p><button class="button primary" type="submit">${cloud?.world?.meta.aiMode==='chrome'?'Chrome에서 한국어 표현 만들기':cloud?.world?.meta.aiMode==='remote'?'선택한 외부 API로 만들기':'기억으로 예시 만들기'}</button><p id="expression-status" aria-live="polite"></p></form>`);
+  $<HTMLFormElement>('expression-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget as HTMLFormElement,submit=form.querySelector('button')!;submit.disabled=true;
+    try {const response=await generateExpression({npcId:npc.id,kind,question:$<HTMLTextAreaElement>('expression-question').value},cloud!.world!.meta.aiMode??'off',text=>{const p=document.getElementById('expression-status');if(p)p.textContent=text;});await cloud!.connect();const p=document.getElementById('expression-status');if(p)p.innerHTML=`표현을 세계 기록에 저장했습니다.<blockquote>${esc(response.result.text)}</blockquote>${response.result.evidence.map(id=>`<button type="button" class="evidence-link" data-event="${esc(id)}">근거 사건 ${esc(id)}</button>`).join('')}<small>기억 ID·형식 검증을 통과한 표현입니다. 문장의 사실성을 자동으로 증명하지는 않습니다.</small>`;toast('주민의 표현을 기록했습니다.');}
+    catch(error){const p=document.getElementById('expression-status');if(p)p.textContent=(error as Error).message;}
+    finally{submit.disabled=false;}
+  };
+});
+
+document.addEventListener('click',event=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('#build-position,#land-market');if(!button||cloudMode&&!isOwner())return;
+  const v=state.civilization.settlements.find(v=>v.id===state.civilization.focus)!;
+  if(button.id==='build-position') {
+    openDialog(`<h2>위치를 골라 건설하기</h2><p>${esc(v.name)} 중심 (${v.center.x}, ${v.center.y})에서 24칸 이내의 연결된 빈 풀밭에 건설합니다. 공동 목재를 실제로 사용합니다.</p><form id="placed-build"><label>건물<select name="kind"><option value="home">주택 · 목재 12</option><option value="farm">농장 · 목재 16</option></select></label><label>가로 좌표<input name="x" type="number" min="0" max="${state.width-1}" required value="${v.center.x}"/></label><label>세로 좌표<input name="y" type="number" min="0" max="${state.height-1}" required value="${v.center.y}"/></label><button class="button primary">이 위치에 건설</button><p id="frontier-status" role="status"></p></form>`);
+    $<HTMLFormElement>('placed-build').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget as HTMLFormElement,data=new FormData(form),submit=form.querySelector('button')!;submit.disabled=true;try{const kind=data.get('kind') as 'home'|'farm',position={x:Number(data.get('x')),y:Number(data.get('y'))};if(cloudMode)await cloud!.send({type:'build',settlementId:v.id,kind,position});else {sim.build(v.id,kind,position);render();localSave();}$<HTMLDialogElement>('detail-dialog').close();toast('선택한 위치에 건설했습니다.');}catch(error){$('frontier-status').textContent=(error as Error).message;}finally{submit.disabled=false;}};
+  } else {
+    const homes=state.buildings.filter(b=>b.kind==='home'&&b.settlementId===v.id&&landQuote(state,b.id).available);
+    const people=state.npcs.filter(n=>n.alive&&n.identity.age>=18&&n.settlementId===v.id);
+    openDialog(`<h2>주택 부지 거래</h2><p>공동체 소유 또는 소유자가 살고 있지 않은 주택의 부지와 건물을 거래합니다. 가격은 단계당 20코인이며 대금은 공동 시장 또는 기존 소유자에게 이전합니다. 기존 거주자를 퇴거시키지 않습니다.</p>${homes.length?`<form id="land-trade"><label>매물<select name="building">${homes.map(b=>`<option value="${esc(b.id)}">${esc(b.name)} (${b.position.x}, ${b.position.y}) · ${landQuote(state,b.id).price}코인</option>`).join('')}</select></label><label>매수 주민<select name="buyer">${people.map(n=>`<option value="${esc(n.id)}">${esc(n.identity.name)} · 보유 ${n.wealth}코인</option>`).join('')}</select></label><button class="button primary">소유권과 대금 이전</button><p id="frontier-status" role="status"></p></form>`:'<p>지금 거래할 수 있는 주택이 없습니다. 새집을 건설하면 공동체 소유의 매물이 생깁니다.</p>'}`);
+    const form=document.getElementById('land-trade') as HTMLFormElement|null;
+    if(form) { const updateBuyer=()=>{const select=form.querySelector<HTMLSelectElement>('[name=buyer]')!,building=form.querySelector<HTMLSelectElement>('[name=building]')!.value,quote=landQuote(state,building);for(const option of select.options){const n=state.npcs.find(n=>n.id===option.value)!;option.disabled=n.wealth<quote.price||quote.sellers.includes(n.id);}if(select.selectedOptions[0]?.disabled)select.value=[...select.options].find(o=>!o.disabled)?.value??'';form.querySelector('button')!.disabled=!select.value;};form.querySelector<HTMLSelectElement>('[name=building]')!.onchange=updateBuyer;updateBuyer(); }
+    if(form)form.onsubmit=async e=>{e.preventDefault();const data=new FormData(form),buildingId=String(data.get('building')),buyerId=String(data.get('buyer')),price=landQuote(state,buildingId).price,submit=form.querySelector('button')!;submit.disabled=true;try{if(cloudMode)await cloud!.send({type:'land-trade',buildingId,buyerId,price});else{sim.tradeLand(buildingId,buyerId,price);render();localSave();}$<HTMLDialogElement>('detail-dialog').close();toast('부지 소유권과 대금을 이전했습니다.');}catch(error){$('frontier-status').textContent=(error as Error).message;}finally{submit.disabled=false;}};
+  }
 });

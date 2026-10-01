@@ -1,0 +1,69 @@
+{
+  "version": "0.22.0",
+  "recordedAt": "2026-10-01T23:56:22.337043+00:00",
+  "scope": "EXPANSION_PLAN.md",
+  "core": {
+    "fullPassed": 241,
+    "finalRelatedPassed": 17,
+    "newTestsInFinalRelated": 1,
+    "finalSuiteInventory": 242
+  },
+  "browser": {
+    "fullPassed": 70,
+    "skippedRealChrome": 1,
+    "finalRelatedPassed": 7
+  },
+  "regression": {
+    "report": "expansion-regression.json",
+    "completed": true,
+    "cases": 9,
+    "longTerm": "3 seeds x 12 residents x 365 days x off/mock",
+    "scale": [
+      "300 residents x 30 days",
+      "1000 residents x 3 days",
+      "3000 residents x 1 day"
+    ],
+    "accountingErrors": 0,
+    "missingArchiveReferences": 0
+  },
+  "scaleProfile": "scale-profile-v022.json",
+  "largeUpload": {
+    "realLocalWorker": true,
+    "bytesAbove": 10000000,
+    "fileLimitBytes": 24000000,
+    "atomicApplyAndBackup": true,
+    "resumedPartsAndLease": true
+  },
+  "replay": {
+    "hashChain": true,
+    "engineCommandReplay": true,
+    "approvedExpressionResult": true,
+    "damagedInputsRejected": true,
+    "worldUnaffected": true
+  },
+  "priorFailures": [
+    {
+      "stage": "first full core",
+      "reason": "Circular imports of new schema definitions caused module initialization failures. Extracted schema into expansion-schema.ts. Full rerun passed."
+    },
+    {
+      "stage": "first expansion browser",
+      "reason": "Initial buyer selection could default to an unaffordable parcel. Disabled ineligible choices and chose an eligible buyer. Rerun passed."
+    },
+    {
+      "stage": "first full browser",
+      "passed": 69,
+      "skipped": 1,
+      "failed": 1,
+      "reason": "Navigation aborted during source edits/development reload in multiplayer test. Frozen-source full rerun passed 70, skipped 1."
+    }
+  ],
+  "build": "pending exact-commit build",
+  "boundaries": [
+    "No new real Chrome Korean inference/quality success claimed. Mocked API, unsupported behavior, and server evidence validation are separately covered.",
+    "No real invited-person login performed.",
+    "Production CPU/memory are not exposed by application API; UI labels unavailable. CPU/heap in regression are local Node measurements including archive/verification overhead.",
+    "Spatial microbenchmark improves index costs, not a claim of whole-server speedup. No approximate physics or distributed servers introduced.",
+    "Engine replay compares commands at identical source fingerprint; model outcomes and world replacement replay recorded accepted state transitions."
+  ]
+}

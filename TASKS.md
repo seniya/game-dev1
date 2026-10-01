@@ -1,6 +1,6 @@
 # 구현 작업
 
-현재 앱은 **v0.21.0**이다. 최신 추가 개발 범위는 [OPERATIONS_PLAN](OPERATIONS_PLAN.md), 실행·배포 결과는 [보고서 안내](reports/README.md)를 따른다. 문서 탐색은 [DOCUMENTATION](DOCUMENTATION.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)을 참고한다.
+현재 앱은 **v0.22.0**이다. 최신 추가 개발 범위는 [EXPANSION_PLAN](EXPANSION_PLAN.md), 실행·배포 결과는 [보고서 안내](reports/README.md)를 따른다. 문서 탐색은 [DOCUMENTATION](DOCUMENTATION.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)을 참고한다.
 
 아래 목록은 도입 순서의 누적 기록이다. 테스트 개수·상한·접근 정책은 당시 기준이며 현재 상태와 혼동하지 않는다. 구현·검증 완료 시 실제 결과로 갱신하고 실패·재검증·건너뜀도 보존한다.
 
@@ -309,3 +309,17 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - [x] 기존 epoch의 사건·생성자·개인 기록을 보존하며 백업 복원. 현재 대기 진행의 백업, 한 번의 트랜잭션·중복/동시성·손상 검사.
 - [x] 코어/서버 232개·브라우저 66개 통과, 실제 Chrome 1개 건너뜀. 신규 화면 3개 별도 통과. TypeScript/production build 통과. 원본 기록: reports/storage-operations-validation.json.
 - [x] 같은 custom 프로젝트 **Sites 버전 32 succeeded**. 소스 `698739a2c3e0bc055af94fe1b312d4b9c1de9641`에서 만든 빌드·운영 JS/CSS 일치, 확정 세계 행·접근 정책 유지, 배포 직전/직후 미확정 진행 없음. 최초 잘못된 아카이브 경로의 거부와 수정도 reports/deployment-v021.json에 기록.
+
+
+## v0.22 · 운영·대용량 복원·재생·표현·세계 확장 — 2026-10-02
+
+사용자가 후속 제안 1~5번 전체 개발과 완료를 지시했다. 구체적인 범위·상한은 [EXPANSION_PLAN](EXPANSION_PLAN.md)을 따른다.
+
+- [x] 요청 지연·오류의 제한된 Worker 표본, 제공자 D1 물리 크기·쿼리 시간, 소유자 운영 경고. CPU·메모리 미제공을 명시하며 2초 동기화의 추가 쓰기 없음.
+- [x] 10MB 초과~24MB 분할 업로드·해시·재개·검증 임시 상태·원자적 적용·백업·만료 정리.
+- [x] 최대 500회·16MB·30일의 선택적 확정 기록, 명령·승인된 AI 결과 보존, 상태 해시 재생 및 같은 엔진의 명령 재실행 검사.
+- [x] 주민 질문·성찰, Chrome 한국어 별도 세션·공유 예산/실행권, Mock 및 명시적인 remote 모드, 근거·세계 세대 검사와 즉시 저장.
+- [x] 위치 지정 건축, 실제 자금과 소유권을 이전하는 주택 부지 거래, 제한된 야생동물 생태와 기록·지도, 정확한 공간 색인 재사용.
+- [x] 전체 코어·서버 241개 및 브라우저 70개 통과/실제 Chrome 1개 건너뜀. 마지막 입력 검증·표시 보완 후 관련 서버 17개(신규 1개 포함), 브라우저 7개 통과. 초기 실패와 수정 결과는 [검증 보고서](reports/expansion-validation.json)에 보존.
+- [x] 3시드 × off/Mock × 365일 6조건과 300명 30일·1,000명 3일·3,000명 1일: 회계 오차 0·원본 사건 근거 누락 0·복원 연속성. [회귀](reports/expansion-regression.json), [공간 색인 프로파일](reports/scale-profile-v022.json).
+- [ ] 정확한 소스 커밋의 production build·같은 custom 사이트 배포 확인.

@@ -43,7 +43,7 @@ export class CloudClient {
         if (response!.status === 409 && action.type === 'sync') return;
         throw new Error(result.error ?? '서버에 저장하지 못했습니다.');
       }
-      if (['create-character', 'reset', 'import', 'restore-backup'].includes(action.type)) this.session = await this.get<SessionView>('session');
+      if (['create-character', 'reset', 'import', 'import-upload', 'restore-backup'].includes(action.type)) this.session = await this.get<SessionView>('session');
       this.accept(result);
     };
     const result = this.queue.then(run);

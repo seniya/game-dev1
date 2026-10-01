@@ -17,5 +17,5 @@ export function observationView(w: WorldState) {
     return `<article class="observation-task ${t.value >= t.target ? 'complete' : ''}"><div><b>${t.title}</b><span>${t.value >= t.target ? '✓ 충족' : '관찰 중'}</span></div><p>${t.hint}</p><progress aria-label="${t.title}" value="${Math.min(t.value,t.target)}" max="${t.target}"></progress><footer><span>${t.value} / ${t.target}${t.unit}</span>${event ? `<button class="text-button" data-event="${esc(event.id)}">최근 장면 보기 ↗</button>` : '<span class="muted">아직 해당 장면이 없습니다</span>'}</footer></article>`;
   }).join('')}</div>
   <div class="village-projects"><div><b>${esc(v.name)}에 남기는 작은 변화</b><p>공동 목재 ${stock.wood}개 · 집은 4명의 주거 공간, 농장은 시간이 지나며 자라나는 식량 생산지입니다.</p></div><div><button class="button" data-build="home" ${stock.wood < 12 ? 'disabled' : ''}>새집 짓기 · 목재 12</button><button class="button" data-build="farm" ${stock.wood < 16 ? 'disabled' : ''}>농장 짓기 · 목재 16</button></div></div>
-  <p class="observation-footnote">건설은 공동 재고를 사용하고 기록에 남습니다. 새로 시작하면 현재 세계는 교체 전 백업에 보관됩니다.</p>`;
+  <div><button class="button" id="build-position">위치를 골라 건설하기</button><button class="button" id="land-market">주택 부지 거래</button></div><p class="observation-footnote">건설은 공동 재고를 사용하고 기록에 남습니다. 새로 시작하면 현재 세계는 교체 전 백업에 보관됩니다.</p>`;
 }

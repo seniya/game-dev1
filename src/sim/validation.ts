@@ -1,3 +1,4 @@
+import { frontierSchema, validateFrontier } from './frontier';
 import { gatheringsSchema, validateGatherings } from './gatherings-validation';
 import { requestsSchema, emptyRequests } from './requests-types';
 import { cognitionSchema, validateCognition } from './cognition-validation';
@@ -50,6 +51,7 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
+  frontier: frontierSchema.optional(),
   gatherings: gatheringsSchema.optional(),
   version: z.literal(9), observation: z.object({ watchIds: z.array(z.string().min(1).max(100)).max(12) }).strict(), requests: requestsSchema, living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(24576),
@@ -113,6 +115,7 @@ export function validateSave(input: unknown): WorldState {
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
   const w = parsed.data as WorldState;
   const ensure = (condition: unknown, message: string) => { if (!condition) throw new Error(`저장 파일 무결성 오류: ${message}`); };
+  validateFrontier(w,ensure);
   ensure(w.tiles.length === w.width * w.height, '지도 크기');
   const ids = new Set<string>(), events = new Map(w.events.map(e => [e.id, e])), npcs = new Set(w.npcs.map(n => n.id)), buildings = new Map(w.buildings.map(b => [b.id, b]));
   const register = (value: string) => { ensure(!ids.has(value), `중복 ID ${value}`); ids.add(value); if (/^[emqlgcj]\d+$/.test(value)) ensure(Number(value.slice(1)) < w.nextId, '다음 ID'); };

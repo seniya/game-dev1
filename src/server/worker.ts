@@ -1,3 +1,7 @@
+import { expressionAPI } from './expressions';
+import { startReplay, exportReplay, verifyReplay } from './replay';
+import { uploadRequest, prepareUpload } from './uploads';
+import { operationsStatus, recordRequest } from './operations';
 import { personalObservation } from './personal-observation';
 import { storageStatus } from './storage-status';
 import { WorldStore } from './store';
@@ -20,7 +24,7 @@ import { CHROME_COLLECT_MS } from '../llm/chrome-contract';
 interface Env extends ModelEnv, AccessEnv { DB: D1Database; ASSETS: Fetcher }
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 const parseEvent = (row: { body: string }) => JSON.parse(row.body) as WorldEvent;
-export default {
+const handler = {
   async fetch(request: Request, env: Env, context?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request as never) as unknown as Promise<Response>;
@@ -35,6 +39,10 @@ export default {
       await store.init(Date.now());
       const member = await memberFor(env.DB, principal);
       await claimLegacyResidents(env.DB, member, () => store.read());
+      if (url.pathname === '/api/expressions' && request.method === 'POST') { requireOwner(member); const body=await request.text(); if(body.length>6000)return json({error:'주민 표현 요청이 너무 큽니다.'},413);return json(await expressionAPI(store,member.id,JSON.parse(body),env)); }
+      if (url.pathname === '/api/replay' && request.method === 'POST') { requireOwner(member); const body=await request.text(); if(body.length>100) return json({error:'저장 검증 요청이 너무 큽니다.'},413); const input=JSON.parse(body); if(input.type==='start') return json(await startReplay(env.DB,await new WorldStore(env.DB).read(),Date.now())); if(input.type==='stop'){await env.DB.batch([env.DB.prepare("UPDATE replay_session SET status='stopped' WHERE id=1 AND status='recording'")]);return json({message:'검증 기록을 중지했습니다. 기존 기록은 내려받거나 검증할 수 있습니다.'});} if(input.type==='export')return json(await exportReplay(env.DB)); if(input.type==='check') {const {world:_,...result}=await verifyReplay(await exportReplay(env.DB));return json(result);} return json({error:'저장 검증 요청을 확인해 주세요.'},400); }
+      if (url.pathname === '/api/uploads' && request.method === 'POST') { requireOwner(member); const body=await request.text(); if(new TextEncoder().encode(body).length>150_000) return json({error:'저장 업로드 조각이 너무 큽니다.'},413); return json(await uploadRequest(store, member.id, JSON.parse(body))); }
+      if (url.pathname === '/api/operations' && request.method === 'GET') { requireOwner(member); return json(await operationsStatus(env.DB)); }
       if (url.pathname === '/api/storage' && request.method === 'GET') { requireOwner(member); return json(await storageStatus(new WorldStore(env.DB))); }
       if (url.pathname === '/api/session' && request.method === 'GET') return json(await sessionView(env.DB, member, await store.read(), principal.local));
       if (url.pathname === '/api/personal-observation') {
@@ -118,10 +126,11 @@ export default {
         if (command.revision !== current.revision) return json({ error: '다른 기기의 최신 상태를 반영했습니다. 변경을 다시 선택해 주세요.', world: viewWorld(current) }, 409);
         if (command.action.type === 'create-character') await checkCreation(env.DB, member, current);
         const acceptedAt = Date.now();
-        const { world, events, motion } = command.action.type === 'restore-backup'
+        const uploaded = command.action.type === 'import-upload' ? await prepareUpload(store,current,member.id,command.action.upload,command.id,acceptedAt) : undefined;
+        const { world, events, motion } = uploaded ?? (command.action.type === 'restore-backup'
           ? { world: await store.restoreBackup(current, command, acceptedAt), events: [], motion: undefined }
-          : await applyCommand(current, command, acceptedAt);
-        try { await store.commit(world, events, canonical, command.id, creationStatements(env.DB, member, world, command), { action: command.action, at: acceptedAt }); }
+          : await applyCommand(current, command, acceptedAt));
+        try { await store.commit(world, events, canonical, command.id, [...creationStatements(env.DB, member, world, command), ...(uploaded?.extra ?? [])], { action: command.action, at: acceptedAt }); }
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
         wakeAI(); return json(viewWorld(world, motion));
       }
@@ -173,11 +182,19 @@ export default {
       }
       return json({ error: '지원하지 않는 요청입니다.' }, 404);
     } catch (error) {
+      if (error instanceof Conflict) return json({error:error.message},409);
       if (error instanceof AccessError) return json({ error: error.message }, error.status);
       if (error instanceof SyntaxError) return json({ error: 'JSON 형식을 확인해 주세요.' }, 400);
-      if (error instanceof Error && /관찰|저장|주민|시드|도시 정책|역사 조회|도시 의회|공동 목재|마을을 찾을|지원하지 않는 건물|부탁/.test(error.message)) return json({ error: error.message }, 400);
+      if (error instanceof Error && /관찰|저장|주민|시드|도시 정책|역사 조회|도시 의회|공동 목재|마을 부지|마을을 찾을|지원하지 않는 건물|부탁/.test(error.message)) return json({ error: error.message }, 400);
       console.error('World request failed', error instanceof Error ? error.message : 'unknown');
       return json({ error: '서버 처리에 실패했습니다. 세계는 마지막 저장 상태로 유지됩니다.' }, 503);
     }
   },
 };
+
+export default { async fetch(request: Request, env: Env, context?: ExecutionContext) {
+  const started = performance.now();
+  const response = await handler.fetch(request, env, context);
+  if (new URL(request.url).pathname.startsWith('/api/')) recordRequest(new URL(request.url).pathname, performance.now() - started, response.status);
+  return response;
+} };

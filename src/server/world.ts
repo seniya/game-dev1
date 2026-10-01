@@ -22,13 +22,15 @@ export const commandSchema = z.object({
     z.object({ type: z.literal('detail'), focus: z.string().max(100), detail: z.enum(['full', 'focused']) }).strict(),
     z.object({ type: z.literal('sync') }).strict(),
     z.object({ type: z.literal('save') }).strict(),
+    z.object({ type: z.literal('import-upload'), upload: z.string().uuid() }).strict(),
     z.object({ type: z.literal('restore-backup'), epoch: z.string().min(1).max(100) }).strict(),
     z.object({ type: z.literal('play'), running: z.boolean() }).strict(),
     z.object({ type: z.literal('speed'), speed: z.union([z.literal(1), z.literal(5), z.literal(20)]) }).strict(),
     z.object({ type: z.literal('offline'), enabled: z.boolean() }).strict(),
     z.object({ type: z.literal('step'), ticks: z.union([z.literal(1), z.literal(12), z.literal(144)]) }).strict(),
     z.object({ type: z.literal('request'), requestId: z.string().min(1).max(100), choice: z.enum(REQUEST_CHOICES) }).strict(),
-    z.object({ type: z.literal('build'), settlementId: z.string().max(100), kind: z.enum(['home', 'farm']) }).strict(),
+    z.object({ type: z.literal('build'), settlementId: z.string().max(100), kind: z.enum(['home', 'farm']), position: z.object({x:z.number().int().min(0).max(191),y:z.number().int().min(0).max(127)}).strict().optional() }).strict(),
+    z.object({ type:z.literal('land-trade'),buildingId:z.string().max(100),buyerId:z.string().max(100),price:z.number().int().min(1).max(1000) }).strict(),
     z.object({ type: z.literal('experiment'), kind: z.enum(['food', 'drought']) }).strict(),
     z.object({ type: z.literal('llm'), enabled: z.boolean() }).strict(),
     z.object({ type: z.literal('ai-mode'), mode: z.enum(['off', 'mock', 'remote', 'chrome']) }).strict(),
@@ -85,6 +87,7 @@ export function compactWorld(w: WorldState): WorldState {
   w.urban?.enterprises.forEach(e => { if (e.sourceEventId) keep.add(e.sourceEventId); });
   w.urban?.freight.forEach(f => keep.add(f.sourceEventId));
   w.urban?.samples.forEach(s => keep.add(s.eventId));
+  w.frontier?.habitats.forEach(h=>keep.add(h.lastEventId));
   w.heritage?.habitats.forEach(h => { if (h.lastEventId) keep.add(h.lastEventId); });
   w.heritage?.councils.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); });
   w.heritage?.accords.forEach(r => { if (r.lastEventId) keep.add(r.lastEventId); if (r.deliveryEventId) keep.add(r.deliveryEventId); });
@@ -103,6 +106,7 @@ export function compactWorld(w: WorldState): WorldState {
   return { ...w, events: w.events.filter(e => keep.has(e.id)) };
 }
 export async function applyCommand(current: StoredWorld, command: Command, now: number): Promise<{ world: StoredWorld; events: WorldEvent[]; replaced: boolean; motion?: MotionTrace }> {
+  if (command.action.type === 'import-upload') throw new Error('저장 업로드는 서버 저장소에서 적용합니다.');
   if (command.action.type === 'restore-backup') throw new Error('저장된 서버 백업은 서버 저장소에서 복원해야 합니다.');
   const meta = { ...current.meta };
   let sim = Simulation.load(JSON.stringify(current.state));
@@ -142,7 +146,8 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   if (a.type === 'detail') sim.setDetail(a.focus, a.detail);
   if (a.type === 'watch') sim.watchResident(a.npcId, a.enabled);
   if (a.type === 'request') sim.respondToRequest(a.requestId, a.choice);
-  if (a.type === 'build') sim.build(a.settlementId, a.kind);
+  if (a.type === 'build') sim.build(a.settlementId, a.kind, a.position);
+  if (a.type === 'land-trade') sim.tradeLand(a.buildingId,a.buyerId,a.price);
   if (a.type === 'experiment') sim.experiment(a.kind);
   if (a.type === 'llm' || a.type === 'ai-mode') {
     meta.aiMode = a.type === 'ai-mode' ? a.mode : a.enabled ? 'mock' : 'off';

@@ -269,6 +269,12 @@ export class WorldMap {
       ctx.beginPath(); ctx.ellipse(x, y + 8, target.kind === 'building' ? 34 : 23, 13, 0, 0, Math.PI * 2); ctx.stroke();
       this.label(ctx, objectName(w, target) ?? '', x, y - (target.kind === 'building' ? buildingBounds(obj as WorldState['buildings'][number]).height + 15 : 52), true, target === this.selectedObject ? 100 : 90, `object:${target.id}`);
     }
+    for (const a of w.frontier?.animals??[]) {
+      if (!this.inView(a.position)) continue;
+      const x=(a.position.x+.3)*c,y=(a.position.y+.35)*c;
+      ctx.fillStyle=a.species==='hare'?'#e1c9a5':'#99724c';ctx.beginPath();ctx.ellipse(x,y,a.species==='hare'?5:9,5,0,0,Math.PI*2);ctx.fill();
+      ctx.fillRect(x-2,y-10,2,7);ctx.fillRect(x+2,y-11,2,8);ctx.fillStyle='#342e24';ctx.fillRect(x+4,y-2,2,2);
+    }
     const occupants = new Map<string, number>();
     this.displayed.clear();
     const visible = this.residents.map(n => ({ n, p: this.motion.position(n.id, now) ?? n.position })).filter(({ p }) => this.inView(p)).sort((a, b) => a.n.id === this.selected ? 1 : b.n.id === this.selected ? -1 : a.p.y - b.p.y);

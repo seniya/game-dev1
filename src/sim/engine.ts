@@ -1,3 +1,4 @@
+import { wildlifeDay, tradeLand } from './frontier';
 import { proposeGatherings, updateGatherings, gatheringCandidate } from './gatherings';
 import { respondToRequest, updateRequests } from './requests';
 import type { RequestChoice } from './requests-types';
@@ -142,6 +143,7 @@ export class Simulation {
     const weatherName = { rain: '비', cloudy: '흐림', sunny: '맑음', drought: '가뭄' }[w.weather];
     appendEvent(w, { kind: 'weather', importance: 20, description: `${dayOf(w.tick)}일째 · ${weatherName}. ${w.weather === 'drought' ? '농장과 열매의 생산량이 감소한다.' : '새로운 하루가 시작되었다.'}` });
     ecologyDay(w);
+    wildlifeDay(w);
     sampleDay(w);
     for (const n of w.npcs) {
       n.dailyTaken = 0;
@@ -330,11 +332,12 @@ export class Simulation {
     n.goals = n.goals.filter(g => g.id !== goal?.id);
     socialEvent(w, { kind: 'project', actorId: n.id, locationId: b.id, importance: 75, description: `${n.identity.name}이 목재 8개로 ${b.name}을 개선했다. (단계 ${b.level})`, causeId: goal?.sourceEventId, data: { woodCost: 8, personalWood: own, communalWood: 8 - own, level: b.level, growthMultiplier: b.kind === 'farm' ? 1 + (b.level - 1) * .35 : 1 } });
   }
-  build(settlementId: string, kind: 'home' | 'farm') {
+  tradeLand(buildingId:string,buyerId:string,price:number) { tradeLand(this.state,buildingId,buyerId,price); }
+  build(settlementId: string, kind: 'home' | 'farm', position?:{x:number;y:number}) {
     if (kind !== 'home' && kind !== 'farm') throw new Error('지원하지 않는 건물입니다.');
     const v = this.state.civilization.settlements.find(v => v.id === settlementId);
     if (!v) throw new Error('마을을 찾을 수 없습니다.');
-    const b = buildHouse(this.state, v, kind, true);
+    const b = buildHouse(this.state, v, kind, true, position);
     if (!b) throw new Error('공동 목재가 부족하거나 연결된 빈 건설 부지가 없습니다.');
     return b.id;
   }
@@ -391,6 +394,11 @@ export class Simulation {
     appendEvent(w, { kind: 'llm', actorId: speakerId, targetId: listenerId, causeId: evidence[0], importance: 30,
       description: `${speaker.identity.name}가 ${listener.identity.name}에게 떠올린 말: ${text}`, data: { text, evidence, requestId, model, dialogue: true } });
     return true;
+  }
+  recordExpression(npcId:string,kind:'dialogue'|'reflection',text:string,evidence:string[],requestId:string,model:string,question:string) {
+    const w=this.state,n=w.npcs.find(n=>n.id===npcId&&n.alive);
+    if(!n||!text.trim()||text.length>500||!evidence.length||evidence.length>5||evidence.some(id=>!eventById(w,id)||!n.memories.some(m=>m.sourceEventId===id)))return false;
+    appendEvent(w,{kind:'llm',actorId:n.id,causeId:evidence[0],importance:35,description:`${n.identity.name}의 ${kind==='reflection'?'성찰':'답변'} (${model==='mock'?'규칙 기반 예시':'AI 표현'}): ${text}`,data:{expression:kind,text,evidence,requestId,model,question}});return true;
   }
   failDecision(requestId: string, reason: string, retry = true) {
     const w = this.state, request = w.llm.queue.find(q => q.id === requestId); if (!request) return;
