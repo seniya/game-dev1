@@ -246,3 +246,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 사람의 실제 타 계정 로그인 검증은 요청에 따라 제외했다. 새 실모델 추론·사람의 자연스러움 평가·production 365일 부하를 자동 테스트 성공으로 표현하지 않는다. Chrome 우선과 외부 API 명시 선택, 초대 전용 `custom` 접근, 기존 세계·설정, v0.16 저장 정책을 유지한다.
 
 - [x] 최종 초대 우선순위로 **3시드 × off/Mock 6조건 × 365일** 완료. 100일·365일 비교와 일별 회계·복원, 30일 간격 독립 이어 실행, 원본 근거·중복 참석·정체 검사 통과. 모든 조건 자원/상품 회계 오차와 원본 근거 누락 0. 시드별 독립 실행을 완료 후 합쳤으며 이전 v0.17 보고서는 보존했다. `reports/recurring-observation-regression.json`.
+
+- [x] TypeScript 및 production Worker/UI build 통과. 소스 `07afd52e49b60347594eba46f38aae23567dd881`와 그 커밋에서 생성한 아티팩트를 기존 사이트 **Sites 버전 29**로 저장·배포하여 `succeeded` 확인. 배포 직전 D1에 미확정 진행 행이 없었으며, 배포 후 같은 epoch·revision 3766·사건 12,340건·시계·재생/배속/비접속/Chrome 설정이 바이트 단위로 동일했다. `custom` 접근과 기존 초대 목록을 유지했다. 별도 로그인 신원을 만들거나 외부 사람을 초대하지 않았다. `reports/deployment-v018.json`.

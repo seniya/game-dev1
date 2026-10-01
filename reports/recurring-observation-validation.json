@@ -34,5 +34,11 @@
     "days": 365,
     "missingEvidence": 0,
     "allResourceBalanceErrors": 0
-  }
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "sourceCommit": "07afd52e49b60347594eba46f38aae23567dd881"
+  },
+  "deployment": "reports/deployment-v018.json"
 }
