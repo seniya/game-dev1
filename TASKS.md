@@ -184,3 +184,5 @@
 - [x] 코어·서버 **169개** (전체 실행 168개 + 반복 부탁 추가 회귀 1개), 브라우저 전체 **46개**, 관찰 화면 보완 후 관련 **3개** 재검증. 실제 Chrome 추론 **1개 건너뜀**. production Worker/UI build 통과.
 
 결과와 운영 한계: reports/README.md, reports/observation-validation.json, reports/observation-regression.json. 시드 42 지원 조건의 식량 부족 사망 2건과 이주 기록은 reports/observation-death-evidence.json에 보존했다. 배포 결과는 reports/deployment-v013.json을 따른다.
+
+- [x] 소스 `51aff1b2fb9e5131cdb8b00fd5c35251e2fce5bc`와 해당 빌드를 기존 소유자 전용 사이트 **Sites 버전 24**로 배포, `succeeded` 확인. 운영 JS/CSS 해시 일치, v9 읽기·요약/이야기 API 200 확인. 같은 세계와 기존 사건 6,755건을 보존했다. 재생 설정이 유지되어 배포 확인 중 144틱이 정상 진행됐으며 세계를 초기화하거나 되돌리지 않았다.

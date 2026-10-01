@@ -1,0 +1,66 @@
+{
+  "id": "appgdep_6abdc6ce48e88191a4c3358b0be042a9",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_6e3fa93b4440819189392bcc9a68d4ea",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 0,
+  "updated_at": "2026-10-01T02:35:11.964461+00:00",
+  "source_commit": "51aff1b2fb9e5131cdb8b00fd5c35251e2fce5bc",
+  "sites_version": 24,
+  "unit_server_tests_passed": 169,
+  "browser_scenarios_passed": 46,
+  "real_chrome_inference_skipped": 1,
+  "long_regression": {
+    "conditions": 6,
+    "daysPerCondition": 365,
+    "checkpoints": [
+      100,
+      365
+    ],
+    "resourceBalanceErrors": 0,
+    "missingEvidence": 0,
+    "saveContinuity": true
+  },
+  "archive_sha256": "e5953160aae8d22efa00aa52d29aa0839cdd0729e8d094c3be6605af256ec81c",
+  "production_smoke": {
+    "http_status": 200,
+    "assets": [
+      {
+        "path": "/assets/index-BG8xEuy9.js",
+        "status": 200,
+        "sha256_matches_build": true
+      },
+      {
+        "path": "/assets/index-DV4NRf2c.css",
+        "status": 200,
+        "sha256_matches_build": true
+      }
+    ],
+    "api_status": 200,
+    "world_version": 9,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "tick": 2651,
+    "population": 12,
+    "eventCount": 7186,
+    "aiMode": "mock",
+    "running_setting_preserved": true,
+    "same_world_epoch": true,
+    "all_prior_npc_ids_present": true,
+    "prior_events_preserved": 6755,
+    "ticks_advanced_during_publication_checks": 144,
+    "world_reset": false,
+    "watchIds": [],
+    "observer_status": 200,
+    "observer_total": 4106,
+    "observer_highlights": 3,
+    "story_status": 200,
+    "story_total": 80
+  }
+}
