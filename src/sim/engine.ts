@@ -37,6 +37,15 @@ export class Simulation {
     const sim = new Simulation(); sim.state = state; return sim;
   }
   respondToRequest(id: string, choice: RequestChoice) { respondToRequest(this.state, id, choice); }
+  watchResident(id: string, enabled: boolean) {
+    const ids = this.state.observation.watchIds;
+    if (!this.state.npcs.some(n => n.id === id)) throw new Error('관심 주민을 찾을 수 없습니다.');
+    if (enabled && !ids.includes(id)) {
+      if (ids.length >= 12) throw new Error('관심 주민은 최대 12명입니다.');
+      ids.push(id);
+    }
+    if (!enabled) this.state.observation.watchIds = ids.filter(value => value !== id);
+  }
   snapshot(): WorldState { return structuredClone(this.state); }
   save(): string { return JSON.stringify(this.state); }
   get tick(): number { return this.state.tick; }
@@ -165,7 +174,7 @@ export class Simulation {
     const w = this.state, a = n.currentAction!, stock = stocks(w, n.settlementId), localMarket = market(w, n.settlementId);
     if (distance(n.position, a.target) !== 0) { this.fail(n, '목적지에 도착하지 않았다.'); return; }
     const found = person(w, a.targetId), other = found?.alive ? found : undefined;
-    const simple = (kind: WorldEvent['kind'], description: string, importance = 15, data: WorldEvent['data'] = {}) => appendEvent(w, { kind, actorId: n.id, description, importance, data });
+    const simple = (kind: WorldEvent['kind'], description: string, importance = 15, data: WorldEvent['data'] = {}) => appendEvent(w, { kind, actorId: n.id, locationId: w.buildings.find(b => b.id === a.targetId)?.id, description, importance, data: { ...data, action: a.kind } });
     switch (a.kind) {
       case 'Idle': n.needs.fatigue = clamp(n.needs.fatigue - 2); break;
       case 'Move': break;

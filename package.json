@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -15,6 +15,7 @@
     "regression:heritage": "tsx src/heritage-regression.ts",
     "regression:urban": "tsx src/urban-regression.ts",
     "regression:living": "tsx src/living-regression.ts",
+    "regression:observation": "tsx src/observation-regression.ts",
     "regression:small-village": "tsx src/small-village-regression.ts"
   },
   "devDependencies": {

@@ -1,0 +1,54 @@
+{
+  "applicationVersion": "0.13.0",
+  "saveVersion": 9,
+  "unitAndServerTests": {
+    "passed": 169,
+    "failed": 0,
+    "fullSuitePassed": 168,
+    "additionalCooldownRegressionPassed": 1,
+    "latestObserverSubsetPassed": 8
+  },
+  "browserTests": {
+    "passed": 46,
+    "failed": 0,
+    "skipped": 1,
+    "skipReason": "Real Chrome inference remains opt-in; no new real-model inference success is claimed.",
+    "latestObserverSubsetPassed": 3
+  },
+  "build": {
+    "typescript": true,
+    "worker": true,
+    "ui": true
+  },
+  "productionSaveMigration": {
+    "sourceVersion": 8,
+    "targetVersion": 9,
+    "tick": 2507,
+    "population": 12,
+    "events": 6755,
+    "unchanged": [
+      "tick",
+      "npcs",
+      "storage",
+      "market",
+      "buildings",
+      "tiles",
+      "events",
+      "llm"
+    ],
+    "source": "Read-only export of the existing private production world; migration tested locally."
+  },
+  "checks": [
+    "Daily and three-day support measurements with bounded evidence and cancellation on life/residence changes",
+    "Version 8 checkpoint plus pending deltas upgraded atomically before watch command",
+    "Archive totals, frozen pagination, same-tick return boundary, world identity isolation",
+    "Watch selection persisted across browsers and export without affecting simulation rules",
+    "Real action progress, destinations and completion records",
+    "Help/family/birth/care evidence and hearsay labels",
+    "Desktop 1440px, mobile 390px, no horizontal overflow",
+    "Late history response cannot reopen a closed dialog",
+    "Full-history and compacted checkpoint simulation agree"
+  ],
+  "longRegressionReport": "observation-regression.json",
+  "deathEvidenceReport": "observation-death-evidence.json"
+}

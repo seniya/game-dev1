@@ -12,6 +12,9 @@ export const residentRequestSchema = z.object({
   status: z.enum(['open', 'deferred', 'observing', 'completed', 'declined', 'expired', 'resolved', 'cancelled']),
   createdAt: tick, expiresAt: tick, deferredUntil: tick.optional(), reviewAt: tick.optional(), closedAt: tick.optional(),
   choice: z.enum(REQUEST_CHOICES).optional(), sourceEventId: id, lastEventId: id, decisionEventId: id.optional(), resultEventId: id.optional(), buildingId: id.optional(),
+  context: z.object({ metrics: requestMetricsSchema, facts: z.array(z.string().max(300)).max(5), evidence: z.array(id).max(4) }).strict().optional(),
+  followups: z.array(z.object({ days: z.union([z.literal(1), z.literal(3)]), tick, eventId: id, metrics: requestMetricsSchema, evidence: z.array(id).max(6), needRemains: z.boolean() }).strict()).max(2).optional(),
+  followupStopped: id.optional(), followupSince: tick.optional(),
   before: requestMetricsSchema, immediate: requestMetricsSchema.optional(), after: requestMetricsSchema.optional(),
 }).strict();
 export type ResidentRequest = z.infer<typeof residentRequestSchema>;

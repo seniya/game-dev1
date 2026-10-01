@@ -1,0 +1,1269 @@
+{
+  "version": "0.13.0",
+  "completed": true,
+  "elapsedMs": 812114,
+  "results": [
+    {
+      "seed": 7,
+      "days": 100,
+      "policy": "observe-only",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 1,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 7,
+        "day": 101,
+        "elapsedDays": 100,
+        "population": 13,
+        "deaths": 0,
+        "averageFood": 836.05,
+        "storage": {
+          "food": 1292,
+          "wood": 618
+        },
+        "conflicts": 187,
+        "thefts": 53,
+        "shares": 56,
+        "strongestRelationship": {
+          "residents": "새봄26219 ↔ 하루",
+          "score": 183.29999999999995
+        },
+        "weakestRelationship": {
+          "residents": "서연 ↔ 이안",
+          "score": -50.349999999999994
+        },
+        "events": 3093,
+        "economy": {
+          "producedFood": 5147,
+          "producedWood": 1016,
+          "consumedFood": 3673,
+          "investedWood": 364,
+          "externalFood": 0,
+          "trades": 235,
+          "tradeVolume": 553,
+          "wages": 2639,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 100
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 39320,
+      "offers": 127,
+      "repeatedOffers": 106,
+      "followups": 0,
+      "deathReasons": {},
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 2901023,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 7,
+      "days": 365,
+      "policy": "observe-only",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 3,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 7,
+        "day": 366,
+        "elapsedDays": 365,
+        "population": 14,
+        "deaths": 1,
+        "averageFood": 2846.81,
+        "storage": {
+          "food": 4724,
+          "wood": 2817
+        },
+        "conflicts": 851,
+        "thefts": 265,
+        "shares": 258,
+        "strongestRelationship": {
+          "residents": "하루 ↔ 시우",
+          "score": 200
+        },
+        "weakestRelationship": {
+          "residents": "이안 ↔ 다은",
+          "score": -100
+        },
+        "events": 12084,
+        "economy": {
+          "producedFood": 19742,
+          "producedWood": 3833,
+          "consumedFood": 14465,
+          "investedWood": 919,
+          "externalFood": 0,
+          "trades": 1000,
+          "tradeVolume": 2038,
+          "wages": 9316,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 365
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 162800,
+      "offers": 445,
+      "repeatedOffers": 417,
+      "followups": 0,
+      "deathReasons": {
+        "age": 1
+      },
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 12612023,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 7,
+      "days": 100,
+      "policy": "support-affordable",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 3,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 7,
+        "day": 101,
+        "elapsedDays": 100,
+        "population": 15,
+        "deaths": 0,
+        "averageFood": 761.19,
+        "storage": {
+          "food": 1194,
+          "wood": 731
+        },
+        "conflicts": 112,
+        "thefts": 45,
+        "shares": 41,
+        "strongestRelationship": {
+          "residents": "새봄23924 ↔ 시우",
+          "score": 189.80000000000004
+        },
+        "weakestRelationship": {
+          "residents": "이안 ↔ 유준",
+          "score": -31.15
+        },
+        "events": 3223,
+        "economy": {
+          "producedFood": 5162,
+          "producedWood": 1101,
+          "consumedFood": 3821,
+          "investedWood": 345,
+          "externalFood": 0,
+          "trades": 189,
+          "tradeVolume": 401,
+          "wages": 2511,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 100
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 39348,
+      "offers": 188,
+      "repeatedOffers": 159,
+      "followups": 270,
+      "deathReasons": {},
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 3027605,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 7,
+      "days": 365,
+      "policy": "support-affordable",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 3,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 7,
+        "day": 366,
+        "elapsedDays": 365,
+        "population": 14,
+        "deaths": 1,
+        "averageFood": 2707.25,
+        "storage": {
+          "food": 4791,
+          "wood": 3208
+        },
+        "conflicts": 875,
+        "thefts": 255,
+        "shares": 151,
+        "strongestRelationship": {
+          "residents": "하루 ↔ 시우",
+          "score": 200
+        },
+        "weakestRelationship": {
+          "residents": "이안 ↔ 다은",
+          "score": -100
+        },
+        "events": 12441,
+        "economy": {
+          "producedFood": 20300,
+          "producedWood": 4148,
+          "consumedFood": 14896,
+          "investedWood": 863,
+          "externalFood": 0,
+          "trades": 978,
+          "tradeVolume": 1906,
+          "wages": 9095,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 365
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 168025,
+      "offers": 693,
+      "repeatedOffers": 663,
+      "followups": 1021,
+      "deathReasons": {
+        "age": 1
+      },
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 13077574,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 42,
+      "days": 100,
+      "policy": "observe-only",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 2,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 42,
+        "day": 101,
+        "elapsedDays": 100,
+        "population": 14,
+        "deaths": 0,
+        "averageFood": 1834.21,
+        "storage": {
+          "food": 3113,
+          "wood": 177
+        },
+        "conflicts": 89,
+        "thefts": 27,
+        "shares": 66,
+        "strongestRelationship": {
+          "residents": "서연 ↔ 유준",
+          "score": 195.74999999999986
+        },
+        "weakestRelationship": {
+          "residents": "이안 ↔ 수아",
+          "score": -25.4
+        },
+        "events": 3189,
+        "economy": {
+          "producedFood": 7082,
+          "producedWood": 596,
+          "consumedFood": 3740,
+          "investedWood": 384,
+          "externalFood": 0,
+          "trades": 479,
+          "tradeVolume": 903,
+          "wages": 2958,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 100
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 41517,
+      "offers": 124,
+      "repeatedOffers": 103,
+      "followups": 0,
+      "deathReasons": {},
+      "peakRequests": 32,
+      "peakUnmetFood": 1,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 3096978,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 42,
+      "days": 365,
+      "policy": "observe-only",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 5,
+        "generations": 2,
+        "journeys": 0,
+        "seed": 42,
+        "day": 366,
+        "elapsedDays": 365,
+        "population": 15,
+        "deaths": 2,
+        "averageFood": 6176.01,
+        "storage": {
+          "food": 11078,
+          "wood": 0
+        },
+        "conflicts": 678,
+        "thefts": 186,
+        "shares": 340,
+        "strongestRelationship": {
+          "residents": "지호 ↔ 다은",
+          "score": 200
+        },
+        "weakestRelationship": {
+          "residents": "도윤 ↔ 수아",
+          "score": -62.800000000000004
+        },
+        "events": 12508,
+        "economy": {
+          "producedFood": 27107,
+          "producedWood": 1218,
+          "consumedFood": 14900,
+          "investedWood": 1158,
+          "externalFood": 0,
+          "trades": 1667,
+          "tradeVolume": 3333,
+          "wages": 11765,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 365
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 165652,
+      "offers": 428,
+      "repeatedOffers": 399,
+      "followups": 0,
+      "deathReasons": {
+        "age": 2
+      },
+      "peakRequests": 32,
+      "peakUnmetFood": 1,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 13686801,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 42,
+      "days": 100,
+      "policy": "support-affordable",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 2,
+        "births": 4,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 42,
+        "day": 101,
+        "elapsedDays": 100,
+        "population": 14,
+        "deaths": 2,
+        "averageFood": 2020.4,
+        "storage": {
+          "food": 3566,
+          "wood": 20
+        },
+        "conflicts": 44,
+        "thefts": 15,
+        "shares": 28,
+        "strongestRelationship": {
+          "residents": "새봄9948 ↔ 소율",
+          "score": 194.4000000000002
+        },
+        "weakestRelationship": {
+          "residents": "이안 ↔ 도윤",
+          "score": -25.35
+        },
+        "events": 3001,
+        "economy": {
+          "producedFood": 7680,
+          "producedWood": 643,
+          "consumedFood": 3804,
+          "investedWood": 446,
+          "externalFood": 0,
+          "trades": 420,
+          "tradeVolume": 849,
+          "wages": 2841,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 100
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 40044,
+      "offers": 192,
+      "repeatedOffers": 161,
+      "followups": 264,
+      "deathReasons": {
+        "needs": 2
+      },
+      "peakRequests": 32,
+      "peakUnmetFood": 1,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 3018929,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 42,
+      "days": 365,
+      "policy": "support-affordable",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 3,
+        "births": 6,
+        "generations": 2,
+        "journeys": 0,
+        "seed": 42,
+        "day": 366,
+        "elapsedDays": 365,
+        "population": 16,
+        "deaths": 2,
+        "averageFood": 7296.23,
+        "storage": {
+          "food": 12727,
+          "wood": 195
+        },
+        "conflicts": 234,
+        "thefts": 72,
+        "shares": 143,
+        "strongestRelationship": {
+          "residents": "소율 ↔ 시우",
+          "score": 200
+        },
+        "weakestRelationship": {
+          "residents": "수아 ↔ 나은",
+          "score": -39.85
+        },
+        "events": 11925,
+        "economy": {
+          "producedFood": 29279,
+          "producedWood": 1658,
+          "consumedFood": 14877,
+          "investedWood": 1146,
+          "externalFood": 0,
+          "trades": 1694,
+          "tradeVolume": 3225,
+          "wages": 10288,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 365
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 157973,
+      "offers": 677,
+      "repeatedOffers": 641,
+      "followups": 1035,
+      "deathReasons": {
+        "needs": 2
+      },
+      "peakRequests": 32,
+      "peakUnmetFood": 1,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 13462563,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 123,
+      "days": 100,
+      "policy": "observe-only",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 2,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 123,
+        "day": 101,
+        "elapsedDays": 100,
+        "population": 14,
+        "deaths": 0,
+        "averageFood": 749.19,
+        "storage": {
+          "food": 1269,
+          "wood": 602
+        },
+        "conflicts": 7520,
+        "thefts": 2172,
+        "shares": 9,
+        "strongestRelationship": {
+          "residents": "민서 ↔ 유준",
+          "score": 199.40000000000012
+        },
+        "weakestRelationship": {
+          "residents": "하루 ↔ 이안",
+          "score": -100
+        },
+        "events": 4506,
+        "economy": {
+          "producedFood": 5137,
+          "producedWood": 974,
+          "consumedFood": 3696,
+          "investedWood": 356,
+          "externalFood": 0,
+          "trades": 352,
+          "tradeVolume": 654,
+          "wages": 2622,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 100
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 80493,
+      "offers": 99,
+      "repeatedOffers": 78,
+      "followups": 0,
+      "deathReasons": {},
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 3291408,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 123,
+      "days": 365,
+      "policy": "observe-only",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 2,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 123,
+        "day": 366,
+        "elapsedDays": 365,
+        "population": 13,
+        "deaths": 1,
+        "averageFood": 2675.83,
+        "storage": {
+          "food": 3975,
+          "wood": 1534
+        },
+        "conflicts": 17401,
+        "thefts": 4826,
+        "shares": 137,
+        "strongestRelationship": {
+          "residents": "수아 ↔ 유준",
+          "score": 200
+        },
+        "weakestRelationship": {
+          "residents": "하루 ↔ 이안",
+          "score": -100
+        },
+        "events": 12581,
+        "economy": {
+          "producedFood": 19056,
+          "producedWood": 2452,
+          "consumedFood": 14276,
+          "investedWood": 848,
+          "externalFood": 0,
+          "trades": 1428,
+          "tradeVolume": 2734,
+          "wages": 10057,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 365
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 276366,
+      "offers": 385,
+      "repeatedOffers": 362,
+      "followups": 0,
+      "deathReasons": {
+        "age": 1
+      },
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 13324759,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 123,
+      "days": 100,
+      "policy": "support-affordable",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 1,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 123,
+        "day": 101,
+        "elapsedDays": 100,
+        "population": 13,
+        "deaths": 0,
+        "averageFood": 834.62,
+        "storage": {
+          "food": 1312,
+          "wood": 441
+        },
+        "conflicts": 7776,
+        "thefts": 2229,
+        "shares": 3,
+        "strongestRelationship": {
+          "residents": "서연 ↔ 도윤",
+          "score": 196.7
+        },
+        "weakestRelationship": {
+          "residents": "하루 ↔ 이안",
+          "score": -100
+        },
+        "events": 4699,
+        "economy": {
+          "producedFood": 5159,
+          "producedWood": 805,
+          "consumedFood": 3641,
+          "investedWood": 359,
+          "externalFood": 0,
+          "trades": 355,
+          "tradeVolume": 648,
+          "wages": 2625,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 100
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 82887,
+      "offers": 166,
+      "repeatedOffers": 143,
+      "followups": 202,
+      "deathReasons": {},
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 3310135,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    },
+    {
+      "seed": 123,
+      "days": 365,
+      "policy": "support-affordable",
+      "population": 12,
+      "model": "off",
+      "summary": {
+        "settlements": 1,
+        "births": 1,
+        "generations": 1,
+        "journeys": 0,
+        "seed": 123,
+        "day": 366,
+        "elapsedDays": 365,
+        "population": 12,
+        "deaths": 1,
+        "averageFood": 2782.19,
+        "storage": {
+          "food": 4387,
+          "wood": 1370
+        },
+        "conflicts": 18857,
+        "thefts": 5127,
+        "shares": 88,
+        "strongestRelationship": {
+          "residents": "서연 ↔ 유준",
+          "score": 200
+        },
+        "weakestRelationship": {
+          "residents": "이안 ↔ 도윤",
+          "score": -100
+        },
+        "events": 12580,
+        "economy": {
+          "producedFood": 19062,
+          "producedWood": 2271,
+          "consumedFood": 13775,
+          "investedWood": 823,
+          "externalFood": 0,
+          "trades": 1572,
+          "tradeVolume": 2782,
+          "wages": 10070,
+          "balance": {
+            "food": 0,
+            "wood": 0,
+            "coins": 0
+          },
+          "foodPrice": 1,
+          "outstandingDebt": 0,
+          "samples": 365
+        },
+        "llm": {
+          "requested": 0,
+          "completed": 0,
+          "rejected": 0,
+          "failed": 0,
+          "queued": 0
+        }
+      },
+      "archivedEvents": 283449,
+      "offers": 589,
+      "repeatedOffers": 565,
+      "followups": 767,
+      "deathReasons": {
+        "age": 1
+      },
+      "peakRequests": 32,
+      "peakUnmetFood": 0,
+      "maximumStallTicks": 0,
+      "peakCheckpointBytes": 13411248,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "goodsBalance": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "dailyRestore": true,
+      "savedContinuation": true,
+      "missingEvidence": 0
+    }
+  ]
+}

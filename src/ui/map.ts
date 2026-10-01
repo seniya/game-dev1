@@ -1,3 +1,4 @@
+import { activity } from './activity';
 import { villageSize } from '../sim/civilization';
 import { layoutMapLabels, type MapLabel, type LabelRect } from './map-labels';
 import { characterVisual } from './character-state';
@@ -30,6 +31,7 @@ export class WorldMap {
   private reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   private world?: WorldState;
   private selected = 'npc0';
+  private completedActivity = '';
   private grid = false;
   private selectedObject?: ObjectSelection;
   private hovered?: ObjectSelection;
@@ -120,6 +122,8 @@ export class WorldMap {
       this.motion.update(previous?.npcs ?? [], world.npcs, trace, now, duration);
       if (advanced) this.lastUpdate = now;
     }
+    const completed = world.events.slice(-100).filter(e => e.actorId === selected && world.tick - e.tick <= 6 && (['production','industry','storage','project'].includes(e.kind) || e.kind === 'consumption' && e.data.action === 'Eat' || e.kind === 'request' && e.data.phase === 'supported')).at(-1);
+    this.completedActivity = !completed ? '' : completed.kind === 'request' ? '지원 반영 완료' : completed.kind === 'storage' ? '자원 운반 완료' : completed.kind === 'consumption' ? '식사 완료' : completed.kind === 'project' ? '시설 개선 완료' : '생산 완료';
     this.world = world; this.selected = selected; this.residents = world.npcs.filter(n => n.alive);
     const key = JSON.stringify([world.seed, world.width, world.height, this.origin, this.zoom, selected, this.selectedObject, world.urban.cities.map(c => [c.services, c.active]), world.urban.enterprises.map(e => [e.buildingId, e.kind]), world.buildings.map(b => [b.id, b.kind, b.name, b.position, b.level, b.growth >= 20, world.living.homes[b.id]]), world.resources.map(r => [r.id, r.kind, r.position, resourceStage(r)])]);
     if (rebuilt || key !== this.sceneKey) { this.buildScene(world); this.sceneKey = key; }
@@ -277,7 +281,12 @@ export class WorldMap {
       drawPerson(ctx, n, x, y, w, this.reducedMotion.matches ? 0 : (p.x + p.y) * Math.PI * 2, false);
       const status = characterVisual(n, w);
       if (this.zoom >= 1 && status.key !== 'calm' && status.key !== 'moving') this.label(ctx, status.symbol, x + 15, y - 27, false, 5, `status:${n.id}`, status.color, true);
-      if (!this.selectedObject && n.id === this.selected) this.label(ctx, `${n.identity.name} · ${n.currentAction ? ACTION_LABELS[n.currentAction.kind] : '관찰 중'}`, x, y - 45, true, 100, `npc:${n.id}`);
+      if (!this.selectedObject && n.id === this.selected) {
+        const task = activity(w, n);
+        this.label(ctx, `${n.identity.name} · ${task.label}${task.a ? task.moving ? ` · ${task.steps}칸` : ` ${task.progress}%` : ''}`, x, y - 45, true, 100, `npc:${n.id}`);
+        if (this.completedActivity) this.label(ctx, this.completedActivity, x, y+29, true, 85, 'activity-completed');
+        if (task.a && !task.moving) { ctx.fillStyle = '#314f44'; ctx.fillRect(x-15,y+12,30,4); ctx.fillStyle = '#f5df94'; ctx.fillRect(x-15,y+12,30*task.progress/100,4); }
+      }
 
     }
     if (!this.selectedObject && selected?.currentAction?.targetId && ['Talk', 'Share', 'Borrow', 'Trade'].includes(selected.currentAction.kind)) {

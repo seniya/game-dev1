@@ -76,7 +76,7 @@ test('defer once, decline, expiry and natural resolution do not give hidden bonu
 });
 test('version 7 migration adds no history or resources; forged request references are rejected', () => {
   const {w}=scenario('food'); const old:any=structuredClone(w); old.version=7; delete old.requests;
-  const migrated=valid(old).snapshot(); assert.equal(migrated.version,8); assert.deepEqual(migrated.events,old.events); assert.deepEqual(migrated.storage,old.storage); assert.deepEqual(migrated.requests.items,[]);
+  const migrated=valid(old).snapshot(); assert.equal(migrated.version,9); assert.deepEqual(migrated.events,old.events); assert.deepEqual(migrated.storage,old.storage); assert.deepEqual(migrated.requests.items,[]);
   for(const change of [(x:typeof w)=>x.requests.items[0].sourceEventId='missing',(x:typeof w)=>x.requests.items[0].status='completed',(x:typeof w)=>x.requests.items[0].npcId='missing',(x:typeof w)=>x.requests.items[0].choice='repair']) {const bad=structuredClone(w); change(bad); assert.throws(()=>valid(bad),/부탁/);}
 });
 test('server saves once across retries, rejects stale decisions, and archives request evidence', async () => {
@@ -121,7 +121,7 @@ test('v7 checkpoint plus journal upgrades before new request choices and survive
     db.prepare('UPDATE world SET revision=1 WHERE id=1'), db.prepare('UPDATE world_checkpoints SET head_revision=1'),
     db.prepare('INSERT INTO world_changes VALUES(?,?,?,?)').bind(original.epoch,1,0,JSON.stringify(stateChange(legacy,after))),
   ]);
-  const fresh=new WorldStore(db), migrated=await fresh.read(); assert.equal(migrated.state.version,8); assert.equal(migrated.state.tick,after.tick); assert.deepEqual(migrated.state.requests.items,[]);
+  const fresh=new WorldStore(db), migrated=await fresh.read(); assert.equal(migrated.state.version,9); assert.equal(migrated.state.tick,after.tick); assert.deepEqual(migrated.state.requests.items,[]);
   const command={id:crypto.randomUUID(),revision:migrated.revision,action:{type:'step',ticks:12}} as const;
   const changed=await applyCommand(migrated,command,1); await fresh.commit(changed.world,changed.events,JSON.stringify(command),command.id);
   const restored=await new WorldStore(db).read(); assert.deepEqual(restored,JSON.parse(JSON.stringify(changed.world))); valid(restored.state);

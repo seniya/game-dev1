@@ -3,7 +3,7 @@ import { newLivingPerson } from './living';
 import { newCitizen } from './urban';
 import { findPath } from './pathfinding';
 import { type WorldState, type NPC, YEAR_TICKS, MAX_POPULATION } from './types';
-import { appendEvent, socialEvent, relationship } from './social';
+import { appendEvent, socialEvent, relationship, eventById } from './social';
 import { clamp } from './random';
 import { stocks, market, capacity, isTravelling } from './civilization';
 
@@ -26,7 +26,7 @@ export function formFamily(w: WorldState, a: NPC, b: NPC): boolean {
   a.life.partnerId = b.id; b.life.partnerId = a.id;
   a.homeId = b.homeId = home.id; a.currentAction = b.currentAction = undefined;
   home.ownerIds = [...new Set([...(home.ownerIds ?? []), a.id, b.id])]; bond.family = reverse.family = true;
-  const e = socialEvent(w, { kind: 'family', actorId: a.id, targetId: b.id, locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}이 서로의 신뢰와 애정을 바탕으로 가족을 이루었다.`, data: { homeId: home.id, trust: bond.trust, affection: bond.affection } });
+  const e = socialEvent(w, { kind: 'family', actorId: a.id, targetId: b.id, locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}이 서로의 신뢰와 애정을 바탕으로 가족을 이루었다.`, data: { homeId: home.id, trust: bond.trust, affection: bond.affection, reverseTrust: reverse.trust, reverseAffection: reverse.affection, evidence: [...new Set([...bond.evidence.slice(-4), ...reverse.evidence.slice(-4)])] } });
   bond.evidence.push(e.id); reverse.evidence.push(e.id); return true;
 }
 export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
@@ -49,7 +49,8 @@ export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
   w.npcs.push(child); w.living.people[child.id] = newLivingPerson(child);
   for (const key of Object.keys(w.living.people[child.id].traits) as (keyof typeof w.living.people[string]['traits'])[]) w.living.people[child.id].traits[key] = (w.living.people[a.id].traits[key] + w.living.people[b.id].traits[key]) / 2;
   w.urban.citizens[child.id] = newCitizen(child); a.life.lastBirth = b.life.lastBirth = w.tick;
-  const e = socialEvent(w, { kind: 'birth', actorId: child.id, participants: [child.id, a.id, b.id], locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}의 가족에 ${child.identity.name}이 태어났다.`, data: { parents: [a.id, b.id], generation: child.life.generation, consumedFood: 2 } }); child.life.birthEventId = e.id;
+  const familyEvent = [...relationship(a, b.id).evidence].reverse().find(id => eventById(w,id)?.kind === 'family');
+  const e = socialEvent(w, { kind: 'birth', causeId: familyEvent, actorId: child.id, participants: [child.id, a.id, b.id], locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}의 가족에 ${child.identity.name}이 태어났다.`, data: { parents: [a.id, b.id], generation: child.life.generation, consumedFood: 2 } }); child.life.birthEventId = e.id;
   for (const parent of [a, b]) { const r = relationship(parent, child.id), reverse = relationship(child, parent.id); r.family = reverse.family = true; r.trust = reverse.trust = 80; r.affection = reverse.affection = 70; r.evidence.push(e.id); reverse.evidence.push(e.id); }
   return child;
 }
@@ -69,7 +70,7 @@ export function careForChild(w: WorldState, n: NPC) {
       const inventory = own ? n.inventory : donor?.inventory ?? stock;
       if (inventory.food > 0) {
         inventory.food--; w.economy.totals.consumedFood++; n.needs.hunger = clamp(n.needs.hunger - 38);
-        appendEvent(w, { kind: 'consumption', actorId: n.id, targetId: donor?.id, importance: 20, description: `${n.identity.name}이 가족의 돌봄으로 식량 1개를 먹었다.`, data: { amount: 1, resource: 'food', caregiver: donor?.id ?? caregivers[0].id } });
+        appendEvent(w, { kind: 'consumption', actorId: n.id, targetId: donor?.id, causeId: n.life.birthEventId, importance: 20, description: `${n.identity.name}이 가족의 돌봄으로 식량 1개를 먹었다.`, data: { amount: 1, resource: 'food', caregiver: donor?.id ?? caregivers[0].id } });
       }
     }
   }

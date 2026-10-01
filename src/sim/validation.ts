@@ -47,7 +47,7 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
-  version: z.literal(8), requests: requestsSchema, living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
+  version: z.literal(9), observation: z.object({ watchIds: z.array(z.string().min(1).max(100)).max(12) }).strict(), requests: requestsSchema, living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(24576),
   buildings: z.array(z.object({ id, kind: z.enum(['home', 'storage', 'farm', 'market', 'well']), name: description, position: pos, level: natural.min(1).max(4), growth: z.number().min(0).max(120), settlementId: id, ownerIds: z.array(id).max(30000).optional() }).strict()).max(4000),
   resources: z.array(z.object({ id, position: pos, kind: z.enum(['food', 'wood']), amount: natural, capacity: natural.min(1) }).strict()).max(1000),
@@ -97,7 +97,13 @@ export function validateSave(input: unknown): WorldState {
   }
   if (input && typeof input === 'object' && (input as { version?: number }).version === 7) {
     const legacy = structuredClone(input) as WorldState;
-    legacy.version = 8; legacy.requests = emptyRequests(legacy.tick); input = legacy;
+    (legacy as unknown as { version: number }).version = 8; legacy.requests = emptyRequests(legacy.tick); input = legacy;
+  }
+  if (input && typeof input === 'object' && (input as { version?: number }).version === 8) {
+    const legacy = structuredClone(input) as WorldState;
+    if (!Array.isArray(legacy.requests?.items) || legacy.requests.items.some(r => !r || typeof r !== 'object')) throw new Error('저장 파일 형식 오류: 이전 부탁 상태를 읽을 수 없습니다.');
+    for (const r of legacy.requests.items) if (r.decisionEventId && r.status !== 'cancelled') { r.followups = []; r.followupSince = legacy.tick; }
+    legacy.version = 9; legacy.observation = { watchIds: [] }; input = legacy;
   }
   const parsed = world.safeParse(input);
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
@@ -107,6 +113,7 @@ export function validateSave(input: unknown): WorldState {
   const ids = new Set<string>(), events = new Map(w.events.map(e => [e.id, e])), npcs = new Set(w.npcs.map(n => n.id)), buildings = new Map(w.buildings.map(b => [b.id, b]));
   const register = (value: string) => { ensure(!ids.has(value), `중복 ID ${value}`); ids.add(value); if (/^[emqlgcj]\d+$/.test(value)) ensure(Number(value.slice(1)) < w.nextId, '다음 ID'); };
   [...w.buildings, ...w.resources, ...w.npcs, ...w.events, ...w.loans, ...w.llm.queue].forEach(v => register(v.id));
+  ensure(new Set(w.observation.watchIds).size === w.observation.watchIds.length && w.observation.watchIds.every(id => npcs.has(id)), '관심 주민 중복/참조');
   const villages = new Set(w.civilization.settlements.map(v => v.id));
   ensure(villages.size === w.civilization.settlements.length && villages.has('v0') && villages.has(w.civilization.focus), '마을 ID/관찰 대상');
   ensure(w.npcs.filter(n => n.alive).length <= 3000, '생존 인구 상한');

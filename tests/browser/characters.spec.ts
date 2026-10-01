@@ -22,7 +22,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await page.getByLabel('주민 검색',{exact:true}).fill('해솔'); await expect(page.locator('.resident-card')).toHaveCount(1); await page.locator('.resident-card').click();
   await page.getByRole('button',{name:'세계 저장',exact:true}).click();
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!));
-  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(8); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
+  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(9); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
   await page.reload(); await page.getByRole('button',{name:'마을 주민',exact:true}).click(); await page.getByLabel('내가 만든 주민만').check(); await expect(page.locator('.resident-card')).toHaveCount(1);
   expect(errors).toEqual([]);
 });

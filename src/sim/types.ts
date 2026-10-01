@@ -39,7 +39,7 @@ export interface Loan { id: string; lenderId: string; borrowerId: string; amount
 export interface DecisionRequest { id: string; npcId: string; eventId: string; tick: number; attempts: number }
 export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys: string[]; dailyByNpc: Record<string, number>; dailyTotal: number; requested: number; completed: number; rejected: number; failed: number }
 export interface WorldState {
-  version: 8; requests: import('./requests-types').RequestsState; living: import('./living-types').LivingState; heritage: Heritage; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
+  version: 9; observation: { watchIds: string[] }; requests: import('./requests-types').RequestsState; living: import('./living-types').LivingState; heritage: Heritage; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
   tiles: Tile[]; buildings: Building[]; resources: ResourceNode[]; npcs: NPC[];
   storage: Resources; market: Resources & { coins: number; foodPrice: number; woodPrice: number };
   weather: 'sunny' | 'rain' | 'cloudy' | 'drought'; droughtUntil: number;

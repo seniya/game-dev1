@@ -18,7 +18,7 @@ function employ(w: WorldState, kind: Parameters<typeof buildEnterprise>[2]) {
 test('v3 migration preserves property and events without inventing past city records', () => {
   const old: any = new Simulation().snapshot(); old.version = 3; delete old.urban;
   const before = holdings(old), events = JSON.stringify(old.events), w = valid(old).snapshot();
-  assert.equal(w.version, 8); assert.deepEqual(holdings(w), before); assert.equal(JSON.stringify(w.events), events); assert.deepEqual(w.urban.samples, []); assert.equal(w.urban.since, w.tick);
+  assert.equal(w.version, 9); assert.deepEqual(holdings(w), before); assert.equal(JSON.stringify(w.events), events); assert.deepEqual(w.urban.samples, []); assert.equal(w.urban.since, w.tick);
 });
 test('finite mining, tool crafting and milling conserve inputs, wages and production ledgers', () => {
   const w = funded(), money = holdings(w).coins;

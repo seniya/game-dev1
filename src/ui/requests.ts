@@ -1,5 +1,5 @@
 import type { WorldState } from '../sim/types';
-import { activeRequest, requestOptions, requestReason } from '../sim/requests';
+import { activeRequest, pendingFollowup, requestOptions, requestReason } from '../sim/requests';
 import { REQUEST_LABELS, type ResidentRequest, type RequestMetrics } from '../sim/requests-types';
 import { stocks } from '../sim/civilization';
 import { dayOf, timeLabel } from '../sim/random';
@@ -10,12 +10,20 @@ function measurements(r: ResidentRequest) {
   fields.push(['trust','마을 신뢰']);
   return `<div class="request-table-wrap"><table class="request-table"><caption>선택 전과 이후의 실제 수치 · 배고픔은 낮을수록 좋습니다</caption><thead><tr><th scope="col">관찰 항목</th><th scope="col">선택 전</th><th scope="col">지원 직후</th><th scope="col">${r.status === 'completed' ? '2시간 뒤' : '관찰 결과'}</th></tr></thead><tbody>${fields.map(([k,l]) => `<tr><th scope="row">${l}</th><td>${Math.round(r.before[k])}</td><td>${r.immediate ? Math.round(r.immediate[k]) : '—'}</td><td>${r.after ? Math.round(r.after[k]) : '관찰 중'}</td></tr>`).join('')}</tbody></table></div>`;
 }
+function followups(r: ResidentRequest) {
+  if (!r.immediate) return '';
+  const fields: [keyof RequestMetrics,string][] = r.kind === 'food' ? [['food','식량'],['hunger','배고픔']] : r.kind === 'clothing' ? [['clothing','옷 상태'],['warmth','온기']] : [['condition','내구도'],['capacity','정원']];
+  return `<div class="request-followups"><b>그 뒤의 생활 · 하루와 3일 뒤</b>${(r.followups ?? []).map(f=>`<article data-reading-key="followup-${esc(f.eventId)}"><strong>${f.days}일 뒤 · ${dayOf(f.tick)}일 ${timeLabel(f.tick)}</strong><p>${fields.map(([k,label])=>`${label} ${Math.round(r.immediate![k])} → ${Math.round(f.metrics[k])}`).join(' · ')}</p><p>${f.needRemains ? '같은 어려움의 조건이 다시 관찰됐어요.' : '지금은 같은 부탁이 필요한 조건이 아니에요.'}</p><button class="text-button" data-event="${esc(f.eventId)}">당시 상태와 관련 생활 기록 ↗</button></article>`).join('')}${r.followupStopped ? `<button class="text-button" data-event="${esc(r.followupStopped)}">생애·거주 변화로 비교 중단 · 기록 보기</button>` : pendingFollowup(r) ? '<p>시간이 흐르면 예정된 시점의 실제 상태를 기록합니다.</p>' : !(r.followups?.length) ? '<p>이전 지원은 관찰을 시작하기 전의 수치를 새로 만들지 않습니다.</p>' : ''}<p class="request-note">이 변화에는 주민의 활동과 날씨가 함께 작용합니다. 지원만의 효과로 단정하지 않습니다.</p></div>`;
+}
 function card(w: WorldState, r: ResidentRequest, busy: boolean) {
   const n = w.npcs.find(n => n.id === r.npcId)!, v = w.civilization.settlements.find(v => v.id === r.settlementId)!;
   const s = stocks(w, v.id), c = w.urban.cities.find(c => c.settlementId === v.id)!;
   const open = r.status === 'open', options = open ? requestOptions(w, r) : [];
   return `<article class="request-card" data-reading-key="${esc(r.id)}" data-request-card="${esc(r.id)}" data-status="${r.status}">
     <div class="request-card-heading"><div><span class="request-status">${statuses[r.status]}</span><h3>${REQUEST_LABELS[r.kind]}</h3><p><button class="text-button" data-npc="${esc(n.id)}">${esc(n.identity.name)} 살펴보기 ↗</button> · ${esc(v.name)} · ${dayOf(r.createdAt)}일 ${timeLabel(r.createdAt)}</p></div><button class="text-button" data-event="${esc(r.sourceEventId)}">발생 기록</button></div>
+    ${r.context ? `<details class="request-context" id="context-${esc(r.id)}"><summary>부탁이 생긴 당시 사정</summary>${r.context.facts.map(f=>`<p>${esc(f)}</p>`).join('')}<p class="request-note">부탁 직전의 기록입니다. 시간 순서만으로 원인을 단정하지 않습니다.</p>${r.context.evidence.map(id=>`<button class="evidence-link" data-event="${esc(id)}">앞선 생활 기록 ${esc(id)}</button>`).join('') || '<p>함께 확인할 앞선 기록이 없습니다.</p>'}</details>` : ''}
+    ${r.buildingId ? `<button class="text-button" data-place="${esc(r.buildingId)}">지원한 시설 지도에서 보기 ↗</button>` : ''}
+    ${r.immediate && ['repair','expand','farm'].includes(r.choice!) ? '<p class="request-note">이 지원의 시설 변경은 선택 즉시 완료됐습니다. 이후 실제 이용과 생산을 관찰하세요.</p>' : ''}
     ${open ? `<p class="request-reason">${esc(requestReason(w, r))}</p><p class="request-stock">이 마을의 공동 재고 · 식량 ${s.food} · 목재 ${s.wood} · 옷 ${c.goods.clothes} · 직물 ${c.goods.cloth}</p>
     <div class="request-options">${options.slice(0,2).map(o => `<div class="request-option"><button class="button" data-request="${esc(r.id)}" data-choice="${o.choice}" ${busy || o.disabled ? 'disabled' : ''}>${o.label}<strong>${o.cost}</strong></button><p>${o.effect}</p>${o.disabled ? `<span class="request-unavailable">${o.disabled}</span>` : ''}</div>`).join('')}</div>
     <div class="request-secondary">${options.slice(2).map(o => `<button class="text-button" data-request="${esc(r.id)}" data-choice="${o.choice}" title="${o.effect}" ${busy || o.disabled ? 'disabled' : ''}>${o.label}${o.disabled ? ' · 이미 미룸' : ''}</button>`).join('')}<span>미루기·거절은 자원을 쓰지 않습니다.</span></div>`
@@ -23,7 +31,7 @@ function card(w: WorldState, r: ResidentRequest, busy: boolean) {
     : `<p>${r.choice && r.choice !== 'decline' ? `선택: ${requestOptions(w,r).find(o => o.choice === r.choice)?.label} · ${requestOptions(w,r).find(o => o.choice === r.choice)?.cost}` : statuses[r.status]}</p>${r.immediate ? measurements(r) : ''}
       ${r.status === 'observing' ? `<button class="button" data-observe-request ${busy ? 'disabled' : ''}>게임 2시간 관찰하고 멈추기</button>` : ''}
       ${r.immediate ? '<p class="request-note">지원 직후에는 선택의 직접 효과를, 이후에는 주민의 활동과 날씨가 함께 반영된 상태를 보여 줍니다.</p>' : ''}
-      ${r.resultEventId ? `<button class="text-button" data-event="${esc(r.resultEventId)}">결과와 이어진 기록 보기 ↗</button>` : ''}`}</article>`;
+      ${r.resultEventId ? `<button class="text-button" data-event="${esc(r.resultEventId)}">결과와 이어진 기록 보기 ↗</button>` : ''}`}${followups(r)}</article>`;
 }
 export function requestsView(w: WorldState, busy = false, playing = false) {
   const active = w.requests.items.filter(activeRequest), closed = w.requests.items.filter(r => !activeRequest(r)).reverse();
@@ -33,7 +41,7 @@ export function requestsView(w: WorldState, busy = false, playing = false) {
     <div class="request-active">${active.length ? active.map(r => card(w,r,busy)).join('') : '<p class="request-empty">지금 기다리는 부탁이 없습니다. 재생하면 식량·옷·집에 어려움이 있는 주민이 찾아옵니다. 부탁이 없어도 마을의 생활은 이어집니다.</p>'}</div>
     ${latest ? `<details class="request-results" id="request-latest" open><summary>최근 결과 · ${esc(w.npcs.find(n => n.id === latest.npcId)!.identity.name)} · ${statuses[latest.status]}</summary>${card(w, latest, busy)}</details>` : ''}
     ${closed.length > 1 ? `<details class="request-results" id="request-archive"><summary>이전 부탁 ${closed.length - 1}건</summary>${closed.slice(1).map(r => card(w,r,busy)).join('')}</details>` : ''}
-    <p class="request-note">부탁은 게임 3일 동안 기다립니다. 같은 주민의 같은 부탁은 최소 3일 간격이며, 지난 기록은 세계의 기록에서도 볼 수 있습니다.</p>`;
+    <p class="request-note">부탁은 게임 3일 동안 기다립니다. 같은 주민의 같은 부탁은 최근 반복에 따라 3·6·9일 간격이며, 지난 기록은 세계의 기록에서도 볼 수 있습니다.</p>`;
 }
 
 export function requestPrompt(w: WorldState) {

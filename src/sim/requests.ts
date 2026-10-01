@@ -17,6 +17,41 @@ function need(w: WorldState, n: NPC, kind: ResidentRequest['kind'], ongoing = fa
   if (kind === 'clothing') return l.clothing < 30 && (ongoing || l.body.warmth < 65);
   return w.urban.buildings[home.id].condition < 65 || w.npcs.filter(p => p.alive && p.homeId === home.id).length > capacity(home);
 }
+export function requestContext(w: WorldState, n: NPC, kind: ResidentRequest['kind']): NonNullable<ResidentRequest['context']> {
+  const metrics = requestMetrics(w, n), stock = stocks(w, n.settlementId);
+  const c = w.urban.cities.find(c => c.settlementId === n.settlementId)!;
+  const facts = kind === 'food' ? [`소지 식량 ${metrics.food}개 · 공동 식량 ${stock.food}개`, `오늘 공동 식량 인출 ${n.dailyTaken}/3개 · 소지금 ${n.wealth}코인`]
+    : kind === 'clothing' ? [`옷 상태 ${Math.round(metrics.clothing)} · 온기 ${Math.round(metrics.warmth)}`, `마을 옷 ${c.goods.clothes}개 · 직물 ${c.goods.cloth}개`]
+    : [`집 내구도 ${Math.round(metrics.condition)} · 정원 ${metrics.capacity}명`, `함께 사는 주민 ${w.npcs.filter(p => p.alive && p.homeId === n.homeId).length}명 · 공동 목재 ${stock.wood}개`];
+  const kinds = kind === 'food' ? ['consumption','storage','trade','share','scarcity','failure','production'] : kind === 'clothing' ? ['consumption','health','industry','weather'] : ['birth','family','migration','construction','project','public_service'];
+  const evidence = w.events.slice(-100).filter(e => e.tick >= w.tick - 144 && kinds.includes(e.kind) && (e.participants.includes(n.id) || e.actorId === n.id || e.locationId === n.homeId)).slice(-4).map(e => e.id);
+  return { metrics, facts, evidence };
+}
+export function pendingFollowup(r: ResidentRequest) {
+  return !!r.decisionEventId && !!r.followups && !r.followupStopped && [1,3].some(days => r.reviewAt! - 12 + days * 144 >= r.followupSince! && !r.followups!.some(f => f.days === days));
+}
+function updateFollowups(w: WorldState) {
+  for (const r of w.requests.items.filter(pendingFollowup)) {
+    const n = w.npcs.find(n => n.id === r.npcId)!;
+    if (!n.alive || n.homeId !== r.homeId || n.settlementId !== r.settlementId || isTravelling(w, n)) {
+      const e = appendEvent(w, { kind: 'request', actorId: n.id, importance: 45, causeId: r.decisionEventId,
+        description: `${n.identity.name}의 생애·거주 상황이 바뀌어 이 부탁의 장기 비교를 중단했다.`,
+        data: { requestId: r.id, requestKind: r.kind, phase: 'followup-stopped' } });
+      r.followupStopped = e.id; continue;
+    }
+    for (const days of [1,3] as const) {
+      const due = r.reviewAt! - 12 + days * 144;
+      if (due < r.followupSince! || w.tick < due || r.followups!.some(f => f.days === days)) continue;
+      const since = r.followups!.at(-1)?.tick ?? r.reviewAt! - 12;
+      const evidence = w.events.slice(-100).filter(e => e.tick > since && e.kind !== 'request' && ['production','consumption','storage','trade','share','family','birth','migration','health','project','industry'].includes(e.kind) && (e.participants.includes(n.id) || e.actorId === n.id || !!r.buildingId && e.locationId === r.buildingId)).slice(-6).map(e => e.id);
+      const metrics = requestMetrics(w, n), needRemains = need(w, n, r.kind);
+      const e = appendEvent(w, { kind: 'request', actorId: n.id, locationId: r.buildingId, importance: 50, causeId: r.decisionEventId,
+        description: `${n.identity.name}의 부탁을 지원한 뒤 ${days}일 경과: ${needRemains ? '같은 어려움의 조건이 다시 관찰됐다' : '현재 같은 부탁이 필요한 조건은 아니다'}. 생활과 날씨가 함께 반영된 실제 상태다.`,
+        data: { requestId: r.id, requestKind: r.kind, phase: 'followup', days, evidence, needRemains, ...metrics } });
+      r.followups!.push({ days, tick: w.tick, eventId: e.id, metrics, evidence, needRemains });
+    }
+  }
+}
 export function requestReason(w: WorldState, r: ResidentRequest) {
   const n = w.npcs.find(n => n.id === r.npcId)!;
   const m = r.before;
@@ -86,6 +121,7 @@ export function respondToRequest(w: WorldState, id: string, choice: RequestChoic
     r.buildingId = home.id;
   }
   w.urban.citizens[n.id].trust = clamp(w.urban.citizens[n.id].trust + 4);
+  r.followups = []; r.followupSince = w.tick;
   r.choice = choice; r.status = 'observing'; r.reviewAt = w.tick + 12; r.immediate = requestMetrics(w, n);
   const e = appendEvent(w, { kind: 'request', actorId: n.id, locationId: r.buildingId, importance: 55, causeId: r.lastEventId,
     description: `${n.identity.name}의 부탁에 ‘${option.label}’로 응답했다. ${option.cost}를 사용했다.`,
@@ -98,6 +134,7 @@ export function respondToRequest(w: WorldState, id: string, choice: RequestChoic
 }
 export function updateRequests(w: WorldState) {
   const state = w.requests;
+  updateFollowups(w);
   for (const r of state.items.filter(activeRequest)) {
     const n = w.npcs.find(n => n.id === r.npcId)!;
     if (!n.alive || n.settlementId !== r.settlementId || n.homeId !== r.homeId || isTravelling(w, n)) { closeRequest(w, r, 'cancelled', `${n.identity.name}의 생애·거주 상황이 바뀌어 부탁 관찰을 마쳤다.`); continue; }
@@ -118,9 +155,11 @@ export function updateRequests(w: WorldState) {
     .flatMap(n => (['food', 'clothing', 'housing'] as const).filter(kind => !state.cooldowns[`${n.id}:${kind}`] && need(w, n, kind)).map(kind => ({ n, kind, urgency: kind === 'food' ? n.needs.hunger + 20 : kind === 'clothing' ? 100 - w.living.people[n.id].body.warmth : 100 - w.urban.buildings[n.homeId].condition })))
     .sort((a, b) => b.urgency - a.urgency || a.n.id.localeCompare(b.n.id));
   const pick = candidates[0]; if (!pick) return;
-  const { n, kind } = pick, id = `request-${w.nextId++}`, before = requestMetrics(w, n);
-  const e = appendEvent(w, { kind: 'request', actorId: n.id, locationId: n.homeId, importance: 50, description: `${n.identity.name}의 부탁: ${REQUEST_LABELS[kind]}`, data: { requestId: id, phase: 'offered', requestKind: kind, hunger: before.hunger, food: before.food, clothing: before.clothing, warmth: before.warmth, condition: before.condition, capacity: before.capacity } });
-  if (state.items.length >= 32) state.items.splice(state.items.findIndex(r => !activeRequest(r)), 1);
-  state.items.push({ id, npcId: n.id, settlementId: n.settlementId, homeId: n.homeId, kind, status: 'open', createdAt: w.tick, expiresAt: w.tick + 432, sourceEventId: e.id, lastEventId: e.id, before });
-  state.cooldowns[`${n.id}:${kind}`] = w.tick + 432; state.lastOffered = w.tick; state.offeredToday++;
+  if (state.items.length >= 32 && !state.items.some(r => !activeRequest(r) && !pendingFollowup(r))) return;
+  const { n, kind } = pick, id = `request-${w.nextId++}`, before = requestMetrics(w, n), context = requestContext(w, n, kind);
+  const repeats = state.items.filter(r => r.npcId === n.id && r.kind === kind && w.tick - r.createdAt <= 12 * 144).length;
+  const e = appendEvent(w, { kind: 'request', actorId: n.id, locationId: n.homeId, importance: 50, description: `${n.identity.name}의 부탁: ${REQUEST_LABELS[kind]}`, data: { requestId: id, phase: 'offered', requestKind: kind, ...before, evidence: context.evidence, conditions: context.facts, hunger: before.hunger, food: before.food, clothing: before.clothing, warmth: before.warmth, condition: before.condition, capacity: before.capacity } });
+  if (state.items.length >= 32) state.items.splice(state.items.findIndex(r => !activeRequest(r) && !pendingFollowup(r)), 1);
+  state.items.push({ id, npcId: n.id, settlementId: n.settlementId, homeId: n.homeId, kind, status: 'open', createdAt: w.tick, expiresAt: w.tick + 432, sourceEventId: e.id, lastEventId: e.id, before, context });
+  state.cooldowns[`${n.id}:${kind}`] = w.tick + 432 * Math.min(3, repeats + 1); state.lastOffered = w.tick; state.offeredToday++;
 }
