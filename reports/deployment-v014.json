@@ -1,0 +1,67 @@
+{
+  "id": "appgdep_6abdcc6c10c081918a8cdf8f20c9634d",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_059090b9a8088191a85c4a0f46c89e0b",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 0,
+  "updated_at": "2026-10-01T02:59:05.946144+00:00",
+  "source_commit": "cac5da9925c7eac16a8516f3a0462c0a61f139f4",
+  "sites_version": 25,
+  "unit_server_tests_passed": 177,
+  "browser_scenarios_passed": 48,
+  "browser_initial_run": {
+    "passed": 47,
+    "failed": 1,
+    "skipped": 1
+  },
+  "browser_retry": {
+    "test": "map paints intermediate positions between server updates while avoiding repeated journal and AI fetches",
+    "passed": true,
+    "initial_failure": "Expected 1 event fetch; received 2."
+  },
+  "real_chrome_inference_skipped": 1,
+  "final_targeted_cognition_chrome_tests_passed": 15,
+  "production_build": true,
+  "archive_sha256": "781a51c11f0adedf6caa3feb7e079bbd599e809bdd0e59499cfe449f786a1093",
+  "regression_report": "reports/cognition-regression.json",
+  "production_smoke": {
+    "http_status": 200,
+    "api_status": 200,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "tick": 3161,
+    "revision": 3675,
+    "aiMode": "chrome",
+    "running": true,
+    "population": 12,
+    "cognitionResidents": 0,
+    "assets": [
+      {
+        "path": "/assets/index-qWIqXGI1.js",
+        "status": 200,
+        "sha256": "cfa27754e7212d52cc548a8f7edd5dc73d6e00d91969437cf2757d29baa7889a",
+        "sha256_matches_build": true
+      },
+      {
+        "path": "/assets/index-D4xFXaqe.css",
+        "status": 200,
+        "sha256": "c6abb38ed058f629f14bc314546f80a8340022e336ae64118374c98c15eb6db4",
+        "sha256_matches_build": true
+      }
+    ],
+    "same_world_epoch": true,
+    "all_prior_npc_ids_present": true,
+    "all_returned_prior_events_preserved": true,
+    "same_ai_mode": true,
+    "same_running_setting": true,
+    "owner_only": true,
+    "world_reset": false,
+    "note": "Read-only check; existing residents acquire cognition at their next action decision. No production tick or model inference was forced."
+  }
+}
