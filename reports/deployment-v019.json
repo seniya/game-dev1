@@ -1,0 +1,66 @@
+{
+  "id": "appgdep_6abe314f5fac8191b7af30f395955d69",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_40f4238d29148191a49bceefc79bd764",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-01T10:09:34.841207+00:00",
+  "source_commit": "7023cda05d2c1c9676f8a5bdcbc92831bfe0a347",
+  "sites_version": 30,
+  "saved_archive_content_hash": "sha256:a5845b4a6c95548f1239f4cb09a28f0e34742d88a8f1ebb213db6a345e422f43",
+  "validation_report": "reports/biography-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "artifact": "living-small-world-v019.tar.gz",
+    "built_from_pushed_commit": true
+  },
+  "production_preservation": {
+    "same_confirmed_world_row": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3773,
+    "confirmed_meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790848053734,
+      "lastSeen": 1790848054138,
+      "eventCount": 13949,
+      "socialCount": 500,
+      "catchupTicks": 0,
+      "skippedTicks": 0,
+      "aiMode": "chrome",
+      "aiGeneration": "8821d2fd-eb3a-4cba-b571-2acbb272361c",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790848056243
+    },
+    "world_reset": false,
+    "explicit_save_before_deploy": false,
+    "pending_progress_preserved": false,
+    "pending_game_ticks": 54,
+    "pending_real_time_seconds_at_selected_speed": 37.8,
+    "pending_event_count": 177,
+    "pending_row_still_present_after_deploy": true,
+    "explanation": "Owner-authenticated save was not available through deployment tools. User was asked asynchronously to save; no answer arrived before publication. Proceeded under the previously accepted up-to-five-minute loss policy. The old-build pending row remains in D1 but LiveWorldStore refuses to replay it with new rules and returns the last confirmed checkpoint. No owner identity was fabricated and no bypass token was generated."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "allowed_account_count": 1,
+    "external_visitor_count": 0,
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "deployment_status": "succeeded",
+    "unauthenticated_biography_http_status": 401,
+    "authenticated_browser_smoke": false,
+    "limits": "Read-only production metadata/access inspection; narrative browser and API checks ran against local Worker/D1. Real invited-person login and actual Chrome inference were not performed."
+  }
+}

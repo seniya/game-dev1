@@ -265,3 +265,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - [x] TypeScript와 production Worker/UI build 통과. 초대 전용 `custom` 접근과 기존 세계·설정, Chrome 우선 및 v0.16 저장 정책 유지.
 
 규칙은 LIVING_SYSTEM_DESIGN.md/SHARED_WORLD.md, 결과는 `reports/biography-validation.json`, 배포 결과는 `reports/deployment-v019.json`을 따른다. 실제 타인의 로그인·실모델 추론·서사 흥미의 사람 평가를 자동 검증 성공으로 주장하지 않는다.
+
+- [x] 소스 `7023cda05d2c1c9676f8a5bdcbc92831bfe0a347`를 기존 Sites 저장소에 push하고 그 커밋에서 빌드한 아티팩트를 **Sites 버전 30**으로 저장·배포, `succeeded` 확인. `custom` 정책·초대 목록을 변경하지 않았으며 무인증 이야기 API는 401이다. 배포 전후 확정 세계 행(epoch·revision 3773·사건 13,949건·설정)은 동일하다. 배포 도구에는 소유자 저장 세션이 없어 저장을 비동기로 요청했으나 배포 전 응답이 없었다. 기존에 수용한 최대 5분 손실 정책으로 진행했다. 미확정 **54틱(1배속 약 37.8초), 사건 177건**은 새 엔진으로 재실행하지 않는다. 해당 이전 빌드의 시계 행이 남아 있어도 다음 세계 읽기는 마지막 확정 상태를 사용한다. 세계 초기화·임의 계정 위조·bypass 토큰 생성은 하지 않았다. 상세 경계는 `reports/deployment-v019.json`에 기록했다.
