@@ -33,7 +33,7 @@ test('construction spends real local wood, rejects unaffordable builds and persi
 });
 
 test('server retries cannot double-build and reset keeps the previous world backup', async () => {
-  const db=database(), env={ DB:db, ASSETS:{fetch:()=>new Response('asset')} } as never;
+  const db=database(), env={ TEST_AUTH:'1', DB:db, ASSETS:{fetch:()=>new Response('asset')} } as never;
   const call=(path:string,body?:unknown)=>worker.fetch(new Request(`https://world.test/api/${path}`,body ? {method:'POST',headers:{Origin:'https://world.test','Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),env);
   const w=await (await call('world')).json() as ReturnType<typeof initialWorld>;
   const cmd={id:crypto.randomUUID(),revision:w.revision,action:{type:'build',settlementId:'v0',kind:'home'}};

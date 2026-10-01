@@ -19,7 +19,7 @@ async function fixture(page: Page, collected = true) {
   await processChrome(store, Date.now() - (collected ? 60_001 : 0));
   await page.route('**/api/**', async route => {
     const req = route.request(), headers = { ...req.headers(), origin: new URL(req.url()).origin };
-    const response = await worker.fetch(new Request(req.url(), { method: req.method(), headers, body: req.postData() }), { DB: db, ASSETS: { fetch: () => new Response('asset') } } as never);
+    const response = await worker.fetch(new Request(req.url(), { method: req.method(), headers, body: req.postData() }), { TEST_AUTH: '1', DB: db, ASSETS: { fetch: () => new Response('asset') } } as never);
     await route.fulfill({ status: response.status, headers: Object.fromEntries(response.headers), body: await response.text() });
   });
   return store;

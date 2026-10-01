@@ -70,7 +70,7 @@ test('legacy residents retain deterministic colors and all appearance variants h
 });
 
 test('server creation persists through restart and export; retries, stale revisions and invalid input cannot duplicate a resident', async () => {
-  const db=database(), env={DB:db,ASSETS:{fetch:()=>new Response('asset')}} as never;
+  const db=database(), env={TEST_AUTH:'1',DB:db,ASSETS:{fetch:()=>new Response('asset')}} as never;
   const request=(path:string, body?:unknown)=>worker.fetch(new Request(`https://world.test/api/${path}`,body ? {method:'POST',headers:{Origin:'https://world.test','Content-Type':'application/json'},body:JSON.stringify(body)} : {}),env);
   const initial=await (await request('world')).json() as WorldView;
   const cmd:Command={id:crypto.randomUUID(),revision:initial.revision,action:{type:'create-character',character:defaultCharacter('b4')}};

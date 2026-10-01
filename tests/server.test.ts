@@ -7,7 +7,7 @@ import { Conflict, WorldStore } from '../src/server/store';
 
 import { database } from './helpers/database';
 function harness() {
-  const db = database(), env = { DB: db, ASSETS: { fetch: () => new Response('asset') } } as never;
+  const db = database(), env = { TEST_AUTH: '1', DB: db, ASSETS: { fetch: () => new Response('asset') } } as never;
   const request = (path: string, data?: unknown, origin = 'https://world.test') => worker.fetch(new Request(`https://world.test/api/${path}`, data === undefined ? {} : { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(data) }), env);
   const get = async () => (await (await request('world')).json()) as WorldView;
   const send = async (action: Command['action'], revision: number, id = crypto.randomUUID()) => request('command', { id, revision, action });

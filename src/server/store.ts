@@ -12,6 +12,11 @@ interface ChangeRow { revision: number; part: number; body: string }
 export interface CommandInput { action: Command['action']; at: number; checkpoint?: boolean }
 
 const schema = [
+  "CREATE TABLE IF NOT EXISTS world_members(id TEXT PRIMARY KEY,email TEXT NOT NULL,name TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('owner','participant')),blocked INTEGER NOT NULL DEFAULT 0 CHECK(blocked IN (0,1)))",
+  "CREATE UNIQUE INDEX IF NOT EXISTS world_one_owner ON world_members(role) WHERE role='owner'",
+  'CREATE TABLE IF NOT EXISTS access_migrations(id TEXT PRIMARY KEY)',
+  'CREATE TABLE IF NOT EXISTS npc_creators(epoch TEXT NOT NULL,npc TEXT NOT NULL,member TEXT NOT NULL,command TEXT NOT NULL UNIQUE,PRIMARY KEY(epoch,npc))',
+  'CREATE INDEX IF NOT EXISTS npc_creators_member ON npc_creators(epoch,member)',
   'CREATE TABLE IF NOT EXISTS world_live (id INTEGER PRIMARY KEY CHECK(id=1), revision INTEGER NOT NULL, sequence INTEGER NOT NULL, body TEXT NOT NULL)',
   'CREATE TABLE IF NOT EXISTS world_checkpoints (epoch TEXT PRIMARY KEY, revision INTEGER NOT NULL, created INTEGER NOT NULL, head_revision INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS world_changes (epoch TEXT NOT NULL, revision INTEGER NOT NULL, part INTEGER NOT NULL, body TEXT NOT NULL, PRIMARY KEY(epoch,revision,part))',

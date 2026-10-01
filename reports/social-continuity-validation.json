@@ -1,0 +1,132 @@
+{
+  "version": "0.17.0",
+  "coreServer": {
+    "fullPassed": 204,
+    "additionalLegacyAttributionTestPassed": 1,
+    "relatedAccessAndLiveStorePassedAfterFinalChange": 13
+  },
+  "browser": {
+    "fullRunPassed": 52,
+    "fullRunSkippedRealChrome": 1,
+    "newScheduleSelectorFailure": 1,
+    "scheduleSelectorCorrectedAndRerunPassed": 1,
+    "validatedScenarios": 53
+  },
+  "build": "production Worker/UI and TypeScript passed; development authentication removed",
+  "longRegression": {
+    "conditions": 6,
+    "seeds": [
+      7,
+      42,
+      123
+    ],
+    "modes": [
+      "off",
+      "mock"
+    ],
+    "days": [
+      100,
+      365
+    ],
+    "completed": true,
+    "elapsedMs": 605259,
+    "results365": [
+      {
+        "seed": 7,
+        "mode": "off",
+        "survivors": 23,
+        "proposed": 622,
+        "completed": 471,
+        "rescheduled": 21,
+        "missingEvidence": 0,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        }
+      },
+      {
+        "seed": 7,
+        "mode": "mock",
+        "survivors": 19,
+        "proposed": 575,
+        "completed": 488,
+        "rescheduled": 19,
+        "missingEvidence": 0,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        }
+      },
+      {
+        "seed": 42,
+        "mode": "off",
+        "survivors": 16,
+        "proposed": 398,
+        "completed": 305,
+        "rescheduled": 7,
+        "missingEvidence": 0,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        }
+      },
+      {
+        "seed": 42,
+        "mode": "mock",
+        "survivors": 14,
+        "proposed": 365,
+        "completed": 285,
+        "rescheduled": 4,
+        "missingEvidence": 0,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        }
+      },
+      {
+        "seed": 123,
+        "mode": "off",
+        "survivors": 16,
+        "proposed": 241,
+        "completed": 194,
+        "rescheduled": 10,
+        "missingEvidence": 0,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        }
+      },
+      {
+        "seed": 123,
+        "mode": "mock",
+        "survivors": 14,
+        "proposed": 365,
+        "completed": 269,
+        "rescheduled": 8,
+        "missingEvidence": 0,
+        "balance": {
+          "food": 0,
+          "wood": 0,
+          "coins": 0
+        }
+      }
+    ]
+  },
+  "productionCompatibility": "reports/social-production-compatibility.json",
+  "limits": [
+    "Actual invited-person ChatGPT login not exercised; local authenticated-header fixtures used.",
+    "No new real Chrome inference success.",
+    "Long simulation ran locally, not as a production duration/load test."
+  ],
+  "resolvedFindings": [
+    "Circles now retain completion evidence in temporal order, including the latest completion.",
+    "Initial connection no longer leaves owner controls disabled.",
+    "Browser API fixtures include explicit authenticated sessions.",
+    "Appointment test uses the visible resident list and an unambiguous event button."
+  ]
+}

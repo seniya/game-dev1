@@ -80,7 +80,7 @@ test('version 7 migration adds no history or resources; forged request reference
   for(const change of [(x:typeof w)=>x.requests.items[0].sourceEventId='missing',(x:typeof w)=>x.requests.items[0].status='completed',(x:typeof w)=>x.requests.items[0].npcId='missing',(x:typeof w)=>x.requests.items[0].choice='repair']) {const bad=structuredClone(w); change(bad); assert.throws(()=>valid(bad),/부탁/);}
 });
 test('server saves once across retries, rejects stale decisions, and archives request evidence', async () => {
-  const db=database(), env={DB:db,ASSETS:{fetch:()=>new Response('asset')}} as never;
+  const db=database(), env={TEST_AUTH:'1',DB:db,ASSETS:{fetch:()=>new Response('asset')}} as never;
   const call=(path:string,body?:unknown)=>worker.fetch(new Request(`https://world.test/api/${path}`,body?{method:'POST',headers:{Origin:'https://world.test','Content-Type':'application/json'},body:JSON.stringify(body)}:undefined),env);
   const initial=await (await call('world')).json() as ReturnType<typeof initialWorld>, r=initial.state.requests.items[0];
   const cmd={id:crypto.randomUUID(),revision:initial.revision,action:{type:'request',requestId:r.id,choice:'food'}};

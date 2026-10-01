@@ -100,7 +100,7 @@ test('server archive retrieves an old birth and inheritance after restart and fu
   const { database } = await import('./helpers/database');
   const { default: worker } = await import('../src/server/worker');
   const { WorldStore } = await import('../src/server/store');
-  const db = database(), env = { DB: db, ASSETS: { fetch: () => new Response('asset') } } as never;
+  const db = database(), env = { TEST_AUTH: '1', DB: db, ASSETS: { fetch: () => new Response('asset') } } as never;
   const request = (path: string, data?: unknown) => worker.fetch(new Request(`https://world.test/api/${path}`, data ? { method: 'POST', headers: { Origin: 'https://world.test', 'Content-Type': 'application/json' }, body: JSON.stringify(data) } : {}), env);
   await request('world');
   const { w, a, b } = familyFixture(), child = giveBirth(w, a, b)!; die(w, a, 'needs');

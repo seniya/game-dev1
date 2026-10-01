@@ -1,0 +1,16 @@
+{
+  "version": "0.17.0",
+  "source": "read-only production export",
+  "tick": 4271,
+  "npcs": 13,
+  "events": 11900,
+  "originalUnchanged": true,
+  "compactContinuationTicks": 144,
+  "continuationMatches": true,
+  "balance": {
+    "food": 0,
+    "wood": 0,
+    "coins": 0
+  },
+  "productionAdvanced": false
+}

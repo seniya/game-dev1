@@ -76,10 +76,10 @@ for (const seed of [7, 42, 123]) for (const mode of ['off', 'mock'] as const) {
         peakItems, peakCheckpointBytes: peakBytes, maximumStallTicks: maximumStall, retainedReflections: w.npcs.reduce((s, n) => s + (n.cognition?.reflections.length ?? 0), 0),
         modelDecisions: w.llm.completed, balance: balance(w), goodsBalance: urbanBalance(w), dailyRestore: true, exactContinuation: true, missingEvidence: 0 });
       console.log(JSON.stringify({ seed, mode, day, phases, kinds, survivors: w.npcs.filter(n => n.alive).length }));
-      writeFileSync('reports/gatherings-regression.json', JSON.stringify({ version: '0.15.0', completed: false, elapsedMs: Date.now() - started, results }, null, 2) + '\n');
+      writeFileSync('reports/social-continuity-regression.json', JSON.stringify({ version: '0.17.0', completed: false, elapsedMs: Date.now() - started, results }, null, 2) + '\n');
     }
   }
   db.close(); rmSync(dir, { recursive: true });
 }
-writeFileSync('reports/gatherings-regression.json', JSON.stringify({ version: '0.15.0', completed: true, elapsedMs: Date.now() - started, results,
+writeFileSync('reports/social-continuity-regression.json', JSON.stringify({ version: '0.17.0', completed: true, elapsedMs: Date.now() - started, results,
   limits: 'Rule-based simulation on local CPU; no real Chrome inference, external API, human believability evaluation or production long-duration load test.' }, null, 2) + '\n');

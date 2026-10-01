@@ -111,3 +111,65 @@ test('server commits new optional appointment state and restores it with origina
   for (const i of g.invitations) assert.ok(exported.events.some(e => e.id === i.invitationEventId));
   Simulation.load(JSON.stringify(exported));
 });
+
+test('a consenting guest relays to an unseen neighbour, while third-hop and uninvited people cannot spread it', () => {
+  const { w, g, host, guest } = fixture(); g.invitations = g.invitations.filter(i => i.npcId === guest.id);
+  const other = w.npcs[2], third = w.npcs[3];
+  guest.position = { x: host.position.x + 4, y: host.position.y };
+  for (const [n, dx] of [[other, 8], [third, 12]] as const) { n.position = { x: host.position.x + dx, y: host.position.y }; n.identity.age = 30; n.life.bornTick = w.tick - 30 * 1728; n.needs = { ...guest.needs }; n.inventory.food = 3; }
+  w.economy.openingFood += balance(w).food; deliverInvitations(w, g);
+  const i = g.invitations.find(i => i.npcId === other.id)!;
+  assert.ok(i); assert.equal(i.senderId, guest.id); assert.equal(i.depth, 2);
+  assert.ok(!g.invitations.some(i => i.npcId === third.id));
+  assert.ok(!host.memories.some(m => m.sourceEventId === i.invitationEventId));
+  Simulation.load(JSON.stringify(w));
+  const bad = structuredClone(w); bad.gatherings!.items[0].invitations.find(i => i.npcId === other.id)!.depth = 1;
+  assert.throws(() => Simulation.load(JSON.stringify(bad)), /초대 전달/);
+});
+test('a new time requires in-person notice and fresh consent; old promises cannot silently complete', async () => {
+  const { rescheduleGathering } = await import('../src/sim/gatherings');
+  const f = fixture(), { w, g, host, guest } = f;
+  const oldStart = g.startsAt;
+  assert.equal(rescheduleGathering(w, g, guest, '진행하던 작업을 마쳐야 한다.'), true);
+  assert.equal(g.startsAt, oldStart + 18);
+  assert.equal(rescheduleGathering(w, g, guest, '다시 변경'), false);
+  guest.position = { x: host.position.x + 8, y: host.position.y };
+  deliverInvitations(w, g); assert.equal(g.invitations.find(i => i.npcId === guest.id)!.scheduleEventId, undefined);
+  const saved = compactWorld(w); Simulation.load(JSON.stringify(saved));
+  guest.position = { ...host.position }; deliverInvitations(w, g);
+  const invite = g.invitations.find(i => i.npcId === guest.id)!;
+  assert.ok(invite.scheduleEventId); assert.ok(invite.scheduleResponseId); assert.equal(invite.status, 'accepted');
+  attend(f); for (let t = 0; t < 6; t++) { updateGatherings(w); w.tick++; }
+  assert.equal(g.status, 'completed'); Simulation.load(JSON.stringify(compactWorld(w)));
+  const bad = structuredClone(w); delete bad.gatherings!.items[0].invitations[0].scheduleEventId;
+  assert.throws(() => Simulation.load(JSON.stringify(bad)), /약속 변경|초대 없는/);
+});
+test('travel and remaining work can autonomously request a later time without repeatedly postponing', () => {
+  const { w, g, host } = fixture();
+  const n = w.npcs.find(n => n.id !== host.id && !g.invitations.some(i => i.npcId === n.id))!;
+  g.invitations = g.invitations.slice(0,1); n.identity.age = 30; n.needs = { ...host.needs }; n.position = { ...host.position }; n.inventory.food = 2;
+  n.currentAction = { kind: 'Work', score: 20, target: { ...n.position }, path: [], duration: 40, progress: 0, reason: '남은 작업' };
+  deliverInvitations(w, g); assert.ok(g.schedule); assert.equal(g.schedule.requestedBy, n.id);
+  assert.equal(g.invitations.find(i => i.npcId === n.id)!.status, 'accepted');
+  const at = g.startsAt; deliverInvitations(w, g); assert.equal(g.startsAt, at);
+});
+test('repeated real completions form bounded circles, affect future invitations and survive compaction', async () => {
+  const { invitationPreference } = await import('../src/sim/gatherings');
+  const f = fixture(); attend(f); for (let t = 0; t < 6; t++) { updateGatherings(f.w); f.w.tick++; }
+  const { w, host, guest } = f;
+  assert.equal(w.gatherings!.circles?.length ?? 0, 0);
+  w.tick = 60 + 432; host.needs.hunger = guest.needs.hunger = 20; host.needs.social = 20; host.inventory.food = guest.inventory.food = 3;
+  w.economy.openingFood += balance(w).food; proposeGatherings(w);
+  const g = w.gatherings!.items.find(g => g.status === 'planned' && g.hostId === host.id)!; assert.ok(g);
+  const next = { ...f, g }; attend(next); for (let t = 0; t < 6; t++) { updateGatherings(w); w.tick++; }
+  const c = w.gatherings!.circles!.find(c => c.hostId === host.id && c.partnerId === guest.id)!;
+  assert.ok(c); assert.equal(c.meetings, 2);
+  const score = invitationPreference(w, host, guest, g.kind); const before = w.gatherings!.circles; w.gatherings!.circles = [];
+  assert.ok(score > invitationPreference(w, host, guest, g.kind)); w.gatherings!.circles = before;
+  for (let i = 0; i < 120; i++) appendEvent(w, { kind: 'weather', description: '압축 검사', importance: 1 });
+  const saved = compactWorld(w); Simulation.load(JSON.stringify(saved));
+  assert.ok(c.evidence.every(id => saved.events.some(e => e.id === id)));
+  const html = gatheringsView(w, host); assert.match(html, /반복해서 함께한 이웃/);
+  const bad = structuredClone(w); bad.gatherings!.circles![0].evidence[0] = bad.events[0].id;
+  assert.throws(() => Simulation.load(JSON.stringify(bad)), /친교 모임/);
+});

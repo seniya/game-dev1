@@ -301,3 +301,5 @@
 .gathering-card p { font-size: 12px; line-height: 1.65; margin: 7px 0; }
 .gathering-card ul { padding-left: 18px; font-size: 12px; }
 .gathering-card li { margin: 10px 0; }
+
+.member-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1rem 0;border-bottom:1px solid #ddd;overflow-wrap:anywhere}.friendship-circles{padding:1rem;background:#edf3f4;border-radius:8px}.member-row span{min-width:0}.topbar-actions{flex-wrap:wrap}button:disabled{cursor:not-allowed}

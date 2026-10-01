@@ -86,6 +86,7 @@ export function compactWorld(w: WorldState): WorldState {
   w.heritage?.councils.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); });
   w.heritage?.accords.forEach(r => { if (r.lastEventId) keep.add(r.lastEventId); if (r.deliveryEventId) keep.add(r.deliveryEventId); });
   w.requests?.items.forEach(r => { for (const id of [r.sourceEventId, r.lastEventId, r.decisionEventId, r.resultEventId, r.followupStopped, ...(r.context?.evidence ?? []), ...(r.followups ?? []).flatMap(f => [f.eventId, ...f.evidence])]) if (id) keep.add(id); });
+  w.gatherings?.circles?.forEach(c => c.evidence.forEach(id => keep.add(id)));
   w.gatherings?.items.forEach(g => gatheringEvidence(g).forEach(id => keep.add(id)));
   w.loans.forEach(l => keep.add(l.sourceEventId));
   w.llm.queue.forEach(q => keep.add(q.eventId));

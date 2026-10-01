@@ -1,3 +1,4 @@
+import { identity, memberFor, claimLegacyResidents, requireOwner, authorizeCommand, sessionView, checkCreation, creationStatements, AccessError, type AccessEnv } from './access';
 import { readObserver } from './observation';
 import { readHistory, streamWorld } from './history';
 import { summarize } from '../sim/engine';
@@ -12,21 +13,37 @@ import { modelConfig, type ModelEnv } from './model';
 import { chromeSchedule } from './chrome-schedule';
 import { CHROME_COLLECT_MS } from '../llm/chrome-contract';
 
-interface Env extends ModelEnv { DB: D1Database; ASSETS: Fetcher }
+interface Env extends ModelEnv, AccessEnv { DB: D1Database; ASSETS: Fetcher }
 const json = (data: unknown, status = 200) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' } });
 const parseEvent = (row: { body: string }) => JSON.parse(row.body) as WorldEvent;
 export default {
   async fetch(request: Request, env: Env, context?: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (!url.pathname.startsWith('/api/')) return env.ASSETS.fetch(request as never) as unknown as Promise<Response>;
-    // The production Site's owner-only edge gate protects all paths, including /api.
+    // Sites dispatch authenticates invited visitors and strips spoofed identity headers.
     // JSON-only, same-origin writes also prevent cross-site form submissions.
     if (request.method !== 'GET' && (request.headers.get('Origin') !== url.origin || !request.headers.get('Content-Type')?.startsWith('application/json'))) return json({ error: '같은 사이트의 JSON 요청만 허용됩니다.' }, 403);
     if (!env.DB) return json({ error: '세계 저장소에 연결하지 못했습니다.' }, 503);
     const store = new LiveWorldStore(env.DB);
     const wakeAI = () => { if (context) context.waitUntil(Promise.all([processChrome(new LiveWorldStore(env.DB)), processAI(new LiveWorldStore(env.DB), env)]).catch(() => { console.error('AI background processing failed'); })); };
     try {
+      const principal = identity(request, env);
       await store.init(Date.now());
+      const member = await memberFor(env.DB, principal);
+      await claimLegacyResidents(env.DB, member, () => store.read());
+      if (url.pathname === '/api/session' && request.method === 'GET') return json(await sessionView(env.DB, member, await store.read(), principal.local));
+      if (url.pathname === '/api/members') {
+        requireOwner(member);
+        if (request.method === 'GET') return json({ members: (await env.DB.prepare('SELECT id,name,email,role,blocked FROM world_members ORDER BY role,name LIMIT 200').all()).results });
+        if (request.method === 'POST') {
+          const body = await request.text(); if (body.length > 1500) return json({ error: '참여자 요청이 너무 큽니다.' }, 413);
+          const input = JSON.parse(body);
+          if (typeof input.id !== 'string' || typeof input.blocked !== 'boolean' || input.id === member.id) return json({ error: '참여자 설정을 확인해 주세요.' }, 400);
+          await env.DB.batch([env.DB.prepare("UPDATE world_members SET blocked=? WHERE id=? AND role='participant'").bind(input.blocked ? 1 : 0, input.id)]);
+          return json({ ok: true });
+        }
+      }
+      if (url.pathname.startsWith('/api/chrome/') || url.pathname.startsWith('/api/ai/jobs/') || url.pathname.startsWith('/api/export')) requireOwner(member);
       if (url.pathname === '/api/world' && request.method === 'GET') { const world = await store.read(); wakeAI(); return json(viewWorld(world)); }
       if (url.pathname === '/api/ai' && request.method === 'GET') return json(await aiStatus(env.DB, env));
       if (url.pathname === '/api/chrome/claim' && request.method === 'POST') {
@@ -70,6 +87,7 @@ export default {
         const parsed = commandSchema.safeParse(JSON.parse(body));
         if (!parsed.success) return json({ error: '명령 형식이 올바르지 않습니다.' }, 400);
         const command = parsed.data;
+        authorizeCommand(member, command);
         if ((command.action.type === 'history-ai' || command.action.type === 'ai-mode' && command.action.mode === 'remote') && !modelConfig(env)) return json({ error: '서버 모델이 연결되지 않았습니다. 모델 주소와 이름을 먼저 설정해 주세요.' }, 400);
         if (command.action.type === 'sync') {
           try {
@@ -77,7 +95,7 @@ export default {
             wakeAI(); return json(viewWorld(result.world, result.motion));
           } catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
         }
-        const canonical = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(command))))).map(b => b.toString(16).padStart(2, '0')).join('');
+        const canonical = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify({ member: member.id, command }))))).map(b => b.toString(16).padStart(2, '0')).join('');
         const previous = await store.command(command.id);
         if (previous) {
           if (previous.body !== canonical) return json({ error: '이미 사용된 명령 ID입니다.' }, 409);
@@ -85,9 +103,10 @@ export default {
         }
         const current = await store.read();
         if (command.revision !== current.revision) return json({ error: '다른 기기의 최신 상태를 반영했습니다. 변경을 다시 선택해 주세요.', world: viewWorld(current) }, 409);
+        if (command.action.type === 'create-character') await checkCreation(env.DB, member, current);
         const acceptedAt = Date.now();
         const { world, events, motion } = await applyCommand(current, command, acceptedAt);
-        try { await store.commit(world, events, canonical, command.id, [], { action: command.action, at: acceptedAt }); }
+        try { await store.commit(world, events, canonical, command.id, creationStatements(env.DB, member, world, command), { action: command.action, at: acceptedAt }); }
         catch (e) { if (e instanceof Conflict) return json({ error: e.message, world: viewWorld(await store.read()) }, 409); throw e; }
         wakeAI(); return json(viewWorld(world, motion));
       }
@@ -138,6 +157,7 @@ export default {
       }
       return json({ error: '지원하지 않는 요청입니다.' }, 404);
     } catch (error) {
+      if (error instanceof AccessError) return json({ error: error.message }, error.status);
       if (error instanceof SyntaxError) return json({ error: 'JSON 형식을 확인해 주세요.' }, 400);
       if (error instanceof Error && /관찰|저장|주민|시드|도시 정책|역사 조회|도시 의회|공동 목재|마을을 찾을|지원하지 않는 건물|부탁/.test(error.message)) return json({ error: error.message }, 400);
       console.error('World request failed', error instanceof Error ? error.message : 'unknown');

@@ -51,7 +51,7 @@ test('watching residents preserves simulation rules and survives save, rejects d
 });
 test('archive digest counts complete history, pins pagination and same-tick return boundary, isolates worlds',async()=>{
   const db=database(),store=new WorldStore(db);await store.init(0);
-  let w=await store.read();const env={DB:db,ASSETS:{fetch:()=>new Response('asset')}} as never;
+  let w=await store.read();const env={TEST_AUTH:'1',DB:db,ASSETS:{fetch:()=>new Response('asset')}} as never;
   const call=(query:string)=>worker.fetch(new Request(`https://world.test/api/observer?${query}`),env);
   const sim=valid(w.state);sim.setLLM(false);sim.step(144);const next=sim.snapshot();
   const oldIds=new Set(w.state.events.map(e=>e.id)),events=next.events.filter(e=>!oldIds.has(e.id));

@@ -1,7 +1,9 @@
+import type { SessionView } from '../server/access';
 import type { Command, WorldView } from '../server/world';
 export type CloudAction = Command['action'];
 export class CloudClient {
   world?: WorldView;
+  session?: SessionView;
   private queue = Promise.resolve();
   constructor(private receive: (w: WorldView) => void, private status: (message: string) => void) {}
   async get<T>(path: string): Promise<T> {
@@ -22,7 +24,7 @@ export class CloudClient {
     if (!this.world || world.revision > this.world.revision || (world.live?.sequence ?? 0) > (this.world.live?.sequence ?? 0)) { this.world = world; this.receive(world); }
     this.status(world.live ? `진행 중 · 최대 5분마다 자동 저장 · ${world.meta.eventCount.toLocaleString()}개 사건` : `서버 저장 완료 · ${world.meta.eventCount.toLocaleString()}개 사건 · 다른 기기에서 이어보기 가능`);
   }
-  async connect() { this.accept(await this.get<WorldView>('world')); }
+  async connect() { this.session = await this.get<SessionView>('session'); this.accept(await this.get<WorldView>('world')); }
   send(action: CloudAction, commandId = crypto.randomUUID()): Promise<void> {
     const run = async () => {
       if (!this.world) throw new Error('서버 연결을 먼저 확인해 주세요.');
@@ -40,6 +42,7 @@ export class CloudClient {
         if (response!.status === 409 && action.type === 'sync') return;
         throw new Error(result.error ?? '서버에 저장하지 못했습니다.');
       }
+      if (action.type === 'create-character') this.session = await this.get<SessionView>('session');
       this.accept(result);
     };
     const result = this.queue.then(run);
