@@ -1,0 +1,63 @@
+{
+  "id": "appgdep_6abe7dd146c08191837c920b2c5c14c9",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_333321b0e6388191aecd071370410962",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-01T15:36:00.848450+00:00",
+  "source_commit": "b760ef51f0d862b6ae41cf9d65b88bc69482a392",
+  "sites_version": 31,
+  "saved_archive_content_hash": "sha256:e07f1b17a36c3da15ce60c0d85a8be8ca1bbdffe196c4f9df7538fe28219506e",
+  "validation_report": "reports/appeal-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "artifact": "living-small-world-v020.tar.gz",
+    "built_from_pushed_commit": true
+  },
+  "production_preservation": {
+    "same_confirmed_world_row": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3777,
+    "confirmed_meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790852384586,
+      "lastSeen": 1790852384586,
+      "eventCount": 15063,
+      "socialCount": 574,
+      "catchupTicks": 132,
+      "skippedTicks": 901,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790852384586
+    },
+    "world_reset": false,
+    "explicit_save_before_deploy": false,
+    "pending_row_count_before": 0,
+    "pending_row_count_after": 0,
+    "explanation": "No unconfirmed progress row existed immediately before publication, so there was no pending replay to lose. Owner-authenticated session probe returned 401. No identity headers were fabricated; no world command was submitted. Read-only world row metadata matched byte-for-byte after deployment; full event/snapshot content was not re-hashed."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "deployment_status": "succeeded",
+    "js_css_http_status": 200,
+    "js_css_match_local_build": true,
+    "unauthenticated_world_http_status": 403,
+    "authenticated_browser_smoke": false,
+    "limits": "Local Worker/D1 browser checks; no actual invited-person login, real Chrome inference, or human interest evaluation."
+  }
+}

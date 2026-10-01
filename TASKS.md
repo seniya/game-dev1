@@ -298,3 +298,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - [x] 코어/서버 225개 통과, 전체 브라우저 62개 통과·실제 Chrome 1개 건너뜀. 추가한 세계 교체·키보드 검사를 포함한 최종 산책 4개 재검증과 production build.
 
 상세 결과는 `reports/appeal-validation.json`. 배포 성공과 운영 보존 결과는 배포 후 별도 기록한다. 엔진 규칙과 서버 저장·AI 정책은 변경하지 않았다. 실제 타인 로그인·실모델 추론·사람의 흥미 평가는 수행하지 않았다.
+
+- [x] 소스 `b760ef51f0d862b6ae41cf9d65b88bc69482a392`를 기존 Sites 저장소에 push, 해당 production 아티팩트를 **Sites 버전 31**로 배포해 `succeeded` 확인. 운영 JS/CSS가 빌드와 동일하며 custom 접근과 초대 목록을 유지했다. 배포 전후 세계 행(epoch·revision 3777·사건 15,063건·재생/배속/비접속/Chrome 설정)이 동일했고 미확정 진행은 없었다. 인증된 운영 브라우저 검사는 미실행이며 무인증 세계 요청은 403. `reports/deployment-v020.json`.

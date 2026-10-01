@@ -35,4 +35,12 @@
 - [x] 1. 마을 중심 화면
 - [x] 2. 실제 상태 기반 이야기 발견
 - [x] 3. 첫 관찰 안내와 몰입 보기
-- [ ] 4. 회귀 검증·production build·기존 사이트 배포
+- [x] 4. 회귀 검증·production build·기존 사이트 배포
+
+## 완료 결과
+
+네 단계를 모두 완료했다. 코어·서버 225개, 전체 브라우저 62개 통과·실제 Chrome 1개 건너뜀, 세계 교체·키보드를 포함한 최종 산책 4개 통과, production build 통과. 상세 조건은 [검증 보고서](reports/appeal-validation.json)를 따른다.
+
+소스 `b760ef51f0d862b6ae41cf9d65b88bc69482a392`와 해당 빌드를 기존 프로젝트 **Sites 버전 31**에 배포하여 `succeeded`를 확인했다. 운영 JS/CSS 일치, custom 접근 정책 동일, 확정 세계 행(epoch·revision 3777·사건 15,063건·설정) 동일, 배포 직전/직후 미확정 진행 없음. [배포 보고서](reports/deployment-v020.json).
+
+[완료된 게임 열기](https://living-small-world-observatory.seniya2.chatgpt.site). 사람의 흥미 평가·실제 초대 계정 로그인·실제 Chrome 추론은 자동 검증과 구분하며 이번에 수행하지 않았다.

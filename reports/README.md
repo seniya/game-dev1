@@ -6,6 +6,7 @@
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.20 배포 | [deployment-v020.json](deployment-v020.json): Sites 31 `succeeded`, 운영 자산 일치·custom 정책 동일·확정 세계 행 동일·미확정 진행 없음 |
 | v0.20 관찰 경험 | [appeal-validation.json](appeal-validation.json): 지도 중심 화면·이야기 산책·첫 안내·몰입·모바일·전체 회귀와 최종 재검증 |
 | v0.19 최종 검증 | [biography-validation.json](biography-validation.json): 코어/서버 221개, 브라우저 59개, 최종 서사 3개 재검증, 실제 Chrome 1개 건너뜀, build 통과 |
 | v0.19 장기 회귀 | [biography-regression.json](biography-regression.json): 3시드 × off/Mock × 365일, 100/365일 비교; 회계 오차·근거 누락 0 |
