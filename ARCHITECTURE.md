@@ -1,56 +1,58 @@
 # 전체 아키텍처
 
+기준: 앱 v0.19.0. 기본 화면은 서버 세계를 관찰하고, 명시적인 기기 모드와 CLI는 같은 TypeScript 코어를 직접 실행한다.
+
 ```text
-src/ui (DOM, Canvas, localStorage)     src/cli.ts (파일, 인자, 통계)
-                 ↓ commands / ↑ snapshots
-                    src/sim/engine.ts
-               ↙          ↓          ↘
-       decision.ts     social.ts    world.ts / pathfinding.ts
-                    types.ts / random.ts
-                         ↑ validated intents only
-                 src/llm/coordinator.ts
-                         ↓
-                   LLMProvider / Mock
+서버 모드: UI → cloud.ts → Worker API → 인증·역할 검사
+                                      ↓
+                            LiveWorldStore + 명령 검증
+                                      ↓
+                             Simulation / 도메인 규칙
+                                      ↓
+                          D1 체크포인트·원본 사건·시계
+
+기기 모드 / CLI → Simulation ← 검증된 Mock·모델 결과
+Chrome 기기 → 실행권·결과 제출 → 서버 검증·저장 → Simulation
+외부 모델 ← 서버 어댑터·예산·감사 → 서버 검증·저장 → Simulation
 ```
 
-## 책임
-- `types.ts`: JSON state와 command/provider 경계 계약.
-- `world.ts`: seed 기반 초기 마을, 엔티티, 환경 데이터.
-- `decision.ts`: 순수 Utility 후보·실행 계획. 세계 변경 금지.
-- `engine.ts`: 유일한 public 상태 변경 진입점. 틱/행동/명령/검증/저장.
-- `economy.ts`: 엔진이 호출하는 회계/가격/일별 관측 reducer 및 보존 검사.
-- `affinity.ts`: 본인의 관계·기억에 근거한 순수 상대 평가.
-- `ui/observatory.ts`: 경제 그래프/표와 생애·인과 타임라인.
-- `regression.ts`: 다중 시드·조건 장기 검증과 보고서.
-- `social.ts`: 엔진 내부 이벤트 reducer. 관계/기억과 판단 큐.
-- `llm/`: 공급자 교체, 예산 게이트 이후 비동기 처리. 복제된 context 사용.
-- `ui/`: Canvas 지도와 한국어 debug dashboard. simulation state를 직접 수정하지 않는다.
-- `cli.ts`: 브라우저 의존성 없는 실행과 JSON 분석/저장.
+## 책임과 모듈
 
-## 선택
-TypeScript + Vite + DOM/Canvas. 렌더러 라이브러리나 외부 API 없이 실행한다. Node `node:test` + tsx로 코어를 검증한다. 순수 TS 코어이므로 향후 Worker/서버/다른 렌더러로 이동할 수 있다. 브라우저는 fixed tick accumulator를 사용하고 프레임당 처리량을 제한한다. 탭 복귀 시 누적 실시간을 버려 과도한 catch-up을 피한다.
+| 경계 | 주요 파일 | 책임 |
+| --- | --- | --- |
+| 세계 계약 | `src/sim/types.ts`, `validation.ts`, `world.ts` | JSON 상태·저장 변환·입력 불변식·시드 기반 생성 |
+| 실행 | `src/sim/engine.ts`, `decision.ts`, `pathfinding.ts` | 틱·명령·실행 검증, Utility 후보와 경로 |
+| 도메인 | `src/sim/`의 경제·사회·생애·도시·생활·인지·공동 활동 모듈 | 엔진이 호출하는 규칙과 사건 처리 |
+| 서버 진입 | `src/server/worker.ts`, `access.ts`, `world.ts` | 같은 출처 API·신원·역할·명령·서버 시계 |
+| 저장 | `src/server/live-store.ts`, `store.ts` | 시계 행, 확정 저장, 리비전 비교, 구형 저널 복원, 보관 정리 |
+| 조회 | `src/server/history.ts`, `observation.ts`, `biography.ts` | 아카이브 집계·페이지·근거 조회·스트리밍 내보내기 |
+| 개인 관찰 | `src/server/personal-observation.ts` | 계정·세계별 관심 주민과 마지막 관찰 시점 |
+| 화면 | `src/main.ts`, `src/ui/` | 서버 snapshot 표시, 명령 직렬화·재시도, 지도 보간과 관찰 UI |
+| 모델 | `src/llm/`, `src/server/ai.ts`, `model.ts`, `chrome.ts` | 기능별 계약·예산·실행권·결과 검증과 반영 |
+| headless | `src/cli.ts`, `src/*regression.ts` | 같은 코어 실행과 조건별 측정 |
 
-## 불변식
-자원/화폐는 유한한 0 이상의 값이다. 행동은 대상에 인접/도착한 경우만 실행한다. 죽은 주민은 행동하지 않는다. 모르는 범죄의 범인에 대한 관계 페널티는 없다. 모든 관계 변경과 고차원 해석은 실제 사건 ID를 가진다. 외부 입력은 검증 후 엔진에서만 적용된다. UI가 읽은 snapshot은 변조해도 원본 상태에 영향을 주지 않는다.
+## 상태와 저장 경계
 
-## 검증과 운영
-`npm test`, `npm run build`, `npm run simulate -- --days 100`. 브라우저 smoke는 실행/정지/주민선택/저장·로드/필터를 확인한다. 성능 측정은 실제 실행 시간과 사건 수를 함께 보고한다. 코어에는 운영 환경 비밀이나 네트워크 의존성이 없다.
+Simulation은 게임 상태 변경의 공개 진입점이다. UI는 snapshot을 읽고 명령을 제출하며, 서버 snapshot을 브라우저에서 다시 시뮬레이션하지 않는다. 서버 시계·접근 권한·개인 관찰·모델 감사는 게임 규칙 밖에서 관리한다. 개인 관심 지정이나 이야기 조회가 NPC의 기억·선택을 변경하지 않는다.
 
+현재 서버 요청은 `LiveWorldStore`를 사용한다. 2초 동기화는 작은 `world_live` 시계 행만 갱신하고 일반 진행은 최대 5분 간격으로 확정한다. 사용자 명령과 AI 결과는 즉시 확정한다. 같은 소스 지문에서는 체크포인트와 시계로 진행을 재구성하고, 지문이 다르면 마지막 확정 상태를 사용한다. 구형 `WorldStore`의 체크포인트+변경 저널은 읽기 호환과 과거 검증을 위해 유지한다. 보관·복구의 상세 계약은 [SERVER_WORLD](SERVER_WORLD.md)를 따른다.
 
-## v0.3 서버 경계
+Sites `custom` 경계와 서버의 역할 검증을 함께 적용한다. 초대 참여자는 관찰·자신의 NPC 생성, 소유자는 세계 제어·설정·개입을 수행한다. 생성자/계정 정보와 개인 관심 목록은 세계 저장 파일에 넣지 않는다. [공동 세계](SHARED_WORLD.md).
 
-- `src/server/world.ts`: 서버 시계, 검증된 명령, 상한, 필요한 사건 참조만 남기는 체크포인트.
-- `src/server/store.ts`: D1 원자적 리비전 비교/저장, 명령 중복 방지, 사건·참여자·근거 색인.
-- `src/server/worker.ts`: 같은 출처 JSON API, 제한된 사건 페이지, 전체 파일 내보내기.
-- `src/ui/cloud.ts`: 명령 직렬화, 응답 유실 재시도, 최신 리비전 적용.
-- `src/main.ts`: 기본 서버 관측과 명시적인 기기 모드. 서버 snapshot은 표시용이며 브라우저에서 Simulation.load로 실행하지 않는다.
+## AI 경계
 
-자세한 저장·동시성·배포 계약: [SERVER_WORLD.md](SERVER_WORLD.md).
+Chrome은 서버가 만든 제한된 영어 입력에서 허용 목표를 고른다. `src/llm/chrome-contract.ts`는 입력·응답과 한국어 템플릿, `src/ui/chrome.ts`는 기기 session, `src/server/chrome.ts`와 `chrome-schedule.ts`는 실행권·호출 간격·검증·저장을 담당한다. 세계 상태·시계의 권위는 서버에 남는다.
 
-## v0.4 서버 모델 경계
+외부 모델은 서버 연결 설정과 명시적 모드 선택이 있을 때만 호출한다. `model.ts`는 어댑터, `ai.ts`는 예산·작업 수명·저장된 결과 반영을 담당한다. 인증 키는 클라이언트로 전달하지 않는다. Chrome 실패 시 외부 자동 전환은 없고 로컬/CLI의 Mock/off와 무네트워크 코어를 유지한다. [LLM 계약](LLM_ARCHITECTURE.md).
 
-`server/model.ts`는 서버 환경 변수로만 연결되는 JSON 모델 어댑터와 근거 검증을 제공한다. `server/ai.ts`는 D1 예산/lease 예약, 비동기 호출, 결과 저장과 최신 세계 반영을 처리한다. UI는 모드·대화 요청만 제출하며 모델 주소나 인증 키를 받지 않는다. 로컬/CLI의 Mock 코디네이터와 코어의 무네트워크 계약은 유지한다. 자세한 운영 계약은 LLM_ARCHITECTURE.md를 참조한다.
+6A는 사용자 수용 완료다. 새 실기기 자동 추론 성공과 구별하며 [기존 검증 기록](CHROME_AI_VALIDATION.md)을 보존한다.
 
-## Chrome 내장 AI 시험 구현 경계
+## 구현과 불변식
 
-서버가 제한된 영어 판단 요청을 발급하고 선택된 Chrome 기기가 목표 선택 결과를 제출한다. `src/llm/chrome-contract.ts`는 안전한 context·응답 코드·한국어 템플릿, `src/ui/chrome.ts`는 기기 session lifecycle, `src/server/chrome.ts`는 D1 실행권·서버 검증·영구 저장·리비전 적용을 담당한다. 세계 상태·시계는 서버가 계속 소유한다. 외부 API는 명시적으로 선택하는 기존 경로이며 자동 대체하지 않는다. 실제 기기 추론은 아직 수용 검증을 통과하지 않았으며 [CHROME_AI_VALIDATION.md](CHROME_AI_VALIDATION.md)에서 모의 검증과 구분한다.
+TypeScript + Vite + DOM/Canvas, Cloudflare Worker/D1을 사용한다. 서버 모드의 렌더링은 확인된 위치를 보간한다. 기기 모드만 브라우저의 고정 틱 누적기로 코어를 실행하며 탭 복귀 시 과도한 시간 따라잡기를 제한한다.
+
+자원·화폐는 유한한 0 이상의 값이고, 행동은 거리·대상·소유량·생존·재고를 재검증한다. 주민은 모르는 사건의 정보를 선택에 사용하지 않는다. 관계·기억·모델 제안의 근거는 원본 사건에 연결한다. 모델이 자원·위치·관계 수치를 직접 변경하지 않는다. 난수 상태와 승인된 입력을 저장해 재현한다.
+
+## 검증
+
+`npm test`, `npm run test:browser`, `npm run build`와 변경 영역의 회귀를 사용한다. 최신 v0.19 결과와 과거 규모 측정은 [보고서 안내](reports/README.md)에서 구분한다. 코어/로컬 Worker 검증을 운영 부하나 실제 모델 품질의 증거로 확대하지 않는다.
