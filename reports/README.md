@@ -1,11 +1,12 @@
 # 검증·배포 보고서 안내
 
-정리: 2026-10-02. 최신 앱은 v0.19.0이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
+정리: 2026-10-02. 최신 앱은 v0.20.0이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
 
 ## 최신 증거와 버전별 색인
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.20 관찰 경험 | [appeal-validation.json](appeal-validation.json): 지도 중심 화면·이야기 산책·첫 안내·몰입·모바일·전체 회귀와 최종 재검증 |
 | v0.19 최종 검증 | [biography-validation.json](biography-validation.json): 코어/서버 221개, 브라우저 59개, 최종 서사 3개 재검증, 실제 Chrome 1개 건너뜀, build 통과 |
 | v0.19 장기 회귀 | [biography-regression.json](biography-regression.json): 3시드 × off/Mock × 365일, 100/365일 비교; 회계 오차·근거 누락 0 |
 | v0.19 호환·조회 | [보존 운영 사본](biography-production-compatibility.json), [아카이브 조회](biography-archive-check.json): 새 운영 부하 측정이 아닌 로컬 검사 |

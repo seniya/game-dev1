@@ -1,6 +1,8 @@
 # Living Small World — 개발 로드맵
 
-정리: 2026-10-02. 현재 앱 **v0.19.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
+정리: 2026-10-02. 현재 앱 **v0.20.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
+
+v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPEAL_ROADMAP.md)에 기록한다. 지도 중심 화면, 실제 상태 기반 이야기 산책, 첫 관찰 안내와 몰입 보기를 구현했다.
 
 ## 현재 위치
 
@@ -23,6 +25,7 @@
 | v0.16 | 최대 5분 확정 저장·작은 시계 행·보관 정리 | [현재 저장 정책](SERVER_WORLD.md) |
 | v0.17 | 초대 전달·시간 조율·반복 만남·초대형 공동 접속 | [활동](COMMUNITY_ACTIVITIES.md), [권한](SHARED_WORLD.md) |
 | v0.18 | 계정별 관찰·정기 모임·관계 타임라인·꾸미기 | [공동 세계](SHARED_WORLD.md), [생활](LIVING_SYSTEM_DESIGN.md) |
+| v0.20 | 지도 중심 화면·이야기 산책·관심 주민 주제·첫 관찰 안내·몰입 보기 | [완료 기준](APPEAL_ROADMAP.md), [검증](reports/appeal-validation.json) |
 | v0.19 | 삶의 소개·전환점·미결 일·개인 경험의 선택 영향·공동 역사 | [삶의 이야기](LIVING_SYSTEM_DESIGN.md), [최종 검증](reports/biography-validation.json) |
 
 최신 배포 기록은 [Sites 버전 30](reports/deployment-v019.json)이다. 아래 테스트 개수와 제한값은 각 단계 당시의 증거이며 현재 전체 테스트 수나 운영 보장이 아니다.

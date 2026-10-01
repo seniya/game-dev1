@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-02",
+  "version": "0.20.0",
+  "scope": "Map-first observation, grounded story discovery, first-walk guide and immersive viewing",
+  "roadmap": "APPEAL_ROADMAP.md",
+  "unit": {
+    "command": "npm test",
+    "passed": 225,
+    "failed": 0,
+    "new_discovery_tests": 4
+  },
+  "browser_full": {
+    "command": "npm run test:browser",
+    "passed": 62,
+    "failed": 0,
+    "skipped": 1,
+    "skip_reason": "Real Chrome inference requires explicit real-device setup; mocked Chrome tests passed."
+  },
+  "browser_final": {
+    "command": "npx playwright test tests/browser/discovery.spec.ts",
+    "passed": 4,
+    "failed": 0,
+    "includes_additional_world_reset_and_keyboard_focus_case": true
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true
+  },
+  "visual_checks": {
+    "desktop": [
+      1440,
+      1000
+    ],
+    "mobile": [
+      390,
+      844
+    ],
+    "horizontal_overflow": false,
+    "map_top_before_px": 735,
+    "map_top_after_px": 483,
+    "screenshots": [
+      "screenshots/v020-village-desktop.png",
+      "screenshots/v020-village-mobile.png",
+      "screenshots/v020-story-walk.png",
+      "screenshots/v020-immersive.png"
+    ]
+  },
+  "verified": [
+    "Read-only deterministic discovery grounded in actual requests, accepted invitations and evidenced relationships",
+    "Stable recommendation snapshot across ticks; explicit refresh and source links",
+    "Watch filtering including memorials, empty topics and missing legacy gathering state",
+    "Actual-action guide progress, persistence, dismissal/reopening, world reset and blocked device storage",
+    "Immersive Escape/button return preserves paused time and speed",
+    "Keyboard focus retained during topic changes and reduced-motion mobile layout",
+    "Existing server access, storage, personal observation, AI mode and multiplayer browser regression"
+  ],
+  "boundaries": {
+    "simulation_rules_changed": false,
+    "server_schema_changed": false,
+    "external_ai_autofallback_added": false,
+    "actual_chrome_inference": false,
+    "real_invited_person_login": false,
+    "human_interest_evaluation": false,
+    "authenticated_production_browser_smoke": false,
+    "production_session_probe_status": 401,
+    "new_long_run_regression": "Not run: simulation rules unchanged; existing full core/server scale and persistence tests passed."
+  }
+}
