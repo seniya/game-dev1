@@ -1,4 +1,5 @@
 import { requestsSchema, emptyRequests } from './requests-types';
+import { cognitionSchema, validateCognition } from './cognition-validation';
 import { validateRequests } from './requests-validation';
 import { migrateResources } from './employment';
 import { OCCUPATIONS, type Occupation } from './types';
@@ -27,8 +28,9 @@ const actionKind = z.enum(['Wash', 'Idle', 'Move', 'Sleep', 'Eat', 'Drink', 'Gat
 const candidate = z.object({ kind: actionKind, score: z.number().finite(), reason: description, target: pos, targetId: id.optional(), evidence: z.array(id).max(12).optional() }).strict();
 const action = candidate.extend({ path: z.array(pos).max(16384), progress: natural, duration: natural.min(1).max(100) }).strict();
 const relationship = z.object({ npcId: id, familiarity: score, trust: score, affection: score, fear: score, resentment: score, respect: score, family: z.boolean(), interpretation: description, evidence: z.array(id) }).strict();
-const memory = z.object({ id, type: z.enum(['personal', 'social', 'event', 'economic', 'trauma', 'achievement']), description, importance: score, emotionalImpact: z.number().min(-100).max(100), createdAt: natural, relatedNpcIds: z.array(id), relatedLocationIds: z.array(id), sourceEventId: id, repetitions: natural.min(1) }).strict();
+const memory = z.object({ id, type: z.enum(['personal', 'social', 'event', 'economic', 'trauma', 'achievement']), description, importance: score, emotionalImpact: z.number().min(-100).max(100), createdAt: natural, lastRetrievedAt: natural.optional(), relatedNpcIds: z.array(id), relatedLocationIds: z.array(id), sourceEventId: id, repetitions: natural.min(1) }).strict();
 const npc = z.object({
+  cognition: cognitionSchema.optional(),
   profile: profileSchema.optional(),
   id, identity: z.object({ name: z.string().min(1).max(80), age: natural.max(150) }).strict(), position: pos, homeId: id,
   settlementId: id, life: z.object({ bornTick: z.number().int().min(-300000).max(Number.MAX_SAFE_INTEGER), parentIds: z.array(id).max(2), partnerId: id.optional(), generation: natural.max(1000), skill: score, lastBirth: natural, lastMove: natural, deathTick: natural.optional(), birthEventId: id.optional(), deathEventId: id.optional(), estateSettled: z.boolean() }).strict(),
@@ -147,6 +149,7 @@ export function validateSave(input: unknown): WorldState {
     ensure(!e.locationId || buildings.has(e.locationId), '사건 위치'); ensure(e.participants.every(n => npcs.has(n)), '사건 참여자');
   }
   for (const n of w.npcs) {
+    validateCognition(w, n, events, ensure);
     if (n.profile) ensure(n.profile.createdAt <= w.tick && events.get(n.profile.arrivalEventId)?.tick === n.profile.createdAt && events.get(n.profile.arrivalEventId)?.actorId === n.id && events.get(n.profile.arrivalEventId)?.kind === 'arrival' && events.get(n.profile.arrivalEventId)?.data.createdCharacter === true, '생성 주민 출처');
     if (n.id.startsWith('npc-created-')) ensure(Number(n.id.slice(12)) < w.nextId, '생성 ID 순서');
     if (n.id.startsWith('npc-born-')) ensure(Number(n.id.slice(9)) < w.nextId, '출생 ID 순서');

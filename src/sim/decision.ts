@@ -8,6 +8,7 @@ import { type WorldState, type NPC, type Candidate, type Action, type ActionKind
 import { distance } from './random';
 import { affinity } from './affinity';
 import { findPath } from './pathfinding';
+import { applyPlan } from './cognition';
 
 const durations: Record<ActionKind, number> = { Wash: 3, Idle: 2, Move: 1, Sleep: 8, Eat: 1, Drink: 1, Gather: 3, Work: 4, Talk: 2, StoreItem: 1, TakeItem: 1, Share: 1, Theft: 2, Trade: 1, Borrow: 1, Repay: 1 };
 export function candidates(w: WorldState, n: NPC): Candidate[] {
@@ -69,7 +70,11 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
   return list.sort((a, b) => b.score - a.score);
 }
 export function plan(w: WorldState, n: NPC): { action: Action; candidates: Candidate[] } {
+  // Omitted optional actions must get the same insertion order after a JSON round trip.
+  if (!n.currentAction) delete n.currentAction;
   const options = candidates(w, n);
+  applyPlan(w, n, options);
+  options.sort((a, b) => b.score - a.score);
   for (const candidate of options) {
     const path = findPath(w, n.position, candidate.target);
     if (path !== null) return { action: { ...candidate, path, progress: 0, duration: durations[candidate.kind] }, candidates: options.slice(0, 6) };

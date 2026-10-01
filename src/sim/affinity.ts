@@ -1,10 +1,11 @@
 import { attraction, signed } from './attraction';
 import type { NPC, WorldState } from './types';
+import { retrieveMemories } from './memory-retrieval';
 
 // Personal memories remain private; profile impressions are separate from event evidence.
 export function affinity(w: WorldState, n: NPC, other: NPC) {
   const r = n.relationships.find(r => r.npcId === other.id);
-  const memories = n.memories.filter(m => m.relatedNpcIds.includes(other.id));
+  const memories = retrieveMemories(n.memories.filter(m => m.relatedNpcIds.includes(other.id)), w.tick, { npcIds: [other.id] }, 4).map(h => h.memory);
   let experience = 0;
   for (const m of memories) {
     const recency = 1 / (1 + Math.max(0, w.tick - m.createdAt) / (144 * 7));

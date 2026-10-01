@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { retrieveMemories } from '../sim/memory-retrieval';
+import { eventById } from '../sim/social';
 import { GOAL_KINDS, type GoalKind, type NPC, type WorldEvent, type WorldState, type Interpretation } from '../sim/types';
 
 export const CHROME_CONTEXT_VERSION = 1;
@@ -65,7 +67,14 @@ export function chromeContext(world: WorldState, requestId: string, relatedIds: 
   const trigger = fact(event, npc); if (!trigger) return null;
   const known = new Set(npc.memories.map(m => m.sourceEventId));
   const related = world.events.filter(e => relatedIds.includes(e.id) && known.has(e.id) && e.id !== trigger.id).slice(-2).map(e => fact(e, npc)).filter((e): e is ChromeFact => !!e);
-  const memories = world.events.filter(e => known.has(e.id) && e.id !== trigger.id && !related.some(r => r.id === e.id)).slice(-(8 - related.length)).map(e => fact(e, npc)).filter((e): e is ChromeFact => !!e);
+  const exported = new Set<string>();
+  const eligible = npc.memories.filter(m => {
+    const e = eventById(world, m.sourceEventId);
+    if (!e || e.id === trigger.id || exported.has(e.id) || related.some(r => r.id === e.id) || !fact(e, npc)) return false;
+    exported.add(e.id); return true;
+  });
+  const memories = retrieveMemories(eligible, world.tick, { npcIds: event.participants.filter(id => id !== npc.id), locationIds: event.locationId ? [event.locationId] : [] }, 8 - related.length)
+    .map(h => fact(eventById(world, h.memory.sourceEventId)!, npc)!);
   const facts = [trigger, ...related, ...memories];
   const choices = (Object.keys(rules) as ReasonCode[]).filter(code => rules[code].events.includes(trigger.kind)).map(reasonCode => ({ reasonCode, kinds: rules[reasonCode].goals, evidence: facts.filter(e => rules[reasonCode].events.includes(e.kind)).map(e => e.id) }));
   const context: ChromeContext = { version: 1, npcId: npc.id, tick: world.tick, trigger, memories, allowedGoals: [...GOAL_KINDS], choices, ...(related.length ? { related } : {}) };

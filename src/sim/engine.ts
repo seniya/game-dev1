@@ -18,6 +18,8 @@ import { lifeDay, careForChild, die } from './life';
 import { sampleDay, balance, holdings } from './economy';
 import { createWorld } from './world';
 import { plan } from './decision';
+import { urgentNeed } from './cognition';
+import { retrieveMemories } from './memory-retrieval';
 import { findPath, walkable } from './pathfinding';
 import { random, clamp, distance, dayOf } from './random';
 import { eventById, appendEvent, socialEvent, changeRelationship, decayMemories, relationship } from './social';
@@ -106,6 +108,7 @@ export class Simulation {
       syncEmployment(w, n);
       if (careForChild(w, n) || isTravelling(w, n)) { updatePerson(w, n); continue; }
       const a = n.currentAction;
+      if (a && urgentNeed(n) && n.cognition?.plan?.interruption !== urgentNeed(n)) n.currentAction = undefined;
       if (a && ((n.needs.hunger > 88 && n.inventory.food > 0 && a.kind !== 'Eat') || (n.needs.thirst > 90 && a.kind !== 'Drink'))) n.currentAction = undefined;
       if (!n.currentAction) {
         const decision = plan(w, n); n.currentAction = decision.action;
@@ -339,7 +342,8 @@ export class Simulation {
     const w = this.state, request = w.llm.queue[0]; if (!request || !w.llm.enabled) return null;
     const npc = w.npcs.find(n => n.id === request.npcId), event = eventById(w, request.eventId);
     if (!npc || !event) return null;
-    const copy = structuredClone(npc); copy.memories = copy.memories.slice(-8); copy.relationships = copy.relationships.slice(-12);
+    const copy = structuredClone(npc); copy.memories = retrieveMemories(copy.memories, w.tick, { npcIds: event.participants.filter(id => id !== npc.id), locationIds: event.locationId ? [event.locationId] : [] }).map(h => h.memory); copy.relationships = copy.relationships.slice(-12);
+    delete copy.cognition; // Internal plans and reflection history are not extra provider context.
     return { requestId: request.id, context: { npc: copy, event: structuredClone(event), allowedGoals: [...GOAL_KINDS], tick: w.tick } };
   }
   applyInterpretation(requestId: string, input: unknown, provenance?: { evidence: string[]; model: string }): boolean {

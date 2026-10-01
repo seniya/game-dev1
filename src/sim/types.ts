@@ -20,8 +20,9 @@ export const ACTION_LABELS: Record<ActionKind, string> = { Wash: '씻기', Idle:
 export interface Candidate { kind: ActionKind; score: number; reason: string; target: Position; targetId?: string; evidence?: string[] }
 export interface Action extends Candidate { path: Position[]; progress: number; duration: number }
 export interface Relationship { npcId: string; familiarity: number; trust: number; affection: number; fear: number; resentment: number; respect: number; family: boolean; interpretation: string; evidence: string[] }
-export interface Memory { id: string; type: 'personal' | 'social' | 'event' | 'economic' | 'trauma' | 'achievement'; description: string; importance: number; emotionalImpact: number; createdAt: number; relatedNpcIds: string[]; relatedLocationIds: string[]; sourceEventId: string; repetitions: number }
+export interface Memory { id: string; type: 'personal' | 'social' | 'event' | 'economic' | 'trauma' | 'achievement'; description: string; importance: number; emotionalImpact: number; createdAt: number; lastRetrievedAt?: number; relatedNpcIds: string[]; relatedLocationIds: string[]; sourceEventId: string; repetitions: number }
 export interface NPC {
+  cognition?: import('./cognition').Cognition;
   profile?: { commandId?: string; background: string; appearance: import('./character-schema').Appearance; createdAt: number; arrivalEventId: string };
   id: string; identity: { name: string; age: number }; position: Position; homeId: string;
   life: Life; settlementId: string;

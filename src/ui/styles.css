@@ -283,3 +283,13 @@
 .request-followups article { margin:10px 0; padding:10px; border-radius:8px; background:#f5f7ef; }
 .request-followups p { line-height:1.7; }
 @media(max-width:760px) { .observer-panel { padding:16px; } .observer-actions .button { padding:8px 10px; font-size:12px; } .watch-heading { flex-wrap:wrap; } }
+.daily-plan, .memory-retrieval { margin: 16px 0; padding: 14px; border: 1px solid #dce3d8; border-radius: 12px; background: #f6f8f2; }
+.daily-plan summary, .memory-retrieval summary { cursor: pointer; font-weight: 650; font-size: 13px; }
+.daily-plan p, .reflection-card p { font-size: 12px; line-height: 1.7; overflow-wrap: anywhere; }
+.plan-blocks { list-style: none; margin: 12px 0; padding: 0; }
+.plan-blocks li { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 8px; font-size: 11px; border-radius: 6px; }
+.plan-blocks li span { font-variant-numeric: tabular-nums; color: #667264; }
+.plan-blocks li[aria-current] { background: #e2eddf; color: #345a37; }
+.reflection-card { margin-bottom: 10px; padding: 14px; background: #f6f3eb; border-radius: 10px; border-left: 3px solid #a6b896; }
+.reflection-card .evidence-link { margin-right: 10px; }
+.memory-retrieval .memory-card { display: grid; gap: 8px; font-size: 12px; }

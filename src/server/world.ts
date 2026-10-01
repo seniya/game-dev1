@@ -64,6 +64,9 @@ export function compactWorld(w: WorldState): WorldState {
     if (n.life?.birthEventId) keep.add(n.life.birthEventId);
     if (n.life?.deathEventId) keep.add(n.life.deathEventId);
     n.memories.forEach(m => keep.add(m.sourceEventId));
+    n.cognition?.reflections.forEach(r => { keep.add(r.eventId); r.evidence.forEach(id => keep.add(id)); });
+    n.cognition?.plan?.evidence.forEach(id => keep.add(id));
+    n.cognition?.retrieval?.items.forEach(r => keep.add(r.eventId));
     n.relationships.forEach(r => r.evidence.forEach(id => keep.add(id)));
     n.goals.forEach(g => { if (g.sourceEventId) keep.add(g.sourceEventId); });
     n.knownRumors.forEach(id => keep.add(id));

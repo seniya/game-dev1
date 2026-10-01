@@ -1,0 +1,120 @@
+{
+  "version": "0.14.0",
+  "results": [
+    {
+      "seed": 7,
+      "mode": "off",
+      "days": 30,
+      "continuationTicks": 6,
+      "survivors": 13,
+      "retainedReflections": 33,
+      "residentsWithPlans": 11,
+      "completedModelDecisions": 0,
+      "shares": 15,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "exactContinuation": true,
+      "compactReferencesValid": true
+    },
+    {
+      "seed": 7,
+      "mode": "mock",
+      "days": 30,
+      "continuationTicks": 6,
+      "survivors": 13,
+      "retainedReflections": 17,
+      "residentsWithPlans": 11,
+      "completedModelDecisions": 80,
+      "shares": 17,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "exactContinuation": true,
+      "compactReferencesValid": true
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "days": 30,
+      "continuationTicks": 6,
+      "survivors": 12,
+      "retainedReflections": 42,
+      "residentsWithPlans": 11,
+      "completedModelDecisions": 0,
+      "shares": 14,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "exactContinuation": true,
+      "compactReferencesValid": true
+    },
+    {
+      "seed": 42,
+      "mode": "mock",
+      "days": 30,
+      "continuationTicks": 6,
+      "survivors": 12,
+      "retainedReflections": 42,
+      "residentsWithPlans": 11,
+      "completedModelDecisions": 79,
+      "shares": 17,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "exactContinuation": true,
+      "compactReferencesValid": true
+    },
+    {
+      "seed": 123,
+      "mode": "off",
+      "days": 30,
+      "continuationTicks": 6,
+      "survivors": 13,
+      "retainedReflections": 88,
+      "residentsWithPlans": 11,
+      "completedModelDecisions": 0,
+      "shares": 3,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "exactContinuation": true,
+      "compactReferencesValid": true
+    },
+    {
+      "seed": 123,
+      "mode": "mock",
+      "days": 30,
+      "continuationTicks": 6,
+      "survivors": 13,
+      "retainedReflections": 43,
+      "residentsWithPlans": 11,
+      "completedModelDecisions": 234,
+      "shares": 3,
+      "balance": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "exactContinuation": true,
+      "compactReferencesValid": true
+    }
+  ],
+  "scale": {
+    "population": 100,
+    "days": 5,
+    "elapsedMs": 1926,
+    "valid": true
+  },
+  "limits": "Deterministic rule-based adaptation; no real Chrome inference or human believability evaluation."
+}
