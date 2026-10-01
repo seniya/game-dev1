@@ -1,4 +1,5 @@
 import { personalObservation } from './personal-observation';
+import { readBiography } from './biography';
 import { identity, memberFor, claimLegacyResidents, requireOwner, authorizeCommand, sessionView, checkCreation, creationStatements, AccessError, type AccessEnv } from './access';
 import { readObserver } from './observation';
 import { readHistory, streamWorld } from './history';
@@ -120,6 +121,7 @@ export default {
         wakeAI(); return json(viewWorld(world, motion));
       }
       const observed = await store.read(), archive = store.archive();
+      if (url.pathname === '/api/biography' && request.method === 'GET') return json(await readBiography(store, observed, url.searchParams));
       if (url.pathname === '/api/observer' && request.method === 'GET') return json(await readObserver(store, observed, url.searchParams));
       if (url.pathname === '/api/history' && request.method === 'GET') return json(await readHistory(store, observed, url.searchParams));
       if (url.pathname === '/api/export-stream' && request.method === 'GET') return streamWorld(store, observed);

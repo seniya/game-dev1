@@ -40,6 +40,8 @@ const schema = [
   "CREATE INDEX IF NOT EXISTS events_kind_order ON events(epoch,kind,seq)",
   "CREATE INDEX IF NOT EXISTS events_region_order ON events(epoch,json_extract(body,'$.data.settlementId'),kind,seq)",
   'CREATE INDEX IF NOT EXISTS events_cause ON events(epoch,cause)',
+  "CREATE INDEX IF NOT EXISTS events_request_story ON events(epoch,json_extract(body,'$.data.requestId'),seq)",
+  "CREATE INDEX IF NOT EXISTS events_gathering_story ON events(epoch,json_extract(body,'$.data.gatheringId'),seq)",
   'CREATE TABLE IF NOT EXISTS participants (epoch TEXT NOT NULL, npc TEXT NOT NULL, event TEXT NOT NULL, seq INTEGER NOT NULL, PRIMARY KEY(epoch,npc,event))',
   'CREATE INDEX IF NOT EXISTS participants_order ON participants(epoch,npc,seq)',
   'CREATE TABLE IF NOT EXISTS event_refs (epoch TEXT NOT NULL, source TEXT NOT NULL, target TEXT NOT NULL, PRIMARY KEY(epoch,source,target))',

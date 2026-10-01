@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.18.0",
+  "version": "0.19.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -19,7 +19,8 @@
     "regression:small-village": "tsx src/small-village-regression.ts",
     "regression:cognition": "tsx src/cognition-regression.ts",
     "regression:gatherings": "tsx src/gatherings-regression.ts",
-    "regression:social": "tsx src/gatherings-regression.ts"
+    "regression:social": "tsx src/gatherings-regression.ts",
+    "regression:biography": "tsx src/gatherings-regression.ts --biography"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.62.0",

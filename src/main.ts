@@ -1,3 +1,5 @@
+import { Biography, lifeIntroductionView } from './ui/biography';
+import type { BiographyMode } from './sim/biography';
 import { gatheringsView } from './ui/gatherings';
 import { dailyPlanView, cognitionMemoryView } from './ui/cognition';
 import { Observer } from './ui/observer';
@@ -87,6 +89,8 @@ let metric = 'food', lifeLimit = 40;
 let presentationMotion: MotionTrace | undefined;
 const observationEpoch = () => cloudMode ? cloud?.world?.epoch ?? 'loading' : `local:${localWorldKey}`;
 const observer = new Observer({ state:()=>state, epoch:observationEpoch, cloud:()=>cloudMode, get:<T>(path:string)=>cloud!.get<T>(path), changed:()=>render(), ownIds:()=>cloudMode ? cloud?.session?.ownNpcIds.slice(-12) ?? [] : state.npcs.filter(n=>n.profile).slice(-12).map(n=>n.id), open:openDialog, error:toast });
+const biography = new Biography({state:()=>state,epoch:observationEpoch,cloud:()=>cloudMode,get:<T>(path:string)=>cloud!.get<T>(path),open:openDialog,error:toast});
+window.addEventListener('hashchange',()=>{if(!cloudMode||cloudReady)biography.readLink();});
 const markupCache = new Map<string, string>();
 function setHTML(id: string, html: string) { if (markupCache.get(id) !== html) { $(id).innerHTML = html; markupCache.set(id, html); } }
 let noticeTimer: ReturnType<typeof setTimeout>;
@@ -141,6 +145,7 @@ function selectNPC(id: string) { selectedObject = undefined; selectedId = id; ma
 function actionText(n: NPC) { return !n.alive ? '세상을 떠남' : !n.currentAction ? '다음 행동을 생각하는 중' : `${n.currentAction.path.length ? '이동 중 · ' : ''}${ACTION_LABELS[n.currentAction.kind]}`; }
 function render() {
   if (!cloudMode) state = sim.snapshot();
+  if (!cloudMode || cloudReady) biography.readLink();
   if (selectedObject && !objectName(state, selectedObject)) selectedObject = undefined;
   const living = state.npcs.filter(n => n.alive), socialCount = cloudMode ? cloud?.world?.meta.socialCount ?? 0 : state.events.filter(e => ['gathering', 'share', 'talk', 'witness', 'rumor'].includes(e.kind)).length;
   const averageHealth = Math.round(living.reduce((s, n) => s + n.needs.health, 0) / Math.max(1, living.length));
@@ -202,7 +207,7 @@ function renderInspectorContent() {
     return;
   }
   const needLabels = [['hunger', '배고픔', false], ['thirst', '갈증', false], ['fatigue', '피로', false], ['health', '건강', true], ['social', '사회적 충족', true], ['safety', '안전감', true]] as const;
-  setInspectorHTML(`${activityView(state,n)}<div class="action-box"><span class="section-label">지금 하고 있는 일</span><div>${icon(n.currentAction?.path.length ? 'arrow' : 'leaf', 17)}<b>${actionText(n)}</b><span class="small-live-dot"></span></div></div>
+  setInspectorHTML(`${lifeIntroductionView(state,n)}${activityView(state,n)}<div class="action-box"><span class="section-label">지금 하고 있는 일</span><div>${icon(n.currentAction?.path.length ? 'arrow' : 'leaf', 17)}<b>${actionText(n)}</b><span class="small-live-dot"></span></div></div>
     ${n.profile ? `<div class="character-background"><p>${esc(n.profile.background) || '이곳에서 새로운 삶을 시작한 주민입니다.'}</p><button class="evidence-link" data-event="${esc(n.profile.arrivalEventId)}">입주 기록 보기</button></div>` : ''}<div class="section-label needs-title">몸과 마음 <span>0 — 100</span></div><div class="needs-list">${needLabels.map(([key, label, positive]) => { const value = Math.round(n.needs[key]), danger = positive ? value < 35 : value > 75; return `<div class="need-row"><span>${label}</span><div class="need-track"><i style="width:${value}%;background:${danger ? '#c9826c' : positive ? '#7d9c86' : '#b7a275'}"></i></div><b>${value}</b></div>`; }).join('')}</div>
     <div class="section-label spaced">왜 이 행동을 할까요? ${icon('spark', 13)}</div><div class="reason-box">${esc(n.decision.reason)}<div class="reason-foot">Utility AI · ${timeLabel(n.decision.tick)} 판단</div></div>
     <details class="utility-details"><summary>행동 후보 점수 보기</summary><div>${n.decision.candidates.map(c => `<div class="utility-row"><span>${ACTION_LABELS[c.kind]}<small>${esc(c.reason)}</small>${(c.evidence ?? []).map(id => `<button class="evidence-link" data-event="${esc(id)}">${esc(id)}</button>`).join('')}</span><b>${c.score.toFixed(1)}</b></div>`).join('') || '<p>첫 틱이 지나면 판단을 확인할 수 있습니다.</p>'}</div></details>
@@ -263,6 +268,9 @@ document.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLElement>('button'); if (!button) return;
   if (button.dataset.place) { $<HTMLDialogElement>('detail-dialog').close(); selectObject({kind:'building',id:button.dataset.place}); }
   if (button.dataset.resource) selectObject({kind:'resource',id:button.dataset.resource});
+  if (button.dataset.biography) void biography.open(button.dataset.biography,(button.dataset.mode??'turns') as BiographyMode,button.dataset.root??'',button.dataset.partner??'');
+  if (button.hasAttribute('data-life-more')) biography.more();
+  if (button.hasAttribute('data-copy-life')) void biography.copy();
   if (button.dataset.story) void observer.story(button.dataset.story);
   if (button.dataset.storyMore) void observer.story(button.dataset.storyMore,true);
   if (button.dataset.digest) void observer.show(button.dataset.digest as 'today'|'yesterday'|'since');
@@ -665,13 +673,14 @@ function renderCharacterWatch() {
   const n = selectedNPC(), a = n.currentAction, target = state.npcs.find(p => p.id === a?.targetId?.replace('peer:', ''));
   const recent = state.events.filter(e => e.participants.includes(n.id) && ['talk','share','trade','loan','repayment','family','theft','relationship'].includes(e.kind)).slice(-3).reverse();
   $('map-scope').textContent = map.viewMode === 'region' ? `${state.civilization.settlements.length}개 정착지 · ${state.width}×${state.height}칸` : map.viewMode === 'follow' ? `${n.identity.name} · (${n.position.x}, ${n.position.y})` : `${villageSize(state).width}×${villageSize(state).height}칸 · 구역 확대 가능`;
-  $('character-watch').innerHTML = `<div class="watch-heading">${portrait(appearance(n), characterVisual(n, state))}<div><b>${esc(n.identity.name)}${isOwnNPC(n) ? ' · 내가 만든 주민' : n.profile ? ' · 참여자가 만든 주민' : ''}</b>${characterStatus(n, state)}<p>${actionText(n)}${target ? ` · 상대 <button class="text-button" data-npc="${esc(target.id)}">${esc(target.identity.name)}</button>` : ''}</p></div><button class="button" data-tab="relationships">관계 살펴보기</button><button class="button" data-story="${esc(n.id)}">관계와 가족의 이야기</button></div>${activityView(state,n)}<p>${esc(n.decision.reason)}</p><div class="watch-events">${recent.length ? recent.map(e => `<button class="evidence-link" data-event="${esc(e.id)}">${esc(e.description)}</button>`).join('') : '<span class="muted">재생하면 이웃과의 실제 만남과 행동을 관찰할 수 있습니다. 관계·기억 탭과 선택 주민 기록에서 이전 사건도 확인하세요.</span>'}</div>`;
+  $('character-watch').innerHTML = `<div class="watch-heading">${portrait(appearance(n), characterVisual(n, state))}<div><b>${esc(n.identity.name)}${isOwnNPC(n) ? ' · 내가 만든 주민' : n.profile ? ' · 참여자가 만든 주민' : ''}</b>${characterStatus(n, state)}<p>${actionText(n)}${target ? ` · 상대 <button class="text-button" data-npc="${esc(target.id)}">${esc(target.identity.name)}</button>` : ''}</p></div><button class="button" data-tab="relationships">관계 살펴보기</button><button class="button" data-story="${esc(n.id)}">관계와 가족의 이야기</button><button class="button" data-biography="${esc(n.id)}">삶의 이야기</button></div>${activityView(state,n)}<p>${esc(n.decision.reason)}</p><div class="watch-events">${recent.length ? recent.map(e => `<button class="evidence-link" data-event="${esc(e.id)}">${esc(e.description)}</button>`).join('') : '<span class="muted">재생하면 이웃과의 실제 만남과 행동을 관찰할 수 있습니다. 관계·기억 탭과 선택 주민 기록에서 이전 사건도 확인하세요.</span>'}</div>`;
 }
 $('create-character').onclick = () => {
   if (creatingCharacter) { toast('주민의 입주를 저장하고 있습니다.'); return; }
   if (cloudMode && !cloudReady) { toast('서버 연결을 먼저 확인해 주세요.'); return; }
   openDialog(characterForm(state));
 };
+document.addEventListener('change',event=>{const target=event.target as HTMLSelectElement;if(target.id==='biography-partner')biography.pair(target.value);});
 $('object-picker').onchange = () => { const [kind, id] = $<HTMLSelectElement>('object-picker').value.split(':'); if (id && (kind === 'building' || kind === 'resource')) selectObject({ kind, id }); else selectNPC(selectedId); };
 $('map-mode').onchange = () => { selectedObject = undefined; map.setMode($<HTMLSelectElement>('map-mode').value as 'city' | 'region' | 'follow'); render(); };
 $('follow-character').onclick = () => { selectedObject = undefined; map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; render(); };

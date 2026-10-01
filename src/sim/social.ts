@@ -26,16 +26,18 @@ export function relationship(n: NPC, targetId: string): Relationship {
 }
 export function changeRelationship(w: WorldState, n: NPC, targetId: string, changes: Partial<Pick<Relationship, 'familiarity' | 'trust' | 'affection' | 'fear' | 'resentment' | 'respect'>>, cause: WorldEvent, meaning: string) {
   const r = relationship(n, targetId), actual: string[] = [];
+  const measurements:Record<string,number>={};
   for (const [key, amount] of Object.entries(changes)) {
     const k = key as keyof typeof changes, before = r[k];
     r[k] = clamp(before + amount);
+    if(r[k]!==before){measurements[`${k}Before`]=before;measurements[`${k}After`]=r[k];}
     if (r[k] !== before) actual.push(`${key} ${r[k] - before > 0 ? '+' : ''}${Math.round((r[k] - before) * 100) / 100}`);
   }
   r.interpretation = meaning;
   if (!r.evidence.includes(cause.id)) r.evidence.push(cause.id);
   const evidenceLimit = w.npcs.length > 400 ? 4 : 12;
   if (r.evidence.length > evidenceLimit) r.evidence = [r.evidence[0], ...r.evidence.slice(-(evidenceLimit - 1))];
-  appendEvent(w, { kind: 'relationship', actorId: n.id, targetId, importance: 30, causeId: cause.id, description: `${n.identity.name} → ${person(w, targetId)?.identity.name}: ${actual.join(', ') || '관계의 기억을 갱신'}`, data: { meaning } });
+  appendEvent(w, { kind: 'relationship', actorId: n.id, targetId, importance: 30, causeId: cause.id, description: `${n.identity.name} → ${person(w, targetId)?.identity.name}: ${actual.join(', ') || '관계의 기억을 갱신'}`, data: { meaning, ...measurements } });
 }
 export function remember(w: WorldState, n: NPC, event: WorldEvent, description = event.description) {
   if (event.importance < 45 || !n.alive) return;

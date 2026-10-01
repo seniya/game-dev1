@@ -1,0 +1,42 @@
+{
+  "version": "0.19.0",
+  "coreServer": {
+    "passed": 221,
+    "failed": 0,
+    "command": "npm test"
+  },
+  "browser": {
+    "passed": 59,
+    "failed": 0,
+    "skippedRealChromeInference": 1,
+    "command": "npx playwright test --workers=1",
+    "finalNarrativeRerun": {
+      "passed": 3,
+      "failed": 0
+    },
+    "earlyTestCorrections": [
+      "Used an actual character arrival because an initial resident legitimately had no turning points after one day.",
+      "Explicit reload tests old-world deep links; navigating to the same fragment can remain in the current document."
+    ]
+  },
+  "regression": {
+    "report": "reports/biography-regression.json",
+    "conditions": 6,
+    "days": 365,
+    "missingEvidence": 0,
+    "allResourceBalanceErrors": 0
+  },
+  "productionCompatibility": "reports/biography-production-compatibility.json",
+  "archiveReadCheck": "reports/biography-archive-check.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true
+  },
+  "screenshots": [
+    "reports/screenshots/v019-biography-desktop.png",
+    "reports/screenshots/v019-biography-mobile.png"
+  ],
+  "externalApiUsed": false,
+  "limits": "Local automation and preserved production-copy compatibility; not real invited-person login, real model inference, human narrative quality evaluation, or production long-duration load.",
+  "deployment": "reports/deployment-v019.json"
+}

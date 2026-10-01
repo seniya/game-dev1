@@ -216,3 +216,7 @@
 - `recurring-production-compatibility.json`: 보존된 이전 운영 사본 13명·12,339건을 읽어 144틱 압축/복원 연속성을 비교. 새 운영 내보내기나 운영 세계 진행을 의미하지 않는다.
 - `screenshots/v018-*`: 캐릭터 꾸미기, 개인 관찰, 관계 타임라인의 데스크톱·모바일 확인.
 - 사람의 실제 로그인과 새 실모델 추론 품질은 이번 완료 범위에서 제외한다. 배포 및 운영 메타데이터 보존 결과는 `deployment-v018.json`에 별도로 기록한다.
+
+### v0.19 캐릭터의 삶과 공동 역사
+
+`biography-validation.json`은 221개 코어/서버, 59개 브라우저 및 최종 서사 3개 재검증, production build의 결과다. 실제 Chrome 추론 1개는 건너뛰었다. `biography-regression.json`은 새 규칙으로 3시드 × off/Mock의 365일 실행을 마친 결과이며, 시드별 원본은 `biography-seed-*.json`이다. `biography-production-compatibility.json`과 `biography-archive-check.json`은 보존된 과거 운영 사본으로 수행한 로컬 호환/조회 검사다. 현재 production 실행이나 인간의 자연스러움 평가를 뜻하지 않는다. `deployment-v019.json`에 별도의 실제 배포 결과와 저장 상태를 기록한다.

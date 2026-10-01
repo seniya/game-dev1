@@ -1,0 +1,24 @@
+{
+  "source": "Preserved production export loaded only into local SQLite; not production latency.",
+  "events": 12339,
+  "results": [
+    {
+      "mode": "turns",
+      "ms": 34,
+      "bytes": 11284,
+      "chapters": 12
+    },
+    {
+      "mode": "threads",
+      "ms": 27,
+      "bytes": 11627,
+      "chapters": 7
+    },
+    {
+      "mode": "shared",
+      "ms": 3,
+      "bytes": 119,
+      "chapters": 0
+    }
+  ]
+}

@@ -324,3 +324,26 @@
 .timeline-stage { font-size:11px; font-weight:700; color:#627758; }
 .relationship-milestone .story-event { margin-top:6px; }
 @media(max-width:600px) { .look-presets { gap:6px; } .look-preset { flex-direction:column; gap:4px; padding:8px 3px; font-size:11px; text-align:center; } .hair-gallery { grid-template-columns:repeat(5,minmax(0,1fr)); } #character-preview .character-portrait { width:100px; } }
+
+/* A resident's life, grounded in the same shared event archive. */
+.life-introduction { padding:18px; margin-bottom:18px; border:1px solid #d9dfd2; border-radius:14px; background:#f4f6ed; }
+.life-introduction h3 { margin:6px 0 12px; }
+.life-introduction p,.life-thread p,.life-perspectives p { line-height:1.7; overflow-wrap:anywhere; }
+.life-introduction p b { display:block; color:#5b6b52; font-size:11px; }
+.life-actions { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+.life-actions [aria-pressed="true"] { background:#294c3b; color:white; }
+.life-thread,.life-chapter { border:1px solid #dfe3d7; border-radius:12px; padding:16px; margin:12px 0; background:#fafbf6; overflow-wrap:anywhere; }
+.life-thread h4 { margin:6px 0; }
+.life-thread small { color:#56704b; }
+.life-chapter summary { cursor:pointer; padding:10px 0; color:#47604a; }
+.life-turn { border-left:3px solid #70875c; padding-left:12px; }
+.life-partner { display:flex; flex-direction:column; gap:8px; margin:18px 0; }
+.life-partner select { width:100%; padding:10px; }
+.life-share { display:flex; flex-wrap:wrap; gap:8px; margin:18px 0; }
+.life-share label { flex-basis:100%; }
+.life-share input { min-width:0; width:100%; padding:10px; border:1px solid #dfe3d7; border-radius:6px; }
+.perspective-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.perspective-grid article { border:1px solid #dfe3d7; border-radius:12px; padding:14px; min-width:0; }
+.life-motive { background:#eef2e8; padding:10px; border-radius:8px; }
+#biography .muted { line-height:1.7; }
+@media(max-width:600px) { .perspective-grid { grid-template-columns:1fr; } .life-chapter { padding:12px; } }
