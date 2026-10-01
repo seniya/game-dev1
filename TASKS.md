@@ -228,3 +228,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 장기 회귀와 배포 결과는 `reports/social-continuity-regression.json`, `reports/social-continuity-validation.json`, `reports/deployment-v017.json`에 기록한다. 실제 타인의 ChatGPT 계정 로그인, 실제 Chrome 추론, production의 365일 부하를 로컬 자동 검증으로 대신 성공 처리하지 않는다.
 
 - [x] 5. **3시드 × off/Mock의 6조건 × 365일** 완료, 100일/365일 비교. 매일 회계·상태 상한·복원, 30일 간격과 100/365일의 압축 전후 독립 엔진 일치, 초대/완료 중복·인과 참조 검사. 모든 조건 회계 오차와 원본 근거 누락 0. 365일 실제 일정 변경은 조건별 4~21건이며 성공을 강제로 생성하지 않았다.
+
+- [x] 소스 `3b097f148a9262291ff9bef37df1c81f8637ab93`와 해당 production 빌드를 기존 사이트 **Sites 버전 28**로 배포, `succeeded` 확인. 배포 전 명시적 저장은 같은 세계의 4,403틱·주민 13명·사건 12,339건을 확정했다. 기존 비접속 진행 선택에 따라 저장 때 132틱을 반영했고 재생·배속·Chrome 모드는 유지했다. 배포 후 D1에서 동일 epoch·시계·설정, 사건 12,340건을 확인했다. 초대 가능 `custom` 정책을 유지했으며 아직 추가 사용자 초대는 하지 않았다. `reports/deployment-v017.json`.

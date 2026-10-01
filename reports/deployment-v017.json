@@ -1,0 +1,48 @@
+{
+  "id": "appgdep_6abe1718a68081918aca091ee79b3216",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_8aed68697c7481918e00c86f1bcd53a4",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-01T08:17:37.557639+00:00",
+  "source_commit": "3b097f148a9262291ff9bef37df1c81f8637ab93",
+  "sites_version": 28,
+  "saved_archive_content_hash": "sha256:a8daa569c264149f06f3724d5aac5cd06147a724826bad36775a0f97238a57f5",
+  "validation_report": "reports/social-continuity-validation.json",
+  "shared_world": {
+    "audience": "custom",
+    "external_invites_enabled": true,
+    "currently_allowed_users": 1,
+    "additional_people_invited_by_agent": false,
+    "owner_bootstrap_configured": true,
+    "actual_other_person_login_verified": false
+  },
+  "production_preservation": {
+    "explicit_save_before_deploy": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision_after": 3766,
+    "event_count_after": 12340,
+    "settings_after": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "aiMode": "chrome"
+    },
+    "verification": "Read-only deployed D1 world metadata compared with explicit pre-deploy save; same epoch, clock, AI generation and settings. Archive count increased by one between observations. No reset or rollback requested.",
+    "save_before": {
+      "revision": 3765,
+      "tick": 4403,
+      "population": 13,
+      "events": 12339,
+      "same_settings": true,
+      "clock": 1790842598881
+    }
+  }
+}
