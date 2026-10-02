@@ -4,7 +4,7 @@
 
 현재 앱은 **v0.30.0**, 세계 저장 형식은 **v9**입니다. v1~v8 저장을 변환해서 읽으며 기존 세계를 업데이트만으로 초기화하지 않습니다. [문서 안내](DOCUMENTATION.md)에서 현재 규칙과 과거 개발 기록을 찾아볼 수 있습니다.
 
-배포 주소: [Living Small World](https://living-small-world-observatory.seniya2.chatgpt.site). 최신 저장된 배포 결과는 **Sites 버전 41, succeeded**입니다. [v0.29 배포 보고서](reports/deployment-v029.json). 버전별 배포 상태와 보존 경계는 [검증·배포 보고서](reports/README.md)를 따릅니다. 과거 v0.19의 미확정 진행 손실 기록도 원본 보고서에 보존합니다.
+배포 주소: [Living Small World](https://living-small-world-observatory.seniya2.chatgpt.site). 최신 저장된 배포 결과는 **Sites 버전 42, succeeded**입니다. [v0.30 배포 보고서](reports/deployment-v030.json). 버전별 배포 상태와 보존 경계는 [검증·배포 보고서](reports/README.md)를 따릅니다. 과거 v0.19의 미확정 진행 손실 기록도 원본 보고서에 보존합니다.
 
 v0.30에는 **내 이웃** 화면을 추가했습니다. 직접 만든 주민의 위치·행동·생활 문제·관계와 공동 목표를 모아 보고 지도에서 따라갈 수 있습니다. **내 가문**에는 첫 흑자·공동 소유·다음 세대 현장 생산의 조건과 달성 근거를 표시합니다. [규칙과 범위](NEIGHBORS_PLAN.md).
 

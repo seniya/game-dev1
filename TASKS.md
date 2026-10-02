@@ -399,3 +399,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - 전체 코어/서버 309개 및 추가된 계정/미확정 사건 검사 포함 관련 33개, 고유 **311개 통과**. 전체 브라우저 **99개 통과·실모델 1개 건너뜀**, 최종 UI와 새 v0.29 복구 **3개 통과**, 고유 **100개**. [실패·수정·재검증](reports/neighbors-validation.json).
 - 3시드 × off/Mock × 3유형 × 3인연 × 60일의 54조건과 혼합 5명 365일 6조건, 300/1000/3000명 3조건, 총 **63조건**의 회계·독립 재개 검사 통과. [원자료](reports/neighbors-regression.json), [비교 판단](NEIGHBORS_BALANCE.md). 1,000명 3일 조건의 생존 인구 930명도 결과로 보존했다.
 - 직전 배포 소스 `30dfcb064655fe25dca53a8d8a80d99cd2043f16`의 엔진을 보존하고 SQLite/실제 로컬 Worker 복구를 검증했다. production build와 보존 엔진 무결성 검사 통과. 배포와 운영 보존 결과는 `reports/deployment-v030.json`에 별도 기록한다.
+
+- 소스 `b4a56fd86ef3197a5e5becf8c2eadbab767c5bcc`를 기존 Sites 저장소에 push하고 동일 커밋에서 빌드·패키징한 아티팩트를 **Sites 42 succeeded**로 배포했다. custom 접근 정책·확정 세계 revision 3804·사건 27,738개·Chrome 설정 보존, 배포 전후 대기 행 없음. [배포 보고서](reports/deployment-v030.json). 운영 인증 브라우저·원본 전체 재해시는 별도 미실행 경계다.

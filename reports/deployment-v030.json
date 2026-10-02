@@ -1,0 +1,59 @@
+{
+  "id": "appgdep_6abf5c70bfe88191b2a1f707764a0477",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_35d6d614ebdc8191a86fda4d24fcb21c",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-02T07:25:45.288760+00:00",
+  "source_commit": "b4a56fd86ef3197a5e5becf8c2eadbab767c5bcc",
+  "sites_version": 42,
+  "saved_archive_content_hash": "sha256:ad443c0e36f64f820421eecb1cc175ddddfbc134353a44433a46e5cf0a8f0a79",
+  "validation_report": "reports/neighbors-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "built_from_pushed_commit": true,
+    "archive_sha256": "1784123253cc9fb750802cb7b67a0f108142618327be7230b71b335188a9c097",
+    "packaging": "Available Sites package-site.sh and prepare-site-build.cjs helpers; the local skill referenced site-workflow.mjs but that script was absent. Native credential, exact Git push, build, package, save and deploy tools were used."
+  },
+  "production_preservation": {
+    "same_confirmed_world_row": true,
+    "same_pending_clock_rows": true,
+    "before": [
+      {
+        "id": 1,
+        "revision": 3804,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790922185439,\"lastSeen\":1790922185439,\"eventCount\":27738,\"socialCount\":1331,\"catchupTicks\":108,\"skippedTicks\":1237,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790922185439,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "after": [
+      {
+        "id": 1,
+        "revision": 3804,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790922185439,\"lastSeen\":1790922185439,\"eventCount\":27738,\"socialCount\":1331,\"catchupTicks\":108,\"skippedTicks\":1237,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790922185439,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "pending_before": [],
+    "pending_after": [],
+    "world_reset": false,
+    "explanation": "Same world epoch, confirmed revision 3804, 27738 events and settings before and after deployment. No pending clock rows observed. No authenticated production owner application session was available for explicit save; no application identity was forged. Exact published v0.29 engine recovery passed SQLite and local Worker checks. Full snapshot/event archive bodies were not rehashed."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "native_deployment": "succeeded",
+    "authenticated_browser_smoke": false,
+    "asset_fetch": false
+  }
+}

@@ -1,7 +1,7 @@
 {
   "version": "0.30.0",
   "date": "2026-10-02",
-  "implementation": "All five requested scopes implemented; production deployment recorded separately in deployment-v030.json.",
+  "implementation": "All five requested scopes implemented, validated and deployed to the existing invited-only Site.",
   "core_server": {
     "fullSuite": {
       "passed": 309,
@@ -38,7 +38,11 @@
     "preCommitProductionBuildPassed": true,
     "typeCheckPassed": true,
     "retainedManifestCheckPassed": true,
-    "finalPushedCommitBuild": "See deployment-v030.json; rebuild and package after pushing the exact source commit."
+    "finalPushedCommitBuild": {
+      "passed": true,
+      "sourceCommit": "b4a56fd86ef3197a5e5becf8c2eadbab767c5bcc",
+      "archive": "deployment-v030.json"
+    }
   },
   "regression": {
     "passed": 63,
@@ -78,5 +82,10 @@
     "screenshots/v030-dynasty-desktop.png",
     "screenshots/v030-dynasty-mobile.png"
   ],
-  "priorEvidence": "Older version screenshots and the old map profile were restored after browser-generated overwrites; this run is stored under v030 names and neighbors-map-profile.json."
+  "priorEvidence": "Older version screenshots and the old map profile were restored after browser-generated overwrites; this run is stored under v030 names and neighbors-map-profile.json.",
+  "deployment": {
+    "sitesVersion": 42,
+    "status": "succeeded",
+    "report": "deployment-v030.json"
+  }
 }
