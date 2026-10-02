@@ -37,6 +37,8 @@ import { ChromeRunner } from './ui/chrome';
 import { CloudClient, type CloudAction } from './ui/cloud';
 import { eventLink } from './ui/observatory';
 import './ui/styles.css';
+import './ui/mobile.css';
+import { setupResponsiveUI, revealInspector } from './ui/responsive';
 import { Simulation, summarize } from './sim/engine';
 import { ACTION_LABELS, OCCUPATIONS, GOAL_LABELS, type WorldState, type WorldEvent, type NPC } from './sim/types';
 import { dayOf, timeLabel } from './sim/random';
@@ -112,28 +114,28 @@ $('app').innerHTML = `
     <a class="brand" href="#" aria-label="Living Small World 홈"><span class="brand-icon">${icon('leaf', 27)}</span><span>living<br><b>small world<span class="brand-dot">.</span></b></span></a>
     <div class="sidebar-caption">작은 세계 관측소</div>
     <nav aria-label="주 메뉴">
-      <button class="nav-button active" data-view="world" aria-label="세계 관찰" title="세계 관찰">${icon('world')}<span>세계 관찰</span><span class="nav-dot"></span></button>
+      <button class="nav-button active" data-view="world" aria-current="page" aria-label="세계 관찰" title="세계 관찰">${icon('world')}<span>세계 관찰</span><span class="nav-dot"></span></button>
       <button class="nav-button" data-view="residents" aria-label="마을 주민" title="마을 주민">${icon('people')}<span>마을 주민</span><span id="nav-population" class="nav-number">100</span></button>
       <button class="nav-button" data-view="history" aria-label="세계의 기록" title="세계의 기록">${icon('book')}<span>세계의 기록</span></button>
       <button class="nav-button" data-view="economy" aria-label="마을 경제">${icon('food')}<span>마을 경제</span></button>
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.20</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.24</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
-    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></header>
+    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
     <div class="page-content">
       <section class="page-heading"><div><div class="eyebrow">LIVING SMALL WORLD</div><h1 id="page-title">이야기가 자라는 마을</h1><p id="page-subtitle">저마다의 하루가 만나, 이 세계만의 역사가 됩니다.</p></div><div class="world-status"><span id="running-dot" class="live-dot"></span><span id="running-status">세계가 살아가는 중</span><span class="seed-label">SEED <b id="seed-label">42</b></span></div></section>
-      <section class="cloud-panel" aria-label="세계 저장 및 연결"><div><b>${cloudMode ? '서버에 이어지는 세계' : '이 기기의 세계'}</b><p id="cloud-status">${cloudMode ? '서버 세계를 불러오는 중…' : '이 기기에서만 진행하고 저장합니다.'}</p></div><div class="cloud-actions">${cloudMode ? '<label><input id="offline-toggle" type="checkbox" disabled/> 자리를 비워도 진행</label><button id="cloud-retry" class="button">연결 새로고침</button><a class="text-button" href="?local=1">기기 세계 관찰</a>' : '<a class="button" href="/">서버 세계로 돌아가기</a>'}</div>${cloudMode ? '<p class="cloud-policy">기본은 비접속 시 정지입니다. 켜면 재접속할 때 최대 게임 하루(144틱)만 반영합니다. 재생·정지·배속 설정은 모든 기기에 적용됩니다.</p>' : ''}</section>
-      <div id="world-view" class="world-layout">
+      <details class="cloud-panel" id="connection-details"><summary><div><b>${cloudMode ? '서버에 이어지는 세계' : '이 기기의 세계'}</b><p id="cloud-status">${cloudMode ? '서버 세계를 불러오는 중…' : '이 기기에서만 진행하고 저장합니다.'}</p></div><span class="disclosure-label">연결 설정</span></summary><div class="cloud-actions">${cloudMode ? '<label><input id="offline-toggle" type="checkbox" disabled/> 자리를 비워도 진행</label><button id="cloud-retry" class="button">연결 새로고침</button><a class="text-button" href="?local=1">기기 세계 관찰</a>' : '<a class="button" href="/">서버 세계로 돌아가기</a>'}</div>${cloudMode ? '<p class="cloud-policy">기본은 비접속 시 정지입니다. 켜면 재접속할 때 최대 게임 하루(144틱)만 반영합니다. 재생·정지·배속 설정은 모든 기기에 적용됩니다.</p>' : ''}</details>
+      <div id="world-view" class="world-layout"><nav class="world-shortcuts" aria-label="관찰 바로가기"><button data-world-jump="map-panel">지도</button><button data-world-jump="resident-inspector">주민 상세</button><button data-world-jump="world-feed">마을 소식</button></nav>
         <div class="world-toolbar"><span>마을을 바라보는 시간</span><div><button class="text-button" data-walk-jump>이야기 산책 ↓</button><button class="text-button" data-walk-guide>처음 오셨나요?</button><button id="immersive-button" class="button" aria-pressed="false">몰입 보기 ⤢</button></div></div>
-        <section class="panel map-panel"><div class="panel-heading"><div><span class="small-dot"></span><h2 id="village-title">느티나무 마을</h2><span class="muted location-caption">NEUTINAMU VILLAGE</span></div><div class="weather-info" id="weather"></div></div>
-          <div class="map-controls"><div class="time-controls"><button id="play-button" class="play-button" aria-label="일시정지">${icon('pause', 17)}</button><button id="step-button" class="icon-button" aria-label="한 틱 진행">${icon('step', 17)}</button><span class="control-divider"></span><div class="speed-switch" aria-label="시뮬레이션 배속">${[1, 5, 20].map(s => `<button data-speed="${s}" class="${s === 1 ? 'active' : ''}" aria-pressed="${s === 1}">${s}×</button>`).join('')}</div></div><div class="game-clock" id="game-clock"></div></div><div class="map-navigation"><label>지도 범위 <select id="map-mode"><option value="city">정착지 전체</option><option value="region">세계 전체</option><option value="follow">선택 주민 따라보기</option></select></label><button id="follow-character" class="button">선택 주민 찾기</button><label>시설·자원 선택 <select id="object-picker" aria-label="시설·자원 선택"><option value="">지도에서 고르기</option></select></label><span id="map-scope" class="muted"></span></div><div class="map-wrap"><canvas id="world-map" aria-label="주민을 클릭해 자세히 볼 수 있는 마을 지도. 마을 주민 메뉴에서도 선택할 수 있습니다."></canvas><div class="map-badge"><i></i> 작은 세계 · <span id="map-size">48 × 36</span></div><button class="map-grid-button" id="grid-button" aria-label="지도 격자 표시" aria-pressed="false">${icon('grid', 17)}</button><div class="map-compass"><span>N</span>↑</div></div>
+        <section class="panel map-panel" id="map-panel" tabindex="-1"><div class="panel-heading"><div><span class="small-dot"></span><h2 id="village-title">느티나무 마을</h2><span class="muted location-caption">NEUTINAMU VILLAGE</span></div><div class="weather-info" id="weather"></div></div>
+          <div class="map-controls"><div class="time-controls"><button id="play-button" class="play-button" aria-label="일시정지">${icon('pause', 17)}</button><button id="step-button" class="icon-button" aria-label="한 틱 진행">${icon('step', 17)}</button><span class="control-divider"></span><div class="speed-switch" aria-label="시뮬레이션 배속">${[1, 5, 20].map(s => `<button data-speed="${s}" class="${s === 1 ? 'active' : ''}" aria-pressed="${s === 1}">${s}×</button>`).join('')}</div></div><div class="game-clock" id="game-clock"></div></div><details id="map-options" class="map-options"><summary>지도 범위·시설 찾기</summary><div class="map-navigation"><label>지도 범위 <select id="map-mode"><option value="city">정착지 전체</option><option value="region">세계 전체</option><option value="follow">선택 주민 따라보기</option></select></label><button id="follow-character" class="button">선택 주민 찾기</button><label>시설·자원 선택 <select id="object-picker" aria-label="시설·자원 선택"><option value="">지도에서 고르기</option></select></label><span id="map-scope" class="muted"></span></div></details><div class="map-wrap"><canvas id="world-map" aria-label="주민을 클릭해 자세히 볼 수 있는 마을 지도. 마을 주민 메뉴에서도 선택할 수 있습니다."></canvas><div class="map-badge"><i></i> 작은 세계 · <span id="map-size">48 × 36</span></div><button class="map-grid-button" id="grid-button" aria-label="지도 격자 표시" aria-pressed="false">${icon('grid', 17)}</button><div class="map-compass"><span>N</span>↑</div></div>
           <section class="stats-grid" aria-label="세계 현황" id="stats"></section><div id="requests-prompt" class="requests-prompt" aria-live="off"></div><section id="walk-guide" class="walk-guide" aria-label="첫 관찰 안내"></section><section id="story-walk" class="story-walk" aria-label="이야기 산책"></section><section class="observer-panel" aria-label="마을의 하루"><div id="observer-heading" class="observer-heading"></div><div id="watch-list" class="watch-list"></div><div id="observer-content"></div></section><section id="requests-panel" class="requests-panel" aria-label="주민의 부탁" aria-live="off"></section><section id="observation-board" class="observation-board" aria-label="마을 관찰 과제"></section><div id="character-watch" class="character-watch" aria-live="off"></div><div id="civilization-panel" class="civilization-panel"></div>
           <div class="map-footer"><span><i class="legend-dot citizen"></i> 주민</span><span><i class="legend-dot farm"></i> 농장</span><span><i class="legend-dot resource"></i> 자원</span><span class="map-tip">주민·건물·자원을 선택해 살펴보세요</span></div>
         </section>
-        <aside class="panel inspector"><div class="inspector-title"><h2 id="inspector-heading">주민 들여다보기</h2><span class="muted">AGENT INSPECTOR</span></div><div id="npc-header"></div><div class="inspector-tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="overview" class="active">일상</button><button role="tab" aria-selected="false" data-tab="relationships">관계</button><button role="tab" aria-selected="false" data-tab="memories">기억</button><button role="tab" aria-selected="false" data-tab="life">생애</button></div><div id="npc-detail" class="inspector-content"></div></aside>
+        <aside class="panel inspector" id="resident-inspector" tabindex="-1"><div class="inspector-title"><h2 id="inspector-heading">주민 들여다보기</h2><span class="muted">AGENT INSPECTOR</span></div><div id="npc-header"></div><div class="inspector-tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="overview" class="active">일상</button><button role="tab" aria-selected="false" data-tab="relationships">관계</button><button role="tab" aria-selected="false" data-tab="memories">기억</button><button role="tab" aria-selected="false" data-tab="life">생애</button></div><div id="npc-detail" class="inspector-content"></div></aside>
       </div>
       <section id="economy-view" class="panel alternate-view" hidden></section>
       <section id="residents-view" class="panel alternate-view" hidden><div class="panel-heading"><h2>마을의 모든 주민</h2><span class="muted">주민을 선택해 삶의 흔적을 확인하세요.</span></div><div class="resident-search"><label>주민 검색<input id="resident-search" type="search" placeholder="이름 또는 직업"/></label><label><input id="custom-residents" type="checkbox"/> 내가 만든 주민만</label><span id="resident-count"></span></div><div id="resident-grid" class="resident-grid"></div></section>
@@ -143,17 +145,19 @@ $('app').innerHTML = `
     </div>
   </main><input type="file" id="file-input" accept=".json,application/json" hidden/><div id="toast" class="toast" role="status" hidden></div><dialog id="detail-dialog"><button id="close-dialog" class="dialog-close" aria-label="닫기">×</button><div id="dialog-content"></div></dialog>`;
 
+setupResponsiveUI();
+
 let selectedObject: ObjectSelection | undefined;
 const map = new WorldMap($<HTMLCanvasElement>('world-map'), selectNPC, selectObject);
 function selectObject(selection: ObjectSelection) {
   const object = selection.kind === 'building' ? state.buildings.find(b => b.id === selection.id) : state.resources.find(r => r.id === selection.id);
   if (!object) return;
   $('npc-detail').scrollTop = 0; selectedObject = selection; map.focusObject(object.position); $<HTMLSelectElement>('map-mode').value = 'city'; render();
-  if (matchMedia('(max-width: 760px)').matches) document.querySelector('.inspector')?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+  revealInspector();
 }
 function toast(message: string) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => $('toast').hidden = true, 4500); }
 function selectedNPC() { return state.npcs.find(n => n.id === selectedId) ?? state.npcs[0]; }
-function selectNPC(id: string) { if (!state.npcs.some(n=>n.id===id)) return; walk.mark('meet'); selectedObject = undefined; selectedId = id; map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; tab = 'overview'; lifeLimit = 40; setView('world'); render(); }
+function selectNPC(id: string) { if (!state.npcs.some(n=>n.id===id)) return; walk.mark('meet'); selectedObject = undefined; selectedId = id; map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; tab = 'overview'; lifeLimit = 40; setView('world'); render(); revealInspector(); }
 function actionText(n: NPC) { return !n.alive ? '세상을 떠남' : !n.currentAction ? '다음 행동을 생각하는 중' : `${n.currentAction.path.length ? '이동 중 · ' : ''}${ACTION_LABELS[n.currentAction.kind]}`; }
 function render() {
   if (!cloudMode) state = sim.snapshot();
@@ -263,13 +267,15 @@ function showEvent(id: string) {
 }
 function setView(next: string) {
   if (next !== 'world' && immersive) setImmersive(false);
+  const changed = view !== next;
   view = next;
   const titles: Record<string, [string, string, string]> = { world: ['세계 관찰', '이야기가 자라는 마을', '저마다의 하루가 만나, 이 세계만의 역사가 됩니다.'], residents: ['마을 주민', '열두 빛깔의 하루', '각자의 욕구와 성격, 그리고 스스로 만들어 가는 삶.'], history: ['세계의 기록', '작은 세계의 긴 기억', '지금의 관계를 따라가면, 그날의 선택을 만날 수 있습니다.'], economy: ['마을 경제', '생활이 오가는 자리', '누가 생산하고, 누가 나누며, 무엇이 달라졌는지 살펴봅니다.'], experiments: ['관찰 실험실', '다른 조건, 새로운 이야기', '세계의 법칙 안에서 작은 변화를 관찰해 보세요.'] };
   const [label, title, subtitle] = titles[next]; $('breadcrumb-view').textContent = label; $('page-title').textContent = next === 'residents' ? `${state.npcs.length}개의 서로 다른 하루` : title; $('page-subtitle').textContent = subtitle;
   $('economy-view').hidden = next !== 'economy'; if (next === 'economy') $('economy-view').innerHTML = economyView(state, metric);
   $('world-view').hidden = next !== 'world'; $('residents-view').hidden = next !== 'residents'; $('experiments-view').hidden = next !== 'experiments'; $('event-panel').hidden = next === 'residents';
   $('event-panel').classList.toggle('full-journal', next === 'history'); $('all-events-button').hidden = next === 'history';
-  document.querySelectorAll('[data-view]').forEach(el => el.classList.toggle('active', (el as HTMLElement).dataset.view === next));
+  document.querySelectorAll('[data-view]').forEach(el => { const active = (el as HTMLElement).dataset.view === next; el.classList.toggle('active', active); if (active) el.setAttribute('aria-current', 'page'); else el.removeAttribute('aria-current'); });
+  if (changed && matchMedia('(max-width: 760px)').matches) window.scrollTo({ top: 0, behavior: 'instant' });
   if (next === 'residents') renderResidents();
 }
 function replaceWorld(next: Simulation) { observer.saveSeen(); localWorldKey = crypto.randomUUID(); try { localStorage.setItem('lsw-local-world-key',localWorldKey); } catch {} localInspectorEpoch++; coordinator.dispose(); sim = next; coordinator = new DecisionCoordinator(sim, new MockLLMProvider()); state = sim.snapshot(); selectedId = state.npcs[0].id; lastSaveTick = sim.tick; selectedObject = undefined; map.reset(); accumulator = 0; eventLimit = 40; $<HTMLInputElement>('seed-input').value = String(state.seed); render(); }
@@ -364,7 +370,7 @@ $('file-input').onchange = async () => {
 };
 $('close-dialog').onclick = () => $<HTMLDialogElement>('detail-dialog').close();
 $('detail-dialog').onclick = event => { if (event.target === $('detail-dialog')) $<HTMLDialogElement>('detail-dialog').close(); };
-$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.9</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>여러 도시의 가족·세대·생산·생태·공동결정을 관찰합니다. 도시 연대기와 가계도에서 실제 사건을 따라갈 수 있으며, 모델 없이도 세계와 역사 조회가 동작합니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
+$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.24</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>여러 도시의 가족·세대·생산·생태·공동결정을 관찰합니다. 도시 연대기와 가계도에서 실제 사건을 따라갈 수 있으며, 모델 없이도 세계와 역사 조회가 동작합니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
 $('dialog-content').addEventListener('click', event => { if ((event.target as HTMLElement).closest('#export-report')) download('living-small-world-report.json', JSON.stringify(summarize(state), null, 2)); });
 document.querySelector('.brand')!.addEventListener('click', event => { event.preventDefault(); setView('world'); });
 

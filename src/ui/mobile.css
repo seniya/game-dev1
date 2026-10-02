@@ -1,0 +1,150 @@
+/* Responsive shell. The simulation and the live panels keep their existing state. */
+.world-shortcuts { display: none; }
+.world-tools-content { display: flex; align-items: center; gap: 9px; }
+.world-tools > summary, .map-options > summary { display: none; }
+.cloud-panel { display: block; }
+.cloud-panel > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; }
+.cloud-panel > summary > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
+.cloud-panel[open] > .cloud-actions { margin-top: 12px; }
+.cloud-panel .cloud-policy { margin-top: 8px; }
+.disclosure-label { flex-shrink: 0; font-size: 11px; color: #536b4e; }
+.disclosure-label::after { content: ' ＋'; }
+.cloud-panel[open] .disclosure-label::after { content: ' −'; }
+.topbar { height: auto; min-height: 73px; gap: 12px; padding-top: 12px; padding-bottom: 12px; flex-wrap: wrap; }
+.topbar-actions { flex-wrap: wrap; }
+dialog[open] { overscroll-behavior: contain; }
+body:has(dialog[open]) { overflow: hidden; }
+
+@media (max-width: 760px) {
+  :root { --mobile-nav: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  html { scroll-padding-top: 64px; scroll-padding-bottom: var(--mobile-nav); }
+  body { padding-bottom: var(--mobile-nav); }
+  main { margin: 0; }
+  button, a, summary { touch-action: manipulation; }
+  button, .button, .text-button, .icon-button, .topbar .button, summary { min-height: 44px; }
+  button, .button, .topbar .button { font-size: 13px; }
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea,
+  .character-form input, .character-form select, .character-form textarea, .map-navigation select,
+  .search-box input, .urban-panel input, .urban-panel select { font-size: 16px; min-height: 44px; max-width: 100%; }
+  input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; }
+  label:has(input[type=checkbox]) { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; }
+  .sidebar { position: fixed; inset: auto 0 0; z-index: 20; height: var(--mobile-nav); padding: 6px max(8px, env(safe-area-inset-right)) calc(6px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left)); background: #fcfcf8; border: 0; border-top: 1px solid #dce3d5; box-shadow: 0 -4px 20px #243b2810; }
+  .sidebar .brand, .sidebar-caption, .sidebar-bottom, .world-note { display: none; }
+  .sidebar nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; gap: 4px; margin: 0; }
+  .sidebar .nav-button { display: flex; flex-direction: column; justify-content: center; gap: 5px; min-height: 54px; padding: 5px 0; font-size: 10px; color: #5d6d58; border-radius: 10px; white-space: nowrap; }
+  .sidebar .nav-button > span { display: block; }
+  .sidebar .nav-button svg { width: 21px; height: 21px; }
+  .sidebar .nav-button.active { background: #e6eedf; color: #2c5137; font-weight: 700; }
+  .sidebar .nav-dot, .sidebar .nav-number { display: none !important; }
+  .topbar { min-height: 64px; padding: 10px 14px; gap: 8px; }
+  .breadcrumb { font-size: 12px; gap: 6px; }
+  .topbar-actions { gap: 6px; margin-left: auto; }
+  #account-button { max-width: 140px; white-space: normal; }
+  .topbar .button { padding: 8px 10px; }
+  .world-tools { position: relative; }
+  .world-tools > summary { display: flex; align-items: center; justify-content: center; border: 1px solid #dfe4d8; border-radius: 8px; padding: 8px 10px; font-size: 12px; cursor: pointer; list-style: none; }
+  .world-tools > summary::-webkit-details-marker { display: none; }
+  .world-tools[open] > summary { background: #e6eedf; }
+  .world-tools-content { position: absolute; top: calc(100% + 8px); right: 0; z-index: 30; width: min(280px, calc(100vw - 28px)); padding: 14px; background: #fffef9; border: 1px solid #dce3d5; border-radius: 12px; box-shadow: 0 8px 28px #243b2826; display: grid; }
+  .world-tools-content .mock-badge { display: flex; margin: 0 0 4px; font-size: 12px; flex-wrap: wrap; }
+  .page-content { padding: 18px max(12px, env(safe-area-inset-right)) 24px max(12px, env(safe-area-inset-left)); }
+  .page-heading { gap: 8px; margin-bottom: 14px; }
+  .page-heading h1 { font-size: 24px; }
+  .page-heading .eyebrow { display: none; }
+  .page-heading p { font-size: 13px; }
+  .world-status { width: 100%; font-size: 11px; }
+  .cloud-panel { padding: 4px 12px; margin-bottom: 12px; }
+  .cloud-panel > summary > div { display: block; min-width: 0; }
+  .cloud-panel b { display: none; }
+  .cloud-panel p { font-size: 12px; overflow-wrap: anywhere; }
+  .cloud-panel .cloud-policy { font-size: 12px; padding-bottom: 10px; }
+  .cloud-actions { flex-wrap: wrap; }
+  .world-layout { gap: 14px; }
+  .world-shortcuts { order: 0; }
+  .map-panel { order: 1; }
+  .world-toolbar { order: 2; }
+  .inspector { order: 3; }
+  #world-feed { order: 4; }
+  .world-shortcuts { display: flex; position: sticky; top: 0; z-index: 10; gap: 4px; padding: 6px; background: #f6f6f1f5; border: 1px solid #dfe5d8; border-radius: 12px; box-shadow: 0 3px 10px #243b2808; }
+  .world-shortcuts button { flex: 1; color: #39593e; border-radius: 8px; font-size: 13px; font-weight: 600; }
+  .world-shortcuts button:focus-visible, .world-shortcuts button:hover { background: #e6eedf; }
+  .world-toolbar { gap: 0; }
+  .world-toolbar > div { gap: 8px; }
+  .world-toolbar .text-button { font-size: 12px; }
+  #map-panel, #resident-inspector, #world-feed { min-width: 0; scroll-margin-top: 0; }
+  .panel-heading { min-height: 50px; height: auto; padding: 10px 14px; flex-wrap: wrap; }
+  .panel h2 { font-size: 15px; }
+  .map-controls { height: auto; padding: 10px; gap: 8px; flex-wrap: wrap; }
+  .time-controls { gap: 4px; }
+  .play-button, .icon-button, .speed-switch button { min-width: 44px; min-height: 44px; }
+  .speed-switch button { font-size: 13px; }
+  .control-divider { margin: 0 2px; }
+  .game-clock { margin-left: auto; font-size: 13px; }
+  .map-options > summary { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; font-size: 12px; color: #52674a; cursor: pointer; border-top: 1px solid var(--line); }
+  .map-options > summary::after { content: '＋'; }
+  .map-options[open] > summary::after { content: '−'; }
+  .map-navigation { display: grid; grid-template-columns: minmax(0, 1fr); padding: 12px; gap: 10px; }
+  .map-navigation label { display: grid; gap: 6px; font-size: 13px; }
+  .map-navigation select { width: 100%; max-width: 100%; }
+  .map-wrap canvas { min-height: 0; height: auto; aspect-ratio: 4 / 3; }
+  .map-grid-button { min-width: 44px; min-height: 44px; top: 8px; right: 8px; }
+  .map-badge { font-size: 10px; padding: 8px; top: 10px; left: 10px; }
+  .inspector { position: static; max-height: none; }
+  .inspector-title { height: auto; min-height: 48px; padding: 14px 16px; }
+  .inspector-title .muted { display: none; }
+  .inspector-content { padding: 16px; overflow: visible; }
+  .inspector-tabs { padding: 0 12px; gap: 8px; }
+  .inspector-tabs button { font-size: 14px; }
+  .npc-profile { padding: 12px 16px 18px; }
+  .npc-profile p, .npc-profile h3 span, .personality-tag { font-size: 12px; }
+  .section-label, .action-box .section-label, .goal-row b, .goal-row p, .reason-box,
+  .need-row, .need-row > b, .need-row > span, .inspector-footnote { font-size: 13px; }
+  .needs-list { grid-template-columns: 1fr; gap: 14px; }
+  .need-row > span { width: 80px; }
+  .need-track { height: 6px; }
+  .reason-foot, .section-label > span, .utility-details summary, .personality-details summary { font-size: 12px; }
+  #world-feed { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fdfdf9; }
+  .stats-grid { margin: 0; border: 0; border-radius: 0; }
+  .stat-card { min-height: 92px; padding: 14px; }
+  .stat-label { font-size: 12px; white-space: normal; }
+  .stat-note { font-size: 11px; }
+  .story-walk, .walk-guide, .observer-panel, .civilization-panel { padding: 18px 14px; }
+  .walk-card p, .walk-heading p, .walk-guide p { font-size: 13px; }
+  .walk-filters { gap: 8px; }
+  .walk-filters button, .walk-links .button, .observer-actions .button { min-height: 44px; font-size: 13px; }
+  .walk-links .text-button, .walk-foot, .walk-guide > .text-button { min-height: 44px; font-size: 12px; }
+  .event-toolbar { padding: 12px; }
+  .event-filters { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .event-filters button { font-size: 12px; padding: 8px 4px; }
+  .event-search { flex-wrap: wrap; gap: 8px; }
+  .search-box { flex: 1; min-width: 150px; }
+  .search-box input { width: 100%; min-width: 0; }
+  .event-search > label { font-size: 12px; }
+  .event-list, .full-journal .event-list { max-height: none; overflow: visible; }
+  .event-description { font-size: 13px; color: #536747; }
+  .event-time, .event-time b { font-size: 11px; }
+  .event-panel .text-button, .more-button { font-size: 12px; }
+  .record-badge { display: none; }
+  .resident-search { padding: 14px; align-items: stretch; }
+  .resident-search > label:first-child { width: 100%; }
+  .resident-grid { padding: 14px; }
+  .resident-card { padding: 16px; }
+  .resident-card div > span, .resident-card p { font-size: 13px; }
+  .experiment-grid { padding: 14px; }
+  .experiment-grid article { padding: 16px; }
+  .experiment-grid p, .experiment-settings p { font-size: 13px; }
+  .experiment-settings { margin: 0 14px 18px; }
+  .experiment-settings .button { white-space: normal; }
+  .page-footer { font-size: 11px; line-height: 1.7; }
+  .toast { bottom: calc(var(--mobile-nav) + 12px); width: calc(100% - 24px); max-width: 440px; min-width: 0; font-size: 13px; }
+  dialog { width: calc(100% - 16px); max-width: 600px; max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin: auto; padding: 16px; border-radius: 18px; }
+  .dialog-close { position: sticky; display: block; top: 0; margin-left: auto; min-width: 44px; min-height: 44px; background: #eef2e7; border-radius: 50%; z-index: 2; }
+  #dialog-content { overflow-wrap: anywhere; }
+  #dialog-content h2 { font-size: 21px; }
+  #dialog-content p { font-size: 14px; }
+  .character-form label { font-size: 13px; }
+  .immersive .world-shortcuts { display: none; }
+  .immersive .world-toolbar { top: 0; }
+  .immersive .world-toolbar { order: 0; }
+  body.immersive { padding-bottom: env(safe-area-inset-bottom); }
+}

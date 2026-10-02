@@ -56,11 +56,10 @@ export function updateReadingPanel(root: HTMLElement, html: string, identity: st
   } else {
     const active = document.activeElement, anchor = readingAnchor(root);
     const anchorTop = anchor?.getBoundingClientRect().top;
-    const scroll = root.scrollTop;
     const template = document.createElement('template'); template.innerHTML = html;
     reconcile(root, template.content);
     if (active instanceof HTMLElement && root.contains(active) && document.activeElement !== active) active.focus({ preventScroll: true });
-    root.scrollTop = anchor?.isConnected && anchorTop !== undefined ? scroll + anchor.getBoundingClientRect().top - anchorTop : scroll;
+    if (anchor?.isConnected && anchorTop !== undefined) restoreReadingOffset(root, anchor.getBoundingClientRect().top - anchorTop);
   }
   rendered.set(root, { identity, html });
 }
@@ -68,9 +67,21 @@ export function updateReadingPanel(root: HTMLElement, html: string, identity: st
 
 function readingAnchor(root: HTMLElement) {
   const { top, bottom } = root.getBoundingClientRect(), active = document.activeElement;
-  const visible = (el: HTMLElement) => el.getClientRects().length > 0 && el.getBoundingClientRect().bottom > top + 8 && el.getBoundingClientRect().top < bottom;
+  const visible = (el: HTMLElement) => el.getClientRects().length > 0 && el.getBoundingClientRect().bottom > Math.max(top + 8, 64) && el.getBoundingClientRect().top < Math.min(bottom, window.innerHeight);
   if (active instanceof HTMLElement && root.contains(active) && visible(active)) return active;
   return [...root.querySelectorAll<HTMLElement>('summary, p, .need-row, .section-label, .memory-card, .causal-button')].find(visible);
+}
+
+// Mobile panels flow with the page; desktop panels and dialogs can scroll internally.
+function restoreReadingOffset(root: HTMLElement, delta: number) {
+  if (!delta) return;
+  for (let node: HTMLElement | null = root; node && node !== document.body; node = node.parentElement) {
+    if (/(auto|scroll)/.test(getComputedStyle(node).overflowY) && node.scrollHeight > node.clientHeight) {
+      node.scrollTop += delta;
+      return;
+    }
+  }
+  window.scrollBy({ top: delta, behavior: 'instant' });
 }
 
 // Header wrapping can resize the scroll area before the body's own diff begins.
@@ -78,6 +89,6 @@ export function withReadingPosition(root: HTMLElement, update: () => void) {
   const identity = rendered.get(root)?.identity, anchor = readingAnchor(root), top = anchor?.getBoundingClientRect().top;
   update();
   if (identity !== undefined && rendered.get(root)?.identity === identity && anchor?.isConnected && top !== undefined) {
-    root.scrollTop += anchor.getBoundingClientRect().top - top;
+    restoreReadingOffset(root, anchor.getBoundingClientRect().top - top);
   }
 }

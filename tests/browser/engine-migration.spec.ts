@@ -1,3 +1,4 @@
+import {LegacySimulation as V023Simulation} from '../../src/server/retained/1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4';
 import {LegacySimulation as V022Simulation} from '../../src/server/retained/94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b';
 import {test,expect} from '@playwright/test';
 import {readdirSync} from 'node:fs';
@@ -5,7 +6,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {LegacySimulation} from '../../src/server/legacy-v021';
 import type {WorldState} from '../../src/sim/types';
 
-for(const engine of [{version:'v021',Simulation:LegacySimulation,build:'5809ccf28f7e3e9d2f897f7a23c03ecfe41c0de21b98432a7776949f4ac4d2f2'},{version:'v022',Simulation:V022Simulation,build:'94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b'}])
+for(const engine of [{version:'v023',Simulation:V023Simulation,build:'1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4'},{version:'v021',Simulation:LegacySimulation,build:'5809ccf28f7e3e9d2f897f7a23c03ecfe41c0de21b98432a7776949f4ac4d2f2'},{version:'v022',Simulation:V022Simulation,build:'94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b'}])
 test(`real Worker loads ${engine.version} retained engine and confirms previous-build progress once`,async({request})=>{
  const get=()=>request.get('/api/world').then(r=>r.json());
  const send=async(action:object)=>{const w=await get();const r=await request.post('/api/command',{headers:{Origin:'http://127.0.0.1:4173'},data:{id:crypto.randomUUID(),revision:w.revision,action}});expect(r.ok()).toBe(true);return r.json();};

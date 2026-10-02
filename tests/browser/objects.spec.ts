@@ -50,8 +50,10 @@ test('canvas selects roofs and resources, keyboard selection opens live facts an
 });
 
 test('mobile and reduced motion support object details and status portraits without overflow', async ({page}) => {
-  await page.setViewportSize({width:390,height:844}); await page.emulateMedia({reducedMotion:'reduce'});
+  await page.setViewportSize({width:390,height:844});
+  await page.emulateMedia({reducedMotion:'reduce'});
   const world=await fixture(page), w=world.state;
+  await page.locator('#map-options summary').click();
   const storage=w.buildings.find(b=>b.kind==='storage')!;
   await page.locator('#object-picker').selectOption(`building:${storage.id}`);
   await expect(page.locator('#npc-detail')).toContainText('공동 식량');
@@ -119,6 +121,7 @@ test('crowded labels avoid each other at all zoom levels and on mobile, with sel
   await page.locator('#world-map').hover({position:{x:15.5/48*rect.width,y:(10.5-1)/36*rect.height}});
   expect((await check()).some(l=>l.text==='가까운 작업장 3')).toBe(true);
   await page.setViewportSize({width:390,height:844});
+  await page.locator('#map-options summary').click();
   await page.locator('#object-picker').selectOption('building:dense0');
   expect((await check()).filter(l=>l.text==='가까운 작업장 0')).toHaveLength(1);
   await page.locator('#world-map').screenshot({path:'test-results/labels-dense-mobile.png'});

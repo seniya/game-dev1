@@ -1,0 +1,68 @@
+{
+  "version": "0.24.0",
+  "date": "2026-10-02",
+  "unit_tests": {
+    "passed": 254,
+    "failed": 0,
+    "log": "reports/mobile-ui-unit.log"
+  },
+  "browser_tests": {
+    "unique_passed": 81,
+    "skipped": 1,
+    "initial": {
+      "passed": 78,
+      "failed": 3,
+      "skipped": 1,
+      "log": "reports/mobile-ui-browser-initial.log"
+    },
+    "final_targeted": {
+      "passed": 19,
+      "failed": 0,
+      "log": "reports/mobile-ui-browser-final.log"
+    },
+    "resolved": [
+      "Existing tests now open world/connection disclosures on mobile before interacting.",
+      "Retained v0.23 engine recovery retested after restarting Vite to recompute the new build fingerprint."
+    ],
+    "skip_reason": "Real Chrome model inference requires separate device/model setup."
+  },
+  "viewports": [
+    320,
+    390,
+    430,
+    768,
+    1280
+  ],
+  "additional_smoke": {
+    "chromium_touch": true,
+    "landscape_844x390": true,
+    "webkit_mobile": true,
+    "firefox_mobile": true,
+    "page_errors": []
+  },
+  "reading_position": {
+    "desktop": true,
+    "mobile_document_scroll": true,
+    "text_selection_and_focus": true
+  },
+  "engine_recovery": {
+    "retained_versions": [
+      "v0.21",
+      "v0.22",
+      "v0.23"
+    ],
+    "worker_d1_recovery_passed": true,
+    "v023_source": "916ac822ad55d2e4d83a99bef558bcdf68b026e6",
+    "v023_fingerprint": "1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4"
+  },
+  "limits": [
+    "Browser emulation is not physical iOS/Android validation.",
+    "Authenticated production owner session unavailable (401); no production save command issued.",
+    "Chrome model inference and invited-user production login are not newly verified."
+  ],
+  "screenshots": [
+    "reports/screenshots/v024-world-mobile.png",
+    "reports/screenshots/v024-inspector-mobile.png",
+    "reports/screenshots/v024-creator-mobile.png"
+  ]
+}

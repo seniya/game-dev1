@@ -20,6 +20,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await page.getByRole('tab',{name:'관계',exact:true}).click(); await expect(page.locator('#npc-detail .relationship-card').first()).toBeVisible();
   await page.getByRole('button',{name:'마을 주민',exact:true}).click(); await page.getByLabel('내가 만든 주민만').check();
   await page.getByLabel('주민 검색',{exact:true}).fill('해솔'); await expect(page.locator('.resident-card')).toHaveCount(1); await page.locator('.resident-card').click();
+  if (await page.locator('#world-tools summary').isVisible()) await page.locator('#world-tools summary').click();
   await page.getByRole('button',{name:'세계 저장',exact:true}).click();
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!));
   const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(9); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
@@ -129,6 +130,7 @@ test('visual presets, hairstyles and wardrobe persist across save and reload on 
   expect(await form.evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
   await page.screenshot({path:'reports/screenshots/v018-creator-mobile.png'});
   await form.getByRole('button',{name:'이 세계에 입주시키기'}).click();
+  if (await page.locator('#world-tools summary').isVisible()) await page.locator('#world-tools summary').click();
   await page.getByRole('button',{name:'세계 저장',exact:true}).click();
   const look=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!).npcs.find((n:any)=>n.identity.name==='별빛 이웃').profile.appearance);
   expect(look).toMatchObject({hairstyle:'braid',accessory:'headphones',clothing:'vest',faceMark:'freckles',expression:'bright',backdrop:'night'});

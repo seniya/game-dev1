@@ -1,0 +1,28 @@
+npm notice run living-small-world@0.24.0 npx
+npm notice run 'playwright' test tests/browser/mobile.spec.ts tests/browser/characters.spec.ts tests/browser/continuity.spec.ts tests/browser/engine-migration.spec.ts
+
+Running 19 tests using 1 worker
+
+(node:3250184) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/characters.spec.ts:3:1 › create a customized resident, follow real interactions, find them and restore their profile (3.0s)
+  ✓   2 tests/browser/characters.spec.ts:31:1 › city scale supports creating and locating a resident in a different settlement (1.6s)
+  ✓   3 tests/browser/characters.spec.ts:43:1 › mobile creator fits the viewport, preserves input across ticks, and allows cancellation (2.2s)
+  ✓   4 tests/browser/characters.spec.ts:53:1 › server-backed creator survives reload and records arrival in the life archive (1.4s)
+  ✓   5 tests/browser/characters.spec.ts:66:2 › expanded world overview and resident condition are readable on desktop and mobile (1.2s)
+  ✓   6 tests/browser/characters.spec.ts:78:1 › children, retired residents and job seekers can be created with accurate status labels (1.1s)
+  ✓   7 tests/browser/characters.spec.ts:93:1 › personality charms update in the creator and directional relationship factors fit mobile (2.6s)
+  ✓   8 tests/browser/characters.spec.ts:119:1 › visual presets, hairstyles and wardrobe persist across save and reload on desktop and mobile (1.3s)
+  ✓   9 tests/browser/continuity.spec.ts:4:1 › timed construction, evidence, farm fences and daily history work on mobile (2.1s)
+  ✓  10 tests/browser/continuity.spec.ts:16:1 › follow-up conversation sends server-issued previous ID and new conversation clears it (2.0s)
+  ✓  11 tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v023 retained engine and confirms previous-build progress once (645ms)
+  ✓  12 tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v021 retained engine and confirms previous-build progress once (624ms)
+  ✓  13 tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v022 retained engine and confirms previous-build progress once (615ms)
+  ✓  14 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 320px viewport (915ms)
+  ✓  15 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 390px viewport (937ms)
+  ✓  16 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 430px viewport (900ms)
+  ✓  17 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 768px viewport (780ms)
+  ✓  18 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 1280px viewport (1.0s)
+  ✓  19 tests/browser/mobile.spec.ts:44:1 › mobile resident selection, shortcuts and resizing preserve the same live controls (918ms)
+
+  19 passed (27.0s)

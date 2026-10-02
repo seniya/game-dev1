@@ -1,0 +1,190 @@
+npm notice run living-small-world@0.23.0 npx
+npm notice run 'playwright' test
+
+Running 82 tests using 1 worker
+
+(node:3242722) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓   1 tests/browser/app.spec.ts:3:1 › observe, pause, inspect, experiment, save and restore a world (3.9s)
+  ✓   2 tests/browser/app.spec.ts:28:1 › reset preserves a separate backup and reload resumes local progress (2.0s)
+  ✓   3 tests/browser/app.spec.ts:39:1 › mobile layout fits the viewport and invalid import preserves the world (964ms)
+  ✓   4 tests/browser/app.spec.ts:48:1 › daily observations, prices and life history show actual linked events (1.9s)
+  ✓   5 tests/browser/app.spec.ts:77:1 › server world synchronizes two devices, archives history, exports and restores a backup (6.0s)
+  ✓   6 tests/browser/app.spec.ts:122:1 › AI settings distinguish unavailable models and grounded Mock dialogue opens real evidence (1.5s)
+  ✓   7 tests/browser/app.spec.ts:168:1 › configured model audit displays escaped results, links evidence and exports the saved input (953ms)
+  ✓   8 tests/browser/app.spec.ts:198:1 › multiple settlements, focused history and family inspection survive reload on mobile (1.5s)
+  ✓   9 tests/browser/app.spec.ts:217:1 › initial server load recovers automatically after a failed request (2.3s)
+  ✓  10 tests/browser/app.spec.ts:230:1 › map paints intermediate positions between server updates while avoiding repeated journal and AI fetches (11.4s)
+  ✓  11 tests/browser/app.spec.ts:274:1 › city atlas, district inspection, policy and citizen attributes survive local save (1.1s)
+  ✓  12 tests/browser/app.spec.ts:290:1 › 1000 resident city world has paginated residents and selectable regions (1.2s)
+  ✓  13 tests/browser/app.spec.ts:300:1 › ecology and council controls persist; historical questions, evidence and family tree work on mobile (1.4s)
+  ✓  14 tests/browser/app.spec.ts:322:1 › server history retrieves original events and streamed save remains a valid restorable world (1.5s)
+  ✓  15 tests/browser/biography.spec.ts:5:1 › life introduction, threads, turning points and both perspectives are readable and link to originals (1.2s)
+  ✓  16 tests/browser/biography.spec.ts:28:1 › server archive paginates, preserves link across accounts and guards world reset (2.3s)
+  ✓  17 tests/browser/biography.spec.ts:44:1 › delayed history never replaces a closed dialog or a newer story (910ms)
+  ✘  18 tests/browser/characters.spec.ts:3:1 › create a customized resident, follow real interactions, find them and restore their profile (30.1s)
+(node:3245390) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  19 tests/browser/characters.spec.ts:31:1 › city scale supports creating and locating a resident in a different settlement (1.8s)
+  ✓  20 tests/browser/characters.spec.ts:43:1 › mobile creator fits the viewport, preserves input across ticks, and allows cancellation (2.2s)
+  ✓  21 tests/browser/characters.spec.ts:53:1 › server-backed creator survives reload and records arrival in the life archive (1.3s)
+  ✓  22 tests/browser/characters.spec.ts:66:2 › expanded world overview and resident condition are readable on desktop and mobile (1.2s)
+  ✓  23 tests/browser/characters.spec.ts:78:1 › children, retired residents and job seekers can be created with accurate status labels (1.2s)
+  ✓  24 tests/browser/characters.spec.ts:93:1 › personality charms update in the creator and directional relationship factors fit mobile (2.6s)
+  ✓  25 tests/browser/characters.spec.ts:119:1 › visual presets, hairstyles and wardrobe persist across save and reload on desktop and mobile (1.5s)
+  ✓  26 tests/browser/chrome.spec.ts:52:1 › Chrome opt-in runs an English goal request through real server validation and shows evidence (3.3s)
+  ✓  27 tests/browser/chrome.spec.ts:81:1 › unsupported Chrome and failed download preserve the selected world mode and never call external AI (1.4s)
+  ✓  28 tests/browser/chrome.spec.ts:97:1 › hidden tabs cancel outstanding inference, destroy sessions and cannot start new work (2.4s)
+Actual browser capability: {"browser":"153.0.8010.12","secureContext":true,"languageModelPresent":true,"availability":"downloadable","realInferenceVerified":false}
+  ✓  29 tests/browser/chrome.spec.ts:108:1 › actual browser capability probe is reported separately from mocked model tests (391ms)
+  -  30 tests/browser/chrome.spec.ts:118:1 › real Chrome model selects a goal without external API credentials
+  ✓  31 tests/browser/chrome.spec.ts:149:1 › Chrome context limit fails before inference and exports bounded diagnostics without lease credentials (2.5s)
+  ✓  32 tests/browser/chrome.spec.ts:172:1 › server-rejected model output stops the device instead of consuming more requests (2.4s)
+  ✓  33 tests/browser/chrome.spec.ts:192:1 › server collection and rest windows are visible and do not start extra model calls (8.3s)
+  ✓  34 tests/browser/chrome.spec.ts:207:1 › cancelled download destroys a late session without activating the device (782ms)
+  ✓  35 tests/browser/chrome.spec.ts:222:1 › Chrome inference timeout cancels the model and records failure while the world remains usable (2.8s)
+  ✓  36 tests/browser/cognition.spec.ts:6:37 › daily plan, reflection and original evidence are readable on desktop (1.2s)
+  ✓  37 tests/browser/cognition.spec.ts:6:37 › daily plan, reflection and original evidence are readable on mobile (1.0s)
+  ✘  38 tests/browser/continuity.spec.ts:4:1 › timed construction, evidence, farm fences and daily history work on mobile (30.1s)
+(node:3247342) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  39 tests/browser/continuity.spec.ts:16:1 › follow-up conversation sends server-issued previous ID and new conversation clears it (2.0s)
+  ✓  40 tests/browser/discovery.spec.ts:3:1 › story walk keeps its reading snapshot and links to actual people, evidence and lives (1.1s)
+  ✓  41 tests/browser/discovery.spec.ts:27:1 › immersive mode restores controls with Escape without changing world time or speed (539ms)
+  ✓  42 tests/browser/discovery.spec.ts:37:1 › mobile, reduced motion, empty topics and blocked storage stay usable (760ms)
+  ✓  43 tests/browser/discovery.spec.ts:53:1 › a new world clears old recommendations and guide progress; topic buttons keep keyboard focus (768ms)
+  ✘  44 tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v023 retained engine and confirms previous-build progress once (328ms)
+(node:3247637) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  45 tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v021 retained engine and confirms previous-build progress once (750ms)
+  ✓  46 tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v022 retained engine and confirms previous-build progress once (627ms)
+  ✓  47 tests/browser/expansion.spec.ts:21:1 › operations and replay check explain actual measurements without changing the world (1.7s)
+  ✓  48 tests/browser/expansion.spec.ts:40:1 › large file browser upload previews and applies an archive above 10MB (7.2s)
+  ✓  49 tests/browser/expansion.spec.ts:71:1 › positioned home, land sale, wildlife and grounded mock reflection are usable from the UI (2.2s)
+  ✓  50 tests/browser/expansion.spec.ts:117:1 › Chrome Korean unsupported rejects locally without any external request (1.2s)
+  ✓  51 tests/browser/gatherings.spec.ts:4:37 › resident appointments show direct invitations, outcomes and place on desktop (1.9s)
+  ✓  52 tests/browser/gatherings.spec.ts:4:37 › resident appointments show direct invitations, outcomes and place on mobile (1.4s)
+  ✓  53 tests/browser/gatherings.spec.ts:33:1 › changed appointments show the original request, fresh consent and grounded recurring neighbours (2.0s)
+  ✓  54 tests/browser/inspector.spec.ts:4:34 › reading remains stable across live updates at 1440px (904ms)
+  ✓  55 tests/browser/inspector.spec.ts:4:34 › reading remains stable across live updates at 390px (903ms)
+  ✓  56 tests/browser/inspector.spec.ts:45:1 › server life refresh retains old records while a response is pending (805ms)
+  ✓  57 tests/browser/inspector.spec.ts:77:1 › relationship reordering keeps the same open card and the visible reading position (816ms)
+  ✓  58 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 320px viewport (1.0s)
+  ✓  59 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 390px viewport (862ms)
+  ✓  60 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 430px viewport (1.0s)
+  ✓  61 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 768px viewport (998ms)
+  ✓  62 tests/browser/mobile.spec.ts:4:3 › navigation, forms and panels fit a 1280px viewport (795ms)
+  ✓  63 tests/browser/mobile.spec.ts:44:1 › mobile resident selection, shortcuts and resizing preserve the same live controls (970ms)
+  ✓  64 tests/browser/motion.spec.ts:4:1 › server motion covers response jitter and slow syncs restart without an extra polling interval (9.5s)
+  ✓  65 tests/browser/multiplayer.spec.ts:3:1 › invited visitors create and observe in the same world with isolated ownership and owner-only controls (2.6s)
+  ✓  66 tests/browser/multiplayer.spec.ts:49:1 › personal stars and last observation follow the same account across contexts without affecting another account (2.3s)
+  ✓  67 tests/browser/objects.spec.ts:26:1 › canvas selects roofs and resources, keyboard selection opens live facts and residents remain reachable (1.2s)
+  ✓  68 tests/browser/objects.spec.ts:52:1 › mobile and reduced motion support object details and status portraits without overflow (2.7s)
+  ✓  69 tests/browser/objects.spec.ts:68:1 › crowded labels avoid each other at all zoom levels and on mobile, with selected and hovered names preserved (1.3s)
+  ✓  70 tests/browser/observer.spec.ts:4:1 › followups, physical actions, watch list and grounded family story remain readable on mobile (1.8s)
+  ✓  71 tests/browser/observer.spec.ts:26:1 › server watch preferences travel across pages; digest pagination is frozen and reset clears bookmarks (2.8s)
+  ✓  72 tests/browser/observer.spec.ts:39:1 › late family history cannot replace another open event or a closed dialog (707ms)
+  ✓  73 tests/browser/observer.spec.ts:48:1 › a pair relationship timeline orders recorded encounters and opens their original evidence (896ms)
+  ✓  74 tests/browser/requests.spec.ts:3:1 › first request reaches an evidenced result, persists, and fits desktop and mobile (6.2s)
+  ✓  75 tests/browser/requests.spec.ts:36:1 › server request spends once and retains result through reload; disclosure stays closed during updates (1.5s)
+  ✓  76 tests/browser/requests.spec.ts:54:1 › deferring costs nothing and persists a concrete return time (542ms)
+  ✓  77 tests/browser/small-village.spec.ts:3:1 › small village preset, real construction, scene evidence and mobile observation work end to end (6.4s)
+  ✓  78 tests/browser/small-village.spec.ts:39:1 › server preset backs up the populated world and construction survives reconnection (1.4s)
+  ✓  79 tests/browser/storage-operations.spec.ts:11:1 › storage panel is read-only, handles mobile, and restores the server archive without downloading it (1.8s)
+  ✓  80 tests/browser/storage-operations.spec.ts:31:1 › file import previews validated facts, closing does nothing, explicit apply replaces once (1.6s)
+  ✓  81 tests/browser/storage-operations.spec.ts:44:1 › invalid and stale previews cannot replace a newer world (1.3s)
+  ✓  82 tests/browser/storage.spec.ts:3:1 › live progress is visible across devices before autosave and explicit save exports it (5.7s)
+
+
+  1) tests/browser/characters.spec.ts:3:1 › create a customized resident, follow real interactions, find them and restore their profile 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#world-tools summary')
+        - locator resolved to <summary>세계 관리</summary>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not visible
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not visible
+        - retrying click action
+          - waiting 100ms
+        51 × waiting for element to be visible, enabled and stable
+           - element is not visible
+         - retrying click action
+           - waiting 500ms
+
+
+      21 |   await page.getByRole('button',{name:'마을 주민',exact:true}).click(); await page.getByLabel('내가 만든 주민만').check();
+      22 |   await page.getByLabel('주민 검색',{exact:true}).fill('해솔'); await expect(page.locator('.resident-card')).toHaveCount(1); await page.locator('.resident-card').click();
+    > 23 |   await page.locator('#world-tools summary').click();
+         |                                              ^
+      24 |   await page.getByRole('button',{name:'세계 저장',exact:true}).click();
+      25 |   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!));
+      26 |   const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(9); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
+        at /home/malrang/workspace/game-dev1/tests/browser/characters.spec.ts:23:46
+
+    Error Context: test-results/characters-create-a-custom-3fcee-m-and-restore-their-profile/error-context.md
+
+  2) tests/browser/continuity.spec.ts:4:1 › timed construction, evidence, farm fences and daily history work on mobile 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('#cloud-retry')
+        - locator resolved to <button class="button" id="cloud-retry">연결 새로고침</button>
+      - attempting click action
+        2 × waiting for element to be visible, enabled and stable
+          - element is not visible
+        - retrying click action
+        - waiting 20ms
+        2 × waiting for element to be visible, enabled and stable
+          - element is not visible
+        - retrying click action
+          - waiting 100ms
+        54 × waiting for element to be visible, enabled and stable
+           - element is not visible
+         - retrying click action
+           - waiting 500ms
+
+
+       9 |  await page.locator('#observation-details').evaluate((d:HTMLDetailsElement)=>d.open=true);await expect(page.locator('#observation-details')).toContainText('공정 0%');
+      10 |  await expect(page.locator('[data-protect-farm]').first()).toBeDisabled();
+    > 11 |  await send(page,{type:'step',ticks:144});await page.locator('#cloud-retry').click();const b=await(await page.request.get('/api/world')).json();expect(b.state.construction.projects[0].buildingId).toBeTruthy();
+         |                                                                              ^
+      12 |  await send(page,{type:'reset',seed:42,population:12});await page.locator('#cloud-retry').click();await page.locator('#observation-details').evaluate((d:HTMLDetailsElement)=>d.open=true);await page.locator('[data-protect-farm]').first().click();await expect(page.locator('#observation-details')).toContainText('울타리 보호');
+      13 |  await page.locator('#load-button').click();await expect(page.locator('#storage-status')).toContainText('최근 30일 운영 추이');await expect(page.locator('#storage-status table tbody tr')).toHaveCount(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+      14 |  await page.locator('#storage-status table').scrollIntoViewIfNeeded();await page.getByRole('dialog').screenshot({path:'reports/screenshots/v023-operations.png'});
+        at /home/malrang/workspace/game-dev1/tests/browser/continuity.spec.ts:11:78
+
+    Error Context: test-results/continuity-timed-construct-a6095-aily-history-work-on-mobile/error-context.md
+
+  3) tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v023 retained engine and confirms previous-build progress once 
+
+    Error: expect(received).toBe(expected) // Object.is equality
+
+    Expected: 712
+    Received: 711
+
+      20 |    const db=databases.find(db=>db.prepare("SELECT name FROM sqlite_master WHERE name='world'").get());if(!db)throw new Error('No local world fixture database');
+      21 |    db.prepare('INSERT OR REPLACE INTO world_live VALUES(1,?,1,?)').run(saved.revision,JSON.stringify({build:engine.build,epoch:saved.epoch,ticks:160,meta,started:Date.now(),id:crypto.randomUUID()}));
+    > 22 |    const recovered=await get();expect(recovered.revision).toBe(saved.revision+1);expect(recovered.state.tick).toBe(state.tick);if(engine.version==='v021')expect(recovered.state.frontier).toBeUndefined();else expect(recovered.state.frontier).toBeTruthy();expect(recovered.meta.eventCount).toBe(meta.eventCount);
+         |                                                           ^
+      23 |    expect(db.prepare('SELECT * FROM world_live').get()).toBeUndefined();expect((await get()).revision).toBe(recovered.revision);
+      24 |    const exported=await(await request.get('/api/export')).json();expect(exported.events).toEqual(JSON.parse(JSON.stringify(state.events)));
+      25 |  }finally{databases.forEach(db=>db.close());}
+        at /home/malrang/workspace/game-dev1/tests/browser/engine-migration.spec.ts:22:59
+
+    Error Context: test-results/engine-migration-real-Work-fd91f-revious-build-progress-once/error-context.md
+
+  3 failed
+    tests/browser/characters.spec.ts:3:1 › create a customized resident, follow real interactions, find them and restore their profile 
+    tests/browser/continuity.spec.ts:4:1 › timed construction, evidence, farm fences and daily history work on mobile 
+    tests/browser/engine-migration.spec.ts:10:1 › real Worker loads v023 retained engine and confirms previous-build progress once 
+  1 skipped
+  78 passed (3.9m)
