@@ -16,3 +16,20 @@
 .dynasty-family, .dynasty-history { display: grid; gap: 8px; margin: 14px 0; }
 #dynasty-panel .causal-button { width: 100%; text-align: left; white-space: normal; }
 @media(max-width: 540px) { .dynasty-metrics { grid-template-columns: 1fr; } .dynasty-metrics section { padding: 14px; } .dynasty-metrics h3 { margin: 6px 0; } }
+.family-dashboard { border-top:1px solid #dbe3d3; margin-top:24px; padding-top:24px; }
+.family-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.family-generation { background:#e5eddf; padding:9px 14px; border-radius:8px; margin:20px 0 10px; }
+.family-node { margin:8px 0 8px 12px; padding:12px 16px; border-left:3px solid #859c70; background:#fafbf5; border-radius:0 10px 10px 0; }
+.family-parents,.family-partner,.family-learning { color:#64735f; font-size:13px; line-height:1.8; }
+.family-person { font-size:16px; padding:6px 0; }
+.family-person span { font-size:12px; color:#64735f; }
+.family-pages,.family-places { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:16px 0; }
+.family-return { background:#f7f0e4; border-radius:14px; padding:16px; margin:24px 0; }
+.family-business { padding:16px; border:1px solid #d5dfcc; border-radius:14px; margin:12px 0; background:#f7faf3; }
+.business-ledger { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px; }
+.business-ledger div { background:white; border-radius:8px; padding:10px; }
+.business-ledger dt { font-size:12px; color:#64735f; }
+.business-ledger dd { margin:8px 0 0; font-size:20px; font-variant-numeric:tabular-nums; }
+.family-influence { margin:24px 0; }
+#family-map-status { background:#eef3e4; padding:8px 12px; border-radius:8px; font-size:13px; }
+@media(max-width:540px){.business-ledger{grid-template-columns:repeat(2,minmax(0,1fr));}.family-node{margin-left:4px;padding:10px;}.family-business{padding:12px;} .family-section-heading .button{width:100%;}}

@@ -1,3 +1,5 @@
+import { familyObservation, FAMILY_KINDS, type FamilyVisit } from '../sim/family-observation';
+import { INDUSTRY_LABELS } from '../sim/urban-types';
 import { z } from 'zod';
 import type { Member } from './access';
 import { AccessError } from './access';
@@ -68,5 +70,11 @@ export async function dynastyAPI(store: WorldStore, member: Member, world: Store
     active.profile ? archive.prepare('SELECT body FROM events WHERE epoch=? AND id=? AND seq<=?').bind(world.epoch, active.profile.arrivalEventId, world.meta.eventCount).first<{ body: string }>() : null,
     archive.prepare("SELECT body FROM events WHERE epoch=? AND kind='inheritance' AND seq<=? AND json_extract(body,'$.actorId')=? AND json_type(body,'$.data.heirs')='array' ORDER BY seq DESC LIMIT 1").bind(world.epoch, world.meta.eventCount, active.id).first<{ body: string }>(),
   ]);
-  return { ...result, dynasty, stats: dynastyStats(world.state, root, active.id), active: { id: active.id, identity: active.identity, alive: active.alive, life: active.life }, successors: successorIds(world.state, dynasty), deeds, activeDeeds, history: history.results.map(r => JSON.parse(r.body) as WorldEvent), openingCoins: arrival ? JSON.parse(arrival.body).data.coins : active.life.parentIds.length ? 0 : null, estateCoins: estate ? JSON.parse(estate.body).data.coins : null };
+  const observation=familyObservation(world.state,root);
+  const previous=await db.prepare('SELECT tick,through,coins FROM dynasty_visits WHERE epoch=? AND member=? AND root=?').bind(world.epoch,member.id,root).first<FamilyVisit>();
+  const visit=previous&&previous.tick<=world.state.tick&&previous.through<=world.meta.eventCount?previous:null;
+  const changes=await archive.prepare(`SELECT e.body FROM events e WHERE e.epoch=? AND e.seq>? AND e.seq<=? AND e.kind IN (SELECT value FROM json_each(?)) AND EXISTS(SELECT 1 FROM participants p WHERE p.epoch=e.epoch AND p.event=e.id AND p.npc IN (SELECT value FROM json_each(?))) ORDER BY e.seq DESC LIMIT 25`).bind(world.epoch,visit?.through??0,world.meta.eventCount,JSON.stringify(FAMILY_KINDS),JSON.stringify([...family.keys()])).all<{body:string}>();
+  // Only deliberate dashboard requests write one bookmark; the 2-second world sync never does.
+  if(input===undefined)await db.batch([db.prepare(`INSERT INTO dynasty_visits(epoch,member,root,tick,through,coins) SELECT ?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM world WHERE epoch=?) AND EXISTS(SELECT 1 FROM world_members WHERE id=? AND blocked=0) ON CONFLICT(epoch,member,root) DO UPDATE SET tick=excluded.tick,through=excluded.through,coins=excluded.coins WHERE dynasty_visits.through<=excluded.through OR dynasty_visits.tick>excluded.tick`).bind(world.epoch,member.id,root,world.state.tick,world.meta.eventCount,observation.coins,world.epoch,member.id)]);
+  return { ...result, family:observation,changes:{since:visit?.tick??null,coinDelta:visit?observation.coins-visit.coins:null,events:changes.results.slice(0,24).map(r=>JSON.parse(r.body) as WorldEvent),more:changes.results.length>24},availableBusinesses:world.state.urban.enterprises.filter(e=>!e.business&&e.settlementId===active.settlementId).map(e=>({id:e.id,label:INDUSTRY_LABELS[e.kind]})), dynasty, stats: dynastyStats(world.state, root, active.id), active: { id: active.id, identity: active.identity, alive: active.alive, life: active.life }, successors: successorIds(world.state, dynasty), deeds, activeDeeds, history: history.results.map(r => JSON.parse(r.body) as WorldEvent), openingCoins: arrival ? JSON.parse(arrival.body).data.coins : active.life.parentIds.length ? 0 : null, estateCoins: estate ? JSON.parse(estate.body).data.coins : null };
 }

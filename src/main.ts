@@ -1,3 +1,4 @@
+import { familyTree } from './ui/family-dashboard';
 import { dynastyView, localDynasty } from './ui/dynasty';
 import type { DynastyView } from './sim/dynasty';
 import type { Ambition } from './sim/ambition';
@@ -130,7 +131,7 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.27</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.28</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
     <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="dynasty-button" class="button">내 가문</button><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
@@ -526,6 +527,7 @@ function startCloud() {
   let displayedEpoch = '', displayedEvents = -1;
   cloud = new CloudClient(world => {
     const changed = displayedEpoch !== world.epoch, newEvents = displayedEvents !== world.meta.eventCount;
+    if(changed){map.setFamily();document.getElementById('family-map-status')?.remove();dynastyPage=undefined;}
     displayedEpoch = world.epoch; displayedEvents = world.meta.eventCount;
     presentationMotion = world.motion;
     chromeRunner!.setWorld(world.epoch, world.meta.aiGeneration ?? 'legacy', world.meta.aiMode === 'chrome' && isOwner());
@@ -907,12 +909,25 @@ async function showAccount() {
 let dynastyPage: DynastyView | undefined;
 let dynastyBusy = false;
 async function showDynasty() {
+  if (cloudMode && !cloudReady) await cloud!.connect();
   const epoch = observationEpoch();
-  if (cloudMode && !cloudReady) throw new Error('서버 연결을 먼저 확인해 주세요.');
   const view = cloudMode ? await cloud!.get<DynastyView>('dynasty') : localDynasty(state, epoch);
   if (epoch !== observationEpoch() || view.epoch !== epoch) throw new Error('세계가 바뀌었습니다. 내 가문을 다시 열어 주세요.');
   dynastyPage = view; openDialog(dynastyView(view, isOwner()));
 }
+document.addEventListener('click',event=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-family-map],[data-family-building],[data-family-page],[data-family-map-off]');if(!button)return;
+  if(button.hasAttribute('data-family-map-off')){map.setFamily();document.getElementById('family-map-status')?.remove();return;}
+  const page=dynastyPage;if(!page||page.epoch!==observationEpoch())return;
+  if(button.dataset.familyPage!==undefined){$('family-tree').innerHTML=familyTree(page,Number(button.dataset.familyPage));$('family-tree').scrollIntoView({block:'start'});return;}
+  $<HTMLDialogElement>('detail-dialog').close();
+  if(button.dataset.familyBuilding){selectObject({kind:'building',id:button.dataset.familyBuilding});return;}
+  map.setFamily(page.dynasty?.root);
+  document.getElementById('family-map-status')?.remove();
+  const status=document.createElement('div');status.id='family-map-status';status.innerHTML='가문 지도 · 금색 원: 가문원 · 초록 테두리: 집 · 파란 테두리: 사업장 <button class="text-button" data-family-map-off>표시 끄기</button>';
+  $('world-map').parentElement!.insertAdjacentElement('beforebegin',status);
+  if(page.active)selectNPC(page.active.id);
+});
 $('dynasty-button').onclick = () => { void showDynasty().catch(cloudFailure); };
 document.addEventListener('click', event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-dynasty-create],[data-dynasty-refresh]'); if (!button) return;
@@ -921,13 +936,18 @@ document.addEventListener('click', event => {
 });
 document.addEventListener('submit', async event => {
   const form = event.target as HTMLFormElement;
-  if (!['dynasty-found', 'dynasty-succeed', 'dynasty-ambition'].includes(form.id)) return;
+  if (!['dynasty-found', 'dynasty-succeed', 'dynasty-ambition', 'dynasty-business'].includes(form.id)) return;
   event.preventDefault(); if (dynastyBusy || !dynastyPage) return;
   const data = new FormData(form), page = dynastyPage, button = form.querySelector<HTMLButtonElement>('button')!;
   dynastyBusy = true; button.disabled = true;
   try {
     if (page.epoch !== observationEpoch()) throw new Error('세계가 바뀌었습니다. 내 가문을 다시 열어 주세요.');
-    if (form.id === 'dynasty-ambition') {
+    if(form.id==='dynasty-business'){
+      if(!isOwner()||!page.active)throw new Error('소유자만 사업 인수를 제안할 수 있습니다.');
+      const enterpriseId=String(data.get('enterprise'));
+      if(cloudMode)await cloud!.send({type:'business-acquire',npcId:page.active.id,enterpriseId},crypto.randomUUID(),{epoch:page.epoch,revision:cloud!.world!.revision});
+      else{sim.acquireBusiness(page.active.id,enterpriseId);state=sim.snapshot();localSave();render();}
+    } else if (form.id === 'dynasty-ambition') {
       if (!isOwner() || !page.active) throw new Error('소유자만 삶의 우선순위를 바꿀 수 있습니다.');
       const focus = String(data.get('focus')) as Ambition;
       if (cloudMode) await cloud!.send({ type: 'ambition', npcId: page.active.id, focus }, crypto.randomUUID(), { epoch: page.epoch, revision: cloud!.world!.revision });

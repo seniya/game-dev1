@@ -7,6 +7,7 @@ import { type WorldState, type NPC, type Position } from '../sim/types';
 import type { MotionTrace } from '../sim/motion';
 import { MotionBuffer, MotionPlayback } from './motion';
 
+import { descendants } from '../sim/dynasty';
 import { appearance, drawPerson } from './characters';
 import { ACTION_LABELS } from '../sim/types';
 import { SERVICE_LABELS, INDUSTRY_LABELS } from '../sim/urban-types';
@@ -31,6 +32,18 @@ export class WorldMap {
   private reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   private world?: WorldState;
   private selected = 'npc0';
+  private familyRoot?:string;
+  private familyMembers=new Set<string>();
+  private familyHomes=new Set<string>();
+  private familyBusinesses=new Set<string>();
+  setFamily(root?:string){this.familyRoot=root;this.refreshFamily();this.draw();}
+  private refreshFamily(){
+    const w=this.world;this.familyMembers=new Set(w&&this.familyRoot?descendants(w,this.familyRoot).keys():[]);
+    if(!w||!this.familyRoot){this.familyHomes.clear();this.familyBusinesses.clear();return;}
+    const homes=new Set(w.npcs.filter(n=>n.alive&&this.familyMembers.has(n.id)).map(n=>n.homeId));
+    this.familyHomes=new Set(w?.buildings.filter(b=>b.kind==='home'&&(b.ownerIds?.some(id=>this.familyMembers.has(id))||homes.has(b.id))).map(b=>b.id)??[]);
+    this.familyBusinesses=new Set(w?.urban.enterprises.filter(e=>e.business?.shares.some(s=>this.familyMembers.has(s.npc))).map(e=>e.buildingId)??[]);
+  }
   private completedActivity = '';
   private grid = false;
   private selectedObject?: ObjectSelection;
@@ -124,7 +137,7 @@ export class WorldMap {
     }
     const completed = world.events.slice(-100).filter(e => (e.actorId === selected || e.kind === 'gathering' && e.participants.includes(selected)) && world.tick - e.tick <= 6 && (e.kind === 'gathering' && e.data.phase === 'completed' || (['production','industry','storage'].includes(e.kind)||e.kind==='project'&&!e.data.provisions&&(!e.data.initiative||e.data.phase==='completed')) || e.kind === 'consumption' && e.data.action === 'Eat' || e.kind === 'request' && e.data.phase === 'supported')).at(-1);
     this.completedActivity = !completed ? '' : completed.kind === 'gathering' ? '함께한 활동 완료' : completed.kind === 'request' ? '지원 반영 완료' : completed.kind === 'storage' ? '자원 운반 완료' : completed.kind === 'consumption' ? '식사 완료' : completed.kind === 'project' ? '시설 개선 완료' : '생산 완료';
-    this.world = world; this.selected = selected; this.residents = world.npcs.filter(n => n.alive && this.motion.intersects(n.id,this.origin.x-1,this.origin.y-1,this.origin.x+32/this.zoom+1,this.origin.y+24/this.zoom+1));
+    this.world = world; this.refreshFamily(); this.selected = selected; this.residents = world.npcs.filter(n => n.alive && this.motion.intersects(n.id,this.origin.x-1,this.origin.y-1,this.origin.x+32/this.zoom+1,this.origin.y+24/this.zoom+1));
     const key = JSON.stringify([world.seed, world.width, world.height, this.origin, this.zoom, selected, this.selectedObject, world.urban.cities.map(c => [c.services, c.active]), world.urban.enterprises.map(e => [e.buildingId, e.kind]), world.buildings.map(b => [b.id, b.kind, b.name, b.position, b.level, b.growth >= 20, world.living.homes[b.id]]), world.resources.map(r => [r.id, r.kind, r.position, resourceStage(r)])]);
     if (rebuilt || key !== this.sceneKey) { this.buildScene(world); this.sceneKey = key; }
     this.animating = this.motion.active(now); this.draw(now);
@@ -136,7 +149,7 @@ export class WorldMap {
     if (active || this.animating || this.dirty) this.draw(now);
     this.animating = active; this.dirty = false;
   }
-  reset() { this.world = undefined; this.motion.clear(); this.motionBuffer.reset(); this.lastUpdate = 0; this.sceneKey = ''; this.objectFocus = undefined; this.selectedObject = undefined; this.hovered = undefined; this.displayed.clear(); }
+  reset() { this.familyRoot=undefined;this.world = undefined; this.refreshFamily(); this.motion.clear(); this.motionBuffer.reset(); this.lastUpdate = 0; this.sceneKey = ''; this.objectFocus = undefined; this.selectedObject = undefined; this.hovered = undefined; this.displayed.clear(); }
   private buildTerrain(w: WorldState) {
     const c = this.cell; this.canvas.width = 32 * c; this.canvas.height = 24 * c; this.terrain.width = w.width * c; this.terrain.height = w.height * c; this.terrainBuildings = w.buildings.length;
     const ctx = this.terrain.getContext('2d')!;
@@ -254,6 +267,7 @@ export class WorldMap {
     ctx.drawImage(this.scene, 0, 0);
     ctx.save(); ctx.scale(this.zoom, this.zoom); ctx.translate(-this.origin.x * c, -this.origin.y * c);
     for (const l of this.buildingLabels) this.label(ctx, l.text, l.x, l.y, false, l.priority, l.id);
+    for(const b of w.buildings){if(!this.inView(b.position)||!this.familyHomes.has(b.id)&&!this.familyBusinesses.has(b.id))continue;ctx.strokeStyle=this.familyBusinesses.has(b.id)?'#347ba4':'#476e37';ctx.lineWidth=3/this.zoom;ctx.strokeRect(b.position.x*c-4,b.position.y*c-4,c+8,c+8);this.label(ctx,this.familyBusinesses.has(b.id)?'가문 사업장':'가문의 집',(b.position.x+.5)*c,b.position.y*c-12,true,65,`family:${b.id}`);}
     const selected = w.npcs.find(n => n.id === this.selected);
     if (!this.selectedObject && selected?.currentAction?.path.length) {
       ctx.strokeStyle = '#fff9d0bb'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]); ctx.beginPath(); const position = this.motion.position(selected.id, now) ?? selected.position; ctx.moveTo((position.x + .5) * c, (position.y + .5) * c);
@@ -291,6 +305,7 @@ export class WorldMap {
       this.displayed.set(n.id, { x: x / c, y: y / c });
       if (!this.selectedObject && n.id === this.selected) { ctx.fillStyle='#ffeab477';ctx.beginPath();ctx.ellipse(x,y+3,19,11,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#344f32';ctx.lineWidth=2;ctx.stroke(); }
       ctx.fillStyle = '#384f443a'; ctx.beginPath(); ctx.ellipse(x + 2, y + 6, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
+      if(this.familyMembers.has(n.id)){ctx.strokeStyle='#f3bf45';ctx.lineWidth=3/this.zoom;ctx.beginPath();ctx.ellipse(x,y+4,17,9,0,0,Math.PI*2);ctx.stroke();this.label(ctx,`가문 · ${n.identity.name}`,x,y-38,true,60,`family:${n.id}`);}
       drawPerson(ctx, n, x, y, w, this.reducedMotion.matches ? 0 : (p.x + p.y) * Math.PI * 2, false);
       const status = characterVisual(n, w);
       if (this.zoom >= 1 && status.key !== 'calm' && status.key !== 'moving') this.label(ctx, status.symbol, x + 15, y - 27, false, 5, `status:${n.id}`, status.color, true);

@@ -1,0 +1,69 @@
+{
+  "version": "0.28.0",
+  "date": "2026-10-02",
+  "plan": "FAMILY_LEGACY_PLAN.md",
+  "unit": {
+    "fullSuitePassed": 297,
+    "fullSuiteFailed": 0,
+    "finalFamilySuitePassed": 12,
+    "uniquePassed": 298,
+    "note": "One actual cooperation donation regression was added after the 297-test full run; the final 12-test family suite includes it."
+  },
+  "browser": {
+    "fullSuitePassed": 94,
+    "fullSuiteFailed": 0,
+    "skippedRealChromeModel": 1,
+    "finalFocusedPassed": 3,
+    "uniquePassed": 95,
+    "scope": "Real local Worker/D1, desktop and mobile Chromium; final focused run adds exact v027 recovery and rechecks family UI."
+  },
+  "regression": {
+    "file": "reports/family-legacy-regression.json",
+    "cases": 9,
+    "days": {
+      "smallVillage": 365,
+      "population300": 30,
+      "population1000": 3,
+      "population3000": 1
+    },
+    "accountingErrors": 0,
+    "missingOriginalReferences": 0,
+    "deterministicResume": true,
+    "note": "Controlled initial business acquisition funded from existing money in six small-village cases. Natural learning observed in some seeds, not guaranteed in all."
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "retainedEngineIntegrity": true,
+    "warning": "Client bundle exceeds Vite 500kB advisory; build succeeds."
+  },
+  "correctionsDuringValidation": [
+    "Moved contribution evaluation from the low-level event append helper to the end of actual simulation ticks, preserving archive fixture semantics and deliberate bounded social credit.",
+    "Used D1 batch for bookmark writes to match the existing SQLite test adapter.",
+    "Corrected new test fixture init timestamps, member/creator schema fields, enterprise TypeScript return type and original-engine Mock/off setup.",
+    "Fixed opening the dynasty panel before the first server connection completes.",
+    "Seeded browser local-world fixtures before app initialization; pagehide otherwise overwrote the fixture with the running previous world.",
+    "Adjusted newborn fixture timing to include the existing 36-tick initial clock.",
+    "Initial focused browser run 3 passed / 3 failed; corrected run 6 passed; full suite 94 passed / 1 real-model skipped; final focused 3 passed."
+  ],
+  "preservation": {
+    "retainedSource": "5d3a71927dfad7da01eab23a78f94ed3885c63cc",
+    "retainedFingerprint": "d1c19bfa17149028ebf4ad10664f9b11408d705f703b1c0962cc2bdee535193c",
+    "workerRecovery": true,
+    "existingReportsAndScreenshotsPreserved": true,
+    "sameCustomSiteRequired": true
+  },
+  "limitations": [
+    "Local authenticated headers do not prove a real invited account login.",
+    "Actual Chrome language quality, human-interest evaluation and global production CPU/memory were not tested.",
+    "Businesses acquire existing enterprises and sell actual production to the shared market; free-form land plots, private retail orders and credit financing are outside this scope.",
+    "Operating profits exclude acquisition cost and may later be reduced by losses; old paid dividends are not clawed back.",
+    "Dynasty visit/identity metadata remains account-specific and is not imported from world archives."
+  ],
+  "screenshots": [
+    "reports/screenshots/v028-family-mobile.png",
+    "reports/screenshots/v028-business-desktop.png",
+    "reports/screenshots/v028-dynasty-mobile.png",
+    "reports/screenshots/v028-dynasty-desktop.png"
+  ]
+}

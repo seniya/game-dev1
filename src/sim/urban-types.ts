@@ -10,7 +10,7 @@ export interface Citizen {
   disease: number; injury: number; preference: number; skills: Record<'field' | 'quarry' | 'mine' | 'mill' | 'smith', number>;
   employer?: string; healthEventId?: string; income: number; expenses: number;
 }
-export interface Enterprise { id: string; settlementId: string; buildingId: string; kind: Industry; capacity: number; wage: number; workers: string[]; output: number; sourceEventId?: string }
+export interface Enterprise { business?: import('./family-enterprise').Business; id: string; settlementId: string; buildingId: string; kind: Industry; capacity: number; wage: number; workers: string[]; output: number; sourceEventId?: string }
 export interface City {
   settlementId: string; fertility: number; deposits: Record<Mineral, number>; initialDeposits: Record<Mineral, number>;
   goods: Goods; treasury: number; taxRate: number; priority: Service;

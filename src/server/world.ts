@@ -16,6 +16,7 @@ import type { WorldState, WorldEvent } from '../sim/types';
 export const commandSchema = z.object({
   id: z.string().uuid(), revision: z.number().int().nonnegative(),
   action: z.discriminatedUnion('type', [
+    z.object({type:z.literal('business-acquire'),npcId:z.string().min(1).max(100),enterpriseId:z.string().min(1).max(100)}).strict(),
     z.object({ type: z.literal('ambition'), npcId: z.string().min(1).max(100), focus: ambitionSchema }).strict(),
     z.object({type:z.literal('gathering-proposal'),npcId:z.string().min(1).max(100),kind:z.enum(['meal','help','harvest']),source:z.string().min(1).max(100)}).strict(),
     z.object({type:z.literal('construction'),settlementId:z.string().min(1).max(100),kind:z.enum(['home','farm']),position:z.object({x:z.number().int().nonnegative(),y:z.number().int().nonnegative()}).strict()}).strict(),
@@ -72,6 +73,8 @@ export function compactWorld(w: WorldState): WorldState {
   const byId = new Map(w.events.map(e => [e.id, e]));
   const keep = new Set(w.events.slice(-100).map(e => e.id));
   for (const n of w.npcs) {
+    if(n.life.apprenticeship)keep.add(n.life.apprenticeship.source);
+    if(n.life.support)keep.add(n.life.support.source);
     if (n.profile) keep.add(n.profile.arrivalEventId);
     if (w.urban?.citizens[n.id]?.healthEventId) keep.add(w.urban.citizens[n.id].healthEventId!);
     if (n.life?.birthEventId) keep.add(n.life.birthEventId);
@@ -89,7 +92,7 @@ export function compactWorld(w: WorldState): WorldState {
   w.civilization?.settlements.forEach(v => { if (v.sourceEventId) keep.add(v.sourceEventId); });
   w.civilization?.journeys.forEach(j => keep.add(j.sourceEventId));
   w.urban?.cities.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); if (c.policyEventId) keep.add(c.policyEventId); });
-  w.urban?.enterprises.forEach(e => { if (e.sourceEventId) keep.add(e.sourceEventId); });
+  w.urban?.enterprises.forEach(e => { if(e.business){keep.add(e.business.source);keep.add(e.business.latest);} if (e.sourceEventId) keep.add(e.sourceEventId); });
   w.urban?.freight.forEach(f => keep.add(f.sourceEventId));
   w.urban?.samples.forEach(s => keep.add(s.eventId));
   w.construction?.projects.forEach(p=>{keep.add(p.source);keep.add(p.lastEventId);if(p.labor?.assignment)keep.add(p.labor.assignment);if(p.labor?.workEvent)keep.add(p.labor.workEvent);});
@@ -151,6 +154,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
     meta.pendingTicks = a.ticks - work;
     for (let i = 0; i < work; i++) { sim.step(); if (useMock && sim.pending) await decisions.drain(); }
   }
+  if(a.type==='business-acquire')sim.acquireBusiness(a.npcId,a.enterpriseId);
   if (a.type === 'ambition') sim.setAmbition(a.npcId, a.focus);
   if (a.type === 'create-character') meta.createdCharacter = { commandId: command.id, npcId: sim.createCharacter(a.character, command.id) };
   if (a.type === 'council') sim.setCouncil(a.settlementId, a.enabled);

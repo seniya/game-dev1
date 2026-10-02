@@ -1,3 +1,4 @@
+import { apprenticeshipSchema, supportSchema, validateLegacy } from './legacy-learning';
 import { ambitionSchema } from './ambition';
 import { cooperationSchema, validateCooperation } from './cooperation';
 import { agricultureSchema, validateAgriculture } from './agriculture';
@@ -39,7 +40,7 @@ const npc = z.object({
   cognition: cognitionSchema.optional(),
   profile: profileSchema.optional(),
   id, identity: z.object({ name: z.string().min(1).max(80), age: natural.max(150) }).strict(), position: pos, homeId: id,
-  settlementId: id, life: z.object({ ambition: ambitionSchema.optional(), bornTick: z.number().int().min(-300000).max(Number.MAX_SAFE_INTEGER), parentIds: z.array(id).max(2), partnerId: id.optional(), generation: natural.max(1000), skill: score, lastBirth: natural, lastMove: natural, deathTick: natural.optional(), birthEventId: id.optional(), deathEventId: id.optional(), estateSettled: z.boolean() }).strict(),
+  settlementId: id, life: z.object({ apprenticeship:apprenticeshipSchema.optional(), support:supportSchema.optional(), ambition: ambitionSchema.optional(), bornTick: z.number().int().min(-300000).max(Number.MAX_SAFE_INTEGER), parentIds: z.array(id).max(2), partnerId: id.optional(), generation: natural.max(1000), skill: score, lastBirth: natural, lastMove: natural, deathTick: natural.optional(), birthEventId: id.optional(), deathEventId: id.optional(), estateSettled: z.boolean() }).strict(),
   previousOccupation: z.enum(Object.keys(OCCUPATIONS) as [Occupation, ...Occupation[]]).optional(),
   occupation: z.enum(Object.keys(OCCUPATIONS) as [Occupation, ...Occupation[]]), alive: z.boolean(),
   needs: z.object({ hunger: score, thirst: score, fatigue: score, health: score, safety: score, social: score }).strict(),
@@ -219,6 +220,7 @@ export function validateSave(input: unknown): WorldState {
   validateGatherings(w, ensure, register);
   validateRequests(w, ensure, register);
   validateUrban(w, ensure);
+  validateLegacy(w,ensure);
   validateHeritage(w, ensure);
   // Keep the original property order so a save/load round trip is byte-identical.
   // The strict schema above has validated every field without coercion or defaults.

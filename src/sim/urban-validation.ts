@@ -1,3 +1,4 @@
+import { businessSchema, validateBusinesses } from './family-enterprise';
 import { z } from 'zod';
 import type { WorldState } from './types';
 import { GOODS, INDUSTRIES, SERVICES, MINERALS } from './urban-types';
@@ -11,7 +12,7 @@ const deposits = z.object({ stone: nat, ore: nat, clay: nat, salt: nat }).strict
 export const urbanSchema = z.object({ since: nat,
   citizens: z.record(z.object({ education: score, nutrition: score, stress: score, housing: score, trust: score, disease: score, injury: score, preference: score, skills: z.object({ field: score, quarry: score, mine: score, mill: score, smith: score }).strict(), employer: id.optional(), healthEventId: id.optional(), income: nat, expenses: nat }).strict()),
   cities: z.array(z.object({ settlementId: id, fertility: score, deposits, initialDeposits: deposits, goods, treasury: nat, taxRate: nat.max(30), priority: z.enum(SERVICES), services, active: services, pollution: score, collected: nat, spent: nat, policyEventId: id.optional(), lastEventId: id.optional() }).strict()).max(12),
-  enterprises: z.array(z.object({ id, settlementId: id, buildingId: id, kind: z.enum(INDUSTRIES), capacity: nat.min(1).max(40), wage: nat.min(1).max(20), workers: z.array(id).max(40), output: nat, sourceEventId: id.optional() }).strict()).max(480),
+  enterprises: z.array(z.object({ id, settlementId: id, buildingId: id, kind: z.enum(INDUSTRIES), business: businessSchema.optional(), capacity: nat.min(1).max(40), wage: nat.min(1).max(20), workers: z.array(id).max(40), output: nat, sourceEventId: id.optional() }).strict()).max(480),
   freight: z.array(z.object({ id, from: id, to: id, good: z.enum(GOODS), amount: nat.min(1), coins: nat.min(1), fee: nat.min(1), path: z.array(z.object({ x: nat.max(191), y: nat.max(191) }).strict()).max(16384), progress: nat, sourceEventId: id }).strict()).max(1000),
   buildings: z.record(z.object({ condition: score, maintenance: nat.min(1).max(20) }).strict()),
   ledger: z.object({ opening: goods, produced: goods, consumed: goods }).strict(),
@@ -45,5 +46,6 @@ export function validateUrban(w: WorldState, ensure: (condition: unknown, messag
     ensure(f.path.length > 0 && distance(from.center, f.path[0]) === 1 && distance(to.center, f.path.at(-1)!) === 0 && f.path.every((p, i) => walkable(w, p) && (!i || distance(f.path[i - 1], p) === 1)), '화물 경로');
   }
   for (const s of u.samples) ensure(s.tick <= w.tick && villages.has(s.settlementId) && events.get(s.eventId)?.kind === 'urban' && events.get(s.eventId)?.tick === s.tick && s.employed <= s.population && s.sick <= s.population, '도시 표본/출처');
+  validateBusinesses(w,ensure);
   ensure(Object.values(urbanBalance(w)).every(n => n === 0), '산업 자원 회계 보존');
 }

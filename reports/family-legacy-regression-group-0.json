@@ -1,0 +1,352 @@
+{
+  "version": "0.28.0",
+  "completed": true,
+  "measurement": "Local Node process CPU and sampled heap, including archive/validation/continuation overhead. Not production Worker CPU or memory. Full rules preserved; no approximate LOD or distributed server introduced.",
+  "results": [
+    {
+      "seed": 7,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "businesses": [
+        {
+          "kind": "field",
+          "owners": 1,
+          "community": 0,
+          "revenue": 990,
+          "costs": 22,
+          "wages": 250,
+          "dividends": 721
+        },
+        {
+          "kind": "mine",
+          "owners": 1,
+          "community": 0,
+          "revenue": 968,
+          "costs": 22,
+          "wages": 532,
+          "dividends": 414
+        }
+      ],
+      "apprentices": 2,
+      "experiencedContributions": 17,
+      "living": 11,
+      "initiatives": [],
+      "preparations": 1,
+      "wildlife": 6,
+      "construction": [],
+      "events": 139763,
+      "accounting": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "urbanAccounting": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "missingReferences": 0,
+      "resumeChecks": 14,
+      "elapsedMs": 92562,
+      "cpuMs": 108504,
+      "peakHeapSampleBytes": 419561344,
+      "peakCheckpointBytes": 11667778,
+      "p95DayMs": 747
+    },
+    {
+      "seed": 42,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "businesses": [
+        {
+          "kind": "field",
+          "owners": 1,
+          "community": 0,
+          "revenue": 64,
+          "costs": 18,
+          "wages": 16,
+          "dividends": 48
+        },
+        {
+          "kind": "quarry",
+          "owners": 1,
+          "community": 0,
+          "revenue": 8,
+          "costs": 18,
+          "wages": 8,
+          "dividends": 0
+        }
+      ],
+      "apprentices": 0,
+      "experiencedContributions": 18,
+      "living": 19,
+      "initiatives": [],
+      "preparations": 6,
+      "wildlife": 37,
+      "construction": [],
+      "events": 188228,
+      "accounting": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "urbanAccounting": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "missingReferences": 0,
+      "resumeChecks": 14,
+      "elapsedMs": 125689,
+      "cpuMs": 164445,
+      "peakHeapSampleBytes": 580319424,
+      "peakCheckpointBytes": 20141767,
+      "p95DayMs": 661
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 300,
+      "days": 30,
+      "businesses": [
+        {
+          "kind": "quarry",
+          "owners": 1,
+          "community": 0,
+          "revenue": 40,
+          "costs": 0,
+          "wages": 40,
+          "dividends": 0
+        },
+        {
+          "kind": "quarry",
+          "owners": 1,
+          "community": 0,
+          "revenue": 106,
+          "costs": 0,
+          "wages": 106,
+          "dividends": 0
+        },
+        {
+          "kind": "mill",
+          "owners": 1,
+          "community": 0,
+          "revenue": 6,
+          "costs": 8,
+          "wages": 4,
+          "dividends": 0
+        },
+        {
+          "kind": "mine",
+          "owners": 1,
+          "community": 0,
+          "revenue": 12,
+          "costs": 0,
+          "wages": 12,
+          "dividends": 0
+        },
+        {
+          "kind": "mine",
+          "owners": 1,
+          "community": 0,
+          "revenue": 4,
+          "costs": 0,
+          "wages": 4,
+          "dividends": 0
+        },
+        {
+          "kind": "quarry",
+          "owners": 1,
+          "community": 0,
+          "revenue": 22,
+          "costs": 0,
+          "wages": 22,
+          "dividends": 0
+        },
+        {
+          "kind": "mine",
+          "owners": 1,
+          "community": 0,
+          "revenue": 28,
+          "costs": 0,
+          "wages": 28,
+          "dividends": 0
+        },
+        {
+          "kind": "mill",
+          "owners": 1,
+          "community": 0,
+          "revenue": 21,
+          "costs": 28,
+          "wages": 14,
+          "dividends": 0
+        },
+        {
+          "kind": "garden",
+          "owners": 1,
+          "community": 0,
+          "revenue": 0,
+          "costs": 0,
+          "wages": 0,
+          "dividends": 0
+        },
+        {
+          "kind": "quarry",
+          "owners": 1,
+          "community": 0,
+          "revenue": 36,
+          "costs": 0,
+          "wages": 36,
+          "dividends": 0
+        },
+        {
+          "kind": "mine",
+          "owners": 1,
+          "community": 0,
+          "revenue": 24,
+          "costs": 0,
+          "wages": 24,
+          "dividends": 0
+        },
+        {
+          "kind": "garden",
+          "owners": 1,
+          "community": 0,
+          "revenue": 8,
+          "costs": 0,
+          "wages": 4,
+          "dividends": 4
+        },
+        {
+          "kind": "kitchen",
+          "owners": 1,
+          "community": 0,
+          "revenue": 0,
+          "costs": 0,
+          "wages": 0,
+          "dividends": 0
+        },
+        {
+          "kind": "fishery",
+          "owners": 1,
+          "community": 0,
+          "revenue": 0,
+          "costs": 0,
+          "wages": 0,
+          "dividends": 0
+        },
+        {
+          "kind": "fishery",
+          "owners": 1,
+          "community": 0,
+          "revenue": 0,
+          "costs": 0,
+          "wages": 0,
+          "dividends": 0
+        },
+        {
+          "kind": "pottery",
+          "owners": 1,
+          "community": 0,
+          "revenue": 32,
+          "costs": 32,
+          "wages": 8,
+          "dividends": 0
+        }
+      ],
+      "apprentices": 0,
+      "experiencedContributions": 92,
+      "living": 308,
+      "initiatives": [],
+      "preparations": 12,
+      "wildlife": 36,
+      "construction": [],
+      "events": 357886,
+      "accounting": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "urbanAccounting": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "missingReferences": 0,
+      "resumeChecks": 2,
+      "elapsedMs": 48063,
+      "cpuMs": 56399,
+      "peakHeapSampleBytes": 656510816,
+      "peakCheckpointBytes": 26594383,
+      "p95DayMs": 2005
+    }
+  ]
+}

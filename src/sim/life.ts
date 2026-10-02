@@ -1,3 +1,5 @@
+import { inheritBusinesses } from './family-enterprise';
+import { learnFamilyTrade, chooseFamilyTrade } from './legacy-learning';
 import { household } from './spatial';
 import { syncEmployment } from './employment';
 import { newLivingPerson } from './living';
@@ -85,6 +87,7 @@ export function settleEstate(w: WorldState, n: NPC, causeId: string) {
   const partner = w.npcs.find(p => p.alive && p.id === n.life.partnerId);
   const heirs = [...children, ...(partner ? [partner] : [])].sort((a, b) => a.id.localeCompare(b.id));
   const recipient = heirs[0];
+  inheritBusinesses(w,n,heirs,causeId);
   // Pay food-denominated liabilities from the estate first; record unpaid debt explicitly.
   for (const loan of w.loans.filter(l => l.status !== 'repaid' && (l.borrowerId === n.id || l.lenderId === n.id))) {
     if (loan.borrowerId === n.id) {
@@ -125,12 +128,13 @@ export function lifeDay(w: WorldState) {
     if (n.identity.age >= 65) n.needs.health = Math.max(1, n.needs.health - (n.identity.age - 64) * .1);
     if (previous < 18 && n.identity.age >= 18) {
       const mentor = w.npcs.filter(p => p.alive && n.life.parentIds.includes(p.id)).sort((a, b) => b.life.skill - a.life.skill)[0];
-      n.occupation = mentor?.previousOccupation ?? mentor?.occupation ?? 'none';
+      if (!chooseFamilyTrade(w,n)) n.occupation = mentor?.previousOccupation ?? mentor?.occupation ?? 'none';
       delete n.previousOccupation;
       socialEvent(w, { kind: 'coming_of_age', actorId: n.id, targetId: mentor?.id, importance: 60, description: `${n.identity.name}이 성인이 되어 ${n.occupation === 'none' ? '일자리를 찾기 시작한다' : '배운 기술로 일을 시작한다'}.`, data: { skill: n.life.skill, occupation: n.occupation }, causeId: n.life.birthEventId });
     }
     syncEmployment(w, n);
     if (n.identity.age < 18) {
+      learnFamilyTrade(w,n);
       const mentor = w.npcs.filter(p => p.alive && p.homeId === n.homeId && p.identity.age >= 18).sort((a, b) => b.life.skill - a.life.skill)[0];
       if (mentor && n.needs.health > 50) {
         n.life.skill = Math.min(mentor.life.skill, n.life.skill + .1);

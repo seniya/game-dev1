@@ -15,6 +15,7 @@ export interface CommandInput { action: Command['action']; at: number; checkpoin
 
 const schema = [
   'CREATE TABLE IF NOT EXISTS dynasties(epoch TEXT NOT NULL,member TEXT NOT NULL,root TEXT NOT NULL,active TEXT NOT NULL,revision INTEGER NOT NULL,chain TEXT NOT NULL,PRIMARY KEY(epoch,member,root))',
+  'CREATE TABLE IF NOT EXISTS dynasty_visits(epoch TEXT NOT NULL,member TEXT NOT NULL,root TEXT NOT NULL,tick INTEGER NOT NULL,through INTEGER NOT NULL,coins INTEGER NOT NULL,PRIMARY KEY(epoch,member,root))',
   'CREATE TABLE IF NOT EXISTS dynasty_selection(epoch TEXT NOT NULL,member TEXT NOT NULL,root TEXT NOT NULL,PRIMARY KEY(epoch,member))',
   ...uploadSchema, ...replaySchema, ...expressionSchema, ...continuitySchema,
   'CREATE TABLE IF NOT EXISTS personal_observations(epoch TEXT NOT NULL,member TEXT NOT NULL,watch TEXT NOT NULL,tick INTEGER NOT NULL,through INTEGER NOT NULL,seen INTEGER NOT NULL,PRIMARY KEY(epoch,member))',

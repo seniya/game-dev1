@@ -1,3 +1,5 @@
+import { creditContribution } from './legacy-learning';
+import { acquireBusiness, enterpriseDay } from './family-enterprise';
 import { setAmbition, type Ambition } from './ambition';
 import { cooperationDay, cooperationTick, provisionDay } from './cooperation';
 import { knownPromiseEvent } from './promises';
@@ -55,6 +57,7 @@ export class Simulation {
     }
     if (!enabled) this.state.observation.watchIds = ids.filter(value => value !== id);
   }
+  acquireBusiness(npcId:string,enterpriseId:string) { acquireBusiness(this.state,npcId,enterpriseId,true); }
   setAmbition(npcId: string, focus: Ambition) { setAmbition(this.state, npcId, focus); }
   snapshot(): WorldState { return structuredClone(this.state); }
   save(): string { return JSON.stringify(this.state); }
@@ -89,6 +92,7 @@ export class Simulation {
   }
   private tickOnce() {
     const w = this.state; w.tick++;
+    const contributionStart=w.events.length;
     if (w.tick % TICKS_PER_DAY === 0) this.newDay();
     constructionTick(w);
     cooperationTick(w);
@@ -140,6 +144,8 @@ export class Simulation {
     }
     updateGatherings(w);
     updateRequests(w);
+    const contributionEnd=w.events.length;
+    for(let i=contributionStart;i<contributionEnd;i++)creditContribution(w,w.events[i]);
     w.stats.foodSum += this.totalFood(); w.stats.samples++;
   }
   private totalFood() { return holdings(this.state).food; }
@@ -163,6 +169,7 @@ export class Simulation {
     cooperationDay(w);
     regionalDay(w);
     urbanDay(w);
+    enterpriseDay(w);
     initializeUrban(w);
     livingDay(w);
     societyDay(w);

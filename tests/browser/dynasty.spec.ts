@@ -16,8 +16,8 @@ test('avatar, dynasty, ambition, persistence, evidence and mobile layout', async
   await page.setViewportSize({width:390,height:844});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   const panel=page.locator('#dynasty-panel');expect(await panel.evaluate(e=>e.scrollWidth<=e.clientWidth+1)).toBe(true);
-  await page.screenshot({path:'reports/screenshots/v027-dynasty-mobile.png',fullPage:false});
-  await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:'reports/screenshots/v027-dynasty-desktop.png',fullPage:false});
+  await page.screenshot({path:'reports/screenshots/v028-dynasty-mobile.png',fullPage:false});
+  await page.setViewportSize({width:1440,height:1000});await page.screenshot({path:'reports/screenshots/v028-dynasty-desktop.png',fullPage:false});
   expect(errors).toEqual([]);
 });
 test('participant chooses own dynasty, but cannot change world priorities',async({browser,page})=>{
@@ -50,7 +50,7 @@ test('a deceased avatar leaves a life summary and a real child continues without
   for(const [n,p] of [[a,b],[b,a]]){const r=relationship(n,p.id);r.trust=80;r.affection=40;}
   expect(formFamily(w,a,b)).toBe(true);const child=giveBirth(w,a,b)!;expect(child).toBeTruthy();child.identity.name='이어가는 아이';die(w,a,'needs');
   const save=Simulation.load(JSON.stringify(w)).save(),coins=child.wealth;
-  await page.goto('/?local=1');await page.evaluate(save=>{localStorage.setItem('living-small-world-v1',save);localStorage.setItem('lsw-local-world-key','dynasty-successor-test');},save);await page.reload();
+  await page.addInitScript(save=>{if(localStorage.getItem('lsw-local-world-key')!=='dynasty-successor-test'){localStorage.setItem('living-small-world-v1',save);localStorage.setItem('lsw-local-world-key','dynasty-successor-test');}},save);await page.goto('/?local=1');
   await page.locator('#dynasty-button').click();await page.locator('#dynasty-found button').click();
   await expect(page.locator('.dynasty-life')).toContainText('사망 시 전달한 유산');await expect(page.locator('#dynasty-succeed')).toContainText('이어가는 아이');
   await page.locator('#dynasty-succeed button').click();await expect(page.locator('.dynasty-avatar')).toContainText('이어가는 아이');await expect(page.locator('.dynasty-avatar')).toContainText('2번째 아바타');

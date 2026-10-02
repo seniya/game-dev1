@@ -46,7 +46,7 @@ test('sharing transfers actual food and creates trust, memory and source trail',
   const sim = load(w); sim.step(); const after = sim.snapshot(), a = after.npcs[0], b = after.npcs[1];
   assert.equal(a.inventory.food, 2); assert.equal(b.inventory.food, 1); assert.equal(after.stats.shares, 1);
   const event = after.events.find(e => e.kind === 'share')!; assert.ok(event);
-  assert.equal(b.relationships[0].trust, 47); assert.ok(b.relationships[0].evidence.includes(event.id)); assert.ok(b.memories.some(m => m.sourceEventId === event.id)); assert.ok(after.llm.queue.length > 0);
+  assert.equal(b.relationships[0].trust, 49); assert.equal(b.life.support?.source, event.id); assert.ok(b.relationships[0].evidence.includes(event.id)); assert.ok(b.memories.some(m => m.sourceEventId === event.id)); assert.ok(after.llm.queue.length > 0);
 });
 test('utility chooses aid from hunger and empathy without resident-specific script', () => {
   const w = prepared(), [giver, receiver] = w.npcs;

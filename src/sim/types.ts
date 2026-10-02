@@ -66,6 +66,8 @@ export const DAYS_PER_YEAR = 12;
 export const YEAR_TICKS = DAYS_PER_YEAR * TICKS_PER_DAY;
 export const MAX_POPULATION = 3000;
 export interface Life {
+  apprenticeship?: import('./legacy-learning').Apprenticeship;
+  support?: {giver:string;tick:number;source:string};
   ambition?: import('./ambition').Ambition;
   bornTick: number; parentIds: string[]; partnerId?: string; generation: number;
   skill: number; lastBirth: number; lastMove: number; deathTick?: number;

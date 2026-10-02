@@ -1,3 +1,4 @@
+import { cooperationTrust } from './legacy-learning';
 import { z } from 'zod';
 import type { Candidate, NPC, WorldState } from './types';
 import { beginConstruction } from './construction';
@@ -72,10 +73,10 @@ export function cooperationTick(w:WorldState) {
     if(w.tick-p.created>=14*144){p.status='withdrawn';p.latest=appendEvent(w,{kind:'project',actorId:p.proposerId,importance:45,causeId:p.source,description:'공동 사업이 14일 안에 착공 조건을 마련하지 못해 제안을 거두었다. 기부한 기금과 공동 자재는 마을에 남는다.',data:{initiative:p.id,settlementId:p.settlementId,phase:'withdrawn'}}).id;continue;}
     const stock=stocks(w,p.settlementId),fund=market(w,p.settlementId),wood=p.kind==='home'?12:16,wages=p.kind==='home'?18:36;
     const venue=w.buildings.find(b=>b.kind==='market'&&b.settlementId===p.settlementId)!;
-    if(fund.coins<wages)for(const n of w.npcs.filter(n=>n.alive&&n.identity.age>=18&&n.settlementId===p.settlementId&&n.wealth>20&&n.personality.empathy>=45&&n.needs.hunger<65&&distance(n.position,venue.position)<=2).slice(0,4)) {
+    if(fund.coins<wages)for(const n of w.npcs.filter(n=>n.alive&&n.identity.age>=18&&n.settlementId===p.settlementId&&n.wealth>20&&n.personality.empathy+cooperationTrust(n,p.proposerId,w)>=45&&n.needs.hunger<65&&distance(n.position,venue.position)<=2).slice(0,4)) {
       const amount=Math.min(2,wages-fund.coins,n.wealth-20);if(amount<=0)break;
       n.wealth-=amount;fund.coins+=amount;p.donated+=amount;
-      p.latest=appendEvent(w,{kind:'project',actorId:n.id,causeId:p.source,importance:35,locationId:venue.id,description:`${n.identity.name}이 시장에서 공동 사업 임금 기금에 ${amount}코인을 보탰다. 자신의 생활비 20코인을 남겼다.`,data:{initiative:p.id,settlementId:p.settlementId,phase:'donated',coins:amount}}).id;
+      p.latest=appendEvent(w,{kind:'project',actorId:n.id,causeId:p.source,importance:35,locationId:venue.id,description:`${n.identity.name}이 시장에서 공동 사업 임금 기금에 ${amount}코인을 보탰다. 자신의 생활비 20코인을 남겼다.`,data:{initiative:p.id,settlementId:p.settlementId,phase:'donated',coins:amount,...(cooperationTrust(n,p.proposerId,w)>0?{evidence:[n.life.support!.source],trustBonus:cooperationTrust(n,p.proposerId,w)}:{})}}).id;
     }
     if(stock.wood<wood||fund.coins<wages||(w.construction?.projects.filter(s=>!s.buildingId).length??0)>=8||w.buildings.length>=3992)continue;
     const v=w.civilization.settlements.find(v=>v.id===p.settlementId)!;
