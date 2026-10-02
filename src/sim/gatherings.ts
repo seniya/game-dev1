@@ -235,3 +235,32 @@ export function updateGatherings(w: WorldState) {
     finish(w, g, g.kind === 'meal' ? `${present.length}명이 각자 식량 1개를 먹었다.` : g.kind === 'help' ? `${host.identity.name}이 ${helped!.identity.name}에게 소지 식량 1개를 전달했다.` : `${present.length}명이 실제 작물에서 각자 식량 2개를 수확했다.`, present);
   }
 }
+
+/** Only physically possible activities are offered; a model's prose never grants attendance. */
+export function conversationGatherings(w:WorldState,npcId:string) {
+  const host=w.npcs.find(n=>n.id===npcId);
+  if(!host || !eligible(w,host) || urgentNeed(host) || booked(w,host.id) || w.gatherings?.items.some(g=>g.settlementId===host.settlementId&&isPlanned(g) || g.hostId===host.id&&w.tick-g.createdAt<3*144))return [];
+  const nearby=w.npcs.filter(n=>n.id!==host.id&&eligible(w,n)&&n.settlementId===host.settlementId&&distance(n.position,host.position)<=4);
+  if(!nearby.length)return [];
+  const market=w.buildings.find(b=>b.kind==='market'&&b.settlementId===host.settlementId);
+  const farm=w.buildings.find(b=>b.kind==='farm'&&b.settlementId===host.settlementId&&b.growth>=8&&!w.urban.enterprises.some(e=>e.buildingId===b.id));
+  const choices:{kind:Gathering['kind'];buildingId:string;label:string}[]=[];
+  for(const kind of ['meal','help','harvest'] as const) {
+    const venue=kind==='harvest'?farm:market;
+    if(!venue || kind==='meal'&&host.inventory.food<2 || kind==='help'&&(host.inventory.food<3||host.personality.empathy<45||!nearby.some(n=>n.inventory.food===0&&n.needs.hunger>55)) || kind==='harvest'&&!canWork(w,host))continue;
+    const path=findPath(w,host.position,venue.position);if(!path||path.length>30)continue;
+    choices.push({kind,buildingId:venue.id,label:GATHERING_LABELS[kind]});
+  }
+  return choices;
+}
+export function proposeConversationGathering(w:WorldState,npcId:string,kind:Gathering['kind'],source:string) {
+  const event=eventById(w,source),choice=conversationGatherings(w,npcId).find(c=>c.kind===kind),host=w.npcs.find(n=>n.id===npcId);
+  if(!choice||!host||event?.actorId!==npcId||!event.data.expression||w.tick-event.tick>144)throw new Error('주민 모임의 생활 조건 또는 대화 근거가 바뀌었습니다.');
+  const state=w.gatherings??={items:[],lastProposalDay:-1};
+  state.items=[...state.items.filter(isPlanned),...state.items.filter(g=>!isPlanned(g)).slice(-23)];
+  if(state.items.length>=36)throw new Error('주민 모임이 너무 많습니다.');
+  const reason='관찰자와 나눈 대화 이후, 현재 생활 조건을 확인하여 제안했다. 참석 여부는 각 주민이 새로 결정한다.';
+  const g:Gathering={id:`g${w.nextId++}`,kind,hostId:npcId,settlementId:host.settlementId,buildingId:choice.buildingId,createdAt:w.tick,startsAt:w.tick+36,endsAt:w.tick+60,status:'planned',reason,evidence:[source],sourceEventId:'',lastEventId:'',invitations:[],progress:0,attendance:[],arrivals:[]};
+  const e=appendEvent(w,{kind:'gathering',actorId:npcId,locationId:g.buildingId,causeId:source,importance:55,description:`${host.identity.name}이 대화 후 ${choice.label} 모임을 제안했다. ${reason}`,data:{gatheringId:g.id,gatheringKind:kind,phase:'proposed',startsAt:g.startsAt,endsAt:g.endsAt,evidence:[source],observer:true}});
+  g.sourceEventId=e.id;g.lastEventId=e.id;state.items.push(g);deliverInvitations(w,g);return g.id;
+}

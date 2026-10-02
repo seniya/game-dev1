@@ -1,0 +1,18 @@
+npm notice run living-small-world@0.23.0 npx
+npm notice run 'tsx' --test tests/continuity.test.ts
+✔ v022 recovery commits exact old engine progress once, with a durable recovery record (225.463586ms)
+✔ daily operations roll back with saves, deduplicate concurrent captures, survive restart and expire after 30 days (7.08504ms)
+✔ conversation chains are bounded and isolated by resident, owner, epoch and AI generation (221.692998ms)
+✔ timed construction reserves land and material, survives checkpoints, completes once without double charging (67.292714ms)
+✔ farm fences consume actual wood, prevent wildlife crop loss and expire without changing resource accounting (3.410173ms)
+✔ conversation activity validates availability again, links source and preserves independent invitations (10.628095ms)
+✔ optimized decisions and household lookup preserve complete deterministic outcomes of the retained engine (8490.618295ms)
+✔ rain delays construction and first-use evidence requires a resident actually sleeping in the completed home (43.990532ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9369.165668

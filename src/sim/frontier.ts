@@ -3,11 +3,13 @@ import type { WorldState, Position } from './types';
 import { appendEvent } from './social';
 import { findPath, walkable } from './pathfinding';
 import { distance } from './random';
-import { market } from './civilization';
+import { market, stocks } from './civilization';
 const id = z.string().min(1).max(100),
   nat = z.number().int().nonnegative();
 export const frontierSchema = z
   .object({
+    protections: z.array(z.object({buildingId:id,sourceEventId:id,until:nat}).strict()).max(128).optional(),
+    impact: z.array(z.object({settlementId:id,berries:nat,crops:nat,protectedDays:nat,since:nat}).strict()).max(12).optional(),
     animals: z
       .array(
         z
@@ -66,7 +68,7 @@ export function wildlifeDay(w: WorldState) {
         .sort((a1, b) => distance(a1.position, a.position) - distance(b.position, a.position))[0];
       const farm = !food
         ? w.buildings
-            .filter((b) => b.kind === 'farm' && b.settlementId === v.id && b.growth >= 1)
+            .filter((b) => b.kind === 'farm' && b.settlementId === v.id && b.growth >= 1 && !f.protections?.some(p=>p.buildingId===b.id&&p.until>w.tick))
             .sort((a1, b) => distance(a1.position, a.position) - distance(b.position, a.position))[0]
         : undefined;
       const target = food ?? farm;
@@ -103,6 +105,9 @@ export function wildlifeDay(w: WorldState) {
       }
     }
     f.animals = f.animals.filter((a) => !dead.has(a.id));
+    const impact=f.impact??=[];
+    let total=impact.find(i=>i.settlementId===v.id);if(!total){total={settlementId:v.id,berries:0,crops:0,protectedDays:0,since:w.tick};impact.push(total);}
+    total.berries+=consumed;total.crops+=cropLoss;total.protectedDays+=(f.protections??[]).filter(p=>p.until>w.tick&&w.buildings.some(b=>b.id===p.buildingId&&b.settlementId===v.id)).length;
     h.born += born;
     h.lost += dead.size;
     h.lastEventId = appendEvent(w, {
@@ -116,6 +121,10 @@ export function wildlifeDay(w: WorldState) {
 export function validateFrontier(w: WorldState, ensure: (value: unknown, message: string) => void) {
   const f = w.frontier;
   if (!f) return;
+  ensure(new Set((f.protections??[]).map(p=>p.buildingId)).size===(f.protections??[]).length,'야생동물 보호 중복');
+  for(const p of f.protections??[])ensure(w.buildings.some(b=>b.id===p.buildingId&&b.kind==='farm')&&w.events.some(e=>e.id===p.sourceEventId&&e.locationId===p.buildingId),'야생동물 보호 근거');
+  ensure(new Set((f.impact??[]).map(i=>i.settlementId)).size===(f.impact??[]).length,'야생동물 영향 중복');
+  for(const i of f.impact??[])ensure(i.since<=w.tick&&w.civilization.settlements.some(v=>v.id===i.settlementId),'야생동물 영향 마을');
   const villages = new Set(w.civilization.settlements.map((v) => v.id));
   ensure(new Set(f.animals.map((a) => a.id)).size === f.animals.length, '야생동물 중복');
   ensure(
@@ -185,7 +194,7 @@ export function tradeLand(w: WorldState, buildingId: string, buyerId: string, pr
     data: { land: true, price, sellers: quote.sellers, settlementId: b.settlementId! },
   });
 }
-export function buildPosition(w: WorldState, villageId: string, p: Position) {
+export function buildPosition(w: WorldState, villageId: string, p: Position, projectId?:string) {
   const v = w.civilization.settlements.find((v) => v.id === villageId);
   return (
     !!v &&
@@ -196,7 +205,18 @@ export function buildPosition(w: WorldState, villageId: string, p: Position) {
     distance(v.center, p) <= 24 &&
     !w.buildings.some((b) => distance(b.position, p) === 0) &&
     !w.resources.some((r) => distance(r.position, p) === 0) &&
+    !(w.construction?.projects.some(site=>!site.buildingId&&site.id!==projectId&&distance(site.position,p)===0)) &&
     !!findPath(w, v.center, p) &&
     w.civilization.settlements.every((other) => other.id === v.id || distance(v.center, p) <= distance(other.center, p))
   );
+}
+
+export function protectFarm(w:WorldState,buildingId:string) {
+ const b=w.buildings.find(b=>b.id===buildingId&&b.kind==='farm');if(!b)throw new Error('마을 농장을 찾을 수 없습니다.');
+ w.frontier??={animals:[],habitats:[]};const f=w.frontier,stock=stocks(w,b.settlementId!);
+ if(stock.wood<4 || f.protections?.some(p=>p.buildingId===b.id&&p.until>w.tick))throw new Error('마을 농장 울타리의 목재가 부족하거나 아직 보호 중입니다.');
+ f.protections=(f.protections??[]).filter(p=>p.until>w.tick);if(f.protections.length>=128)throw new Error('마을 울타리 상한입니다.');
+ stock.wood-=4;w.economy.totals.investedWood+=4;
+ const e=appendEvent(w,{kind:'ecology',locationId:b.id,importance:45,description:`${b.name}에 공동 목재 4개로 울타리를 설치했다. 30일 동안 야생동물이 이 농장의 미수확 작물을 먹지 못한다.`,data:{protection:true,wood:4,until:w.tick+30*144,settlementId:b.settlementId!}});
+ f.protections.push({buildingId:b.id,sourceEventId:e.id,until:w.tick+30*144});
 }

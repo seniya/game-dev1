@@ -81,6 +81,7 @@ test('positioned home, land sale, wildlife and grounded mock reflection are usab
   });
   await page.locator('#observation-details').evaluate((el: HTMLDetailsElement) => (el.open = true));
   await page.locator('#build-position').click();
+  await page.locator('#placed-build [name=timed]').selectOption('no');
   await page.locator('#placed-build [name=x]').fill(String(position.x));
   await page.locator('#placed-build [name=y]').fill(String(position.y));
   await page.locator('#placed-build button').click();
@@ -104,7 +105,7 @@ test('positioned home, land sale, wildlife and grounded mock reflection are usab
     button.remove();
   }, n.id);
   await page.locator('[data-expression=reflection]').click();
-  await page.locator('#expression-form button').click();
+  await page.locator('#expression-form button[type=submit]').click();
   await expect(page.locator('#expression-status')).toContainText('저장했습니다');
   const after = await (await page.request.get('/api/world')).json();
   expect(after.state.events.some((e: { data: { expression?: string } }) => e.data.expression === 'reflection')).toBe(
@@ -129,7 +130,7 @@ test('Chrome Korean unsupported rejects locally without any external request', a
     if (r.method() === 'POST') requests.push(new URL(r.url()).pathname);
   });
   await page.locator('[data-expression=dialogue]').click();
-  await page.locator('#expression-form button').click();
+  await page.locator('#expression-form button[type=submit]').click();
   await expect(page.locator('#expression-status')).toContainText('완료하지 못했습니다');
   expect(requests).not.toContain('/api/expressions');
 });

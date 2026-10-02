@@ -1,3 +1,5 @@
+import { retainedEngine } from './engine-registry';
+import { operationalCommit } from './operations';
 import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types';
 import { Simulation } from '../sim/engine';
 import { DecisionCoordinator } from '../llm/coordinator';
@@ -32,19 +34,19 @@ export class LiveWorldStore extends WorldStore {
     if (!head || head.revision !== saved.revision) return saved;
     const progress = JSON.parse(head.body) as Progress;
     if (progress.epoch !== saved.epoch) return saved;
-    if (progress.build !== this.build && progress.build === '5809ccf28f7e3e9d2f897f7a23c03ecfe41c0de21b98432a7776949f4ac4d2f2') {
+    if (progress.build !== this.build && retainedEngine(progress.build)) {
       // This exact published engine is retained solely to confirm its pending clock.
       // Never feed these ticks into the new engine. Unknown fingerprints still fail closed below.
       if (!Number.isSafeInteger(progress.ticks) || progress.ticks < 0 || progress.ticks > 500) throw new Error('저장 대기 틱 범위를 확인해 주세요.');
-      const { LegacySimulation, LegacyCoordinator, LegacyMock } = await import('./legacy-v021');
+      const { LegacySimulation, LegacyCoordinator, LegacyMock } = await retainedEngine(progress.build)!();
       const sim=LegacySimulation.load(JSON.stringify(saved.state)), decisions=new LegacyCoordinator(sim,new LegacyMock());
       for(let i=0;i<progress.ticks;i++){sim.step(1,undefined);if(saved.meta.aiMode!=='remote'&&saved.meta.aiMode!=='chrome'&&sim.pending)await decisions.drain();}
       const state=sim.snapshot() as unknown as WorldState, ids=new Set(saved.state.events.map(e=>e.id));
       this.pending=state.events.filter(e=>!ids.has(e.id));
-      if(saved.meta.eventCount+this.pending.length!==progress.meta.eventCount)throw new Error('이전 엔진의 저장 대기 사건 수가 일치하지 않습니다.');
+      if(state.tick!==saved.state.tick+progress.ticks || saved.meta.eventCount+this.pending.length!==progress.meta.eventCount)throw new Error('이전 엔진의 저장 대기 사건 수가 일치하지 않습니다.');
       this.current={...saved,state:compactWorld(state),meta:progress.meta,live:{sequence:head.sequence,savedAt:progress.started,observedAt:progress.meta.lastSeen}};
       const id=`engine-migration:${progress.build}:${saved.revision}`;
-      try {await this.commit({...this.current,revision:saved.revision+1,meta:{...progress.meta}},[],id,id,[],{action:{type:'save'},at:Date.now()});}
+      try {await this.commit({...this.current,revision:saved.revision+1,meta:{...progress.meta}},[],id,id,[this.db.prepare('INSERT INTO engine_migrations VALUES(?,?,?,?,?,?,?)').bind(id,progress.build,this.build,saved.epoch,progress.ticks,this.pending.length,Date.now())],{action:{type:'save'},at:Date.now()});}
       catch(error){if(!(error instanceof Conflict))throw error;}
       return this.read();
     }
@@ -123,9 +125,11 @@ export class LiveWorldStore extends WorldStore {
     ] : [];
     const allEvents = replaced ? events : [...this.pending, ...events];
     w.meta.savedAt = now; delete w.live;
+    const operational = operationalCommit(this.db, w, now);
     await super.commit(w, allEvents, request, id, [
-      ...this.guard(), this.db.prepare('DELETE FROM world_live'), ...backup, ...extra, ...this.retention(w, now),
+      ...this.guard(), this.db.prepare('DELETE FROM world_live'), ...backup, ...extra, ...this.retention(w, now), ...operational.statements,
     ], { action: input?.action ?? { type: 'save' }, at: now, checkpoint: true, replay: {ticks:this.current.state.tick-this.saved.state.tick,meta:this.current.meta,...(input?{command:{id,revision:this.current.revision,action:input.action}}:{})} });
+    operational.accepted();
     this.pending = []; this.head = null; this.saved = structuredClone(w); cache.delete(this.db);
   }
 

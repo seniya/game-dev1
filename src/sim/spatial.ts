@@ -4,6 +4,9 @@ interface Index { buckets: Map<string, Set<NPC>>; order: Map<string, number>; ce
 const indexes = new WeakMap<WorldState, Index>();
 const key = (x: number, y: number) => `${Math.floor(x / 8)},${Math.floor(y / 8)}`;
 export function indexPeople(w: WorldState) {
+  const homes=new Map<string,NPC[]>();
+  for(const n of w.npcs){let members=homes.get(n.homeId);if(!members){members=[];homes.set(n.homeId,members);}members.push(n);}
+  households.set(w,homes);
   // Reuse buckets between ticks; positions are updated in place. Rebuild only when membership changes.
   let i=indexes.get(w);
   if(!i||i.order.size!==w.npcs.length||w.npcs.some(n=>!i!.order.has(n.id))) { i={buckets:new Map(),order:new Map(),cells:new Map()}; indexes.set(w,i); }
@@ -32,3 +35,6 @@ export function person(w: WorldState, id: string | undefined): NPC | undefined {
   if (!i || i.count !== w.npcs.length) { i = { count: w.npcs.length, byId: new Map(w.npcs.map(n => [n.id, n])) }; peopleIndexes.set(w, i); }
   return i.byId.get(id);
 }
+
+const households=new WeakMap<WorldState,Map<string,NPC[]>>();
+export function household(w:WorldState,homeId:string) { return households.get(w)?.get(homeId)??w.npcs.filter(n=>n.homeId===homeId); }

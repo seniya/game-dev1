@@ -15,6 +15,9 @@ import type { WorldState, WorldEvent } from '../sim/types';
 export const commandSchema = z.object({
   id: z.string().uuid(), revision: z.number().int().nonnegative(),
   action: z.discriminatedUnion('type', [
+    z.object({type:z.literal('gathering-proposal'),npcId:z.string().min(1).max(100),kind:z.enum(['meal','help','harvest']),source:z.string().min(1).max(100)}).strict(),
+    z.object({type:z.literal('construction'),settlementId:z.string().min(1).max(100),kind:z.enum(['home','farm']),position:z.object({x:z.number().int().nonnegative(),y:z.number().int().nonnegative()}).strict()}).strict(),
+    z.object({type:z.literal('farm-protection'),buildingId:z.string().min(1).max(100)}).strict(),
     z.object({ type: z.literal('watch'), npcId: z.string().min(1).max(100), enabled: z.boolean() }).strict(),
     z.object({ type: z.literal('create-character'), character: characterSchema }).strict(),
     z.object({ type: z.literal('council'), settlementId: z.string().max(100), enabled: z.boolean() }).strict(),
@@ -87,6 +90,8 @@ export function compactWorld(w: WorldState): WorldState {
   w.urban?.enterprises.forEach(e => { if (e.sourceEventId) keep.add(e.sourceEventId); });
   w.urban?.freight.forEach(f => keep.add(f.sourceEventId));
   w.urban?.samples.forEach(s => keep.add(s.eventId));
+  w.construction?.projects.forEach(p=>{keep.add(p.source);keep.add(p.lastEventId);});
+  w.frontier?.protections?.forEach(p=>keep.add(p.sourceEventId));
   w.frontier?.habitats.forEach(h=>keep.add(h.lastEventId));
   w.heritage?.habitats.forEach(h => { if (h.lastEventId) keep.add(h.lastEventId); });
   w.heritage?.councils.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); });
@@ -146,6 +151,9 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
   if (a.type === 'detail') sim.setDetail(a.focus, a.detail);
   if (a.type === 'watch') sim.watchResident(a.npcId, a.enabled);
   if (a.type === 'request') sim.respondToRequest(a.requestId, a.choice);
+  if(a.type==='gathering-proposal')sim.proposeConversationGathering(a.npcId,a.kind,a.source);
+  if(a.type==='construction')sim.beginConstruction(a.settlementId,a.kind,a.position);
+  if(a.type==='farm-protection')sim.protectFarm(a.buildingId);
   if (a.type === 'build') sim.build(a.settlementId, a.kind, a.position);
   if (a.type === 'land-trade') sim.tradeLand(a.buildingId,a.buyerId,a.price);
   if (a.type === 'experiment') sim.experiment(a.kind);

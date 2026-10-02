@@ -54,16 +54,22 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
     if (!other.alive || other.id === n.id) continue;
     const d = distance(n.position, other.position);
     if (d > 7) continue;
-    const bond = affinity(w, n, other), consent = affinity(w, other, n);
+    const rel = other.relationships.find(r => r.npcId === n.id);
+    const share=n.inventory.food > 1 && other.inventory.food === 0 && (other.needs.hunger > 60 || other.needs.health < 55);
+    const talk=w.tick - n.lastTalk > 18 && w.tick - other.lastTalk > 8 && d <= 4;
+    const borrow=n.inventory.food === 0 && n.needs.hunger > 65 && other.inventory.food >= 3 && (rel?.trust ?? 35) >= 30 && !w.loans.some(l => l.borrowerId === n.id && l.status !== 'repaid');
+    const trade=n.inventory.food < 2 && other.inventory.food > 3 && n.wealth >= localMarket.foodPrice && (rel?.trust ?? 35) >= 20;
+    if(!share&&!talk&&!borrow&&!trade)continue;
+    const bond = affinity(w, n, other);
+    const consent = borrow ? affinity(w, other, n) : undefined;
     const motives = socialMotives(w, n, other);
     const evidence = [...new Set([...bond.evidence, ...motives.evidence])];
     const experienceReason = motives.reason ? ` · ${motives.reason}` : '';
     if (d > 7) continue;
-    if (n.inventory.food > 1 && other.inventory.food === 0 && (other.needs.hunger > 60 || other.needs.health < 55)) add('Share', 25 + n.personality.empathy * .85 + (has('help_neighbor') ? 15 : 0) - n.needs.hunger * .3 + bond.value + motives.share, `${other.identity.name}의 식량이 없고 ${other.needs.health < 55 ? '몸이 아프다' : '배고픔이 높다'}. ${bond.reason}${experienceReason}`, other.position, other.id, evidence);
-    if (w.tick - n.lastTalk > 18 && w.tick - other.lastTalk > 8 && d <= 4) add('Talk', (100 - n.needs.social) * .65 + n.personality.sociability * .3 + (has('make_friend') ? 15 : 0) + bond.value + motives.talk, `${other.identity.name}과 대화하고 싶다. 사회적 충족 ${Math.round(n.needs.social)} · ${bond.reason}${experienceReason}`, other.position, other.id, evidence);
-    const rel = other.relationships.find(r => r.npcId === n.id);
-    if (n.inventory.food === 0 && n.needs.hunger > 65 && other.inventory.food >= 3 && (rel?.trust ?? 35) >= 30 && !w.loans.some(l => l.borrowerId === n.id && l.status !== 'repaid')) add('Borrow', n.needs.hunger * 1.2 + bond.value + consent.value * .4 + motives.borrow, `${other.identity.name}에게 식량을 빌릴 수 있다. ${bond.reason} · 상대의 신뢰 ${Math.round(rel?.trust ?? 35)}${experienceReason}`, other.position, other.id, [...new Set([...evidence, ...consent.evidence])]);
-    if (n.inventory.food < 2 && other.inventory.food > 3 && n.wealth >= localMarket.foodPrice && (rel?.trust ?? 35) >= 20) add('Trade', n.needs.hunger * 1.15 + bond.value + 8, `${other.identity.name}의 여분 식량을 ${localMarket.foodPrice}코인에 구매. ${bond.reason}`, other.position, `peer:${other.id}`, evidence);
+    if (share) add('Share', 25 + n.personality.empathy * .85 + (has('help_neighbor') ? 15 : 0) - n.needs.hunger * .3 + bond.value + motives.share, `${other.identity.name}의 식량이 없고 ${other.needs.health < 55 ? '몸이 아프다' : '배고픔이 높다'}. ${bond.reason}${experienceReason}`, other.position, other.id, evidence);
+    if (talk) add('Talk', (100 - n.needs.social) * .65 + n.personality.sociability * .3 + (has('make_friend') ? 15 : 0) + bond.value + motives.talk, `${other.identity.name}과 대화하고 싶다. 사회적 충족 ${Math.round(n.needs.social)} · ${bond.reason}${experienceReason}`, other.position, other.id, evidence);
+    if (borrow) add('Borrow', n.needs.hunger * 1.2 + bond.value + consent!.value * .4 + motives.borrow, `${other.identity.name}에게 식량을 빌릴 수 있다. ${bond.reason} · 상대의 신뢰 ${Math.round(rel?.trust ?? 35)}${experienceReason}`, other.position, other.id, [...new Set([...evidence, ...consent!.evidence])]);
+    if (trade) add('Trade', n.needs.hunger * 1.15 + bond.value + 8, `${other.identity.name}의 여분 식량을 ${localMarket.foodPrice}코인에 구매. ${bond.reason}`, other.position, `peer:${other.id}`, evidence);
   }
   for (const loan of w.loans.filter(l => l.borrowerId === n.id && l.status !== 'repaid' && n.inventory.food > 1)) {
     const lender = w.npcs.find(p => p.id === loan.lenderId);

@@ -1,3 +1,4 @@
+import { household } from './spatial';
 import { syncEmployment } from './employment';
 import { newLivingPerson } from './living';
 import { newCitizen } from './urban';
@@ -56,7 +57,7 @@ export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
 }
 export function careForChild(w: WorldState, n: NPC) {
   if (n.identity.age >= 18 || isTravelling(w, n)) return false;
-  const caregivers = w.npcs.filter(p => p.alive && p.identity.age >= 18 && p.homeId === n.homeId && !isTravelling(w, p));
+  const caregivers = household(w,n.homeId).filter(p => p.alive && p.identity.age >= 18 && p.homeId === n.homeId && !isTravelling(w, p));
   const home = w.buildings.find(h => h.id === n.homeId)!;
   // Children remain at home; no adult work, debt, theft or market actions.
   const route = findPath(w, n.position, home.position);

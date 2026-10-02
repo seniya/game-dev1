@@ -269,6 +269,12 @@ export class WorldMap {
       ctx.beginPath(); ctx.ellipse(x, y + 8, target.kind === 'building' ? 34 : 23, 13, 0, 0, Math.PI * 2); ctx.stroke();
       this.label(ctx, objectName(w, target) ?? '', x, y - (target.kind === 'building' ? buildingBounds(obj as WorldState['buildings'][number]).height + 15 : 52), true, target === this.selectedObject ? 100 : 90, `object:${target.id}`);
     }
+    for(const project of w.construction?.projects??[]) {
+      if(project.buildingId||!this.inView(project.position))continue;
+      const x=project.position.x*c,y=project.position.y*c;
+      ctx.fillStyle='#b9824a88';ctx.fillRect(x+3,y+3,c-6,c-6);ctx.strokeStyle='#fff1b7';ctx.setLineDash([3,3]);ctx.strokeRect(x+3,y+3,c-6,c-6);ctx.setLineDash([]);
+      this.label(ctx,`공사 ${Math.floor(project.progress/project.required*100)}%`,x+c/2,y+c,false,10,`construction:${project.id}`);
+    }
     for (const a of w.frontier?.animals??[]) {
       if (!this.inView(a.position)) continue;
       const x=(a.position.x+.3)*c,y=(a.position.y+.35)*c;

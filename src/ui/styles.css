@@ -469,3 +469,9 @@ select:focus-visible { outline:2px solid #73926b; outline-offset:3px; }
 #expression-status .evidence-link { display: block; margin: 10px 0; }
 #expression-status small { display: block; margin-top: 12px; }
 #storage-status > .button { margin: 4px 6px 4px 0; }
+
+.table-scroll { max-width:100%; overflow-x:auto; }
+.table-scroll table { width:100%; border-collapse:collapse; font-size:.85rem; }
+.table-scroll th,.table-scroll td { padding:.4rem; text-align:left; white-space:nowrap; border-bottom:1px solid #7773; }
+#conversation-history article { padding:.6rem 0; border-bottom:1px solid #7773; }
+#conversation-history blockquote { margin:.6rem 0; padding-left:.8rem; border-left:3px solid #769f82; }

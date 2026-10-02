@@ -1,5 +1,5 @@
 import { replayStatements } from './replay';
-import { uploadSchema, replaySchema, expressionSchema } from './expansion-schema';
+import { uploadSchema, replaySchema, expressionSchema, continuitySchema } from './expansion-schema';
 import { Simulation } from '../sim/engine';
 import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types';
 import type { WorldEvent, WorldState } from '../sim/types';
@@ -14,7 +14,7 @@ interface ChangeRow { revision: number; part: number; body: string }
 export interface CommandInput { action: Command['action']; at: number; checkpoint?: boolean; replay?: {ticks:number; meta:StoredWorld['meta']; command?:Command} }
 
 const schema = [
-  ...uploadSchema, ...replaySchema, ...expressionSchema,
+  ...uploadSchema, ...replaySchema, ...expressionSchema, ...continuitySchema,
   'CREATE TABLE IF NOT EXISTS personal_observations(epoch TEXT NOT NULL,member TEXT NOT NULL,watch TEXT NOT NULL,tick INTEGER NOT NULL,through INTEGER NOT NULL,seen INTEGER NOT NULL,PRIMARY KEY(epoch,member))',
   "CREATE TABLE IF NOT EXISTS world_members(id TEXT PRIMARY KEY,email TEXT NOT NULL,name TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('owner','participant')),blocked INTEGER NOT NULL DEFAULT 0 CHECK(blocked IN (0,1)))",
   "CREATE UNIQUE INDEX IF NOT EXISTS world_one_owner ON world_members(role) WHERE role='owner'",

@@ -321,7 +321,7 @@ test('ecology and council controls persist; historical questions, evidence and f
 
 test('server history retrieves original events and streamed save remains a valid restorable world', async ({ page }) => {
   await page.goto('/'); await expect(page.locator('#cloud-status')).toContainText('서버 저장 완료');
-  await page.getByRole('button', { name: '관찰 실험실' }).click(); await page.locator('#population-input').fill('12'); await page.locator('#seed-input').fill('42'); await page.getByRole('button', { name: '새로 시작', exact: true }).click();
+  await page.getByRole('button', { name: '관찰 실험실' }).click(); await page.locator('#population-input').fill('12'); await page.locator('#seed-input').fill('42'); const reset = page.waitForResponse(r => r.url().endsWith('/api/command') && r.request().method() === 'POST' && r.request().postDataJSON()?.action?.type === 'reset'); await page.getByRole('button', { name: '새로 시작', exact: true }).click(); expect((await reset).ok()).toBe(true); await expect(page.locator('#game-clock')).toContainText('1일째');
   await expect(page.locator('#nav-population')).toHaveText('12'); await page.getByRole('button', { name: '하루 관찰 진행', exact: true }).click(); await expect(page.locator('#game-clock')).toContainText('2일째');
   await page.getByRole('button', { name: '세계 관찰', exact: true }).click(); await page.locator('#heritage-overview summary').click(); await page.getByRole('button', { name: '도시 연대기와 원인 보기' }).click();
   await page.locator('#history-topic').selectOption('ecology'); await page.getByRole('button', { name: '기록 조회', exact: true }).click(); await expect(page.locator('.history-list')).toContainText('토양');

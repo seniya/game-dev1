@@ -18,7 +18,7 @@ export async function generateExpression(input: ExpressionRequest, mode: string,
     progress(
       mode === 'remote' ? '선택한 외부 API로 표현을 준비하고 있습니다…' : '기억을 바탕으로 예시를 준비하고 있습니다…',
     );
-    return postJSON<{ applied: boolean; result: ExpressionResult }>('expressions', input);
+    return postJSON<{ id: string; applied: boolean; result: ExpressionResult }>('expressions', input);
   }
   const api = (globalThis as typeof globalThis & { LanguageModel?: API }).LanguageModel;
   if (!api)
@@ -58,7 +58,7 @@ export async function generateExpression(input: ExpressionRequest, mode: string,
       controller.signal,
     );
     controller.signal.throwIfAborted();
-    return await postJSON<{ applied: boolean; result: ExpressionResult }>('expressions', {
+    return await postJSON<{ id: string; applied: boolean; result: ExpressionResult }>('expressions', {
       id: lease.id,
       token: lease.token,
       output,

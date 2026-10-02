@@ -195,6 +195,6 @@ const handler = {
 export default { async fetch(request: Request, env: Env, context?: ExecutionContext) {
   const started = performance.now();
   const response = await handler.fetch(request, env, context);
-  if (new URL(request.url).pathname.startsWith('/api/')) recordRequest(new URL(request.url).pathname, performance.now() - started, response.status);
+  if (new URL(request.url).pathname.startsWith('/api/')) recordRequest(new URL(request.url).pathname, performance.now() - started, response.status, Date.now(), env.DB);
   return response;
 } };

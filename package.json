@@ -1,11 +1,11 @@
 {
   "name": "living-small-world",
-  "version": "0.22.0",
+  "version": "0.23.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
+    "build": "node scripts/verify-retained.mjs && tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "simulate": "tsx src/cli.ts",
     "test": "tsx --test tests/*.test.ts",
@@ -23,7 +23,9 @@
     "regression:biography": "tsx src/gatherings-regression.ts --biography",
     "replay": "tsx scripts/verify-replay.ts",
     "regression:expansion": "tsx scripts/expansion-regression.ts",
-    "profile:scale": "tsx scripts/scale-profile.ts"
+    "profile:scale": "tsx scripts/scale-profile.ts",
+    "regression:continuity": "tsx scripts/continuity-regression.ts",
+    "profile:engine": "tsx scripts/profile-engine.ts"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.62.0",

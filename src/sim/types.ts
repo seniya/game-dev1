@@ -41,6 +41,7 @@ export interface DecisionRequest { id: string; npcId: string; eventId: string; t
 export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys: string[]; dailyByNpc: Record<string, number>; dailyTotal: number; requested: number; completed: number; rejected: number; failed: number }
 export interface WorldState {
   frontier?: import('./frontier').Frontier;
+  construction?: import('./construction').Construction;
   gatherings?: import('./gatherings-types').Gatherings;
   version: 9; observation: { watchIds: string[] }; requests: import('./requests-types').RequestsState; living: import('./living-types').LivingState; heritage: Heritage; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
   tiles: Tile[]; buildings: Building[]; resources: ResourceNode[]; npcs: NPC[];

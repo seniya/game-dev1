@@ -1,0 +1,199 @@
+{
+  "version": "0.23.0",
+  "date": "2026-10-02",
+  "scope": "CONTINUITY_PLAN.md items 1-5",
+  "core": {
+    "command": "npm test",
+    "passed": 253,
+    "failed": 0,
+    "log": "reports/continuity-core-test.log",
+    "unique_current_cases_passed": 254
+  },
+  "additional": {
+    "core": {
+      "command": "npx tsx --test tests/continuity.test.ts",
+      "passed": 8,
+      "failed": 0,
+      "includes": "Rain delay and physically observed first home use added after the full 253-test run."
+    },
+    "related": {
+      "command": "npx tsx --test tests/continuity.test.ts tests/expansion.test.ts tests/live-store.test.ts",
+      "passed": 25,
+      "failed": 0
+    }
+  },
+  "initial_failures": [
+    {
+      "scope": "construction integrity test",
+      "finding": "Building and project coordinates shared an object reference; corruption changed both. Building now copies coordinates; source event stores and validates immutable construction coordinates."
+    },
+    {
+      "scope": "conversation activity test",
+      "finding": "Fixture memory omitted relatedLocationIds; corrected valid fixture."
+    },
+    {
+      "scope": "construction corruption test rerun",
+      "finding": "Integrity check now rejects against source before position; assertion widened to the construction error domain. Rejected input remained rejected."
+    },
+    {
+      "scope": "first full browser run",
+      "passed": 70,
+      "failed": 3,
+      "skipped": 1,
+      "findings": [
+        "History dialog selector timeout during ongoing development",
+        "Fence fixture used all 12 wood on a home and incorrectly expected the 4-wood fence button to be enabled; test now verifies insufficient stock and a separate funded scenario",
+        "Watch list timeout; clean rerun checks the full flow"
+      ]
+    },
+    {
+      "scope": "second full browser run",
+      "passed": 72,
+      "failed": 1,
+      "skipped": 1,
+      "finding": "History test readiness race reproduced; isolated request tracing showed a correctly rejected old epoch. Targeted 18-case rerun passed after synchronizing reset."
+    }
+  ],
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "retained_engine_hash_check": true
+  },
+  "production_recovery": "reports/continuity-production-recovery.json",
+  "regression": "reports/continuity-regression.json",
+  "profiling": [
+    "reports/engine-profile-v023-before.json",
+    "reports/engine-profile-v023-after.json",
+    "reports/engine-comparison-v023.json"
+  ],
+  "limits": [
+    "Real Chrome Korean inference was not run; one real-model browser case remains skipped.",
+    "Operational daily request counters are confirmed samples, not complete global traffic; a Worker loss before flush can lose samples.",
+    "Local Node CPU/heap and elapsed engine timing are not production Worker CPU/memory guarantees.",
+    "No approximate physics LOD or distributed server was introduced; complete state equivalence is checked with the retained engine.",
+    "No extra external account invitations, access-policy changes or external API fallback."
+  ],
+  "screenshots": [
+    "reports/screenshots/v023-operations.png",
+    "reports/screenshots/v023-conversation.png"
+  ],
+  "browser": {
+    "full_run": {
+      "passed": 72,
+      "failed": 1,
+      "skipped": 1
+    },
+    "resolved_by_targeted_run": {
+      "command": "npx playwright test tests/browser/app.spec.ts tests/browser/continuity.spec.ts tests/browser/engine-migration.spec.ts",
+      "passed": 18,
+      "failed": 0,
+      "includes": "all 14 app flows, 2 new UI flows, v021 and v022 real Worker migration"
+    },
+    "unique_current_scenarios_passed": 74,
+    "real_model_skipped": 1,
+    "root_cause": "The history test only waited for population 12/day 2, which could match the previous world before reset completed. Captured history response was 400: epoch changed. It now waits for the reset response and day 1 before stepping. No stale-world guard was relaxed."
+  },
+  "regression_result": {
+    "completed": true,
+    "cases": 9,
+    "days365": 6,
+    "large_worlds": [
+      300,
+      1000,
+      3000
+    ],
+    "all_accounting_zero": true,
+    "all_missing_references_zero": true
+  },
+  "comparison_result": [
+    {
+      "population": 12,
+      "ticks": 144,
+      "identical": true,
+      "rows": [
+        {
+          "version": "v022",
+          "elapsedMs": 77.110386,
+          "cpuMs": 123.934,
+          "p95TickMs": 1.12583699999999,
+          "events": 437
+        },
+        {
+          "version": "v023",
+          "elapsedMs": 46.35933699999998,
+          "cpuMs": 63.924,
+          "p95TickMs": 0.7541610000000105,
+          "events": 437
+        }
+      ],
+      "speedup": 1.6633194301290382
+    },
+    {
+      "population": 300,
+      "ticks": 144,
+      "identical": true,
+      "rows": [
+        {
+          "version": "v022",
+          "elapsedMs": 1425.0690359999999,
+          "cpuMs": 2060.278,
+          "p95TickMs": 16.076115000000073,
+          "events": 11601
+        },
+        {
+          "version": "v023",
+          "elapsedMs": 834.8762879999997,
+          "cpuMs": 1293.349,
+          "p95TickMs": 10.028723000000355,
+          "events": 11601
+        }
+      ],
+      "speedup": 1.7069223985434359
+    },
+    {
+      "population": 1000,
+      "ticks": 144,
+      "identical": true,
+      "rows": [
+        {
+          "version": "v022",
+          "elapsedMs": 11598.401636,
+          "cpuMs": 12655.494,
+          "p95TickMs": 101.04804999999988,
+          "events": 52559
+        },
+        {
+          "version": "v023",
+          "elapsedMs": 6340.3515800000005,
+          "cpuMs": 7325.946,
+          "p95TickMs": 50.16239499999938,
+          "events": 52559
+        }
+      ],
+      "speedup": 1.8292994465142893
+    },
+    {
+      "population": 3000,
+      "ticks": 144,
+      "identical": true,
+      "rows": [
+        {
+          "version": "v022",
+          "elapsedMs": 46200.25424,
+          "cpuMs": 47726.885,
+          "p95TickMs": 733.7282200000009,
+          "events": 152360
+        },
+        {
+          "version": "v023",
+          "elapsedMs": 23732.17115000001,
+          "cpuMs": 25520.842,
+          "p95TickMs": 206.69796700000006,
+          "events": 152360
+        }
+      ],
+      "speedup": 1.9467352543511378
+    }
+  ],
+  "engine_fingerprint": "1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4"
+}

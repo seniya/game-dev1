@@ -1,0 +1,80 @@
+{
+  "version": "0.23.0",
+  "checkedAt": "2026-10-02T00:57:50.322Z",
+  "priorSource": "698739a2c3e0bc055af94fe1b312d4b9c1de9641",
+  "recoverySource": "1a19672b2871f3b8115b49fe33fb632950b9da91",
+  "before": {
+    "id": 1,
+    "revision": 3784,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790898724021,
+      "lastSeen": 1790898724021,
+      "eventCount": 16802,
+      "socialCount": 674,
+      "catchupTicks": 132,
+      "skippedTicks": 2884,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790898724021
+    }
+  },
+  "after": {
+    "id": 1,
+    "revision": 3785,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790898759884,
+      "lastSeen": 1790898759884,
+      "eventCount": 16958,
+      "socialCount": 684,
+      "catchupTicks": 46,
+      "skippedTicks": 0,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790902193353
+    }
+  },
+  "confirmedTicks": 51,
+  "confirmedEvents": 156,
+  "sameEpoch": true,
+  "subsequentPending": {
+    "id": 1,
+    "revision": 3785,
+    "sequence": 5,
+    "body": {
+      "build": "94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b",
+      "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+      "ticks": 147,
+      "meta": {
+        "running": true,
+        "speed": 1,
+        "offline": true,
+        "clock": 1790902212006,
+        "lastSeen": 1790902212149,
+        "eventCount": 17395,
+        "socialCount": 710,
+        "catchupTicks": 0,
+        "skippedTicks": 0,
+        "aiMode": "chrome",
+        "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+        "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+        "pendingTicks": 0,
+        "savedAt": 1790902193353
+      },
+      "started": 1790902193353,
+      "id": "d9593c33-cd80-4a16-b6ce-54c451ede759"
+    }
+  },
+  "scope": "Read-only Sites DB observations before and after owner-site activity reported by the user. Exact v021 pending count confirmed by revision/event count; whole archived bodies were not downloaded or rehashed. New v022 pending progress remains eligible for retained-engine recovery."
+}

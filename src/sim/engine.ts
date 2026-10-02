@@ -1,5 +1,6 @@
-import { wildlifeDay, tradeLand } from './frontier';
-import { proposeGatherings, updateGatherings, gatheringCandidate } from './gatherings';
+import { beginConstruction, constructionTick } from './construction';
+import { protectFarm, wildlifeDay, tradeLand } from './frontier';
+import { proposeConversationGathering, proposeGatherings, updateGatherings, gatheringCandidate } from './gatherings';
 import { respondToRequest, updateRequests } from './requests';
 import type { RequestChoice } from './requests-types';
 import { buildHouse } from './civilization';
@@ -84,6 +85,7 @@ export class Simulation {
   private tickOnce() {
     const w = this.state; w.tick++;
     if (w.tick % TICKS_PER_DAY === 0) this.newDay();
+    constructionTick(w);
     advanceJourneys(w);
     advanceFreight(w);
     indexPeople(w);
@@ -332,6 +334,9 @@ export class Simulation {
     n.goals = n.goals.filter(g => g.id !== goal?.id);
     socialEvent(w, { kind: 'project', actorId: n.id, locationId: b.id, importance: 75, description: `${n.identity.name}이 목재 8개로 ${b.name}을 개선했다. (단계 ${b.level})`, causeId: goal?.sourceEventId, data: { woodCost: 8, personalWood: own, communalWood: 8 - own, level: b.level, growthMultiplier: b.kind === 'farm' ? 1 + (b.level - 1) * .35 : 1 } });
   }
+  proposeConversationGathering(npcId:string,kind:'meal'|'help'|'harvest',source:string) { return proposeConversationGathering(this.state,npcId,kind,source); }
+  beginConstruction(settlementId:string,kind:'home'|'farm',position:{x:number;y:number}) { return beginConstruction(this.state,settlementId,kind,position); }
+  protectFarm(buildingId:string) { protectFarm(this.state,buildingId); }
   tradeLand(buildingId:string,buyerId:string,price:number) { tradeLand(this.state,buildingId,buyerId,price); }
   build(settlementId: string, kind: 'home' | 'farm', position?:{x:number;y:number}) {
     if (kind !== 'home' && kind !== 'farm') throw new Error('지원하지 않는 건물입니다.');

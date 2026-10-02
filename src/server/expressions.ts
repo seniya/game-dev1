@@ -25,11 +25,7 @@ const guard = (s: WorldStore) => [
 const envelope = z.object({ id: z.string().uuid(), token: z.string().uuid(), output: z.string().max(4000) }).strict();
 async function finish(s: WorldStore, j: Job, raw: unknown, now: number) {
   const result = validateExpression(raw, JSON.parse(j.context));
-  if (j.status === 'applied') {
-    if (j.result !== JSON.stringify(result)) throw new Error('주민 표현의 기존 결과와 다릅니다.');
-    return { applied: true, result };
-  }
-  if (j.status !== 'running' || j.expires <= now) throw new Error('주민 표현 실행권이 만료되었습니다.');
+  if (j.status !== 'applied' && (j.status !== 'running' || j.expires <= now)) throw new Error('주민 표현 실행권이 만료되었습니다.');
   for (let retry = 0; retry < 3; retry++) {
     const w = await s.read();
     if (
@@ -39,6 +35,7 @@ async function finish(s: WorldStore, j: Job, raw: unknown, now: number) {
       !w.state.llm.enabled
     )
       throw new Error('주민 표현 도중 세계 또는 AI 설정이 바뀌었습니다.');
+    if(j.status==='applied'){if(j.result!==JSON.stringify(result))throw new Error('주민 표현의 기존 결과와 다릅니다.');return {id:j.id,applied:true,result};}
     const context = JSON.parse(j.context) as ExpressionContext;
     const sim = Simulation.load(JSON.stringify(w.state));
     if (
@@ -66,7 +63,7 @@ async function finish(s: WorldStore, j: Job, raw: unknown, now: number) {
           ...guard(s),
         ],
       );
-      return { applied: true, result };
+      return { id:j.id, applied: true, result };
     } catch (e) {
       if (!(e instanceof Conflict) || retry === 2) throw e;
     }
@@ -109,6 +106,13 @@ export async function expressionAPI(s: WorldStore, member: string, raw: unknown,
   if (mode === 'off' || !w.state.llm.enabled) throw new Error('주민 표현은 AI 모드를 선택한 뒤 사용할 수 있습니다.');
   const context = expressionContext(w.state, p.data),
     config = modelConfig(env);
+  if(p.data.previous) {
+    const previous=await s.db.prepare("SELECT * FROM expressions WHERE id=? AND member=? AND epoch=? AND generation=? AND mode=? AND status='applied' AND created>=?").bind(p.data.previous,member,w.epoch,w.meta.aiGeneration??'legacy',mode,now-7*86400000).first<Job>();
+    if(!previous)throw new Error('주민 대화가 만료되었거나 세계·AI 설정이 바뀌었습니다. 새 대화를 시작해 주세요.');
+    const before=JSON.parse(previous.context) as ExpressionContext;
+    if(before.npcId!==context.npcId || before.kind!==context.kind)throw new Error('주민 대화의 상대 또는 종류가 다릅니다.');
+    context.history=[...(before.history??[]),{question:before.question,text:JSON.parse(previous.result!).text}].slice(-4);
+  }
   if (mode === 'remote' && !config) throw new Error('주민 표현을 위한 외부 API가 연결되지 않았습니다.');
   const id = crypto.randomUUID(),
     token = crypto.randomUUID(),
@@ -178,7 +182,7 @@ export async function expressionAPI(s: WorldStore, member: string, raw: unknown,
     const result =
       mode === 'mock'
         ? {
-            text: `${context.kind === 'reflection' ? '기억을 돌아보면' : '내가 기억하는 일은'} ${context.memories[0].hearsay ? '확인되지 않은 소문이야. ' : ''}${context.memories[0].text}`.slice(
+            text: `${context.history?.length ? '앞선 이야기에 이어, ' : ''}${context.kind === 'reflection' ? '기억을 돌아보면' : '내가 기억하는 일은'} ${context.memories[0].hearsay ? '확인되지 않은 소문이야. ' : ''}${context.memories[0].text}`.slice(
               0,
               500,
             ),

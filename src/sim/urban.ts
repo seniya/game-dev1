@@ -40,7 +40,7 @@ export function setPolicy(w: WorldState, id: string, taxRate: number, priority: 
 }
 function site(w: WorldState, id: string): { x: number; y: number } | undefined {
   const v = w.civilization.settlements.find(v => v.id === id)!;
-  const taken = new Set([...w.buildings, ...w.resources].map(b => `${b.position.x},${b.position.y}`));
+  const taken = new Set([...w.buildings, ...w.resources, ...(w.construction?.projects.filter(p=>!p.buildingId)??[])].map(b => `${b.position.x},${b.position.y}`));
   for (let y = -10; y < 10; y += 2) for (let x = -12; x < 11; x += 2) {
     const p = { x: v.center.x + x, y: v.center.y + y };
     if (p.x < 0 || p.y < 0 || p.x >= w.width || p.y >= w.height || taken.has(`${p.x},${p.y}`) || w.tiles[p.y * w.width + p.x] !== 'grass' || !findPath(w, v.center, p)) continue;

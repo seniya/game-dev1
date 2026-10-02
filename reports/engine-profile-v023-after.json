@@ -1,0 +1,57 @@
+{
+  "scope": "Local Node: complete engine steps, snapshot, serialization and validated load. No production CPU claim.",
+  "rows": [
+    {
+      "population": 12,
+      "ticks": 144,
+      "elapsedMs": 73.76767700000002,
+      "p95TickMs": 1.1746479999999906,
+      "maxTickMs": 9.037965999999983,
+      "cpuMs": 94.503,
+      "heapSampleBytes": 18669640,
+      "snapshotMs": 2.194552999999985,
+      "serializeMs": 1.7672469999999976,
+      "loadMs": 29.74738099999996,
+      "events": 437
+    },
+    {
+      "population": 300,
+      "ticks": 144,
+      "elapsedMs": 830.4985120000001,
+      "p95TickMs": 8.885914999999954,
+      "maxTickMs": 55.80669499999999,
+      "cpuMs": 1329.829,
+      "heapSampleBytes": 100938440,
+      "snapshotMs": 50.90542099999993,
+      "serializeMs": 32.31934000000001,
+      "loadMs": 231.50540699999988,
+      "events": 11601
+    },
+    {
+      "population": 1000,
+      "ticks": 144,
+      "elapsedMs": 6378.99777,
+      "p95TickMs": 50.25658199999998,
+      "maxTickMs": 499.1551210000007,
+      "cpuMs": 7367.649,
+      "heapSampleBytes": 304756704,
+      "snapshotMs": 179.69627200000014,
+      "serializeMs": 130.39485500000046,
+      "loadMs": 638.0213430000003,
+      "events": 52559
+    },
+    {
+      "population": 3000,
+      "ticks": 144,
+      "elapsedMs": 22082.739794,
+      "p95TickMs": 185.9843260000016,
+      "maxTickMs": 1211.600182000002,
+      "cpuMs": 23644.372,
+      "heapSampleBytes": 725606272,
+      "snapshotMs": 575.8447159999996,
+      "serializeMs": 341.84213400000226,
+      "loadMs": 2085.8599790000007,
+      "events": 152360
+    }
+  ]
+}

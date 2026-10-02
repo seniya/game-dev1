@@ -11,3 +11,10 @@ export const replaySchema = [
 export const expressionSchema = [
   'CREATE TABLE IF NOT EXISTS expressions(id TEXT PRIMARY KEY,member TEXT NOT NULL,epoch TEXT NOT NULL,generation TEXT NOT NULL,mode TEXT NOT NULL,context TEXT NOT NULL,token TEXT NOT NULL,expires INTEGER NOT NULL,created INTEGER NOT NULL,status TEXT NOT NULL,result TEXT)',
 ];
+
+export const continuitySchema = [
+  'CREATE TABLE IF NOT EXISTS operation_storage(epoch TEXT PRIMARY KEY,seq INTEGER NOT NULL,bytes INTEGER NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS engine_migrations(id TEXT PRIMARY KEY,source TEXT NOT NULL,target TEXT NOT NULL,epoch TEXT NOT NULL,ticks INTEGER NOT NULL,events INTEGER NOT NULL,created INTEGER NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS operation_batches(id TEXT PRIMARY KEY,day TEXT NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS operation_days(day TEXT PRIMARY KEY,requests INTEGER NOT NULL,errors INTEGER NOT NULL,total_ms INTEGER NOT NULL,max_ms INTEGER NOT NULL,slow INTEGER NOT NULL,epoch TEXT NOT NULL,revision INTEGER NOT NULL,tick INTEGER NOT NULL,events INTEGER NOT NULL,state_bytes INTEGER NOT NULL,archive_bytes INTEGER NOT NULL,measured INTEGER NOT NULL)',
+];

@@ -137,12 +137,14 @@ export function startTrade(w: WorldState, from: Settlement, to: Settlement): boo
   w.civilization.journeys.push({ id: `j${w.nextId++}`, kind: 'trade', from: from.id, to: to.id, npcIds: [], path, progress: 0, food: amount, coins: cost, sourceEventId: e.id });
   return true;
 }
-export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' = 'home', observer = false, position?: {x:number;y:number}): Building | undefined {
-  if(w.buildings.length>=4000)return;
-  if(position&&!buildPosition(w,v.id,position))return;
+export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' = 'home', observer = false, position?: {x:number;y:number}, projectId?:string): Building | undefined {
+  const reserved=projectId?w.construction?.projects.find(p=>p.id===projectId&&!p.buildingId&&p.progress===p.required&&p.settlementId===v.id&&p.kind===kind&&position&&p.position.x===position.x&&p.position.y===position.y):undefined;
+  if(projectId&&!reserved)return;
+  if(w.buildings.length+(w.construction?.projects.filter(p=>!p.buildingId&&p.id!==projectId).length??0)>=4000)return;
+  if(position&&!buildPosition(w,v.id,position,projectId))return;
   const cost = kind === 'home' ? 12 : 16;
-  const stock = stocks(w, v.id); if (stock.wood < cost) return;
-  const occupied = new Set([...w.buildings, ...w.resources].map(b => `${b.position.x},${b.position.y}`));
+  const stock = stocks(w, v.id); if (!projectId && stock.wood < cost) return;
+  const occupied = new Set([...w.buildings, ...w.resources, ...(w.construction?.projects.filter(p=>!p.buildingId&&p.id!==projectId)??[])].map(b => `${b.position.x},${b.position.y}`));
   const sites: { x: number; y: number }[] = [];
   for (let dy = -9; dy <= 8; dy += 3) for (let dx = -10; dx <= 10; dx += 3) sites.push({ x: v.center.x + dx, y: v.center.y + dy });
   // Keep everyday destinations close, then use the newly available outskirts.
@@ -153,8 +155,8 @@ export function buildHouse(w: WorldState, v: Settlement, kind: 'home' | 'farm' =
   }
   for (const p of position ? [position] : sites) {
     if (p.x < 0 || p.y < 0 || p.x >= w.width || p.y >= w.height || occupied.has(`${p.x},${p.y}`) || w.tiles[p.y * w.width + p.x] !== 'grass' || !findPath(w, v.center, p)) continue;
-    stock.wood -= cost; w.economy.totals.investedWood += cost;
-    const b: Building = { id: `c${w.nextId++}`, kind, name: `${v.name} ${kind === 'home' ? '새집' : '새 농장'}`, position: p, level: 1, growth: 0, settlementId: v.id, ownerIds: [] }; w.buildings.push(b);
+    if(!projectId){stock.wood -= cost; w.economy.totals.investedWood += cost;}
+    const b: Building = { id: `c${w.nextId++}`, kind, name: `${v.name} ${kind === 'home' ? '새집' : '새 농장'}`, position: {...p}, level: 1, growth: 0, settlementId: v.id, ownerIds: [] }; w.buildings.push(b);
     if (kind === 'farm') { delete b.ownerIds; w.tiles[p.y * w.width + p.x] = 'farm'; }
     appendEvent(w, { kind: 'construction', locationId: b.id, importance: 50, description: `${v.name}이 ${observer ? '관측자의 건설 선택으로' : '마을의 필요에 따라'} 공동 목재 ${cost}개로 ${kind === 'home' ? capacity(b) + '인 주택' : '생산 농장'}을 지었다.`, data: { observer, wood: cost, settlementId: v.id, capacity: kind === 'home' ? capacity(b) : 0 } });
     initializeUrban(w); if (w.heritage) initializeHeritage(w);

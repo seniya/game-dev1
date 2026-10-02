@@ -1,3 +1,5 @@
+import { operationsHistory } from './ui/operations';
+import { conversationGatherings } from './sim/gatherings';
 import { landQuote } from './sim/frontier';
 import { generateExpression } from './ui/expressions';
 import { uploadSave, postJSON } from './ui/uploads';
@@ -576,7 +578,7 @@ function startCloud() {
       if (!target.isConnected) return;
       target.innerHTML = storageView(status);
       const ops = await cloud!.get<OperationsStatus>('operations');
-      if (target.isConnected) target.innerHTML += `<h3>운영 상태</h3><p>최근 요청 ${ops.samples}건 · 처리 시간 95백분위 ${ops.p95Ms ?? '측정 전'}ms · 서버 오류 ${ops.errors}건</p><p>물리 DB ${ops.databaseBytes === null ? '이 환경에서 제공하지 않음' : (ops.databaseBytes / 1_000_000).toFixed(2) + ' MB'} · DB 조회 ${ops.databaseQueryMs ?? '미제공'}ms</p>${ops.warnings.map(w => `<p role="alert">${esc(w)}</p>`).join('')}<p class="muted">현재 Worker의 최근 1시간·최대 256건 표본입니다. 재시작하면 표본이 초기화됩니다. CPU·메모리는 실행 환경에서 제공하지 않아 별도 운영 측정이 필요합니다.</p><button id="replay-start" class="button">검증 기록 시작 · 이전 기록 교체</button><button id="replay-stop" class="button">검증 기록 중지</button><button id="replay-check" class="button">기록 재생 검증</button><button id="replay-export" class="button">검증 기록 내려받기</button><p id="replay-status" aria-live="polite"></p>`;
+      if (target.isConnected) target.innerHTML += `<h3>운영 상태</h3><p>최근 요청 ${ops.samples}건 · 처리 시간 95백분위 ${ops.p95Ms ?? '측정 전'}ms · 서버 오류 ${ops.errors}건</p><p>물리 DB ${ops.databaseBytes === null ? '이 환경에서 제공하지 않음' : (ops.databaseBytes / 1_000_000).toFixed(2) + ' MB'} · DB 조회 ${ops.databaseQueryMs ?? '미제공'}ms</p>${ops.warnings.map(w => `<p role="alert">${esc(w)}</p>`).join('')}<p class="muted">현재 Worker의 최근 1시간·최대 256건 표본입니다. 재시작하면 표본이 초기화됩니다. CPU·메모리는 실행 환경에서 제공하지 않아 별도 운영 측정이 필요합니다.</p>${operationsHistory(ops)}<button id="replay-start" class="button">검증 기록 시작 · 이전 기록 교체</button><button id="replay-stop" class="button">검증 기록 중지</button><button id="replay-check" class="button">기록 재생 검증</button><button id="replay-export" class="button">검증 기록 내려받기</button><p id="replay-status" aria-live="polite"></p>`;
       const button = document.getElementById('load-backup') as HTMLButtonElement | null;
       if (button) { button.disabled = status.worlds.length < 2; button.dataset.epoch = status.worlds[1]?.epoch ?? ''; button.dataset.revision = String(status.revision); button.dataset.world = status.epoch; }
     } catch (e) { if (target.isConnected) target.textContent = (e as Error).message; }
@@ -850,7 +852,7 @@ function applyAccessUI() {
     const el = document.getElementById(id) as HTMLButtonElement | null;
     if (el && restricted) { el.disabled = true; el.title = '소유자가 관리하는 공동 세계 설정입니다.'; }
   }
-  document.querySelectorAll<HTMLButtonElement>('button[data-speed],button[data-build],button[data-request],button[data-dialogue],#build-position,#land-market,#history-ai,#seed-form button,#urban-policy button').forEach(b => { if (restricted) b.disabled = true; });
+  document.querySelectorAll<HTMLButtonElement>('button[data-protect-farm],button[data-speed],button[data-build],button[data-request],button[data-dialogue],#build-position,#land-market,#history-ai,#seed-form button,#urban-policy button').forEach(b => { if (restricted) b.disabled = true; });
   document.querySelectorAll<HTMLInputElement>('#urban-policy input,#urban-policy select,#world-detail,#council-toggle').forEach(e => { if (restricted) e.disabled = true; });
   const session = cloud?.session;
   $('account-button').hidden = !cloudMode;
@@ -891,13 +893,28 @@ document.addEventListener('click',event=>{
 });
 
 document.addEventListener('click',event=>{
-  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-expression]');if(!button)return;
-  const npc=selectedNPC(),kind=button.dataset.expression==='reflection'?'reflection':'dialogue';
-  openDialog(`<h2>${esc(npc.identity.name)}의 ${kind==='reflection'?'기억 돌아보기':'이야기'}</h2><form id="expression-form"><label>어떤 이야기가 궁금한가요?<textarea id="expression-question" maxlength="200" required>${kind==='reflection'?'최근의 기억을 돌아보면 어떤 생각이 들어?':'마음에 남아 있는 일이 있어?'}</textarea></label><p>주민이 아는 기억만 전달합니다. AI의 표현과 실제 사건을 함께 확인하세요. 표현은 행동이나 관계 수치를 직접 바꾸지 않습니다.</p><button class="button primary" type="submit">${cloud?.world?.meta.aiMode==='chrome'?'Chrome에서 한국어 표현 만들기':cloud?.world?.meta.aiMode==='remote'?'선택한 외부 API로 만들기':'기억으로 예시 만들기'}</button><p id="expression-status" aria-live="polite"></p></form>`);
-  $<HTMLFormElement>('expression-form').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget as HTMLFormElement,submit=form.querySelector('button')!;submit.disabled=true;
-    try {const response=await generateExpression({npcId:npc.id,kind,question:$<HTMLTextAreaElement>('expression-question').value},cloud!.world!.meta.aiMode??'off',text=>{const p=document.getElementById('expression-status');if(p)p.textContent=text;});await cloud!.connect();const p=document.getElementById('expression-status');if(p)p.innerHTML=`표현을 세계 기록에 저장했습니다.<blockquote>${esc(response.result.text)}</blockquote>${response.result.evidence.map(id=>`<button type="button" class="evidence-link" data-event="${esc(id)}">근거 사건 ${esc(id)}</button>`).join('')}<small>기억 ID·형식 검증을 통과한 표현입니다. 문장의 사실성을 자동으로 증명하지는 않습니다.</small>`;toast('주민의 표현을 기록했습니다.');}
-    catch(error){const p=document.getElementById('expression-status');if(p)p.textContent=(error as Error).message;}
-    finally{submit.disabled=false;}
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-expression]');if(!button||!cloudMode||!isOwner())return;
+  const npc=selectedNPC(),kind=button.dataset.expression==='reflection'?'reflection':'dialogue',epoch=cloud!.world!.epoch;
+  let previous:string|undefined;
+  openDialog(`<h2>${esc(npc.identity.name)}의 ${kind==='reflection'?'기억 돌아보기':'이야기'}</h2><p>최근 4회 대화를 이어갑니다. 이전 답변은 대화 맥락이며, 사실의 근거는 주민이 아는 원본 기억입니다.</p><div id="conversation-history"></div><form id="expression-form"><label>어떤 이야기가 궁금한가요?<textarea id="expression-question" maxlength="200" required>${kind==='reflection'?'최근의 기억을 돌아보면 어떤 생각이 들어?':'마음에 남아 있는 일이 있어?'}</textarea></label><button class="button primary" type="submit">${cloud?.world?.meta.aiMode==='chrome'?'Chrome에서 한국어 표현 만들기':cloud?.world?.meta.aiMode==='remote'?'선택한 외부 API로 만들기':'기억으로 예시 만들기'}</button><button class="button" id="conversation-reset" type="button">새 대화</button><p id="expression-status" aria-live="polite"></p></form><div id="conversation-plans"></div>`);
+  const form=$<HTMLFormElement>('expression-form'),history=$('conversation-history'),status=$('expression-status'),plans=$('conversation-plans');
+  $('conversation-reset').onclick=()=>{previous=undefined;history.innerHTML='';plans.innerHTML='';status.textContent='새 대화를 시작합니다.';};
+  form.onsubmit=async e=>{e.preventDefault();const submit=form.querySelector('button')!,reset=$<HTMLButtonElement>('conversation-reset'),question=$<HTMLTextAreaElement>('expression-question').value;submit.disabled=true;reset.disabled=true;
+    try {
+      if(cloud!.world!.epoch!==epoch)throw new Error('세계가 바뀌었습니다. 새 대화를 열어 주세요.');
+      const response=await generateExpression({npcId:npc.id,kind,question,...(previous?{previous}:{})},cloud!.world!.meta.aiMode??'off',text=>{if(form.isConnected)status.textContent=text;});
+      await cloud!.connect();if(!form.isConnected)return;
+      if(cloud!.world!.epoch!==epoch)throw new Error('세계가 바뀌었습니다. 새 대화를 열어 주세요.');
+      previous=response.id;
+      history.insertAdjacentHTML('beforeend',`<article><p><b>나:</b> ${esc(question)}</p><blockquote>${esc(response.result.text)}</blockquote>${response.result.evidence.map(id=>`<button type="button" class="evidence-link" data-event="${esc(id)}">근거 사건 ${esc(id)}</button>`).join('')}</article>`);
+      while(history.children.length>4)history.firstElementChild!.remove();
+      status.textContent='표현을 세계 기록에 저장했습니다. 이어서 질문할 수 있습니다. AI 문장의 사실성을 자동으로 증명하지는 않습니다.';
+      const source=state.events.find(e=>e.data.requestId===response.id);
+      const choices=conversationGatherings(state,npc.id);
+      plans.innerHTML=source?`<h3>대화에서 함께할 일로</h3><p>현재 생활 조건으로 가능한 모임입니다. 제안 후 초대·수락·이동·실제 활동을 거칩니다.</p>${choices.length?choices.map(c=>`<button class="button" data-plan="${c.kind}">${esc(c.label)} 제안</button>`).join(''):'<p>지금은 식량·일정·가까운 이웃 조건을 충족하는 모임이 없습니다.</p>'}`:'';
+      plans.querySelectorAll<HTMLButtonElement>('[data-plan]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{await cloud!.send({type:'gathering-proposal',npcId:npc.id,kind:b.dataset.plan as 'meal'|'help'|'harvest',source:source!.id});plans.textContent='모임을 제안했습니다. 함께하는 약속에서 초대와 참석 경과를 확인하세요.';}catch(error){status.textContent=(error as Error).message;b.disabled=false;}});
+    }catch(error){if(form.isConnected)status.textContent=(error as Error).message;}
+    finally{submit.disabled=false;reset.disabled=false;}
   };
 });
 
@@ -905,8 +922,8 @@ document.addEventListener('click',event=>{
   const button=(event.target as HTMLElement).closest<HTMLButtonElement>('#build-position,#land-market');if(!button||cloudMode&&!isOwner())return;
   const v=state.civilization.settlements.find(v=>v.id===state.civilization.focus)!;
   if(button.id==='build-position') {
-    openDialog(`<h2>위치를 골라 건설하기</h2><p>${esc(v.name)} 중심 (${v.center.x}, ${v.center.y})에서 24칸 이내의 연결된 빈 풀밭에 건설합니다. 공동 목재를 실제로 사용합니다.</p><form id="placed-build"><label>건물<select name="kind"><option value="home">주택 · 목재 12</option><option value="farm">농장 · 목재 16</option></select></label><label>가로 좌표<input name="x" type="number" min="0" max="${state.width-1}" required value="${v.center.x}"/></label><label>세로 좌표<input name="y" type="number" min="0" max="${state.height-1}" required value="${v.center.y}"/></label><button class="button primary">이 위치에 건설</button><p id="frontier-status" role="status"></p></form>`);
-    $<HTMLFormElement>('placed-build').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget as HTMLFormElement,data=new FormData(form),submit=form.querySelector('button')!;submit.disabled=true;try{const kind=data.get('kind') as 'home'|'farm',position={x:Number(data.get('x')),y:Number(data.get('y'))};if(cloudMode)await cloud!.send({type:'build',settlementId:v.id,kind,position});else {sim.build(v.id,kind,position);render();localSave();}$<HTMLDialogElement>('detail-dialog').close();toast('선택한 위치에 건설했습니다.');}catch(error){$('frontier-status').textContent=(error as Error).message;}finally{submit.disabled=false;}};
+    openDialog(`<h2>위치를 골라 건설하기</h2><p>${esc(v.name)} 중심 (${v.center.x}, ${v.center.y})에서 24칸 이내의 연결된 빈 풀밭에 건설합니다. 공동 목재를 실제로 사용합니다.</p><form id="placed-build"><label>건물<select name="kind"><option value="home">주택 · 목재 12</option><option value="farm">농장 · 목재 16</option></select></label><label>공사 방식<select name="timed"><option value="yes">공정 관찰 · 주택 6시간 / 농장 12시간</option><option value="no">즉시 완공</option></select></label><label>가로 좌표<input name="x" type="number" min="0" max="${state.width-1}" required value="${v.center.x}"/></label><label>세로 좌표<input name="y" type="number" min="0" max="${state.height-1}" required value="${v.center.y}"/></label><button class="button primary">이 위치에 건설</button><p id="frontier-status" role="status"></p></form>`);
+    $<HTMLFormElement>('placed-build').onsubmit=async e=>{e.preventDefault();const form=e.currentTarget as HTMLFormElement,data=new FormData(form),submit=form.querySelector('button')!;submit.disabled=true;try{const kind=data.get('kind') as 'home'|'farm',position={x:Number(data.get('x')),y:Number(data.get('y'))};const timed=data.get('timed')==='yes';if(cloudMode)await cloud!.send({type:timed?'construction':'build',settlementId:v.id,kind,position});else {if(timed)sim.beginConstruction(v.id,kind,position);else sim.build(v.id,kind,position);render();localSave();}$<HTMLDialogElement>('detail-dialog').close();toast(timed?'공사를 시작했습니다. 마을 공사에서 진행을 확인하세요.':'선택한 위치에 건설했습니다.');}catch(error){$('frontier-status').textContent=(error as Error).message;}finally{submit.disabled=false;}};
   } else {
     const homes=state.buildings.filter(b=>b.kind==='home'&&b.settlementId===v.id&&landQuote(state,b.id).available);
     const people=state.npcs.filter(n=>n.alive&&n.identity.age>=18&&n.settlementId===v.id);
@@ -915,4 +932,11 @@ document.addEventListener('click',event=>{
     if(form) { const updateBuyer=()=>{const select=form.querySelector<HTMLSelectElement>('[name=buyer]')!,building=form.querySelector<HTMLSelectElement>('[name=building]')!.value,quote=landQuote(state,building);for(const option of select.options){const n=state.npcs.find(n=>n.id===option.value)!;option.disabled=n.wealth<quote.price||quote.sellers.includes(n.id);}if(select.selectedOptions[0]?.disabled)select.value=[...select.options].find(o=>!o.disabled)?.value??'';form.querySelector('button')!.disabled=!select.value;};form.querySelector<HTMLSelectElement>('[name=building]')!.onchange=updateBuyer;updateBuyer(); }
     if(form)form.onsubmit=async e=>{e.preventDefault();const data=new FormData(form),buildingId=String(data.get('building')),buyerId=String(data.get('buyer')),price=landQuote(state,buildingId).price,submit=form.querySelector('button')!;submit.disabled=true;try{if(cloudMode)await cloud!.send({type:'land-trade',buildingId,buyerId,price});else{sim.tradeLand(buildingId,buyerId,price);render();localSave();}$<HTMLDialogElement>('detail-dialog').close();toast('부지 소유권과 대금을 이전했습니다.');}catch(error){$('frontier-status').textContent=(error as Error).message;}finally{submit.disabled=false;}};
   }
+});
+
+document.addEventListener('click',event=>{
+ const b=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-protect-farm]');if(!b||cloudMode&&!isOwner())return;b.disabled=true;
+ const id=b.dataset.protectFarm!;
+ if(cloudMode)void cloud!.send({type:'farm-protection',buildingId:id}).then(()=>toast('농장 울타리를 설치했습니다.')).catch(cloudFailure).finally(()=>{b.disabled=false;});
+ else {try{sim.protectFarm(id);render();localSave();toast('농장 울타리를 설치했습니다.');}catch(e){toast((e as Error).message);}finally{b.disabled=false;}}
 });
