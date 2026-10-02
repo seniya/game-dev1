@@ -1,4 +1,6 @@
-import { ACTION_LABELS, OCCUPATIONS, type WorldEvent, type WorldState } from './types';
+import { type WorldEvent, type WorldState } from './types';
+import { activityStatus } from './activity-status';
+import { occupationLabel } from './employment';
 import { descendants } from './dynasty';
 
 export interface ObservedGoal { id: string; title: string; condition: string; remaining: string; evidence?: WorldEvent }
@@ -10,8 +12,8 @@ export function neighborPeople(w: WorldState, ids: Set<string>) {
   return w.npcs.filter(n => ids.has(n.id)).map(n => ({
     id: n.id, name: n.identity.name, alive: n.alive, age: n.identity.age, position: n.position,
     village: w.civilization.settlements.find(v => v.id === n.settlementId)?.name ?? n.settlementId,
-    occupation: OCCUPATIONS[n.occupation], action: n.alive ? ACTION_LABELS[n.currentAction?.kind ?? 'Idle'] : '생애 종료',
-    reason: n.alive ? n.decision.reason : '남겨진 생애 기록을 읽을 수 있습니다.',
+    occupation: occupationLabel(w,n), action: activityStatus(w,n).label,
+    reason: n.currentAction && n.alive ? n.decision.reason : activityStatus(w,n).reason,
     problems: !n.alive ? [] : [n.needs.hunger >= 65 ? '식량 필요' : '', n.needs.thirst >= 70 ? '물 필요' : '', n.needs.fatigue >= 75 ? '휴식 필요' : '', n.needs.health < 50 ? '건강 악화' : ''].filter(Boolean),
     relations: n.relationships.filter(r => ids.has(r.npcId)).map(r => ({ id: r.npcId, familiarity: r.familiarity, trust: r.trust, affection: r.affection, resentment: r.resentment })),
   }));

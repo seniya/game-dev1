@@ -1,0 +1,47 @@
+{
+  "version": "0.30.1",
+  "date": "2026-10-02",
+  "issue": "Created 16-year-old always displayed thinking because childhood care has no currentAction.",
+  "production_evidence": {
+    "creation_age": 16,
+    "created_npc_id": "npc-created-26602",
+    "world_running": true,
+    "limitation": "Live bounded snapshots did not expose the individual current state; diagnosis combines creation command and local reproduction."
+  },
+  "reproduction": {
+    "seed": 42,
+    "population": 12,
+    "home": "b4",
+    "age": 16,
+    "ticks": 432,
+    "alive": true,
+    "health": 100,
+    "consumption_events": true,
+    "currentAction_absent": true
+  },
+  "changes": [
+    "Shared read-only status for care, return-home path, missing caregiver, food shortage, migration and between-action preparation",
+    "Observer, map portrait, resident list, neighbor panel and focus explanations agree",
+    "Creation and care cards explain adult routines begin at 18"
+  ],
+  "simulation_rules_changed": false,
+  "validation": {
+    "core_server": {
+      "passed": 315,
+      "failed": 0
+    },
+    "targeted_browser": {
+      "passed": 15,
+      "failed": 0,
+      "additional_repeat": 1
+    },
+    "production_build": "passed",
+    "retained_engine_integrity": "passed",
+    "v030_pending_engine_recovery": "passed"
+  },
+  "retained_engine": {
+    "commit": "b4a56fd86ef3197a5e5becf8c2eadbab767c5bcc",
+    "fingerprint": "ddbf564e665f8ab1500ab1a65e0e43e78f37f573b98fd65983ffa03887aafb41"
+  },
+  "screenshot": "screenshots/v0301-child-care-mobile.png"
+}

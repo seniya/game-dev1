@@ -91,8 +91,8 @@ test('neighbor UI escapes names, presents both directions and never offers follo
   const w=new Simulation().snapshot(),[a,b]=w.npcs;a.identity.name='<img onerror=alert(1)>';a.alive=false;relationship(a,b.id);relationship(b,a.id);
   const html=neighborsView(localNeighbors(w,'x',new Set([a.id,b.id])));assert.ok(html.includes('&lt;img'));assert.ok(!html.includes('<img'));assert.ok(!html.includes(`data-neighbor-follow="${a.id}"`));assert.ok(html.includes(`data-neighbor-follow="${b.id}"`));assert.equal((html.match(/→/g)??[]).length,2);
 });
-test('published v0.29 pending engine recovery preserves its exact rules before new observations',async()=>{
-  const {retainedEngine}=await import('../src/server/engine-registry');const fingerprint='b79ef7087a7d3968323946322c6159038f3c99602fa0bec4b74df6dc901ebea7';
+for(const [version,fingerprint] of [['v0.29','b79ef7087a7d3968323946322c6159038f3c99602fa0bec4b74df6dc901ebea7'],['v0.30','ddbf564e665f8ab1500ab1a65e0e43e78f37f573b98fd65983ffa03887aafb41']]) test(`published ${version} pending engine recovery preserves its exact rules before new observations`,async()=>{
+  const {retainedEngine}=await import('../src/server/engine-registry');
   const {LegacySimulation}=await retainedEngine(fingerprint)!();const DB=database(),store=new WorldStore(DB);await store.init(Date.now());const saved=await store.read();
   const sim=LegacySimulation.load(JSON.stringify(saved.state));sim.setLLM(false);saved.state=sim.snapshot() as unknown as WorldState;saved.meta.aiMode='off';
   await DB.batch([DB.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),DB.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);

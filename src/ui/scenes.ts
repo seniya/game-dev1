@@ -34,5 +34,5 @@ export function scenesView(w:WorldState,lens:SceneLens,settlementId:string) {
 export function focusView(w:WorldState,n:NPC) {
   const task=activity(w,n),a=n.currentAction;
   const destination=a?w.buildings.find(b=>b.id===a.targetId):undefined;
-  return `<div class="focus-portrait">${portrait(appearance(n),characterVisual(n,w))}</div><div class="focus-copy"><span>지금 바라보는 주민</span><h3>${esc(n.identity.name)} <small>${n.alive?task.moving?'이동 중':task.label:'남겨진 삶'}</small></h3><p>${esc(!n.alive?'이 주민의 삶과 관계는 기록에 남아 있습니다.':a?task.moving?`${destination?.name??'목적지'}까지 ${task.steps}칸 · ${a.reason}`:a.reason:'잠시 주변을 살피며 다음 행동을 정하고 있어요.')}</p></div><button class="button" data-focus-follow="${esc(n.id)}">가까이 보기</button>`;
+  return `<div class="focus-portrait">${portrait(appearance(n),characterVisual(n,w))}</div><div class="focus-copy"><span>지금 바라보는 주민</span><h3>${esc(n.identity.name)} <small>${n.alive?task.moving?'이동 중':task.label:'남겨진 삶'}</small></h3><p>${esc(!n.alive?'이 주민의 삶과 관계는 기록에 남아 있습니다.':a?task.moving?`${destination?.name??'목적지'}까지 ${task.steps}칸 · ${a.reason}`:a.reason:task.reason)}</p></div><button class="button" data-focus-follow="${esc(n.id)}">가까이 보기</button>`;
 }

@@ -27,6 +27,7 @@ import { gatheringsView } from './ui/gatherings';
 import { dailyPlanView, cognitionMemoryView } from './ui/cognition';
 import { Observer } from './ui/observer';
 import { activityView } from './ui/activity';
+import { activityStatus } from './sim/activity-status';
 import { requestsView, requestPrompt } from './ui/requests';
 import type { RequestChoice } from './sim/requests-types';
 import { updateReadingPanel, withReadingPosition } from './ui/reading-panel';
@@ -136,7 +137,7 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.30</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.30.1</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
     <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="neighbors-button" class="button">내 이웃</button><button id="dynasty-button" class="button">내 가문</button><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
@@ -173,7 +174,7 @@ function selectObject(selection: ObjectSelection) {
 function toast(message: string) { $('toast').textContent = message; $('toast').hidden = false; clearTimeout(noticeTimer); noticeTimer = setTimeout(() => $('toast').hidden = true, 4500); }
 function selectedNPC() { return state.npcs.find(n => n.id === selectedId) ?? state.npcs[0]; }
 function selectNPC(id: string) { if (!state.npcs.some(n=>n.id===id)) return; walk.mark('meet'); selectedObject = undefined; selectedId = id; map.setMode('follow'); $<HTMLSelectElement>('map-mode').value = 'follow'; tab = 'overview'; lifeLimit = 40; setView('world'); render(); revealInspector(); }
-function actionText(n: NPC) { return !n.alive ? '세상을 떠남' : !n.currentAction ? '다음 행동을 생각하는 중' : `${n.currentAction.path.length ? '이동 중 · ' : ''}${ACTION_LABELS[n.currentAction.kind]}`; }
+function actionText(n: NPC) { const status = activityStatus(state,n); return `${n.currentAction && status.moving ? '이동 중 · ' : ''}${status.label}`; }
 function render() {
   if (!cloudMode) state = sim.snapshot();
   if (!cloudMode || cloudReady) biography.readLink();
