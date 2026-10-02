@@ -70,9 +70,9 @@ test('new rules preserve independent continuation and full accounting through a 
 
 test('published v025 pending progress is recovered by its exact engine before new rules begin',async()=>{
   const db=database(),s=new WorldStore(db);await s.init(Date.now());const saved=await s.read();
-  const old=LegacySimulation.load(JSON.stringify(saved.state));old.setLLM(false);saved.state=old.snapshot() as typeof saved.state;saved.meta.aiMode='off';
+  const old=LegacySimulation.load(JSON.stringify(saved.state));old.setLLM(false);saved.state=old.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';
   await db.batch([db.prepare('DELETE FROM snapshots'),...s.snapshotStatements(saved.epoch,saved.state),db.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
-  old.step(144,undefined);const expected=old.snapshot() as typeof saved.state,added=expected.events.filter(e=>!saved.state.events.some(p=>p.id===e.id));
+  old.step(144,undefined);const expected=old.snapshot() as unknown as typeof saved.state,added=expected.events.filter(e=>!saved.state.events.some(p=>p.id===e.id));
   await db.batch([db.prepare('INSERT INTO world_live VALUES(1,?,1,?)').bind(saved.revision,JSON.stringify({build:'ccf7eee8ff74a40d37e0a92ad6d61fc9034753d0e425924544bba9046bab0efa',epoch:saved.epoch,ticks:144,meta:{...saved.meta,eventCount:saved.meta.eventCount+added.length},started:Date.now(),id:'v025-recovery'}))]);
   const restored=await new LiveWorldStore(db,'v026').read();assert.deepEqual(restored.state,JSON.parse(JSON.stringify(compactWorld(expected))));assert.equal(restored.state.cooperation,undefined);assert.equal(restored.meta.aiMode,'off');
   const next=Simulation.load(JSON.stringify(restored.state));next.step(144);assert.ok(next.snapshot().cooperation);assert.deepEqual(balance(next.snapshot()),{food:0,wood:0,coins:0});

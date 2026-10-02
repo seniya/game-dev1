@@ -63,7 +63,8 @@
   "build": {
     "command": "npm run build",
     "passed": true,
-    "warning": "Client bundle exceeds Vite 500kB advisory threshold."
+    "warning": "Client bundle exceeds Vite 500kB advisory threshold.",
+    "resolvedFailure": "The first committed build caught two TS2352 casts in the newly added retained v025 fixture. Explicit unknown bridging documents the legacy compiled snapshot boundary; no runtime simulation code changed. Related six tests and production build repeated."
   },
   "screenshots": [
     "screenshots/v026-observation-desktop.png",
