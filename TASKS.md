@@ -388,3 +388,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - 코어/서버 전체 297개 및 최종 가족 검사 12개(추가 1개 포함), 고유 298개 통과. 브라우저 전체 94개 통과·실모델 1개 건너뜀, 실제 Worker의 v0.27 복구와 가문 UI 최종 3개 통과(고유 95개). 실패와 수정·재검증은 [검증 보고서](reports/family-legacy-validation.json)에 기록했다.
 - 3시드 × off/Mock × 365일과 300명 30일·1,000명 3일·3,000명 1일의 9조건에서 자원/화폐 회계 오차·원본 참조 누락 0, 저장 재개 일치. [장기 회귀](reports/family-legacy-regression.json).
 - production build 및 보존 엔진 무결성 검사 통과. 직전 배포 소스의 엔진을 변경 없이 보존했다. 배포 결과와 운영 보존은 `reports/deployment-v028.json`에 별도 기록한다.
+
+- v0.28 소스 `d09db00300aaf09562d0c65d4f9b4fde7cc3d85e`를 기존 Sites 저장소에 push한 뒤 같은 커밋에서 재빌드·패키징하여 **Sites 40 succeeded** 확인. 운영 JS/CSS 두 파일은 로컬 빌드와 바이트 일치한다. custom 정책·확정 세계 revision 3801/사건 25,857개·이전 엔진 대기 205틱 행 보존. 인증 세계 조회의 복구 수행과 원본 전체 재해시는 관측하지 않았다. [배포 보고서](reports/deployment-v028.json).

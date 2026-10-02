@@ -35,3 +35,7 @@
 새 업종별 회계, 지분 상속·중복 방지, 학습·진로, 기여 제한, 서버 권한·CAS·구형 복구·개인 방문 기록, 브라우저·모바일과 production build를 검사한다. 3시드 × off/Mock × 365일과 300/1,000/3,000명 규모 회귀를 실행한다. 실패 및 수정 후 재검증도 보고서에 남긴다. 실제 모델 품질·실제 타 계정 로그인·사람의 흥미·전역 production CPU/메모리는 이 자동 검증과 구별한다.
 
 결과: `reports/family-legacy-validation.json`, `reports/family-legacy-regression.json`, `reports/deployment-v028.json`.
+
+## 완료 결과
+
+2026-10-02 구현·검증·기존 사이트 배포 완료. 고유 코어/서버 298개, 고유 브라우저 95개와 장기·규모 9조건 통과. 실제 Chrome 모델 1개는 건너뛰었다. 소스 `d09db00300aaf09562d0c65d4f9b4fde7cc3d85e`에서 만든 아티팩트를 Sites 40에 배포하여 `succeeded`와 운영 JS/CSS 일치를 확인했다. 초대 전용 정책·확정 세계 메타데이터·v0.27 대기 205틱 행이 동일하다. 실제 인증 조회의 복구 수행은 아직 관측하지 않았다. [배포 보고서](reports/deployment-v028.json).
