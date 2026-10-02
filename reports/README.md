@@ -6,6 +6,7 @@
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.24 배포 | [deployment-v024.json](deployment-v024.json): Sites 36 `succeeded`, 운영 JS/CSS 일치·모바일 기기 모드 확인·custom 정책 동일·확정 메타데이터와 대기 193틱 행 보존. 인증된 공동 세계 조회와 실기기 검증은 별도 |
 | v0.24 모바일 UI | [검증](mobile-ui-validation.json): 코어·서버 254개, 고유 브라우저 81개·실모델 1개 건너뜀. 전체 실행 이후 변경된 메뉴 경로와 새 빌드 지문으로 19개 최종 재검증; Chromium 터치·WebKit·Firefox 확인 |
 | v0.23 배포 | [deployment-v023.json](deployment-v023.json): Sites 35 `succeeded`, 운영 자산 일치·custom 정책 동일·확정 메타데이터와 대기 147틱 행 유지. v0.22 대기 진행의 운영 복구는 최초 인증 조회 이후 관측 대상 |
 | v0.23 검증 | [검증](continuity-validation.json): 전체 코어 253개+추가 검사, 고유 254개; 브라우저 전체 72개 통과 후 실패 원인을 수정한 18개 재검증, 고유 74개·실모델 1개 건너뜀 |

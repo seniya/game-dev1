@@ -21,3 +21,7 @@
 - 검증된 소스 커밋을 기존 Sites 저장소에 push하고 같은 커밋에서 production build와 아카이브를 만든다. custom 초대 접근 정책을 유지한다.
 
 검증 및 배포 결과는 `reports/mobile-ui-validation.json`, `reports/deployment-v024.json`에 기록한다. 브라우저 에뮬레이션과 실기기 검증은 구분한다.
+
+## 완료 결과
+
+코어·서버 254개, 고유 브라우저 81개 통과·실모델 1개 건너뜀. 최종 관련 19개 재검증과 production build를 통과했다. Chromium 터치·가로 회전, WebKit·Firefox 모바일 화면을 확인했다. 기존 사이트 Sites 36 배포가 성공했으며 운영 JS/CSS와 로컬 빌드가 일치한다. custom 정책과 확정 세계·미확정 193틱 행은 배포 전후 동일하다. 실기기 iOS/Android와 인증된 공동 세계 복구는 새로 검증하지 않았다.
