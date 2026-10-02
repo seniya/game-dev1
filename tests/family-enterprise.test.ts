@@ -66,7 +66,7 @@ test('tampered cash, source and duplicate shares are rejected; old public saves 
   assert.doesNotThrow(()=>Simulation.load(new Simulation().save()));
 });
 test('learning teaches actual skills, never employs children, and supports distinct adult careers',()=>{
-  const {w,n,e}=fixture();const child=w.npcs[1];child.identity.age=12;child.homeId=n.homeId;child.life.parentIds=[n.id];child.needs.health=100;child.needs.hunger=10;child.occupation='none';w.urban.citizens[n.id].skills[INDUSTRY_SKILL[e.kind]]=40;
+  const {w,n,e}=fixture();const child=w.npcs[1];child.identity.age=12;child.homeId=n.homeId;child.position={...n.position};child.life.parentIds=[n.id];child.needs.health=100;child.needs.hunger=10;child.occupation='none';w.urban.citizens[n.id].skills[INDUSTRY_SKILL[e.kind]]=40;
   const before=w.urban.citizens[child.id].skills.field;learnFamilyTrade(w,child);assert.equal(w.urban.citizens[child.id].skills.field,before+.5);assert.equal(child.life.apprenticeship!.lessons,1);assert.equal(e.workers.includes(child.id),false);
   learnFamilyTrade(w,child);assert.equal(child.life.apprenticeship!.lessons,1);
   child.identity.age=18;child.personality.curiosity=100;child.personality.diligence=0;w.living.people[child.id].traits.independence=100;assert.equal(chooseFamilyTrade(w,child),true);assert.equal(child.life.apprenticeship!.choice,'independent');assert.equal(child.occupation,'none');

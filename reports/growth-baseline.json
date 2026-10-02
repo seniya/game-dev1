@@ -1,0 +1,42 @@
+{
+  "version": "0.31.0",
+  "days": 365,
+  "mode": "off",
+  "results": [
+    {
+      "seed": 7,
+      "alive": 8,
+      "births": 3,
+      "deaths": {
+        "needs": 7
+      },
+      "blocked": {
+        "기본 생업과 이웃 돌봄으로 생활합니다.": 365
+      }
+    },
+    {
+      "seed": 42,
+      "alive": 11,
+      "births": 3,
+      "deaths": {
+        "illness": 1,
+        "needs": 1,
+        "age": 2
+      },
+      "blocked": {
+        "기본 생업과 이웃 돌봄으로 생활합니다.": 365
+      }
+    },
+    {
+      "seed": 123,
+      "alive": 15,
+      "births": 6,
+      "deaths": {
+        "needs": 3
+      },
+      "blocked": {
+        "기본 생업과 이웃 돌봄으로 생활합니다.": 365
+      }
+    }
+  ]
+}

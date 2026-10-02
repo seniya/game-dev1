@@ -1,0 +1,270 @@
+{
+  "version": "0.32.0",
+  "environment": "local Node, not production CPU or real Chrome model",
+  "results": [
+    {
+      "seed": 7,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "births": 6,
+      "deaths": {
+        "needs": 1,
+        "age": 1
+      },
+      "deathDetails": [
+        {
+          "tick": 3752,
+          "actor": "npc10",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 10,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        },
+        {
+          "tick": 26064,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "age",
+          "disease": 0,
+          "injury": 0,
+          "age": 85,
+          "hunger": 34.79999999999995,
+          "thirst": 12.5,
+          "fatigue": 0.99,
+          "food": 0,
+          "storageFood": 1351,
+          "weather": "sunny"
+        }
+      ],
+      "birthBlocks": {
+        "age": 782,
+        "health": 25,
+        "spacing": 146,
+        "housing": 258,
+        "food": 0,
+        "ready": 4
+      },
+      "handoffs": 61,
+      "careers": 6,
+      "careMetrics": {
+        "completed": 6,
+        "firstCareTicks": 103,
+        "maxFirstCare": 21,
+        "maxGap": 55,
+        "unassisted": 0
+      },
+      "alive": 16,
+      "people": 18,
+      "stats": {
+        "contacts": 4612,
+        "plays": 883,
+        "arguments": 17,
+        "collisions": 0,
+        "injuries": 6,
+        "treatments": 7,
+        "recoveries": 6,
+        "careTicks": 4688,
+        "outings": 952,
+        "returns": 956,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 12971555,
+      "events": 162213,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 85320
+    },
+    {
+      "seed": 7,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "births": 9,
+      "deaths": {
+        "needs": 5
+      },
+      "deathDetails": [
+        {
+          "tick": 8510,
+          "actor": "npc-born-9956",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 2,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "sunny"
+        },
+        {
+          "tick": 8524,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 74,
+          "hunger": 100,
+          "thirst": 29,
+          "fatigue": 9.200000000000005,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "sunny"
+        },
+        {
+          "tick": 8684,
+          "actor": "npc-born-18367",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 1,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        },
+        {
+          "tick": 8692,
+          "actor": "npc10",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 12,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        },
+        {
+          "tick": 8743,
+          "actor": "npc-born-8778",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 3,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        }
+      ],
+      "birthBlocks": {
+        "age": 802,
+        "health": 17,
+        "spacing": 226,
+        "housing": 316,
+        "food": 3,
+        "ready": 4
+      },
+      "handoffs": 53,
+      "careers": 6,
+      "careMetrics": {
+        "completed": 3,
+        "firstCareTicks": 47,
+        "maxFirstCare": 21,
+        "maxGap": 53,
+        "unassisted": 0
+      },
+      "alive": 16,
+      "people": 21,
+      "stats": {
+        "contacts": 4674,
+        "plays": 851,
+        "arguments": 11,
+        "collisions": 0,
+        "injuries": 3,
+        "treatments": 6,
+        "recoveries": 3,
+        "careTicks": 3871,
+        "outings": 884,
+        "returns": 889,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 12745142,
+      "events": 149286,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 71549
+    }
+  ]
+}

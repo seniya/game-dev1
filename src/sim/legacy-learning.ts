@@ -1,3 +1,4 @@
+import { rememberGrowth } from './growth';
 import { occupationAllowed } from './development';
 import { z } from 'zod';
 import type { NPC, WorldState, WorldEvent } from './types';
@@ -11,13 +12,14 @@ export type Apprenticeship=z.infer<typeof apprenticeshipSchema>;
 export const supportSchema=z.object({giver:id,tick:nat,source:id}).strict();
 export function learnFamilyTrade(w:WorldState,n:NPC){
   if(n.identity.age<12||n.identity.age>=18||n.needs.health<50||n.needs.hunger>=65||isTravelling(w,n))return;
-  const mentor=w.npcs.find(p=>p.alive&&n.life.parentIds.includes(p.id)&&p.homeId===n.homeId&&!isTravelling(w,p));if(!mentor)return;
+  const mentor=w.npcs.find(p=>p.alive&&n.life.parentIds.includes(p.id)&&p.homeId===n.homeId&&distance(p.position,n.position)<=1&&!isTravelling(w,p));if(!mentor)return;
   const enterprise=w.urban.enterprises.find(e=>e.business?.shares.some(s=>s.npc===mentor.id)&&e.settlementId===n.settlementId);if(!enterprise)return;
   const old=n.life.apprenticeship;if(old&&w.tick-old.lastTick<144)return;
   const skill=INDUSTRY_SKILL[enterprise.kind],student=w.urban.citizens[n.id],teacher=w.urban.citizens[mentor.id];
   if(teacher.skills[skill]<=student.skills[skill])return;
   student.skills[skill]=Math.min(teacher.skills[skill],student.skills[skill]+.5);
   const event=appendEvent(w,{kind:'education',actorId:n.id,targetId:mentor.id,locationId:n.homeId,causeId:enterprise.business!.source,importance:45,description:`${n.identity.name}이 집에서 ${mentor.identity.name}에게 ${INDUSTRY_LABELS[enterprise.kind]}의 기술을 배웠다. 아동은 생산·고용에 참여하지 않는다.`,data:{business:enterprise.id,phase:'apprenticeship',skill:student.skills[skill]}});
+  rememberGrowth(w,n,mentor,'lesson',event);
   n.life.apprenticeship={mentor:mentor.id,enterprise:enterprise.id,kind:enterprise.kind,lessons:Math.min(100,(old?.enterprise===enterprise.id?old.lessons:0)+1),lastTick:w.tick,source:event.id,choice:'learning'};
 }
 export function chooseFamilyTrade(w:WorldState,n:NPC):boolean {

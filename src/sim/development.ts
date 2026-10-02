@@ -70,7 +70,7 @@ export function developmentDay(w: WorldState) {
     d.unlocked.push(candidate);d.lastAssigned=w.tick;
     const old=worker.occupation;worker.occupation=candidate;villagePerson(w,worker).careerTick=w.tick;w.villageLife.stats.careerChanges++;
     d.reason=`${OCCUPATIONS[candidate]} 수요가 이어져 ${worker.identity.name}이 일을 맡습니다.`;
-    appendEvent(w,{kind:'occupation',actorId:worker.id,importance:55,description:d.reason,data:{phase:'specialized',previous:old,occupation:candidate,demand:d.demand[candidate],settlementId:v.id}});
+    d.source=appendEvent(w,{kind:'occupation',actorId:worker.id,importance:55,description:d.reason,data:{phase:'specialized',previous:old,occupation:candidate,demand:d.demand[candidate],settlementId:v.id}}).id;
   }
 }
 

@@ -140,3 +140,10 @@ v0.5/v0.5.1의 영어 구조화 목표 선택, 한국어 이유 표시, 실행�
 ## v0.31 · 작은 마을의 직업과 생활
 
 기본 생업 3종으로 시작하는 12명 마을, 인구·수요·생산 여력에 따른 전문화, 만 4세 외출과 보호자 동행, 성격에 따른 언쟁과 중재, 사고·부상·현장 돌봄·치료·회복, 공동 집살림과 배움, 원본 사건 관찰을 구현했다. 기존 세계와 저장 정책은 유지한다. 상세 구현은 [생활 설계 11절](VILLAGE_LIFE_PLAN.md), 실행 증거는 [검증](reports/village-life-validation.json)·[장기 회귀](reports/village-life-regression.json)·[배포](reports/deployment-v031.json)를 따른다.
+
+
+## 2026-10-02 · v0.32 아이의 성장과 함께 돌보는 마을
+
+[GROWING_VILLAGE_PLAN](GROWING_VILLAGE_PLAN.md)의 다섯 범위를 구현했다. 성장 조건과 정체 이유, 같은 집 아이 최대 3명의 공동 외출·현장 보호자 인계, 실제 친구·배움·도움에 근거한 성년 진로, 중재 약속의 후속 만남과 부상별 돌봄 대기, 성장 흐름 관찰을 연결한다. 배고픈 아이의 돌봄 제외 조건을 수정하고 실제 식량 전달을 허용한다. 기존 세계를 초기화하지 않으며 v9 선택 필드와 이전 배포 엔진을 보존한다.
+
+실제 검사 결과와 실패·수정 내역은 [검증 보고서](reports/growth-validation.json), 장기 비교는 [직전 엔진 기준](reports/growth-baseline.json)과 [현재 회귀](reports/growth-regression.json)를 따른다. 배포 결과는 검증 완료 후 별도 기록한다.

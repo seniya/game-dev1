@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -32,6 +32,7 @@
     "convert:archive": "tsx scripts/convert-archive.ts",
     "regression:neighbors": "tsx scripts/neighbors-regression.ts",
     "regression:family-legacy": "tsx scripts/family-legacy-regression.ts",
+    "regression:growth": "tsx scripts/growth-regression.ts",
     "regression:village-life": "tsx scripts/village-life-regression.ts"
   },
   "devDependencies": {

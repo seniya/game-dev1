@@ -1,3 +1,4 @@
+import { chooseGrownCareer, rememberGrowth } from './growth';
 import { occupationAllowed } from './development';
 import { inheritBusinesses } from './family-enterprise';
 import { learnFamilyTrade, chooseFamilyTrade } from './legacy-learning';
@@ -8,7 +9,7 @@ import { newCitizen } from './urban';
 import { findPath } from './pathfinding';
 import { type WorldState, type NPC, YEAR_TICKS, MAX_POPULATION } from './types';
 import { appendEvent, socialEvent, relationship, eventById } from './social';
-import { clamp } from './random';
+import { clamp, distance } from './random';
 import { stocks, market, capacity, isTravelling } from './civilization';
 
 export function related(w: WorldState, a: NPC, b: NPC): boolean {
@@ -131,10 +132,10 @@ export function lifeDay(w: WorldState) {
     if (previous < 18 && n.identity.age >= 18) {
       if(w.villageLife){
         const a=w.villageLife.activities[n.id];if(a&&['play','return','learn','domestic'].includes(a.kind))delete w.villageLife.activities[n.id];
-        for(const [id,a] of Object.entries(w.villageLife.activities))if(a.partner===n.id&&['escort','supervise','return'].includes(a.kind))delete w.villageLife.activities[id];
+        for(const [id,a] of Object.entries(w.villageLife.activities))if(a.partner===n.id&&['escort','supervise','return'].includes(a.kind)){const next=Object.entries(w.villageLife.activities).find(([childId,x])=>childId!==n.id&&x.guardian===id);if(next)a.partner=next[0];else delete w.villageLife.activities[id];}
       }
       const mentor = w.npcs.filter(p => p.alive && n.life.parentIds.includes(p.id)).sort((a, b) => b.life.skill - a.life.skill)[0];
-      if (!chooseFamilyTrade(w,n)) n.occupation = mentor?.previousOccupation ?? mentor?.occupation ?? 'none';
+      if (!chooseGrownCareer(w,n) && !chooseFamilyTrade(w,n)) n.occupation = mentor?.previousOccupation ?? mentor?.occupation ?? 'none';
       if (!occupationAllowed(w,n.settlementId,n.occupation)) n.occupation = 'homemaker';
       delete n.previousOccupation;
       socialEvent(w, { kind: 'coming_of_age', actorId: n.id, targetId: mentor?.id, importance: 60, description: `${n.identity.name}이 성인이 되어 ${n.occupation === 'none' ? '일자리를 찾기 시작한다' : '배운 기술로 일을 시작한다'}.`, data: { skill: n.life.skill, occupation: n.occupation }, causeId: n.life.birthEventId });
@@ -143,9 +144,9 @@ export function lifeDay(w: WorldState) {
     if (n.identity.age < 18) {
       learnFamilyTrade(w,n);
       const mentor = w.npcs.filter(p => p.alive && p.homeId === n.homeId && p.identity.age >= 18).sort((a, b) => b.life.skill - a.life.skill)[0];
-      if (mentor && n.needs.health > 50) {
+      if (mentor && n.needs.health > 50 && distance(n.position,mentor.position)<=1) {
         n.life.skill = Math.min(mentor.life.skill, n.life.skill + .1);
-        if (previous !== n.identity.age) appendEvent(w, { kind: 'education', actorId: n.id, targetId: mentor.id, importance: 40, description: `${n.identity.name}이 ${mentor.identity.name}에게 생활 기술을 배웠다.`, data: { skill: n.life.skill, occupation: mentor.occupation } });
+        if (previous !== n.identity.age) { const lesson=appendEvent(w, { kind: 'education', actorId: n.id, targetId: mentor.id, importance: 40, description: `${n.identity.name}이 ${mentor.identity.name}에게 생활 기술을 배웠다.`, data: { skill: n.life.skill, occupation: mentor.occupation } });rememberGrowth(w,n,mentor,'lesson',lesson); }
       }
       // Orphans can join a local household with a living adult and space.
       if (!mentor) {

@@ -6,6 +6,7 @@
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.32 검증 | [검증](growth-validation.json): 코어·서버 348개, 고유 브라우저 107개·실모델 1개 제외, [365일·규모 9조건](growth-regression.json)·독립 재개 89회·build 통과. [직전 엔진 비교](growth-baseline.json)와 수정 중 회귀를 별도 보존 |
 | v0.31 배포 | [deployment-v031.json](deployment-v031.json): Sites 44 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계·이전 엔진 대기 130틱 행 보존. 운영 복구는 다음 인증 조회 뒤 수행 |
 | v0.31 검증 | [검증](village-life-validation.json): 코어·서버 337개, 고유 브라우저 104개(재검증 포함)·실모델 1개 제외, [365일·규모 9조건](village-life-regression.json)·독립 재개 89회·build 통과. [수정 전 회귀](village-life-regression-initial.json)를 별도로 보존 |
 | v0.30.1 배포 | [deployment-v0301.json](deployment-v0301.json): Sites 43 `succeeded`, custom 정책·확정 세계·124틱 대기 행 동일. 이전 엔진 보존·자동 복구 테스트 통과; 운영 복구는 다음 인증 조회 때 수행 |

@@ -8,8 +8,9 @@ test('timed construction, evidence, farm fences and daily history work on mobile
  const a=await(await page.request.get('/api/world')).json();expect(a.state.construction.projects[0].buildingId).toBeUndefined();
  await page.locator('#observation-details').evaluate((d:HTMLDetailsElement)=>d.open=true);await expect(page.locator('#observation-details')).toContainText('공정 0%');
  await expect(page.locator('[data-protect-farm]').first()).toBeDisabled();
- await send(page,{type:'step',ticks:144});await page.locator('#cloud-retry').click();const b=await(await page.request.get('/api/world')).json();expect(b.state.construction.projects[0].buildingId).toBeTruthy();
- await send(page,{type:'reset',seed:42,population:12});await page.locator('#cloud-retry').click();await page.locator('#observation-details').evaluate((d:HTMLDetailsElement)=>d.open=true);await page.locator('[data-protect-farm]').first().click();await expect(page.locator('#observation-details')).toContainText('울타리 보호');
+ // Shared care and survival can delay voluntary building work; allow three real days.
+ for(let day=0;day<3;day++)await send(page,{type:'step',ticks:144});await page.locator('#cloud-retry').click();const b=await(await page.request.get('/api/world')).json();expect(b.state.construction.projects[0].buildingId).toBeTruthy();
+ await send(page,{type:'reset',seed:42,population:12});await page.locator('#cloud-retry').click();await page.locator('#observation-details').evaluate((d:HTMLDetailsElement)=>d.open=true);await expect(page.locator('#observation-details')).toContainText('진행 중인 공사가 없습니다.');await page.locator('[data-protect-farm]').first().click();await expect(page.locator('#observation-details')).toContainText('울타리 보호');
  await page.locator('#world-tools summary').click();await page.locator('#load-button').click();await expect(page.locator('#storage-status')).toContainText('최근 30일 운영 추이');await expect(page.locator('#storage-status table tbody tr')).toHaveCount(1);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
  await page.locator('#storage-status table').scrollIntoViewIfNeeded();await page.getByRole('dialog').screenshot({path:'reports/screenshots/v023-operations.png'});
 });

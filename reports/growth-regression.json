@@ -1,0 +1,1134 @@
+{
+  "version": "0.32.0",
+  "environment": "local Node, not production CPU or real Chrome model",
+  "results": [
+    {
+      "seed": 7,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "births": 6,
+      "deaths": {
+        "needs": 1,
+        "age": 1
+      },
+      "deathDetails": [
+        {
+          "tick": 3752,
+          "actor": "npc10",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 10,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        },
+        {
+          "tick": 26064,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "age",
+          "disease": 0,
+          "injury": 0,
+          "age": 85,
+          "hunger": 34.79999999999995,
+          "thirst": 12.5,
+          "fatigue": 0.99,
+          "food": 0,
+          "storageFood": 1351,
+          "weather": "sunny"
+        }
+      ],
+      "birthBlocks": {
+        "age": 782,
+        "health": 25,
+        "spacing": 146,
+        "housing": 258,
+        "food": 0,
+        "ready": 4
+      },
+      "handoffs": 61,
+      "careers": 6,
+      "careMetrics": {
+        "completed": 6,
+        "firstCareTicks": 103,
+        "maxFirstCare": 21,
+        "maxGap": 55,
+        "unassisted": 0
+      },
+      "alive": 16,
+      "people": 18,
+      "stats": {
+        "contacts": 4612,
+        "plays": 883,
+        "arguments": 17,
+        "collisions": 0,
+        "injuries": 6,
+        "treatments": 7,
+        "recoveries": 6,
+        "careTicks": 4688,
+        "outings": 952,
+        "returns": 956,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 12971642,
+      "events": 162213,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 93607
+    },
+    {
+      "seed": 7,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "births": 9,
+      "deaths": {
+        "needs": 5
+      },
+      "deathDetails": [
+        {
+          "tick": 8510,
+          "actor": "npc-born-9956",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 2,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "sunny"
+        },
+        {
+          "tick": 8524,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 74,
+          "hunger": 100,
+          "thirst": 29,
+          "fatigue": 9.200000000000005,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "sunny"
+        },
+        {
+          "tick": 8684,
+          "actor": "npc-born-18367",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 1,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        },
+        {
+          "tick": 8692,
+          "actor": "npc10",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 12,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        },
+        {
+          "tick": 8743,
+          "actor": "npc-born-8778",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 3,
+          "hunger": 100,
+          "thirst": 0.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "cloudy"
+        }
+      ],
+      "birthBlocks": {
+        "age": 802,
+        "health": 17,
+        "spacing": 226,
+        "housing": 316,
+        "food": 3,
+        "ready": 4
+      },
+      "handoffs": 53,
+      "careers": 6,
+      "careMetrics": {
+        "completed": 3,
+        "firstCareTicks": 47,
+        "maxFirstCare": 21,
+        "maxGap": 53,
+        "unassisted": 0
+      },
+      "alive": 16,
+      "people": 21,
+      "stats": {
+        "contacts": 4674,
+        "plays": 851,
+        "arguments": 11,
+        "collisions": 0,
+        "injuries": 3,
+        "treatments": 6,
+        "recoveries": 3,
+        "careTicks": 3871,
+        "outings": 884,
+        "returns": 889,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 12745208,
+      "events": 149286,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 68971
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "births": 2,
+      "deaths": {
+        "age": 2
+      },
+      "deathDetails": [
+        {
+          "tick": 26064,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "age",
+          "disease": 0,
+          "injury": 0,
+          "age": 85,
+          "hunger": 20.399999999999995,
+          "thirst": 7,
+          "fatigue": 16.5,
+          "food": 0,
+          "storageFood": 920,
+          "weather": "rain"
+        },
+        {
+          "tick": 46800,
+          "actor": "npc0",
+          "settlementId": "v0",
+          "reason": "age",
+          "disease": 0,
+          "injury": 0,
+          "age": 85,
+          "hunger": 67.19999999999989,
+          "thirst": 13.5,
+          "fatigue": 0.33,
+          "food": 0,
+          "storageFood": 1130,
+          "weather": "sunny"
+        }
+      ],
+      "birthBlocks": {
+        "age": 960,
+        "health": 1,
+        "spacing": 48,
+        "housing": 55,
+        "food": 0,
+        "ready": 1
+      },
+      "handoffs": 32,
+      "careers": 3,
+      "careMetrics": {
+        "completed": 6,
+        "firstCareTicks": 99,
+        "maxFirstCare": 21,
+        "maxGap": 55,
+        "unassisted": 0
+      },
+      "alive": 12,
+      "people": 14,
+      "stats": {
+        "contacts": 4488,
+        "plays": 503,
+        "arguments": 14,
+        "collisions": 0,
+        "injuries": 6,
+        "treatments": 9,
+        "recoveries": 6,
+        "careTicks": 1989,
+        "outings": 516,
+        "returns": 521,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 11776909,
+      "events": 145055,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 65623
+    },
+    {
+      "seed": 42,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "births": 4,
+      "deaths": {
+        "age": 2
+      },
+      "deathDetails": [
+        {
+          "tick": 26064,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "age",
+          "disease": 0,
+          "injury": 0,
+          "age": 85,
+          "hunger": 68.79999999999988,
+          "thirst": 6.5,
+          "fatigue": 14.520000000000001,
+          "food": 0,
+          "storageFood": 2136,
+          "weather": "cloudy"
+        },
+        {
+          "tick": 46800,
+          "actor": "npc0",
+          "settlementId": "v0",
+          "reason": "age",
+          "disease": 0,
+          "injury": 0,
+          "age": 85,
+          "hunger": 41.19999999999985,
+          "thirst": 10,
+          "fatigue": 8.58,
+          "food": 0,
+          "storageFood": 3444,
+          "weather": "cloudy"
+        }
+      ],
+      "birthBlocks": {
+        "age": 1289,
+        "health": 9,
+        "spacing": 80,
+        "housing": 94,
+        "food": 0,
+        "ready": 2
+      },
+      "handoffs": 42,
+      "careers": 3,
+      "careMetrics": {
+        "completed": 3,
+        "firstCareTicks": 53,
+        "maxFirstCare": 19,
+        "maxGap": 53,
+        "unassisted": 0
+      },
+      "alive": 14,
+      "people": 16,
+      "stats": {
+        "contacts": 5714,
+        "plays": 642,
+        "arguments": 16,
+        "collisions": 0,
+        "injuries": 3,
+        "treatments": 5,
+        "recoveries": 3,
+        "careTicks": 3126,
+        "outings": 664,
+        "returns": 668,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 14416005,
+      "events": 149630,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 69480
+    },
+    {
+      "seed": 123,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "births": 0,
+      "deaths": {
+        "needs": 1
+      },
+      "deathDetails": [
+        {
+          "tick": 3533,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 71,
+          "hunger": 100,
+          "thirst": 17.5,
+          "fatigue": 17.91295999999994,
+          "food": 0,
+          "storageFood": 0,
+          "weather": "rain"
+        }
+      ],
+      "birthBlocks": {
+        "age": 683,
+        "health": 0,
+        "spacing": 0,
+        "housing": 0,
+        "food": 0,
+        "ready": 0
+      },
+      "handoffs": 11,
+      "careers": 3,
+      "careMetrics": {
+        "completed": 0,
+        "firstCareTicks": 0,
+        "maxFirstCare": 0,
+        "maxGap": 0,
+        "unassisted": 0
+      },
+      "alive": 11,
+      "people": 12,
+      "stats": {
+        "contacts": 4964,
+        "plays": 330,
+        "arguments": 34,
+        "collisions": 0,
+        "injuries": 0,
+        "treatments": 0,
+        "recoveries": 0,
+        "careTicks": 1094,
+        "outings": 332,
+        "returns": 337,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 11812542,
+      "events": 264568,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 66186
+    },
+    {
+      "seed": 123,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "births": 0,
+      "deaths": {
+        "age": 1
+      },
+      "deathDetails": [
+        {
+          "tick": 26064,
+          "actor": "npc11",
+          "settlementId": "v0",
+          "reason": "age",
+          "disease": 0,
+          "injury": 0,
+          "age": 85,
+          "hunger": 47.19999999999996,
+          "thirst": 9,
+          "fatigue": 0,
+          "food": 0,
+          "storageFood": 1005,
+          "weather": "sunny"
+        }
+      ],
+      "birthBlocks": {
+        "age": 822,
+        "health": 4,
+        "spacing": 0,
+        "housing": 224,
+        "food": 0,
+        "ready": 0
+      },
+      "handoffs": 14,
+      "careers": 3,
+      "careMetrics": {
+        "completed": 2,
+        "firstCareTicks": 33,
+        "maxFirstCare": 20,
+        "maxGap": 52,
+        "unassisted": 0
+      },
+      "alive": 11,
+      "people": 12,
+      "stats": {
+        "contacts": 6373,
+        "plays": 328,
+        "arguments": 96,
+        "collisions": 0,
+        "injuries": 2,
+        "treatments": 4,
+        "recoveries": 2,
+        "careTicks": 1094,
+        "outings": 329,
+        "returns": 333,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 14937494,
+      "events": 183140,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 73984
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 300,
+      "days": 30,
+      "births": 8,
+      "deaths": {
+        "needs": 2
+      },
+      "deathDetails": [
+        {
+          "tick": 867,
+          "actor": "npc284",
+          "settlementId": "v1",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 2,
+          "hunger": 100,
+          "thirst": 100,
+          "fatigue": 2.6528,
+          "food": 2,
+          "storageFood": 673,
+          "weather": "rain"
+        },
+        {
+          "tick": 883,
+          "actor": "npc143",
+          "settlementId": "v1",
+          "reason": "needs",
+          "disease": 0,
+          "injury": 0,
+          "age": 70,
+          "hunger": 100,
+          "thirst": 20.5,
+          "fatigue": 97.77479999999959,
+          "food": 1,
+          "storageFood": 685,
+          "weather": "rain"
+        }
+      ],
+      "birthBlocks": {
+        "age": 11,
+        "health": 0,
+        "spacing": 9,
+        "housing": 0,
+        "food": 0,
+        "ready": 1
+      },
+      "handoffs": 321,
+      "careers": 0,
+      "careMetrics": {
+        "completed": 10,
+        "firstCareTicks": 151,
+        "maxFirstCare": 22,
+        "maxGap": 54,
+        "unassisted": 0
+      },
+      "alive": 306,
+      "people": 308,
+      "stats": {
+        "contacts": 5586,
+        "plays": 1260,
+        "arguments": 41,
+        "collisions": 0,
+        "injuries": 10,
+        "treatments": 18,
+        "recoveries": 10,
+        "careTicks": 15753,
+        "outings": 1455,
+        "returns": 1468,
+        "careerChanges": 18
+      },
+      "stages": [
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 22708268,
+      "events": 308110,
+      "missingCauses": 0,
+      "resumeChecks": 2,
+      "maxCareWaitTicks": 0,
+      "durationMs": 37598
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 1000,
+      "days": 3,
+      "births": 0,
+      "deaths": {},
+      "deathDetails": [],
+      "birthBlocks": {
+        "age": 0,
+        "health": 0,
+        "spacing": 0,
+        "housing": 0,
+        "food": 0,
+        "ready": 0
+      },
+      "handoffs": 76,
+      "careers": 0,
+      "careMetrics": {
+        "completed": 1,
+        "firstCareTicks": 18,
+        "maxFirstCare": 18,
+        "maxGap": 53,
+        "unassisted": 0
+      },
+      "alive": 1000,
+      "people": 1000,
+      "stats": {
+        "contacts": 2060,
+        "plays": 383,
+        "arguments": 16,
+        "collisions": 0,
+        "injuries": 1,
+        "treatments": 1,
+        "recoveries": 1,
+        "careTicks": 10858,
+        "outings": 655,
+        "returns": 655,
+        "careerChanges": 8
+      },
+      "stages": [
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 15961741,
+      "events": 132563,
+      "missingCauses": 0,
+      "resumeChecks": 2,
+      "maxCareWaitTicks": 0,
+      "durationMs": 26032
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 3000,
+      "days": 1,
+      "births": 0,
+      "deaths": {},
+      "deathDetails": [],
+      "birthBlocks": {
+        "age": 0,
+        "health": 0,
+        "spacing": 0,
+        "housing": 0,
+        "food": 0,
+        "ready": 0
+      },
+      "handoffs": 53,
+      "careers": 0,
+      "careMetrics": {
+        "completed": 1,
+        "firstCareTicks": 18,
+        "maxFirstCare": 18,
+        "maxGap": 53,
+        "unassisted": 0
+      },
+      "alive": 3000,
+      "people": 3000,
+      "stats": {
+        "contacts": 2454,
+        "plays": 354,
+        "arguments": 21,
+        "collisions": 0,
+        "injuries": 1,
+        "treatments": 1,
+        "recoveries": 1,
+        "careTicks": 12684,
+        "outings": 695,
+        "returns": 695,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 24074046,
+      "events": 130709,
+      "missingCauses": 0,
+      "resumeChecks": 1,
+      "maxCareWaitTicks": 0,
+      "durationMs": 31215
+    }
+  ]
+}

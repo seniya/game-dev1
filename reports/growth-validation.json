@@ -1,0 +1,169 @@
+{
+  "version": "0.32.0",
+  "date": "2026-10-02",
+  "scope": "GROWING_VILLAGE_PLAN.md items 1–5",
+  "core_server": {
+    "passed": 348,
+    "failed": 0,
+    "new_growth_tests": 11,
+    "initial_run": {
+      "passed": 345,
+      "failed": 1
+    }
+  },
+  "browser": {
+    "unique_passed": 107,
+    "real_chrome_model_skipped": 1,
+    "full_run": {
+      "passed": 103,
+      "failed": 4,
+      "skipped": 1
+    },
+    "first_targeted_retest": {
+      "passed": 27,
+      "failed": 1
+    },
+    "final_growth_and_migration": {
+      "passed": 15,
+      "failed": 1
+    },
+    "construction_final": {
+      "passed": 2,
+      "failed": 0
+    }
+  },
+  "corrections": [
+    "Initial new fixtures used an invalid weather enum and assumed which guardian the fair ordering would select; fixed fixtures, preserving actual co-location assertions.",
+    "Family apprenticeship now requires physical proximity; updated old fixture to put learner and mentor together.",
+    "Found hungry children excluded from ordinary availability; allow actual food delivery at night and prioritize hunger without producing resources.",
+    "Existing injuries start new waiting-time observation on upgrade; no historical first-care timestamp is invented.",
+    "Creator/upload/motion browser failures passed on targeted rerun with stable source. Full run overlapped edits/reloads, so no production failure is inferred from these alone.",
+    "Voluntary construction can be delayed by care and survival. Fixture allows three separately authorized 144-tick days and waits for reset rendering before applying a fence. A first 432-tick command attempt correctly failed schema validation; a later stale-render click was also recorded before fixing the wait."
+  ],
+  "retained_engine": {
+    "commit": "d8101dc4d0c4a4ce1ba791fe3c9fed74a98c8f25",
+    "fingerprint": "71219a10b909c676b6f2eee15ce70be351afa680845d34d19ccf24f520dc9f3e",
+    "integrity": "passed",
+    "real_local_worker_pending_recovery": "passed"
+  },
+  "production_build": "passed",
+  "storage": {
+    "save_version": 9,
+    "world_reset": false,
+    "general_commit_max_minutes": 5,
+    "two_second_sync": "small clock only"
+  },
+  "baseline": "growth-baseline.json",
+  "regression": "growth-regression.json",
+  "intermediate_runs": [
+    "growth-regression-initial.json",
+    "growth-regression-care-fix.json"
+  ],
+  "long_regression_status": "passed",
+  "limits": [
+    "Joint escorts group at most three children from the same household; other-household children retain individual escorts.",
+    "Growth memories are bounded to eight people per kind (24 total), backed by first and latest events.",
+    "Old injuries use post-upgrade observation, not an inferred historical first visit.",
+    "Long-run survival and population growth are not guaranteed; actual deaths and blockers remain in the report.",
+    "Node timings are not production CPU/memory. Real Chrome model quality and human fun evaluation were not performed.",
+    "Some checkpoints exceed the pre-existing 12 MB archive state limit; internal compaction/replay and the existing large-history archive browser case are separate evidence.",
+    "maxCareWaitTicks in the regression is the retained daily-sampled comparison field. Use careMetrics.maxFirstCare/maxGap for every-tick individual injury observations, including completed injuries."
+  ],
+  "screenshot": "screenshots/v032-growth-mobile.png",
+  "comparison_off_365_days": [
+    {
+      "seed": 7,
+      "previous_alive": 8,
+      "current_alive": 16,
+      "previous_needs_deaths": 7,
+      "current_needs_deaths": 1
+    },
+    {
+      "seed": 42,
+      "previous_alive": 11,
+      "current_alive": 12,
+      "previous_needs_deaths": 1,
+      "current_needs_deaths": 0
+    },
+    {
+      "seed": 123,
+      "previous_alive": 15,
+      "current_alive": 11,
+      "previous_needs_deaths": 3,
+      "current_needs_deaths": 1
+    }
+  ],
+  "long_regression": {
+    "passed": 9,
+    "failed": 0,
+    "independent_resume_checks": 89,
+    "missing_cause_references": 0,
+    "accounting": "Food, wood, coins and every urban goods ledger balanced at every daily checkpoint",
+    "natural_collisions": 0,
+    "population_outcomes": [
+      {
+        "seed": 7,
+        "mode": "off",
+        "initial": 12,
+        "days": 365,
+        "alive": 16
+      },
+      {
+        "seed": 7,
+        "mode": "mock",
+        "initial": 12,
+        "days": 365,
+        "alive": 16
+      },
+      {
+        "seed": 42,
+        "mode": "off",
+        "initial": 12,
+        "days": 365,
+        "alive": 12
+      },
+      {
+        "seed": 42,
+        "mode": "mock",
+        "initial": 12,
+        "days": 365,
+        "alive": 14
+      },
+      {
+        "seed": 123,
+        "mode": "off",
+        "initial": 12,
+        "days": 365,
+        "alive": 11
+      },
+      {
+        "seed": 123,
+        "mode": "mock",
+        "initial": 12,
+        "days": 365,
+        "alive": 11
+      },
+      {
+        "seed": 42,
+        "mode": "off",
+        "initial": 300,
+        "days": 30,
+        "alive": 306
+      },
+      {
+        "seed": 42,
+        "mode": "off",
+        "initial": 1000,
+        "days": 3,
+        "alive": 1000
+      },
+      {
+        "seed": 42,
+        "mode": "off",
+        "initial": 3000,
+        "days": 1,
+        "alive": 3000
+      }
+    ]
+  }
+}
