@@ -1,15 +1,19 @@
 # Living Small World — 개발 로드맵
 
-정리: 2026-10-02. 현재 앱 **v0.30.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
+정리: 2026-10-02. 현재 앱 **v0.33.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
 
 v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPEAL_ROADMAP.md)에 기록한다. 지도 중심 화면, 실제 상태 기반 이야기 산책, 첫 관찰 안내와 몰입 보기를 구현했다.
 
 ## 현재 위치
 
-최초 로드맵 1~8단계의 핵심 범위를 구현했고 Chrome 6A는 사용자 수용 완료다. v0.19의 삶의 소개·전환점·이어지는 일·양쪽 관점·공동 역사는 자동 검증과 기존 사이트 배포를 완료했다. 실제 모델 품질·타인 로그인·사람의 흥미 평가·production 장기 부하는 각각의 검증 경계를 유지한다.
+최초 로드맵 1~8단계의 핵심 범위를 구현했고 Chrome 6A는 사용자 수용 완료다. v0.33의 신체 상태·상호 애정·가족 형성까지 구현·검증하고 기존 사이트에 배포했다. 실제 모델 품질·타인 로그인·사람의 흥미 평가·production 장기 부하는 각각의 검증 경계를 유지한다.
 
 | 버전 | 완료 범위 | 규칙·근거 |
 | --- | --- | --- |
+| v0.33 | 성별·성장 체격·질병저항성·상호 애정·가족/출생 근거 | [현재 규칙](README.md#v033의-변화), [검증](reports/physiology-validation.json) |
+| v0.32 | 공동 돌봄·현장 인계·성장 경험과 진로·중재 후속·돌봄 대기 | [범위](GROWING_VILLAGE_PLAN.md) |
+| v0.31 | 단순 생업·수요 기반 전문화·만 4세 외출·갈등/부상/치료 | [범위](VILLAGE_LIFE_PLAN.md) |
+| v0.30.1 | 미성년 돌봄·귀가·이주와 성인 행동 안내 | [검증](reports/child-observation-validation.json) |
 | v0.30 | 공동 목표·관계 전환·내 이웃 관찰·가문 사업 목표·시작 유형 비교 | [범위](NEIGHBORS_PLAN.md) |
 | v0.29 | 생성 예산·사용자당 5명·시작 인연·같은 예산의 유형 | [범위](NPC_CREATION_PLAN.md) |
 | v0.28 | 가계도·개인 사업 장부/지분·기여 신뢰·가업 학습과 진로·가문 지도/재방문 | [범위](FAMILY_LEGACY_PLAN.md) |
@@ -20,25 +24,25 @@ v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPE
 | v0.23 | 엔진 지문별 복구·30일 운영 추이·연속 대화와 모임·공정 건설과 농장 보호·전체 엔진 최적화 | [범위](CONTINUITY_PLAN.md) |
 | v0.22 | 운영 진단·24MB 분할 복원·확정 기록 재생·한국어 질문/성찰·위치 건축/부지 거래/야생동물·공간 색인 재사용 | [범위](EXPANSION_PLAN.md) |
 | v0.21 | 저장량 안내·파일 가져오기 미리보기·큰 사건 이력의 서버 백업 복원 | [계획과 결과](OPERATIONS_PLAN.md) |
-| MVP·v0.2 | 생존·경제·사회 선택·관찰·장기 회귀 | [시뮬레이션](SIMULATION_DESIGN.md), [초기 납품](MVP_SPEC.md) |
-| v0.3 | Worker/D1의 지속 세계와 다중 기기 관찰 | [서버 세계](SERVER_WORLD.md) |
-| v0.4 | 외부 모델 어댑터, 검증·예산·감사·회상 | [LLM](LLM_ARCHITECTURE.md) |
-| v0.5·v0.5.1 | Chrome 목표 선택과 호출 분산; 6A 사용자 수용 | [계약](CHROME_AI_PLAN.md), [실행 증거](CHROME_AI_VALIDATION.md) |
-| v0.6 | 생애·가족·상속·여러 마을·이주·교역 | [가족·계승](CIVILIZATION.md) |
-| v0.7 | 도시·생산망·행정·생존 3,000명 상한 | [도시](URBANISM.md) |
-| v0.8 | 스트리밍 저장·역사·생태·공동체 | [장기 운영](HERITAGE.md) |
-| v0.9~v0.10 및 생활 확장 | 사용자 NPC·지도/외형 관찰·상품·직업·주거·매력 | [도시 관찰](URBANISM.md), [생활](LIVING_SYSTEM_DESIGN.md) |
-| v0.11 | 기본 12명·48×36 마을·관찰 과제·유한 자원 건설 | [작은 마을 회귀](reports/small-village-regression.json) |
-| v0.12·v0.13 | 실제 부탁·선택·후속 생활·관계와 하루 요약 | [사용법](README.md), [관찰 검증](reports/observation-validation.json) |
-| v0.14 | 기억 검색·성찰·하루 계획 | [연구 적용](SMALLVILLE_RESEARCH.md) |
-| v0.15 | 제안·직접 초대·실제 참석·공동 활동 | [공동 활동](COMMUNITY_ACTIVITIES.md) |
-| v0.16 | 최대 5분 확정 저장·작은 시계 행·보관 정리 | [현재 저장 정책](SERVER_WORLD.md) |
-| v0.17 | 초대 전달·시간 조율·반복 만남·초대형 공동 접속 | [활동](COMMUNITY_ACTIVITIES.md), [권한](SHARED_WORLD.md) |
-| v0.18 | 계정별 관찰·정기 모임·관계 타임라인·꾸미기 | [공동 세계](SHARED_WORLD.md), [생활](LIVING_SYSTEM_DESIGN.md) |
 | v0.20 | 지도 중심 화면·이야기 산책·관심 주민 주제·첫 관찰 안내·몰입 보기 | [완료 기준](APPEAL_ROADMAP.md), [검증](reports/appeal-validation.json) |
 | v0.19 | 삶의 소개·전환점·미결 일·개인 경험의 선택 영향·공동 역사 | [삶의 이야기](LIVING_SYSTEM_DESIGN.md), [최종 검증](reports/biography-validation.json) |
+| v0.18 | 계정별 관찰·정기 모임·관계 타임라인·꾸미기 | [공동 세계](SHARED_WORLD.md), [생활](LIVING_SYSTEM_DESIGN.md) |
+| v0.17 | 초대 전달·시간 조율·반복 만남·초대형 공동 접속 | [활동](COMMUNITY_ACTIVITIES.md), [권한](SHARED_WORLD.md) |
+| v0.16 | 최대 5분 확정 저장·작은 시계 행·보관 정리 | [현재 저장 정책](SERVER_WORLD.md) |
+| v0.15 | 제안·직접 초대·실제 참석·공동 활동 | [공동 활동](COMMUNITY_ACTIVITIES.md) |
+| v0.14 | 기억 검색·성찰·하루 계획 | [연구 적용](SMALLVILLE_RESEARCH.md) |
+| v0.12·v0.13 | 실제 부탁·선택·후속 생활·관계와 하루 요약 | [사용법](README.md), [관찰 검증](reports/observation-validation.json) |
+| v0.11 | 기본 12명·48×36 마을·관찰 과제·유한 자원 건설 | [작은 마을 회귀](reports/small-village-regression.json) |
+| v0.9~v0.10 및 생활 확장 | 사용자 NPC·지도/외형 관찰·상품·직업·주거·매력 | [도시 관찰](URBANISM.md), [생활](LIVING_SYSTEM_DESIGN.md) |
+| v0.8 | 스트리밍 저장·역사·생태·공동체 | [장기 운영](HERITAGE.md) |
+| v0.7 | 도시·생산망·행정·생존 3,000명 상한 | [도시](URBANISM.md) |
+| v0.6 | 생애·가족·상속·여러 마을·이주·교역 | [가족·계승](CIVILIZATION.md) |
+| v0.5·v0.5.1 | Chrome 목표 선택과 호출 분산; 6A 사용자 수용 | [계약](CHROME_AI_PLAN.md), [실행 증거](CHROME_AI_VALIDATION.md) |
+| v0.4 | 외부 모델 어댑터, 검증·예산·감사·회상 | [LLM](LLM_ARCHITECTURE.md) |
+| v0.3 | Worker/D1의 지속 세계와 다중 기기 관찰 | [서버 세계](SERVER_WORLD.md) |
+| MVP·v0.2 | 생존·경제·사회 선택·관찰·장기 회귀 | [시뮬레이션](SIMULATION_DESIGN.md), [초기 납품](MVP_SPEC.md) |
 
-최신 완료 배포는 [v0.30 Sites 버전 42](reports/deployment-v030.json), 상태 `succeeded`다. 다섯 이웃의 다섯 범위를 구현·검증·배포했고 장기·규모 63조건을 확인했다. 가문 성장과 전승의 다섯 범위를 구현·검증·배포했다. v0.26의 다섯 범위와 관찰 UI는 구현·검증·기존 사이트 배포를 완료했다. v0.23의 다섯 개발 범위는 구현·검증·기존 사이트 배포를 완료했다. 아래 테스트 개수와 제한값은 각 단계 당시의 증거이며 현재 전체 테스트 수나 운영 보장이 아니다.
+최신 저장된 배포 결과는 [v0.33 Sites 버전 46](reports/deployment-v033.json), 상태 `succeeded`다. 확정 세계와 72틱 대기 행을 보존했으며 운영의 이전 엔진 복구는 당시 다음 인증 요청 이후 관측 대상으로 남겼다. 아래 테스트 개수와 제한값은 각 단계 당시의 증거이며 현재 전체 테스트 수나 운영 보장이 아니다.
 
 ## 최초 로드맵의 완료 기준과 당시 기록
 
@@ -135,17 +139,3 @@ v0.5/v0.5.1의 영어 구조화 목표 선택, 한국어 이유 표시, 실행�
 - 기능별 검증과 build 뒤 기존 `custom` 사이트에 배포한다. 절차와 저장 정책은 [AGENTS](AGENTS.md)를 따른다.
 
 확정되지 않은 일정이나 완료 날짜를 약속하지 않는다. 근사 물리 LOD·다중 서버 분산 등 후속 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)에 구분한다.
-
-
-## v0.31 · 작은 마을의 직업과 생활
-
-기본 생업 3종으로 시작하는 12명 마을, 인구·수요·생산 여력에 따른 전문화, 만 4세 외출과 보호자 동행, 성격에 따른 언쟁과 중재, 사고·부상·현장 돌봄·치료·회복, 공동 집살림과 배움, 원본 사건 관찰을 구현했다. 기존 세계와 저장 정책은 유지한다. 상세 구현은 [생활 설계 11절](VILLAGE_LIFE_PLAN.md), 실행 증거는 [검증](reports/village-life-validation.json)·[장기 회귀](reports/village-life-regression.json)·[배포](reports/deployment-v031.json)를 따른다.
-
-
-## 2026-10-02 · v0.32 아이의 성장과 함께 돌보는 마을
-
-[GROWING_VILLAGE_PLAN](GROWING_VILLAGE_PLAN.md)의 다섯 범위를 구현했다. 성장 조건과 정체 이유, 같은 집 아이 최대 3명의 공동 외출·현장 보호자 인계, 실제 친구·배움·도움에 근거한 성년 진로, 중재 약속의 후속 만남과 부상별 돌봄 대기, 성장 흐름 관찰을 연결한다. 배고픈 아이의 돌봄 제외 조건을 수정하고 실제 식량 전달을 허용한다. 기존 세계를 초기화하지 않으며 v9 선택 필드와 이전 배포 엔진을 보존한다.
-
-실제 검사 결과와 실패·수정 내역은 [검증 보고서](reports/growth-validation.json), 장기 비교는 [직전 엔진 기준](reports/growth-baseline.json)과 [현재 회귀](reports/growth-regression.json)를 따른다. 배포 결과는 검증 완료 후 별도 기록한다.
-
-운영 배포: 소스 `1594fc6f514536f180adbd17de88ed86c6235cf1`를 기존 Sites 저장소에 push하고 동일 커밋에서 재빌드한 아티팩트를 **Sites 45 succeeded**로 배포했다. 운영 JS/CSS 바이트 일치, custom 정책·같은 세계 epoch·Chrome 설정을 확인했다. 관측 사이 세계가 계속 진행되어 revision 3821→3823으로 증가했고, 운영 엔진 감사에 직전 엔진의 224틱·687사건 복구가 기록됐다. 새 엔진 대기 행도 확인했다. 명시적 저장 요청은 소유자 앱 세션 부재로 401이었으며 원본 전체 재해시는 수행하지 않았다. [배포 기록](reports/deployment-v032.json).

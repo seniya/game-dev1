@@ -1,6 +1,6 @@
 # 전체 아키텍처
 
-기준: 앱 v0.19.0. 기본 화면은 서버 세계를 관찰하고, 명시적인 기기 모드와 CLI는 같은 TypeScript 코어를 직접 실행한다.
+기준: 앱 v0.33.0 / 세계 저장 v9. 기본 화면은 서버 세계를 관찰하고, 명시적인 기기 모드와 CLI는 같은 TypeScript 코어를 직접 실행한다.
 
 ```text
 서버 모드: UI → cloud.ts → Worker API → 인증·역할 검사
@@ -26,22 +26,24 @@ Chrome 기기 → 실행권·결과 제출 → 서버 검증·저장 → Simulat
 | 서버 진입 | `src/server/worker.ts`, `access.ts`, `world.ts` | 같은 출처 API·신원·역할·명령·서버 시계 |
 | 저장 | `src/server/live-store.ts`, `store.ts` | 시계 행, 확정 저장, 리비전 비교, 구형 저널 복원, 보관 정리 |
 | 조회 | `src/server/history.ts`, `observation.ts`, `biography.ts` | 아카이브 집계·페이지·근거 조회·스트리밍 내보내기 |
-| 개인 관찰 | `src/server/personal-observation.ts` | 계정·세계별 관심 주민과 마지막 관찰 시점 |
+| 개인 관찰 | `src/server/personal-observation.ts`, `dynasty.ts`, `neighbors.ts` | 계정·세계별 관심 주민·관찰 시점·가문 선택·내 이웃 조회 |
+| 복원·진단 | `src/server/uploads.ts`, `archive-upload.ts`, `replay.ts`, `operations.ts` | 분할 업로드·검증된 세계 교체·확정 기록 재생·운영 집계 |
+| 배포 복구 | `src/server/engine-registry.ts`, `retained/`, `legacy-v021.ts` | 정확한 이전 엔진으로 대기 틱 복구·무결성 검증 |
 | 화면 | `src/main.ts`, `src/ui/` | 서버 snapshot 표시, 명령 직렬화·재시도, 지도 보간과 관찰 UI |
 | 모델 | `src/llm/`, `src/server/ai.ts`, `model.ts`, `chrome.ts` | 기능별 계약·예산·실행권·결과 검증과 반영 |
-| headless | `src/cli.ts`, `src/*regression.ts` | 같은 코어 실행과 조건별 측정 |
+| headless | `src/cli.ts`, `src/*regression.ts`, `scripts/*regression.ts` | 같은 코어 실행과 조건별 측정 |
 
 ## 상태와 저장 경계
 
 Simulation은 게임 상태 변경의 공개 진입점이다. UI는 snapshot을 읽고 명령을 제출하며, 서버 snapshot을 브라우저에서 다시 시뮬레이션하지 않는다. 서버 시계·접근 권한·개인 관찰·모델 감사는 게임 규칙 밖에서 관리한다. 개인 관심 지정이나 이야기 조회가 NPC의 기억·선택을 변경하지 않는다.
 
-현재 서버 요청은 `LiveWorldStore`를 사용한다. 2초 동기화는 작은 `world_live` 시계 행만 갱신하고 일반 진행은 최대 5분 간격으로 확정한다. 사용자 명령과 AI 결과는 즉시 확정한다. 같은 소스 지문에서는 체크포인트와 시계로 진행을 재구성하고, 지문이 다르면 마지막 확정 상태를 사용한다. 구형 `WorldStore`의 체크포인트+변경 저널은 읽기 호환과 과거 검증을 위해 유지한다. 보관·복구의 상세 계약은 [SERVER_WORLD](SERVER_WORLD.md)를 따른다.
+현재 서버 요청은 `LiveWorldStore`를 사용한다. 2초 동기화는 작은 `world_live` 시계 행만 갱신하고 일반 진행은 최대 5분 간격으로 확정한다. 사용자 명령과 AI 결과는 즉시 확정한다. 같은 소스 지문에서는 체크포인트와 시계로 진행을 재구성하고, 지문이 다르면 등록된 정확한 이전 엔진으로 대기 진행을 복구·확정한 뒤 현재 엔진으로 읽는다. 미등록 지문은 마지막 확정 상태를 사용하고, 등록 엔진의 복구 실패는 기존 상태·시계 행을 보존하고 진단을 남긴다. 구형 `WorldStore`의 체크포인트+변경 저널은 읽기 호환과 과거 검증을 위해 유지한다. 보관·복구의 상세 계약은 [SERVER_WORLD](SERVER_WORLD.md)를 따른다.
 
 Sites `custom` 경계와 서버의 역할 검증을 함께 적용한다. 초대 참여자는 관찰·자신의 NPC 생성, 소유자는 세계 제어·설정·개입을 수행한다. 생성자/계정 정보와 개인 관심 목록은 세계 저장 파일에 넣지 않는다. [공동 세계](SHARED_WORLD.md).
 
 ## AI 경계
 
-Chrome은 서버가 만든 제한된 영어 입력에서 허용 목표를 고른다. `src/llm/chrome-contract.ts`는 입력·응답과 한국어 템플릿, `src/ui/chrome.ts`는 기기 session, `src/server/chrome.ts`와 `chrome-schedule.ts`는 실행권·호출 간격·검증·저장을 담당한다. 세계 상태·시계의 권위는 서버에 남는다.
+Chrome은 서버가 만든 제한된 영어 입력에서 허용 목표를 고른다. `src/llm/chrome-contract.ts`는 입력·응답과 한국어 템플릿, `src/ui/chrome.ts`는 기기 session, `src/server/chrome.ts`와 `chrome-schedule.ts`는 실행권·호출 간격·검증·저장을 담당한다. 세계 상태·시계의 권위는 서버에 남는다. 별도의 한국어 질문·성찰은 `src/llm/expression.ts`, `src/ui/expressions.ts`, `src/server/expressions.ts`가 담당하며 영어 목표 선택과 기기 지원·검증을 구분한다.
 
 외부 모델은 서버 연결 설정과 명시적 모드 선택이 있을 때만 호출한다. `model.ts`는 어댑터, `ai.ts`는 예산·작업 수명·저장된 결과 반영을 담당한다. 인증 키는 클라이언트로 전달하지 않는다. Chrome 실패 시 외부 자동 전환은 없고 로컬/CLI의 Mock/off와 무네트워크 코어를 유지한다. [LLM 계약](LLM_ARCHITECTURE.md).
 
@@ -55,4 +57,4 @@ TypeScript + Vite + DOM/Canvas, Cloudflare Worker/D1을 사용한다. 서버 모
 
 ## 검증
 
-`npm test`, `npm run test:browser`, `npm run build`와 변경 영역의 회귀를 사용한다. 최신 v0.19 결과와 과거 규모 측정은 [보고서 안내](reports/README.md)에서 구분한다. 코어/로컬 Worker 검증을 운영 부하나 실제 모델 품질의 증거로 확대하지 않는다.
+`npm test`, `npm run test:browser`, `npm run build`와 변경 영역의 회귀를 사용한다. 버전별 실행 결과와 과거 규모 측정은 [보고서 안내](reports/README.md)에서 구분한다. 코어/로컬 Worker 검증을 운영 부하나 실제 모델 품질의 증거로 확대하지 않는다.

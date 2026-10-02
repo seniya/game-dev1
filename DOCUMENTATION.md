@@ -12,7 +12,7 @@
 
 새 관찰 경험의 완료 기준은 [v0.20 매력 완성 로드맵](APPEAL_ROADMAP.md), 실제 실행 결과는 [검증 보고서](reports/appeal-validation.json)를 따른다.
 
-현재 확장은 [v0.33 신체 상태와 애정·가족](README.md#v033의-변화)이다. [v0.32 아이의 성장과 함께 돌보는 마을](GROWING_VILLAGE_PLAN.md)은 이전 릴리스 기록이다. [v0.31 작은 마을의 직업과 생활](VILLAGE_LIFE_PLAN.md)은 이전 릴리스 기록이다. [v0.30 다섯 이웃의 이야기](NEIGHBORS_PLAN.md)는 이전 릴리스 기록이다. [v0.29 생성 예산과 시작 인연](NPC_CREATION_PLAN.md), [v0.28 가문의 성장과 전승](FAMILY_LEGACY_PLAN.md)은 이전 릴리스 기록이다. [v0.27 내 아바타가 남긴 삶](DYNASTY_PLAN.md)은 이전 릴리스 기록이다. [v0.26 함께 준비하는 마을과 현장 관찰](COOPERATION_PLAN.md)은 이전 릴리스 기록이다. [v0.25 행동으로 이어지는 세계](LIVING_ACTIONS_PLAN.md)는 이전 릴리스 기록이다. 이전 모바일 UI 개발 범위는 [v0.24 모바일 UI 계획](MOBILE_UI_PLAN.md)에 기록한다. [v0.23 지속 운영·대화·공사·규모](CONTINUITY_PLAN.md)는 이전 릴리스 기록이다. [v0.22 범위](EXPANSION_PLAN.md)는 이전 릴리스 기록이다. 이전 저장 기능은 [v0.21 계획](OPERATIONS_PLAN.md)에 보존한다.
+최신 확장은 [v0.33 신체 상태와 애정·가족](README.md#v033의-변화)이다. v0.20~v0.32 계획 문서는 각 릴리스의 결정·구현·검증 기록이며 새 작업 대기 목록이 아니다. 전체 대응표는 [ROADMAP](ROADMAP.md)에 모아 둔다.
 
 ## 주제별 기준 문서
 
@@ -39,5 +39,7 @@ v0.31 생활 규칙과 구현 결과는 [작은 마을에서 시작하는 직업
 ## 기록을 해석하고 갱신하는 기준
 
 현재 정책은 해당 주제의 최신 절을 따른다. 과거 버전의 인구·지도·저장·접근 정책이나 테스트 개수를 현재 제한으로 읽지 않는다. 실행 결과는 실제 보고서의 버전·조건·소스 커밋과 함께 해석한다. 이전 보고서를 현재 코드로 다시 실행한 결과처럼 표시하지 않는다.
+
+코드와 대조할 때는 `package.json`의 앱 버전, `src/sim/types.ts`의 상태·직업·인구 계약, `src/sim/character-schema.ts`의 생성 예산, `src/server/live-store.ts`와 `engine-registry.ts`의 저장·복구, `src/server/uploads.ts`와 `src/shared/archive.ts`의 파일 한도를 우선 확인한다. `graft/`는 Git에서 제외된 생성 코드 색인이므로 현재 소스 확인을 대신하는 기준 문서가 아니다.
 
 기능 변경 시 주제 문서에 규칙을 기록하고, TASKS와 reports에 실제 실행·배포 결과를 남긴다. README와 ROADMAP에는 요약과 링크를 갱신한다. 사용자 수용, 모의 API 검증, 실기기 추론, 로컬 부하, 운영 배포 확인은 구분한다. 문서 정리만으로 과거 실패·건너뜀·배포 손실 경계를 지우거나 새 검증 성공을 추가하지 않는다.
