@@ -36,5 +36,10 @@
   ],
   "initial_failure": {
     "old_three_slot_test": "Expected fourth creation to fail; updated to five slots, targeted and full suites then passed"
+  },
+  "build": {
+    "passed": true,
+    "command": "npm run build",
+    "initial_type_error": "Retained engine test required explicit undefined second argument; corrected before final build."
   }
 }

@@ -1,11 +1,13 @@
 # 검증·배포 보고서 안내
 
-정리: 2026-10-02. 최신 앱은 v0.28.0, 배포는 Sites 40 `succeeded`이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
+정리: 2026-10-02. 최신 앱은 v0.29.0, 배포는 Sites 41 `succeeded`이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
 
 ## 최신 증거와 버전별 색인
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.29 배포 | [deployment-v029.json](deployment-v029.json): Sites 41 `succeeded`, custom 접근 정책·세계 epoch·사용자 설정 유지. 전후 대기 행 없음. 확인 사이 일반 진행으로 revision 3803→3804, 사건 27,355→27,738 |
+| v0.29 검증 | [검증](npc-creation-validation.json): 고유 코어/서버 302개, 대상 브라우저 18개, production build 통과. 생성 예산·사용자당 5명·친밀도·이전 엔진 복구 |
 | v0.28 배포 | [deployment-v028.json](deployment-v028.json): Sites 40 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계·이전 엔진 대기 205틱 행 보존. 실제 운영 복구 수행은 인증 조회 뒤 별도 관측 대상 |
 | v0.28 검증 | [검증](family-legacy-validation.json): 고유 코어/서버 298개, 고유 브라우저 95개, [365일·규모 9조건](family-legacy-regression.json), build 통과 |
 | v0.27 배포 | [deployment-v027.json](deployment-v027.json): Sites 39 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계·이전 엔진 대기 29틱 행 보존. 실제 운영 복구는 최초 인증 조회 후 관측 대상 |

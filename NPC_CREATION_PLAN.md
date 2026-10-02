@@ -23,3 +23,5 @@
 ## 검증과 보존
 
 경계값·모든 예산 초과·누락 기본값·타인 관계 위조·양방향 사건/기억·재시도·동시 마지막 슬롯·소유자 5명 한도·저장/복원·모바일을 검증한다. v0.28 배포 소스의 정확한 엔진을 보존하여 미확정 진행을 새 규칙으로 재생하지 않는다. 테스트와 production build 이후 기존 Sites 프로젝트와 custom 접근을 유지해 배포한다.
+
+검증 완료: 고유 코어/서버 302개, 대상 브라우저 18개와 production build 통과. 기존 사이트에 Sites 41 배포 성공. [검증 보고서](reports/npc-creation-validation.json), [배포 보고서](reports/deployment-v029.json).

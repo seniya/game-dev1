@@ -1,0 +1,64 @@
+{
+  "id": "appgdep_6abf4da549088191a735904964872309",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_674be09756e48191845a771165dc6156",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-02T06:22:45.543737+00:00",
+  "source_commit": "30dfcb064655fe25dca53a8d8a80d99cd2043f16",
+  "sites_version": 41,
+  "saved_archive_content_hash": "sha256:33ea27355a4f1c81515b258712b512017533e51dcac4a685b4c2fc638b80546f",
+  "validation_report": "reports/npc-creation-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "built_from_pushed_commit": true,
+    "archive_sha256": "cc813602fbd64f3b8e712ff436e2b99d474da1b86df545147eec3452ed9e444b",
+    "note": "Initial type check found a missing second argument in the retained-engine test. Fixed, committed, rebuilt successfully and pushed the final commit."
+  },
+  "production_preservation": {
+    "same_confirmed_world_row": false,
+    "same_pending_clock_rows": true,
+    "before": [
+      {
+        "id": 1,
+        "revision": 3803,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790921243638,\"lastSeen\":1790921243638,\"eventCount\":27355,\"socialCount\":1300,\"catchupTicks\":108,\"skippedTicks\":178,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790921243638,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "after": [
+      {
+        "id": 1,
+        "revision": 3804,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790922185439,\"lastSeen\":1790922185439,\"eventCount\":27738,\"socialCount\":1331,\"catchupTicks\":108,\"skippedTicks\":1237,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790922185439,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "pending_before": [],
+    "pending_after": [],
+    "world_reset": false,
+    "explanation": "No pending clock rows observed before or after deployment. Between reads, confirmed revision advanced 3803→3804 and event count 27355→27738 in the same world epoch; user settings and created-character metadata stayed unchanged. This is not a byte-for-byte snapshot equality claim. No authenticated production owner application session was available for explicit save; no identity was forged. Previous published engine recovery passed SQLite and local Worker tests. Full world archive bodies were not rehashed.",
+    "same_epoch": true,
+    "same_user_settings": true,
+    "confirmed_revision_before": 3803,
+    "confirmed_revision_after": 3804,
+    "events_before": 27355,
+    "events_after": 27738
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "native_deployment": "succeeded",
+    "authenticated_browser_smoke": false
+  }
+}
