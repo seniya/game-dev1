@@ -1,3 +1,4 @@
+import { ambitionSchema } from './ambition';
 import { OCCUPATIONS, type Occupation } from './types';
 import { traitsSchema, desiresSchema, bodySchema } from './living-types';
 import { z } from 'zod';
@@ -13,6 +14,7 @@ export const appearanceSchema = z.object({
   accessory: z.enum(['none', 'glasses', 'hat', 'scarf', 'earrings', 'flower', 'headphones']),
 }).strict();
 export const characterSchema = z.object({
+  ambition: ambitionSchema.optional(),
   name: z.string().trim().min(1).max(40), age: z.number().int().min(0).max(80),
   background: z.string().trim().max(300), homeId: z.string().min(1).max(100),
   occupation: z.enum(Object.keys(OCCUPATIONS) as [Occupation, ...Occupation[]]),

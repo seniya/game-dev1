@@ -66,6 +66,7 @@ export const DAYS_PER_YEAR = 12;
 export const YEAR_TICKS = DAYS_PER_YEAR * TICKS_PER_DAY;
 export const MAX_POPULATION = 3000;
 export interface Life {
+  ambition?: import('./ambition').Ambition;
   bornTick: number; parentIds: string[]; partnerId?: string; generation: number;
   skill: number; lastBirth: number; lastMove: number; deathTick?: number;
   birthEventId?: string; deathEventId?: string; estateSettled: boolean;

@@ -1,0 +1,90 @@
+{
+  "version": "0.27.0",
+  "date": "2026-10-02",
+  "plan": "DYNASTY_PLAN.md",
+  "unit": {
+    "command": "npm test",
+    "passed": 286,
+    "failed": 0,
+    "newDynastyTests": 12,
+    "finalFocusedRerun": 12
+  },
+  "browser": {
+    "uniquePassed": 25,
+    "suites": {
+      "characters": 8,
+      "dynasty": 4,
+      "multiplayer": 2,
+      "engineMigration": 5,
+      "mobile": 6
+    },
+    "runs": [
+      {
+        "passed": 13,
+        "scope": "characters + first 3 dynasty + multiplayer"
+      },
+      {
+        "passed": 14,
+        "scope": "4 dynasty + previous 4 retained engines + mobile"
+      },
+      {
+        "passed": 1,
+        "scope": "exact v026 retained engine in real local Worker"
+      },
+      {
+        "passed": 4,
+        "scope": "final dynasty UI after succession refresh and main objective copy"
+      }
+    ]
+  },
+  "regression": {
+    "file": "reports/dynasty-regression.json",
+    "cases": 24,
+    "seeds": [
+      7,
+      42,
+      123
+    ],
+    "modes": [
+      "off",
+      "mock"
+    ],
+    "ambitions": [
+      "balanced",
+      "family",
+      "wealth",
+      "community"
+    ],
+    "daysPerCase": 60,
+    "saveReloads": 1440,
+    "resourceAccountingErrors": 0,
+    "deterministicContinuation": true
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "retainedEngineIntegrity": "passed",
+    "warning": "Existing client bundle exceeds Vite 500kB advisory; build succeeds."
+  },
+  "correctionsDuringValidation": [
+    "SQLite prototype-only assertion normalized before passing full tests.",
+    "Test fixture TypeScript annotations and retained-engine call arity corrected after build typecheck; production build then passed."
+  ],
+  "preservation": {
+    "retainedSource": "2b36000a00f6283990528d0fe2bb1238bc31eb5a",
+    "retainedFingerprint": "ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889",
+    "atomicSuccessionWithPendingDeath": true,
+    "noDoubleInheritance": true,
+    "currentAndPreviousWorldRetention": true
+  },
+  "limitations": [
+    "Local authentication header substitutes do not prove a real invited ChatGPT account login.",
+    "60-day rule regressions do not guarantee a successful family or calibrated long-term balance.",
+    "No personal business ownership, leader elections, landmark naming, or new model-based conversations were added.",
+    "Personal dynasty identity/selection is server metadata and is not imported from world saves."
+  ],
+  "screenshots": [
+    "reports/screenshots/v027-dynasty-desktop.png",
+    "reports/screenshots/v027-dynasty-mobile.png"
+  ]
+}

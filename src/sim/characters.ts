@@ -31,7 +31,7 @@ export function createCharacter(w: WorldState, input: CharacterInput): NPC {
   do { id = `npc-created-${w.nextId++}`; } while (w.npcs.some(n => n.id === id));
   const n: NPC = {
     id, identity: { name: a.name, age: a.age }, position: { ...home.position }, homeId: home.id, settlementId: home.settlementId!,
-    life: { bornTick: w.tick - a.age * YEAR_TICKS, parentIds: [], generation: 0, skill: a.skill, lastBirth: w.tick, lastMove: w.tick, estateSettled: false },
+    life: { ...(a.ambition ? { ambition: a.ambition } : {}), bornTick: w.tick - a.age * YEAR_TICKS, parentIds: [], generation: 0, skill: a.skill, lastBirth: w.tick, lastMove: w.tick, estateSettled: false },
     occupation: a.occupation, alive: true, needs: { ...a.needs }, personality: { ...a.personality },
     inventory: { food: a.food, wood: a.wood }, wealth: a.wealth, relationships: [], memories: [], goals: [],
     decision: { reason: '새로운 이웃으로 이곳에서 삶을 시작합니다.', candidates: [], tick: w.tick }, dailyTaken: 0, lastTalk: -100, knownRumors: [],

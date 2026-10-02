@@ -1,3 +1,7 @@
+import { dynastyView, localDynasty } from './ui/dynasty';
+import type { DynastyView } from './sim/dynasty';
+import type { Ambition } from './sim/ambition';
+import './ui/dynasty.css';
 import { uploadArchive } from './ui/archive-upload';
 import { scenesView, liveScenes, focusView, type SceneLens } from './ui/scenes';
 import { promisesView } from './ui/gatherings';
@@ -126,12 +130,12 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.26</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.27</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
-    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
+    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="dynasty-button" class="button">내 가문</button><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
     <div class="page-content">
-      <section class="page-heading"><div><div class="eyebrow">LIVING SMALL WORLD</div><h1 id="page-title">이야기가 자라는 마을</h1><p id="page-subtitle">저마다의 하루가 만나, 이 세계만의 역사가 됩니다.</p></div><div class="world-status"><span id="running-dot" class="live-dot"></span><span id="running-status">세계가 살아가는 중</span><span class="seed-label">SEED <b id="seed-label">42</b></span></div></section>
+      <section class="page-heading"><div><div class="eyebrow">LIVING SMALL WORLD</div><h1 id="page-title">이야기가 자라는 마을</h1><p id="page-subtitle">내 아바타의 자손과 재산, 세상에 남기는 변화를 지켜보세요.</p></div><div class="world-status"><span id="running-dot" class="live-dot"></span><span id="running-status">세계가 살아가는 중</span><span class="seed-label">SEED <b id="seed-label">42</b></span></div></section>
       <details class="cloud-panel" id="connection-details"><summary><div><b>${cloudMode ? '서버에 이어지는 세계' : '이 기기의 세계'}</b><p id="cloud-status">${cloudMode ? '서버 세계를 불러오는 중…' : '이 기기에서만 진행하고 저장합니다.'}</p></div><span class="disclosure-label">연결 설정</span></summary><div class="cloud-actions">${cloudMode ? '<label><input id="offline-toggle" type="checkbox" disabled/> 자리를 비워도 진행</label><button id="cloud-retry" class="button">연결 새로고침</button><a class="text-button" href="?local=1">기기 세계 관찰</a>' : '<a class="button" href="/">서버 세계로 돌아가기</a>'}</div>${cloudMode ? '<p class="cloud-policy">기본은 비접속 시 정지입니다. 켜면 재접속할 때 최대 게임 하루(144틱)만 반영합니다. 재생·정지·배속 설정은 모든 기기에 적용됩니다.</p>' : ''}</details>
       <div id="world-view" class="world-layout"><nav class="world-shortcuts" aria-label="관찰 바로가기"><button data-world-jump="map-panel">지도</button><button data-world-jump="resident-inspector">주민 상세</button><button data-world-jump="world-feed">마을 소식</button></nav>
         <div class="world-toolbar"><span>마을을 바라보는 시간</span><div><button class="text-button" data-walk-jump>이야기 산책 ↓</button><button class="text-button" data-walk-guide>처음 오셨나요?</button><button id="immersive-button" class="button" aria-pressed="false">몰입 보기 ⤢</button></div></div>
@@ -276,7 +280,7 @@ function setView(next: string) {
   if (next !== 'world' && immersive) setImmersive(false);
   const changed = view !== next;
   view = next;
-  const titles: Record<string, [string, string, string]> = { world: ['세계 관찰', '이야기가 자라는 마을', '저마다의 하루가 만나, 이 세계만의 역사가 됩니다.'], residents: ['마을 주민', '열두 빛깔의 하루', '각자의 욕구와 성격, 그리고 스스로 만들어 가는 삶.'], history: ['세계의 기록', '작은 세계의 긴 기억', '지금의 관계를 따라가면, 그날의 선택을 만날 수 있습니다.'], economy: ['마을 경제', '생활이 오가는 자리', '누가 생산하고, 누가 나누며, 무엇이 달라졌는지 살펴봅니다.'], experiments: ['관찰 실험실', '다른 조건, 새로운 이야기', '세계의 법칙 안에서 작은 변화를 관찰해 보세요.'] };
+  const titles: Record<string, [string, string, string]> = { world: ['세계 관찰', '이야기가 자라는 마을', '내 아바타의 자손과 재산, 세상에 남기는 변화를 지켜보세요.'], residents: ['마을 주민', '열두 빛깔의 하루', '각자의 욕구와 성격, 그리고 스스로 만들어 가는 삶.'], history: ['세계의 기록', '작은 세계의 긴 기억', '지금의 관계를 따라가면, 그날의 선택을 만날 수 있습니다.'], economy: ['마을 경제', '생활이 오가는 자리', '누가 생산하고, 누가 나누며, 무엇이 달라졌는지 살펴봅니다.'], experiments: ['관찰 실험실', '다른 조건, 새로운 이야기', '세계의 법칙 안에서 작은 변화를 관찰해 보세요.'] };
   const [label, title, subtitle] = titles[next]; $('breadcrumb-view').textContent = label; $('page-title').textContent = next === 'residents' ? `${state.npcs.length}개의 서로 다른 하루` : title; $('page-subtitle').textContent = subtitle;
   $('economy-view').hidden = next !== 'economy'; if (next === 'economy') $('economy-view').innerHTML = economyView(state, metric);
   $('world-view').hidden = next !== 'world'; $('residents-view').hidden = next !== 'residents'; $('experiments-view').hidden = next !== 'experiments'; $('event-panel').hidden = next === 'residents';
@@ -900,6 +904,43 @@ async function showAccount() {
     ${isOwner() ? `<h3>초대와 참여자 관리</h3><p>이 사이트의 ChatGPT 공유 메뉴에서 초대할 사람의 이메일을 추가하고 사이트 링크를 전달해 주세요. 초대받은 사람이 로그인하면 아래에 나타납니다. 초대를 완전히 취소하려면 공유 메뉴에서도 접근 권한을 제거하세요.</p><p>다른 참여자의 NPC와 기존 주민은 권한을 해제해도 세계에 남습니다.</p>${members.map(m => `<div class="member-row"><span>${esc(m.name)} · ${esc(m.email)} · ${m.role === 'owner' ? '소유자' : m.blocked ? '참여 중지' : '참여 가능'}</span>${m.role !== 'owner' ? `<button class="button" data-member="${esc(m.id)}" data-blocked="${m.blocked ? '0' : '1'}">${m.blocked ? '참여 재개' : '참여 중지'}</button>` : ''}</div>`).join('')}` : ''}
     ${session.local ? '<p class="muted">로컬 개발용 계정입니다.</p>' : '<a class="text-button" href="/signout-with-chatgpt?return_to=%2F" target="_top">로그아웃</a>'}`);
 }
+let dynastyPage: DynastyView | undefined;
+let dynastyBusy = false;
+async function showDynasty() {
+  const epoch = observationEpoch();
+  if (cloudMode && !cloudReady) throw new Error('서버 연결을 먼저 확인해 주세요.');
+  const view = cloudMode ? await cloud!.get<DynastyView>('dynasty') : localDynasty(state, epoch);
+  if (epoch !== observationEpoch() || view.epoch !== epoch) throw new Error('세계가 바뀌었습니다. 내 가문을 다시 열어 주세요.');
+  dynastyPage = view; openDialog(dynastyView(view, isOwner()));
+}
+$('dynasty-button').onclick = () => { void showDynasty().catch(cloudFailure); };
+document.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-dynasty-create],[data-dynasty-refresh]'); if (!button) return;
+  if (button.hasAttribute('data-dynasty-create')) $('create-character').click();
+  else void showDynasty().catch(cloudFailure);
+});
+document.addEventListener('submit', async event => {
+  const form = event.target as HTMLFormElement;
+  if (!['dynasty-found', 'dynasty-succeed', 'dynasty-ambition'].includes(form.id)) return;
+  event.preventDefault(); if (dynastyBusy || !dynastyPage) return;
+  const data = new FormData(form), page = dynastyPage, button = form.querySelector<HTMLButtonElement>('button')!;
+  dynastyBusy = true; button.disabled = true;
+  try {
+    if (page.epoch !== observationEpoch()) throw new Error('세계가 바뀌었습니다. 내 가문을 다시 열어 주세요.');
+    if (form.id === 'dynasty-ambition') {
+      if (!isOwner() || !page.active) throw new Error('소유자만 삶의 우선순위를 바꿀 수 있습니다.');
+      const focus = String(data.get('focus')) as Ambition;
+      if (cloudMode) await cloud!.send({ type: 'ambition', npcId: page.active.id, focus }, crypto.randomUUID(), { epoch: page.epoch, revision: cloud!.world!.revision });
+      else { sim.setAmbition(page.active.id, focus); state = sim.snapshot(); localSave(); render(); }
+    } else {
+      const action = form.id === 'dynasty-found' ? { type: 'found' as const, root: String(data.get('root')) } : { type: 'succeed' as const, root: page.dynasty!.root, npc: String(data.get('npc')), revision: page.dynasty!.revision };
+      if (cloudMode) { await postJSON('dynasty', { ...action, epoch: page.epoch }); if (action.type === 'succeed') await cloud!.connect(); }
+      else localDynasty(state, page.epoch, action);
+    }
+    if (form.isConnected) await showDynasty();
+  } catch (e) { if (form.isConnected && $('dynasty-status')) $('dynasty-status').textContent = (e as Error).message; else cloudFailure(e); }
+  finally { dynastyBusy = false; button.disabled = false; }
+});
 $('account-button').onclick = () => { void showAccount().catch(cloudFailure); };
 document.addEventListener('click', async event => {
   const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-my-npc],[data-member]'); if (!button) return;

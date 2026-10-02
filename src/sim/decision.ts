@@ -1,3 +1,4 @@
+import { applyAmbition } from './ambition';
 import { prepareCandidates } from './cooperation';
 import { constructionCandidate } from './construction';
 import { gatheringCandidate } from './gatherings';
@@ -82,6 +83,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
   prepareCandidates(w, n, list);
   livingCandidates(w, n, list);
   const appointment = gatheringCandidate(w, n); if (appointment) list.push(appointment);
+  applyAmbition(w, n, list);
   return list.sort((a, b) => b.score - a.score);
 }
 export function plan(w: WorldState, n: NPC): { action: Action; candidates: Candidate[] } {

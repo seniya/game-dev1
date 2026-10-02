@@ -1,0 +1,18 @@
+#dynasty-panel { max-width: 780px; overflow-wrap: anywhere; }
+#dynasty-panel form { display: flex; align-items: end; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+#dynasty-panel label { display: grid; gap: 8px; flex: 1; min-width: 160px; }
+#dynasty-panel select { width: 100%; min-width: 0; padding: 10px; border: 1px solid #cdd7c9; border-radius: 8px; background: #fffef8; color: #334a3d; }
+.dynasty-avatar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 20px 0; }
+.dynasty-avatar > div { flex: 1; min-width: 180px; }
+.dynasty-avatar h3 { margin: 8px 0; font-size: 23px; }
+.dynasty-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.dynasty-metrics section { background: #f0f3e8; border: 1px solid #dbe3d3; border-radius: 14px; padding: 16px; }
+.dynasty-metrics h3 { font-size: 27px; margin: 12px 0; }
+.dynasty-metrics small { font-size: 12px; font-weight: normal; }
+.dynasty-metrics p { font-size: 12px; line-height: 1.8; }
+.dynasty-next progress { display: block; width: 100%; height: 7px; margin: 10px 0 4px; accent-color: #6d8b6d; }
+.dynasty-next span { color: #64735f; }
+.dynasty-life, .dynasty-succession { padding: 16px; margin: 18px 0; border-radius: 12px; background: #f8f2e5; }
+.dynasty-family, .dynasty-history { display: grid; gap: 8px; margin: 14px 0; }
+#dynasty-panel .causal-button { width: 100%; text-align: left; white-space: normal; }
+@media(max-width: 540px) { .dynasty-metrics { grid-template-columns: 1fr; } .dynasty-metrics section { padding: 14px; } .dynasty-metrics h3 { margin: 6px 0; } }

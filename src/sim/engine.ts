@@ -1,3 +1,4 @@
+import { setAmbition, type Ambition } from './ambition';
 import { cooperationDay, cooperationTick, provisionDay } from './cooperation';
 import { knownPromiseEvent } from './promises';
 import { growFarm, agricultureDay, recordHarvest } from './agriculture';
@@ -54,6 +55,7 @@ export class Simulation {
     }
     if (!enabled) this.state.observation.watchIds = ids.filter(value => value !== id);
   }
+  setAmbition(npcId: string, focus: Ambition) { setAmbition(this.state, npcId, focus); }
   snapshot(): WorldState { return structuredClone(this.state); }
   save(): string { return JSON.stringify(this.state); }
   get tick(): number { return this.state.tick; }

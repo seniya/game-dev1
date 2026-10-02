@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -27,6 +27,7 @@
     "regression:living-actions": "tsx scripts/living-actions-regression.ts",
     "regression:continuity": "tsx scripts/continuity-regression.ts",
     "profile:engine": "tsx scripts/profile-engine.ts",
+    "regression:dynasty": "tsx scripts/dynasty-regression.ts",
     "regression:cooperation": "tsx scripts/cooperation-regression.ts",
     "convert:archive": "tsx scripts/convert-archive.ts"
   },

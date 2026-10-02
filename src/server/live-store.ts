@@ -183,7 +183,7 @@ export class LiveWorldStore extends WorldStore {
     result.push(db.prepare('DELETE FROM replay_parts WHERE EXISTS(SELECT 1 FROM replay_session WHERE created<?)').bind(now-30*DAY),db.prepare('DELETE FROM replay_session WHERE created<?').bind(now-30*DAY));
     result.push(db.prepare('DELETE FROM expressions WHERE created<?').bind(now-7*DAY));
     const backup = w.meta.backupEpoch ?? w.epoch;
-    for (const table of ['snapshots', 'world_changes', 'world_checkpoints', 'events', 'participants', 'event_refs', 'npc_creators', 'personal_observations']) {
+    for (const table of ['snapshots', 'world_changes', 'world_checkpoints', 'events', 'participants', 'event_refs', 'npc_creators', 'personal_observations', 'dynasties', 'dynasty_selection']) {
       result.push(db.prepare(`DELETE FROM ${table} WHERE rowid IN (SELECT rowid FROM ${table} WHERE epoch NOT IN (?,?) LIMIT 1000)`).bind(w.epoch, backup));
     }
     for (const table of ['ai_jobs', 'chrome_jobs']) {

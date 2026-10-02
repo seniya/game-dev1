@@ -14,6 +14,8 @@ interface ChangeRow { revision: number; part: number; body: string }
 export interface CommandInput { action: Command['action']; at: number; checkpoint?: boolean; replay?: {ticks:number; meta:StoredWorld['meta']; command?:Command} }
 
 const schema = [
+  'CREATE TABLE IF NOT EXISTS dynasties(epoch TEXT NOT NULL,member TEXT NOT NULL,root TEXT NOT NULL,active TEXT NOT NULL,revision INTEGER NOT NULL,chain TEXT NOT NULL,PRIMARY KEY(epoch,member,root))',
+  'CREATE TABLE IF NOT EXISTS dynasty_selection(epoch TEXT NOT NULL,member TEXT NOT NULL,root TEXT NOT NULL,PRIMARY KEY(epoch,member))',
   ...uploadSchema, ...replaySchema, ...expressionSchema, ...continuitySchema,
   'CREATE TABLE IF NOT EXISTS personal_observations(epoch TEXT NOT NULL,member TEXT NOT NULL,watch TEXT NOT NULL,tick INTEGER NOT NULL,through INTEGER NOT NULL,seen INTEGER NOT NULL,PRIMARY KEY(epoch,member))',
   "CREATE TABLE IF NOT EXISTS world_members(id TEXT PRIMARY KEY,email TEXT NOT NULL,name TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('owner','participant')),blocked INTEGER NOT NULL DEFAULT 0 CHECK(blocked IN (0,1)))",

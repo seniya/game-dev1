@@ -1,11 +1,12 @@
 # 검증·배포 보고서 안내
 
-정리: 2026-10-02. 최신 앱은 v0.26.0이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
+정리: 2026-10-02. 최신 개발 앱은 v0.27.0이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
 
 ## 최신 증거와 버전별 색인
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.27 검증 | [검증](dynasty-validation.json): 코어·서버 286개, 고유 브라우저 25개, [3시드 × 4우선순위 × off/Mock × 60일](dynasty-regression.json) |
 | v0.26 배포 | [deployment-v026.json](deployment-v026.json): Sites 38 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계 행 동일, 대기 진행 없음 |
 | v0.26 검증 | [검증](cooperation-validation.json), [장기·규모 9조건](cooperation-regression.json), [Firefox·WebKit](cooperation-cross-browser.json) |
 | v0.25 배포 | [deployment-v025.json](deployment-v025.json): Sites 37 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계 행 동일, 배포 전후 대기 진행 없음 |

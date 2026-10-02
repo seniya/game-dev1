@@ -1,3 +1,4 @@
+import { dynastyAPI } from './dynasty';
 import { archiveUpload } from './archive-upload';
 import { expressionAPI } from './expressions';
 import { startReplay, exportReplay, verifyReplay } from './replay';
@@ -53,6 +54,13 @@ const handler = {
           const body = await request.text();
           if (body.length > 2000) return json({ error:'관찰 요청이 너무 큽니다.' },413);
           return json(await personalObservation(env.DB, member, await store.read(), JSON.parse(body)));
+        }
+      }
+      if (url.pathname === '/api/dynasty') {
+        if (request.method === 'GET') return json(await dynastyAPI(store, member, await store.read(), url.searchParams.get('root') ?? undefined));
+        if (request.method === 'POST') {
+          const body = await request.text(); if (body.length > 2000) return json({ error: '가문 요청이 너무 큽니다.' }, 413);
+          return json(await dynastyAPI(store, member, await store.read(), undefined, JSON.parse(body)));
         }
       }
       if (url.pathname === '/api/members') {

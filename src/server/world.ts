@@ -1,3 +1,4 @@
+import { ambitionSchema } from '../sim/ambition';
 import { gatheringEvidence } from '../sim/gatherings';
 import { REQUEST_CHOICES } from '../sim/requests-types';
 import { DEFAULT_POPULATION } from '../sim/types';
@@ -15,6 +16,7 @@ import type { WorldState, WorldEvent } from '../sim/types';
 export const commandSchema = z.object({
   id: z.string().uuid(), revision: z.number().int().nonnegative(),
   action: z.discriminatedUnion('type', [
+    z.object({ type: z.literal('ambition'), npcId: z.string().min(1).max(100), focus: ambitionSchema }).strict(),
     z.object({type:z.literal('gathering-proposal'),npcId:z.string().min(1).max(100),kind:z.enum(['meal','help','harvest']),source:z.string().min(1).max(100)}).strict(),
     z.object({type:z.literal('construction'),settlementId:z.string().min(1).max(100),kind:z.enum(['home','farm']),position:z.object({x:z.number().int().nonnegative(),y:z.number().int().nonnegative()}).strict()}).strict(),
     z.object({type:z.literal('farm-protection'),buildingId:z.string().min(1).max(100)}).strict(),
@@ -149,6 +151,7 @@ export async function applyCommand(current: StoredWorld, command: Command, now: 
     meta.pendingTicks = a.ticks - work;
     for (let i = 0; i < work; i++) { sim.step(); if (useMock && sim.pending) await decisions.drain(); }
   }
+  if (a.type === 'ambition') sim.setAmbition(a.npcId, a.focus);
   if (a.type === 'create-character') meta.createdCharacter = { commandId: command.id, npcId: sim.createCharacter(a.character, command.id) };
   if (a.type === 'council') sim.setCouncil(a.settlementId, a.enabled);
   if (a.type === 'policy') sim.setPolicy(a.settlementId, a.taxRate, a.priority);
