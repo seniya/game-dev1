@@ -1,0 +1,98 @@
+{
+  "id": "appgdep_6abf406acdfc8191b94fe418e38b666e",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_cf75e734549c8191a9e94707d2e7133e",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-02T05:26:18.902465+00:00",
+  "source_commit": "5d3a71927dfad7da01eab23a78f94ed3885c63cc",
+  "sites_version": 39,
+  "saved_archive_content_hash": "sha256:ad9b3f5498bc747cdc05b49e1ea9952577aeda596c8ac1fcab2a54da52a75c6b",
+  "validation_report": "reports/dynasty-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "built_from_pushed_commit": true,
+    "artifact": "living-small-world-v027-deployment.tar.gz",
+    "archive_sha256": "a1ff490db83fc170f82b3eb4f27922aab30e39724d994efdd7374b562331ecc7",
+    "retained_engines": [
+      "v0.21",
+      "v0.22",
+      "v0.23",
+      "v0.24",
+      "v0.25",
+      "v0.26"
+    ]
+  },
+  "production_preservation": {
+    "same_confirmed_world_row": true,
+    "same_pending_clock_rows": true,
+    "before": [
+      {
+        "id": 1,
+        "revision": 3797,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790912429664,\"lastSeen\":1790912429664,\"eventCount\":24406,\"socialCount\":1121,\"catchupTicks\":132,\"skippedTicks\":6512,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790912429664}"
+      }
+    ],
+    "after": [
+      {
+        "id": 1,
+        "revision": 3797,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790912429664,\"lastSeen\":1790912429664,\"eventCount\":24406,\"socialCount\":1121,\"catchupTicks\":132,\"skippedTicks\":6512,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790912429664}"
+      }
+    ],
+    "pending_before": [
+      {
+        "id": 1,
+        "revision": 3797,
+        "sequence": 8,
+        "body": "{\"build\":\"ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":29,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790912449964,\"lastSeen\":1790912450445,\"eventCount\":24493,\"socialCount\":1131,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790912429664},\"started\":1790912429664,\"id\":\"326eb119-19ea-475b-b594-5473e4c4fb86\"}"
+      }
+    ],
+    "pending_after": [
+      {
+        "id": 1,
+        "revision": 3797,
+        "sequence": 8,
+        "body": "{\"build\":\"ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":29,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790912449964,\"lastSeen\":1790912450445,\"eventCount\":24493,\"socialCount\":1131,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790912429664},\"started\":1790912429664,\"id\":\"326eb119-19ea-475b-b594-5473e4c4fb86\"}"
+      }
+    ],
+    "world_reset": false,
+    "explanation": "The same confirmed metadata and 29-tick pending clock remain byte-for-byte. The exact v0.26 published engine is retained and recovery passed locally. No authenticated owner session was available for an explicit pre-deployment save. Pending production recovery will occur on the next normal authenticated read; it was not claimed as observed here. Full snapshot/archive bodies were not rehashed."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "assets": [
+      {
+        "path": "/assets/index-jg_7TuzF.js",
+        "status": 200,
+        "bytes": 545982,
+        "matchesLocal": true,
+        "sha256": "e7f9eb90011669db98f9e0a91e5df9f98de998c97cf1d7045d186ff519eb4265"
+      },
+      {
+        "path": "/assets/index-CUsm8mNz.css",
+        "status": 200,
+        "bytes": 77127,
+        "matchesLocal": true,
+        "sha256": "87e708f9de9291502a4a0e3c8db4021e747a77dc007b509a0878f96ec19b1da3"
+      }
+    ],
+    "unauthenticatedWorldStatus": 403,
+    "authenticatedBrowserSmoke": false,
+    "assetReadScope": "Existing Sites-provided artifact credential; only published JS/CSS were requested with it. Anonymous world request used no credential.",
+    "unauthenticatedWorldRejected": true
+  }
+}
