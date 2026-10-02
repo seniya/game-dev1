@@ -1,5 +1,6 @@
 // Only fingerprints reproduced from exact published source may be registered.
 export const retainedEngines = {
+  'b79ef7087a7d3968323946322c6159038f3c99602fa0bec4b74df6dc901ebea7': () => import('./retained/b79ef7087a7d3968323946322c6159038f3c99602fa0bec4b74df6dc901ebea7'),
   'b72423936fb4e2138ccd35578ea2666b6226b5651f80f60f729c00bb362fda2f': () => import('./retained/b72423936fb4e2138ccd35578ea2666b6226b5651f80f60f729c00bb362fda2f'),
   'd1c19bfa17149028ebf4ad10664f9b11408d705f703b1c0962cc2bdee535193c': () => import('./retained/d1c19bfa17149028ebf4ad10664f9b11408d705f703b1c0962cc2bdee535193c'),
   'ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889': () => import('./retained/ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889'),

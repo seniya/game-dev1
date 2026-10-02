@@ -34,7 +34,7 @@ const goalKind = z.enum(GOAL_KINDS as [typeof GOAL_KINDS[number], ...typeof GOAL
 const actionKind = z.enum(['Attend', 'Wash', 'Idle', 'Move', 'Sleep', 'Eat', 'Drink', 'Gather', 'Work', 'Talk', 'StoreItem', 'TakeItem', 'Share', 'Theft', 'Trade', 'Borrow', 'Repay']);
 const candidate = z.object({ kind: actionKind, score: z.number().finite(), reason: description, target: pos, targetId: id.optional(), evidence: z.array(id).max(12).optional() }).strict();
 const action = candidate.extend({ path: z.array(pos).max(16384), progress: natural, duration: natural.min(1).max(100) }).strict();
-const relationship = z.object({ npcId: id, familiarity: score, trust: score, affection: score, fear: score, resentment: score, respect: score, family: z.boolean(), interpretation: description, evidence: z.array(id) }).strict();
+const relationship = z.object({ turn: z.object({ stage: z.enum(['ordinary','close','conflict']), lastTick: natural }).strict().optional(), npcId: id, familiarity: score, trust: score, affection: score, fear: score, resentment: score, respect: score, family: z.boolean(), interpretation: description, evidence: z.array(id) }).strict();
 const memory = z.object({ id, type: z.enum(['personal', 'social', 'event', 'economic', 'trauma', 'achievement']), description, importance: score, emotionalImpact: z.number().min(-100).max(100), createdAt: natural, lastRetrievedAt: natural.optional(), relatedNpcIds: z.array(id), relatedLocationIds: z.array(id), sourceEventId: id, repetitions: natural.min(1) }).strict();
 const npc = z.object({
   cognition: cognitionSchema.optional(),
@@ -180,7 +180,7 @@ export function validateSave(input: unknown): WorldState {
     ensure(n.alive === (n.needs.health > 0), '생존 상태'); ensure(n.alive || !n.currentAction, '사망 주민 행동');
     ensure(n.decision.tick <= w.tick && n.lastTalk <= w.tick, '판단 시간');
     ensure(new Set(n.relationships.map(r => r.npcId)).size === n.relationships.length, '중복 관계');
-    for (const r of n.relationships) ensure(r.npcId !== n.id && npcs.has(r.npcId) && r.evidence.every(e => events.has(e)), '관계 대상/출처');
+    for (const r of n.relationships) ensure(r.npcId !== n.id && npcs.has(r.npcId) && r.evidence.every(e => events.has(e)) && (!r.turn || r.turn.lastTick <= w.tick), '관계 대상/출처');
     for (const m of n.memories) { register(m.id); ensure(events.has(m.sourceEventId) && m.createdAt <= w.tick && m.relatedNpcIds.every(id => npcs.has(id)) && m.relatedLocationIds.every(id => buildings.has(id)), '기억 출처'); }
     for (const g of n.goals) { register(g.id); ensure(g.createdAt <= w.tick && (!g.sourceEventId || events.has(g.sourceEventId)), '목표 출처'); }
     ensure(n.knownRumors.every(id => { const seen = events.get(id); return seen?.kind === 'witness' && seen.causeId && events.get(seen.causeId)?.kind === 'theft'; }), '소문 출처');

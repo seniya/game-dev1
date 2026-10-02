@@ -6,6 +6,7 @@
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.30 검증 | [검증](neighbors-validation.json): 고유 코어/서버 311개, 고유 브라우저 100개·실모델 1개 건너뜀, [장기·규모 63조건](neighbors-regression.json), [유형 비교](../NEIGHBORS_BALANCE.md) |
 | v0.29 배포 | [deployment-v029.json](deployment-v029.json): Sites 41 `succeeded`, custom 접근 정책·세계 epoch·사용자 설정 유지. 전후 대기 행 없음. 확인 사이 일반 진행으로 revision 3803→3804, 사건 27,355→27,738 |
 | v0.29 검증 | [검증](npc-creation-validation.json): 고유 코어/서버 302개, 대상 브라우저 18개, production build 통과. 생성 예산·사용자당 5명·친밀도·이전 엔진 복구 |
 | v0.28 배포 | [deployment-v028.json](deployment-v028.json): Sites 40 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계·이전 엔진 대기 205틱 행 보존. 실제 운영 복구 수행은 인증 조회 뒤 별도 관측 대상 |

@@ -1,3 +1,4 @@
+import { readNeighbors } from './neighbors';
 import { dynastyAPI } from './dynasty';
 import { archiveUpload } from './archive-upload';
 import { expressionAPI } from './expressions';
@@ -56,6 +57,7 @@ const handler = {
           return json(await personalObservation(env.DB, member, await store.read(), JSON.parse(body)));
         }
       }
+      if (url.pathname === '/api/neighbors' && request.method === 'GET') return json(await readNeighbors(store, member, await store.read(), url.searchParams));
       if (url.pathname === '/api/dynasty') {
         if (request.method === 'GET') return json(await dynastyAPI(store, member, await store.read(), url.searchParams.get('root') ?? undefined));
         if (request.method === 'POST') {

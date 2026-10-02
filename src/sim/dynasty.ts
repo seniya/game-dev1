@@ -62,6 +62,8 @@ export function dynastyStats(w: WorldState, rootId: string, activeId: string) {
     members: members.map(n => ({ id: n.id, name: n.identity.name, alive: n.alive, age: n.identity.age, generation: family.get(n.id)! + 1, village: w.civilization.settlements.find(v => v.id === n.settlementId)?.name ?? n.settlementId })) };
 }
 export interface DynastyView {
+  goals?: import('./neighbors').ObservedGoal[];
+  neighborGoals?: import('./neighbors').ObservedGoal[];
   family?: ReturnType<typeof import('./family-observation').familyObservation>;
   changes?: import('./family-observation').FamilyChanges;
   availableBusinesses?: {id:string;label:string}[];

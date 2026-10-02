@@ -1,3 +1,4 @@
+import { recordBondTurn } from './relationship-turns';
 import { person } from './spatial';
 import { type WorldState, type NPC, type WorldEvent, type Relationship, TICKS_PER_DAY } from './types';
 import { clamp, dayOf } from './random';
@@ -26,6 +27,7 @@ export function relationship(n: NPC, targetId: string): Relationship {
 }
 export function changeRelationship(w: WorldState, n: NPC, targetId: string, changes: Partial<Pick<Relationship, 'familiarity' | 'trust' | 'affection' | 'fear' | 'resentment' | 'respect'>>, cause: WorldEvent, meaning: string) {
   const r = relationship(n, targetId), actual: string[] = [];
+  const beforeRelation = { ...r };
   const measurements:Record<string,number>={};
   for (const [key, amount] of Object.entries(changes)) {
     const k = key as keyof typeof changes, before = r[k];
@@ -37,7 +39,8 @@ export function changeRelationship(w: WorldState, n: NPC, targetId: string, chan
   if (!r.evidence.includes(cause.id)) r.evidence.push(cause.id);
   const evidenceLimit = w.npcs.length > 400 ? 4 : 12;
   if (r.evidence.length > evidenceLimit) r.evidence = [r.evidence[0], ...r.evidence.slice(-(evidenceLimit - 1))];
-  appendEvent(w, { kind: 'relationship', actorId: n.id, targetId, importance: 30, causeId: cause.id, description: `${n.identity.name} → ${person(w, targetId)?.identity.name}: ${actual.join(', ') || '관계의 기억을 갱신'}`, data: { meaning, ...measurements } });
+  const turn = recordBondTurn(r, beforeRelation, w.tick, actual.length > 0, cause);
+  appendEvent(w, { kind: 'relationship', actorId: n.id, targetId, importance: turn ? 55 : 30, causeId: cause.id, description: `${n.identity.name} → ${person(w, targetId)?.identity.name}: ${actual.join(', ') || '관계의 기억을 갱신'}`, data: { meaning, ...measurements, ...(turn ? { turn, trustBefore: beforeRelation.trust, trustAfter: r.trust, affectionBefore: beforeRelation.affection, affectionAfter: r.affection, resentmentBefore: beforeRelation.resentment, resentmentAfter: r.resentment } : {}) } });
 }
 export function remember(w: WorldState, n: NPC, event: WorldEvent, description = event.description) {
   if (event.importance < 45 || !n.alive) return;

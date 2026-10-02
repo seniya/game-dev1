@@ -1,3 +1,6 @@
+import { neighborsView } from './ui/neighbors';
+import { localNeighbors, type NeighborView } from './sim/neighbors';
+import './ui/neighbors.css';
 import { NPC_CREATION_LIMIT } from './sim/character-schema';
 import { START_PRESETS, updateCreationBudgets } from './ui/characters';
 import { familyTree } from './ui/family-dashboard';
@@ -133,10 +136,10 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.28</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.30</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
-    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="dynasty-button" class="button">내 가문</button><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
+    <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="neighbors-button" class="button">내 이웃</button><button id="dynasty-button" class="button">내 가문</button><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
     <div class="page-content">
       <section class="page-heading"><div><div class="eyebrow">LIVING SMALL WORLD</div><h1 id="page-title">이야기가 자라는 마을</h1><p id="page-subtitle">내 아바타의 자손과 재산, 세상에 남기는 변화를 지켜보세요.</p></div><div class="world-status"><span id="running-dot" class="live-dot"></span><span id="running-status">세계가 살아가는 중</span><span class="seed-label">SEED <b id="seed-label">42</b></span></div></section>
       <details class="cloud-panel" id="connection-details"><summary><div><b>${cloudMode ? '서버에 이어지는 세계' : '이 기기의 세계'}</b><p id="cloud-status">${cloudMode ? '서버 세계를 불러오는 중…' : '이 기기에서만 진행하고 저장합니다.'}</p></div><span class="disclosure-label">연결 설정</span></summary><div class="cloud-actions">${cloudMode ? '<label><input id="offline-toggle" type="checkbox" disabled/> 자리를 비워도 진행</label><button id="cloud-retry" class="button">연결 새로고침</button><a class="text-button" href="?local=1">기기 세계 관찰</a>' : '<a class="button" href="/">서버 세계로 돌아가기</a>'}</div>${cloudMode ? '<p class="cloud-policy">기본은 비접속 시 정지입니다. 켜면 재접속할 때 최대 게임 하루(144틱)만 반영합니다. 재생·정지·배속 설정은 모든 기기에 적용됩니다.</p>' : ''}</details>
@@ -911,6 +914,30 @@ async function showAccount() {
     ${isOwner() ? `<h3>초대와 참여자 관리</h3><p>이 사이트의 ChatGPT 공유 메뉴에서 초대할 사람의 이메일을 추가하고 사이트 링크를 전달해 주세요. 초대받은 사람이 로그인하면 아래에 나타납니다. 초대를 완전히 취소하려면 공유 메뉴에서도 접근 권한을 제거하세요.</p><p>다른 참여자의 NPC와 기존 주민은 권한을 해제해도 세계에 남습니다.</p>${members.map(m => `<div class="member-row"><span>${esc(m.name)} · ${esc(m.email)} · ${m.role === 'owner' ? '소유자' : m.blocked ? '참여 중지' : '참여 가능'}</span>${m.role !== 'owner' ? `<button class="button" data-member="${esc(m.id)}" data-blocked="${m.blocked ? '0' : '1'}">${m.blocked ? '참여 재개' : '참여 중지'}</button>` : ''}</div>`).join('')}` : ''}
     ${session.local ? '<p class="muted">로컬 개발용 계정입니다.</p>' : '<a class="text-button" href="/signout-with-chatgpt?return_to=%2F" target="_top">로그아웃</a>'}`);
 }
+let neighborsPage: NeighborView | undefined;
+let neighborsRequest = 0;
+async function showNeighbors(older = false) {
+  if (cloudMode && !cloudReady) await cloud!.connect();
+  const epoch = observationEpoch(), previous = older ? neighborsPage : undefined, request = ++neighborsRequest;
+  if (previous && (previous.epoch !== epoch || previous.next === null)) return;
+  const query = previous ? `?epoch=${encodeURIComponent(epoch)}&before=${previous.next}&through=${previous.through}` : '';
+  const v = cloudMode ? await cloud!.get<NeighborView>(`neighbors${query}`) : localNeighbors(state,epoch,new Set(state.npcs.filter(isOwnNPC).map(n=>n.id)),previous?.next??undefined,previous?.through);
+  if (request !== neighborsRequest || epoch !== observationEpoch() || v.epoch !== epoch) return;
+  neighborsPage = previous ? {...v,turns:[...previous.turns,...v.turns]} : v;
+  openDialog(neighborsView(neighborsPage));
+}
+$('neighbors-button').onclick=()=>{void showNeighbors().catch(cloudFailure);};
+document.addEventListener('click',event=>{
+  const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-neighbors-refresh],[data-neighbors-older],[data-neighbor-follow],[data-neighbors-dynasty]');if(!button)return;
+  if(button.dataset.neighborFollow){
+    if(neighborsPage?.epoch!==observationEpoch())return;
+    const n=state.npcs.find(n=>n.id===button.dataset.neighborFollow);if(!n?.alive)return;
+    $<HTMLDialogElement>('detail-dialog').close();selectNPC(n.id);map.setMode('follow');$<HTMLSelectElement>('map-mode').value='follow';render();return;
+  }
+  if(button.hasAttribute('data-neighbors-dynasty')){void showDynasty().catch(cloudFailure);return;}
+  button.disabled=true;
+  void showNeighbors(button.hasAttribute('data-neighbors-older')).catch(e=>{button.disabled=false;cloudFailure(e);});
+});
 let dynastyPage: DynastyView | undefined;
 let dynastyBusy = false;
 async function showDynasty() {

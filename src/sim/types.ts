@@ -19,7 +19,7 @@ export type ActionKind = 'Attend' | 'Wash' | 'Idle' | 'Move' | 'Sleep' | 'Eat' |
 export const ACTION_LABELS: Record<ActionKind, string> = { Attend: '공동 활동 약속', Wash: '씻기', Idle: '쉬기', Move: '이동', Sleep: '잠자기', Eat: '식사', Drink: '물 마시기', Gather: '채집', Work: '일하기', Talk: '대화', StoreItem: '자원 보관', TakeItem: '식량 인출', Share: '식량 나누기', Theft: '식량 훔치기', Trade: '거래', Borrow: '식량 빌리기', Repay: '빚 갚기' };
 export interface Candidate { kind: ActionKind; score: number; reason: string; target: Position; targetId?: string; evidence?: string[] }
 export interface Action extends Candidate { path: Position[]; progress: number; duration: number }
-export interface Relationship { npcId: string; familiarity: number; trust: number; affection: number; fear: number; resentment: number; respect: number; family: boolean; interpretation: string; evidence: string[] }
+export interface Relationship { turn?: import('./relationship-turns').BondMemory; npcId: string; familiarity: number; trust: number; affection: number; fear: number; resentment: number; respect: number; family: boolean; interpretation: string; evidence: string[] }
 export interface Memory { id: string; type: 'personal' | 'social' | 'event' | 'economic' | 'trauma' | 'achievement'; description: string; importance: number; emotionalImpact: number; createdAt: number; lastRetrievedAt?: number; relatedNpcIds: string[]; relatedLocationIds: string[]; sourceEventId: string; repetitions: number }
 export interface NPC {
   cognition?: import('./cognition').Cognition;

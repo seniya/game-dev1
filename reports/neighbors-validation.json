@@ -1,0 +1,82 @@
+{
+  "version": "0.30.0",
+  "date": "2026-10-02",
+  "implementation": "All five requested scopes implemented; production deployment recorded separately in deployment-v030.json.",
+  "core_server": {
+    "fullSuite": {
+      "passed": 309,
+      "failed": 0,
+      "command": "npm test"
+    },
+    "finalRelated": {
+      "passed": 33,
+      "failed": 0,
+      "command": "npx tsx --test tests/neighbors.test.ts tests/dynasty.test.ts tests/family-enterprise.test.ts"
+    },
+    "finalNeighbors": {
+      "passed": 9,
+      "failed": 0
+    },
+    "uniquePassed": 311
+  },
+  "browser": {
+    "fullSuite": {
+      "passed": 99,
+      "skipped": 1,
+      "failed": 0,
+      "command": "npx playwright test"
+    },
+    "finalRelated": {
+      "passed": 3,
+      "failed": 0,
+      "scope": "new desktop/mobile observation UI after compact layout change, account separation, and actual local Worker v0.29 engine recovery"
+    },
+    "uniquePassed": 100,
+    "realModelSkipped": 1
+  },
+  "build": {
+    "preCommitProductionBuildPassed": true,
+    "typeCheckPassed": true,
+    "retainedManifestCheckPassed": true,
+    "finalPushedCommitBuild": "See deployment-v030.json; rebuild and package after pushing the exact source commit."
+  },
+  "regression": {
+    "passed": 63,
+    "report": "neighbors-regression.json",
+    "balanceReport": "../NEIGHBORS_BALANCE.md",
+    "accountingErrors": 0,
+    "deterministicResume": true,
+    "totalResumeChecks": 251,
+    "execution": "54 short and first long case completed sequentially; resumed remaining independent cases in three processes. An in-progress local test process was intentionally stopped during the scheduling change; completed cases retained and combined by unique case key. No production processes were stopped.",
+    "survivalBoundary": "The 1000-resident three-day case ended with 930 living residents. Survival is an observed outcome, not a test assertion; accounting and save integrity passed."
+  },
+  "coverage": [
+    "completed meal/harvest requires two distinct owned residents",
+    "same completed project requires two distinct owned laborers",
+    "archive queries agree with local predicates; pending event overlay supported without observation writes",
+    "account isolation, blocked identity, epoch and cursor validation",
+    "directional relationship hysteresis, three-day cooldown, initial bonds/observer exclusion and optional old-save compatibility",
+    "business profit excludes capital, real shared inheritance, adult successor production",
+    "mobile width, actual map follow, source links, pagination, reload and owner-only controls",
+    "published v0.29 engine exact recovery in SQLite and actual local Worker"
+  ],
+  "failuresAndCorrections": [
+    "Initial TypeScript check rejected a heterogeneous Promise.all spread tuple. Replaced the mapped spread with nested Promise.all so result types remain explicit.",
+    "Initial targeted tests: 5 passed, 2 failed. The world begins at tick 36, so the cooldown fixture was changed to add 432 ticks rather than assign tick 432. Local/archive comparisons now normalize optional undefined fields to JSON storage semantics. All seven then passed.",
+    "An optional-property union in a test event data fixture required an explicit record type. Type checks then passed.",
+    "Initial new browser run: 1 passed, 1 failed because it clicked a background menu while the event modal was open. The test now uses the real close button before reopening. Both passed; final compact layout plus v0.29 recovery passed three tests."
+  ],
+  "limits": [
+    "No new real Chrome or external model inference quality claim; actual Chrome inference test skipped.",
+    "Actual invited human login, human interest evaluation, and global production CPU/memory remain outside automatic validation.",
+    "Historical detailed relationship turns, shared-owner and successor-production milestones are not fabricated when older events lack the required fields.",
+    "The three-seed preset comparison is not proof of equal win rates; no existing NPC stats or preset budgets were changed."
+  ],
+  "screenshots": [
+    "screenshots/v030-neighbors-desktop.png",
+    "screenshots/v030-neighbors-mobile.png",
+    "screenshots/v030-dynasty-desktop.png",
+    "screenshots/v030-dynasty-mobile.png"
+  ],
+  "priorEvidence": "Older version screenshots and the old map profile were restored after browser-generated overwrites; this run is stored under v030 names and neighbors-map-profile.json."
+}

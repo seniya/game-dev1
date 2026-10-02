@@ -1,0 +1,19 @@
+#neighbors-panel { max-width: 1050px; }
+.neighbor-toolbar { display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+.neighbor-people,.neighbor-goals { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:12px; margin:16px 0 24px; }
+.neighbor-person,.neighbor-goal,.neighbor-turns article { border:1px solid #d6decf; border-radius:16px; padding:18px; background:#f8faf3; min-width:0; overflow-wrap:anywhere; }
+.neighbor-person h3,.neighbor-goal h4 { margin:6px 0 12px; }
+.neighbor-needs { color:#45664f; font-weight:600; }
+.neighbor-needs.urgent { color:#92502f; }
+.neighbor-goal.achieved { border-color:#87ab78; background:#f0f6e8; }
+.neighbor-relations { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:0 20px; }
+.neighbor-relations p { padding:12px 0; margin:0; border-bottom:1px solid #d6decf; overflow-wrap:anywhere; }
+.neighbor-turns { display:grid; gap:12px; margin-bottom:16px; }
+.neighbor-turns h4 { margin:8px 0; }
+@media(max-width:600px) { .neighbor-person,.neighbor-goal,.neighbor-turns article { padding:14px; } .neighbor-toolbar .button { flex:1 1 auto; } }
+
+#detail-dialog:has(#neighbors-panel) { width:min(1100px,calc(100vw - 32px)); max-width:calc(100vw - 32px); }
+.neighbor-reason { margin-top:12px; color:#536b50; }
+.neighbor-reason summary { cursor:pointer; }
+@media(min-width:1000px) { .neighbor-people { grid-template-columns:repeat(3,minmax(0,1fr)); } }
+@media(max-width:600px) { #detail-dialog:has(#neighbors-panel) { width:calc(100vw - 16px); max-width:calc(100vw - 16px); } }

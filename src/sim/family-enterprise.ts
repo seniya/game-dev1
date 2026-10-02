@@ -57,7 +57,7 @@ export function inheritBusinesses(w:WorldState,n:NPC,heirs:NPC[],causeId:string)
     if(heirs.length)for(const heir of heirs){const existing=p.shares.find(s=>s.npc===heir.id);if(existing)existing.weight+=share.weight/heirs.length;else p.shares.push({npc:heir.id,weight:share.weight/heirs.length});}
     else p.community+=share.weight;
     p.shares.sort((a,b)=>a.npc.localeCompare(b.npc));
-    p.latest=appendEvent(w,{kind:'inheritance',actorId:n.id,participants:[n.id,...heirs.map(h=>h.id)],locationId:e.buildingId,causeId,importance:60,description:`${n.identity.name}의 ${INDUSTRY_LABELS[e.kind]} 지분 ${(share.weight*100).toFixed(2)}%를 ${heirs.length?'살아 있는 자녀와 배우자에게 균등하게':'마을 공동체에'} 계승했다. 사업 운영금은 사업체에 남는다.`,data:{business:e.id,phase:'shares-inherited',weight:share.weight,recipients:heirs.map(h=>h.id)}}).id;
+    p.latest=appendEvent(w,{kind:'inheritance',actorId:n.id,participants:[n.id,...heirs.map(h=>h.id)],locationId:e.buildingId,causeId,importance:60,description:`${n.identity.name}의 ${INDUSTRY_LABELS[e.kind]} 지분 ${(share.weight*100).toFixed(2)}%를 ${heirs.length?'살아 있는 자녀와 배우자에게 균등하게':'마을 공동체에'} 계승했다. 사업 운영금은 사업체에 남는다.`,data:{business:e.id,phase:'shares-inherited',owners:p.shares.map(s=>s.npc),weight:share.weight,recipients:heirs.map(h=>h.id)}}).id;
   }
 }
 export function enterpriseDay(w:WorldState) {
