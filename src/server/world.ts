@@ -91,6 +91,8 @@ export function compactWorld(w: WorldState): WorldState {
   w.urban?.freight.forEach(f => keep.add(f.sourceEventId));
   w.urban?.samples.forEach(s => keep.add(s.eventId));
   w.construction?.projects.forEach(p=>{keep.add(p.source);keep.add(p.lastEventId);if(p.labor?.assignment)keep.add(p.labor.assignment);if(p.labor?.workEvent)keep.add(p.labor.workEvent);});
+  w.cooperation?.projects.forEach(p=>{keep.add(p.source);keep.add(p.latest);});
+  w.cooperation?.provisions.forEach(p=>keep.add(p.source));
   w.agriculture?.farms.forEach(f=>{if(f.lastEventId)keep.add(f.lastEventId);});
   w.frontier?.protections?.forEach(p=>keep.add(p.sourceEventId));
   w.frontier?.habitats.forEach(h=>keep.add(h.lastEventId));

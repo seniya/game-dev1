@@ -1,3 +1,4 @@
+import { cooperationSchema, validateCooperation } from './cooperation';
 import { agricultureSchema, validateAgriculture } from './agriculture';
 import { constructionSchema, validateConstruction } from './construction';
 import { frontierSchema, validateFrontier } from './frontier';
@@ -54,6 +55,7 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
 }).strict();
 const world = z.object({
   frontier: frontierSchema.optional(),
+  cooperation:cooperationSchema.optional(),
   construction:constructionSchema.optional(),
   agriculture:agricultureSchema.optional(),
   gatherings: gatheringsSchema.optional(),
@@ -119,13 +121,14 @@ export function validateSave(input: unknown): WorldState {
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
   const w = parsed.data as WorldState;
   const ensure = (condition: unknown, message: string) => { if (!condition) throw new Error(`저장 파일 무결성 오류: ${message}`); };
+  validateCooperation(w, ensure);
   validateAgriculture(w, ensure);
   validateConstruction(w, ensure);
   validateFrontier(w,ensure);
   ensure(w.tiles.length === w.width * w.height, '지도 크기');
   const ids = new Set<string>(), events = new Map(w.events.map(e => [e.id, e])), npcs = new Set(w.npcs.map(n => n.id)), buildings = new Map(w.buildings.map(b => [b.id, b]));
   const register = (value: string) => { ensure(!ids.has(value), `중복 ID ${value}`); ids.add(value); if (/^[emqlgcj]\d+$/.test(value)) ensure(Number(value.slice(1)) < w.nextId, '다음 ID'); };
-  [...w.buildings, ...w.resources, ...w.npcs, ...w.events, ...w.loans, ...w.llm.queue].forEach(v => register(v.id));
+  [...w.buildings, ...w.resources, ...w.npcs, ...w.events, ...w.loans, ...w.llm.queue, ...(w.cooperation?.projects??[])].forEach(v => register(v.id));
   ensure(new Set(w.observation.watchIds).size === w.observation.watchIds.length && w.observation.watchIds.every(id => npcs.has(id)), '관심 주민 중복/참조');
   const villages = new Set(w.civilization.settlements.map(v => v.id));
   ensure(villages.size === w.civilization.settlements.length && villages.has('v0') && villages.has(w.civilization.focus), '마을 ID/관찰 대상');
@@ -227,3 +230,5 @@ const interpretation = z.object({
   relationshipInterpretations: z.array(z.object({ npcId: id, meaning: z.string().min(1).max(300) }).strict()).max(4),
 }).strict();
 export function validateInterpretation(input: unknown): Interpretation | null { const result = interpretation.safeParse(input); return result.success ? result.data : null; }
+
+export { event as eventSchema };

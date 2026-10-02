@@ -1,3 +1,4 @@
+import { learnFromPromise, promisePreparation } from './promise-learning';
 import { recordHarvest } from './agriculture';
 import { GATHERING_LABELS, isPlanned, type Gathering } from './gatherings-types';
 import { urgentNeed } from './cognition';
@@ -32,7 +33,7 @@ function responseReason(w: WorldState, g: Gathering, n: NPC) {
   const path = findPath(w, n.position, w.buildings.find(b => b.id === g.buildingId)!.position);
   const work = n.currentAction && ['Work', 'Gather'].includes(n.currentAction.kind) ? n.currentAction.duration - n.currentAction.progress + n.currentAction.path.length : 0;
   return booked(w, n.id, g.id) ? '이미 다른 공동 활동 약속이 있다.' : urgentNeed(n) ? interruptionReason(w, n, g.settlementId)
-    : path === null || path.length + work > g.startsAt - w.tick - 6 ? '이동과 남은 작업 때문에 약속 시간에 도착하기 어렵다.'
+    : path === null || path.length + work + promisePreparation(w,n,host).buffer > g.startsAt - w.tick - 6 ? '이동과 남은 작업 때문에 약속 시간에 도착하기 어렵다.'
     : g.kind === 'harvest' && !canWork(w, n) ? '지금은 노동하기 어려운 상태다.'
     : g.kind === 'meal' && n.inventory.food < 1 ? '함께 먹을 자신의 식량이 없다.'
     : bond(n, host) < 15 ? '지난 관계와 경험 때문에 이번 초대를 거절한다.' : '생활 일정에 여유가 있고 함께할 의사가 있어 약속한다.';
@@ -65,12 +66,14 @@ export function deliverInvitations(w: WorldState, g: Gathering) {
     for (const n of nearby.slice(0, 3 - g.invitations.length)) {
       const invitation = record(w, g, 'invited', `${sender.identity.name}이 ${n.identity.name}에게 ${host.identity.name}의 ${GATHERING_LABELS[g.kind]} 약속을 직접 전했다.`, [sender.id, n.id], parent?.invitationEventId ?? g.sourceEventId);
       const circle = w.gatherings?.circles?.find(c => c.hostId === sender.id && c.partnerId === n.id && c.kind === g.kind);
-      invitation.data.evidence = [...(parent ? [parent.responseEventId] : []), ...(circle?.evidence ?? [])];
+      invitation.data.evidence = [...(parent ? [parent.responseEventId] : []), ...(circle?.evidence ?? []), ...promisePreparation(w,sender,n).evidence];
       invitation.data.preference = invitationPreference(w, sender, n, g.kind);
       if (circle) invitation.description += ` 이전에 함께 완료한 ${circle.meetings}번의 경험을 다음 초대에 참고했다.`;
       invitation.data.distance = distance(sender.position, n.position); invitation.data.depth = parent ? 2 : 1;
       const reason = responseReason(w, g, n), accepted = reason.startsWith('생활 일정');
+      const preparation=promisePreparation(w,n,host);
       const response = record(w, g, accepted ? 'accepted' : 'declined', `${n.identity.name}: ${reason}`, [n.id, sender.id], invitation.id);
+      if(preparation.evidence.length){response.data.evidence=preparation.evidence;response.description+=` ${preparation.reason}`;}
       g.invitations.push({ npcId: n.id, senderId: sender.id, depth: parent ? 2 : 1, deliveredAt: w.tick, invitationEventId: invitation.id, responseEventId: response.id, status: accepted ? 'accepted' : 'declined', reason });
       if (g.schedule) { const i = g.invitations.at(-1)!; i.scheduleEventId = invitation.id; i.scheduleResponseId = response.id; invitation.data.schedule = g.schedule.eventId; }
       if (!accepted && /이동|작업|생활 회복/.test(reason)) rescheduleGathering(w, g, n, reason);
@@ -90,8 +93,7 @@ export function deliverInvitations(w: WorldState, g: Gathering) {
 }
 export function invitationPreference(w: WorldState, n: NPC, other: NPC, kind: Gathering['kind']) {
   const circle = w.gatherings?.circles?.find(c => c.hostId === n.id && c.partnerId === other.id && c.kind === kind);
-  const missed = n.memories.filter(m => { const e = eventById(w, m.sourceEventId); return e?.kind === 'gathering' && e.data.phase === 'missed' && e.tick >= w.tick - 7 * 144 && w.gatherings?.items.some(g => g.id === e.data.gatheringId && g.hostId === other.id); }).length;
-  return bond(n, other) + (circle ? Math.max(0, circle.meetings * 4 - Math.floor((w.tick - circle.lastAt) / 144)) : 0) - Math.min(6, missed * 2);
+  return bond(n, other) + (circle ? Math.max(0, circle.meetings * 4 - Math.floor((w.tick - circle.lastAt) / 144)) : 0) + promisePreparation(w,n,other).preference;
 }
 function rememberCircle(w: WorldState, g: Gathering, host: NPC, guest: NPC, eventId: string) {
   const evidence = host.memories.map(m => eventById(w, m.sourceEventId)).filter(e => e?.kind === 'gathering' && e.data.phase === 'completed' && e.data.gatheringKind === g.kind && e.participants.includes(guest.id)).map(e => e!.id);
@@ -187,8 +189,10 @@ function finish(w: WorldState, g: Gathering, reason: string, completed: NPC[] = 
       i.status = 'missed'; i.reason = '약속 시간 안에 공동 활동을 마치지 못했다.';
       const notice = record(w, g, 'missed', `${n.identity.name}이 약속 시간 안에 공동 활동을 마치지 못했다.`, [n.id], i.responseEventId);
       i.responseEventId = notice.id;
+      learnFromPromise(w,g,n,notice.id);
     }
   }
+  if(g.status==='cancelled')learnFromPromise(w,g,host,e.id);
   clearActions(w, g);
 }
 /** Runs after all movement, so attendance is independent of NPC processing order. */
@@ -201,6 +205,7 @@ export function updateGatherings(w: WorldState) {
       if (eligible(w, n) && n.settlementId === g.settlementId && !urgentNeed(n)) continue;
       i.status = 'withdrawn'; i.reason = interruptionReason(w, n, g.settlementId);
       const e = record(w, g, 'withdrawn', `${n.identity.name}: ${i.reason}`, [n.id], i.responseEventId); i.responseEventId = e.id;
+      learnFromPromise(w,g,n,e.id);
       if (n.currentAction?.kind === 'Attend' && n.currentAction.targetId === g.id) delete n.currentAction;
     }
     deliverInvitations(w, g);

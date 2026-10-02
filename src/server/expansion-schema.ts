@@ -1,8 +1,11 @@
 export const uploadSchema = [
+  'CREATE TABLE IF NOT EXISTS archive_imports(id TEXT PRIMARY KEY,phase TEXT NOT NULL,chain TEXT NOT NULL,events INTEGER NOT NULL,expected INTEGER NOT NULL,last_tick INTEGER NOT NULL,state_bytes INTEGER NOT NULL,entities TEXT)',
+
   'CREATE TABLE IF NOT EXISTS uploads(id TEXT PRIMARY KEY,member TEXT NOT NULL,epoch TEXT NOT NULL,hash TEXT NOT NULL,bytes INTEGER NOT NULL,received INTEGER NOT NULL DEFAULT 0,next INTEGER NOT NULL DEFAULT 0,status TEXT NOT NULL,expires INTEGER NOT NULL,summary TEXT,validation_until INTEGER NOT NULL DEFAULT 0)',
   'CREATE TABLE IF NOT EXISTS upload_parts(upload TEXT NOT NULL,part INTEGER NOT NULL,body TEXT NOT NULL,PRIMARY KEY(upload,part))',
   'CREATE TABLE IF NOT EXISTS upload_states(upload TEXT NOT NULL,part INTEGER NOT NULL,body TEXT NOT NULL,PRIMARY KEY(upload,part))',
   'CREATE TABLE IF NOT EXISTS upload_events(upload TEXT NOT NULL,seq INTEGER NOT NULL,body TEXT NOT NULL,PRIMARY KEY(upload,seq))',
+  "CREATE UNIQUE INDEX IF NOT EXISTS upload_events_id ON upload_events(upload,json_extract(body,'$.id'))",
 ];
 export const replaySchema = [
   'CREATE TABLE IF NOT EXISTS replay_session(id INTEGER PRIMARY KEY CHECK(id=1),epoch TEXT NOT NULL,revision INTEGER NOT NULL,head INTEGER NOT NULL,bytes INTEGER NOT NULL,status TEXT NOT NULL,created INTEGER NOT NULL,build TEXT NOT NULL,hash TEXT NOT NULL)',

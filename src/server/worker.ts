@@ -1,3 +1,4 @@
+import { archiveUpload } from './archive-upload';
 import { expressionAPI } from './expressions';
 import { startReplay, exportReplay, verifyReplay } from './replay';
 import { uploadRequest, prepareUpload } from './uploads';
@@ -8,7 +9,7 @@ import { WorldStore } from './store';
 import { readBiography } from './biography';
 import { identity, memberFor, claimLegacyResidents, requireOwner, authorizeCommand, sessionView, checkCreation, creationStatements, AccessError, type AccessEnv } from './access';
 import { readObserver } from './observation';
-import { readHistory, streamWorld } from './history';
+import { readHistory, streamWorld, streamArchive } from './history';
 import { summarize } from '../sim/engine';
 import type { D1Database, Fetcher, ExecutionContext } from '@cloudflare/workers-types';
 import { applyCommand, commandSchema, viewWorld } from './world';
@@ -41,6 +42,7 @@ const handler = {
       await claimLegacyResidents(env.DB, member, () => store.read());
       if (url.pathname === '/api/expressions' && request.method === 'POST') { requireOwner(member); const body=await request.text(); if(body.length>6000)return json({error:'주민 표현 요청이 너무 큽니다.'},413);return json(await expressionAPI(store,member.id,JSON.parse(body),env)); }
       if (url.pathname === '/api/replay' && request.method === 'POST') { requireOwner(member); const body=await request.text(); if(body.length>100) return json({error:'저장 검증 요청이 너무 큽니다.'},413); const input=JSON.parse(body); if(input.type==='start') return json(await startReplay(env.DB,await new WorldStore(env.DB).read(),Date.now())); if(input.type==='stop'){await env.DB.batch([env.DB.prepare("UPDATE replay_session SET status='stopped' WHERE id=1 AND status='recording'")]);return json({message:'검증 기록을 중지했습니다. 기존 기록은 내려받거나 검증할 수 있습니다.'});} if(input.type==='export')return json(await exportReplay(env.DB)); if(input.type==='check') {const {world:_,...result}=await verifyReplay(await exportReplay(env.DB));return json(result);} return json({error:'저장 검증 요청을 확인해 주세요.'},400); }
+      if (url.pathname === '/api/archive-uploads' && request.method === 'POST') { requireOwner(member); const body=await request.text(); if(new TextEncoder().encode(body).length>600_000) return json({error:'아카이브 조각이 너무 큽니다.'},413); return json(await archiveUpload(store,member.id,JSON.parse(body))); }
       if (url.pathname === '/api/uploads' && request.method === 'POST') { requireOwner(member); const body=await request.text(); if(new TextEncoder().encode(body).length>150_000) return json({error:'저장 업로드 조각이 너무 큽니다.'},413); return json(await uploadRequest(store, member.id, JSON.parse(body))); }
       if (url.pathname === '/api/operations' && request.method === 'GET') { requireOwner(member); return json(await operationsStatus(env.DB)); }
       if (url.pathname === '/api/storage' && request.method === 'GET') { requireOwner(member); return json(await storageStatus(new WorldStore(env.DB))); }
@@ -138,6 +140,7 @@ const handler = {
       if (url.pathname === '/api/biography' && request.method === 'GET') return json(await readBiography(store, observed, url.searchParams));
       if (url.pathname === '/api/observer' && request.method === 'GET') return json(await readObserver(store, observed, url.searchParams));
       if (url.pathname === '/api/history' && request.method === 'GET') return json(await readHistory(store, observed, url.searchParams));
+      if (url.pathname === '/api/export-archive' && request.method === 'GET') return streamArchive(store,observed);
       if (url.pathname === '/api/export-stream' && request.method === 'GET') return streamWorld(store, observed);
       if (url.pathname === '/api/export' && request.method === 'GET') {
         const current = observed, epoch = url.searchParams.has('backup') ? current.meta.backupEpoch : current.epoch;

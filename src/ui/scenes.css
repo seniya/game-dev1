@@ -1,0 +1,68 @@
+/* Observation is a readable, live companion to the map, including touch screens. */
+:root { --muted: #64715e; }
+.scene-observatory { padding: 22px; background: #f7f5ed; border-top: 1px solid #dce2d3; }
+.scene-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:15px; }
+.scene-heading .eyebrow { color:#526846; font-size:10px; letter-spacing:1px; }
+.scene-heading h2 { font-size:20px; color:#243b30; margin-top:5px; letter-spacing:-.7px; }
+.scene-hint { color:#606a5c; font-size:11px; }
+.scene-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+.scene-tabs button { border:1px solid #cbd3c4; border-radius:20px; padding:8px 13px; font-size:12px; color:#485646; background:#fffdf6; min-height:36px; }
+.scene-tabs [aria-pressed="true"] { background:#294c3d; color:white; border-color:#294c3d; }
+.scene-cards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.scene-card { display:flex; flex-direction:column; min-width:0; border:1px solid #d7ddd0; border-radius:12px; padding:16px; background:#fffef9; box-shadow:0 3px 9px #30473505; }
+.scene-label { display:flex; gap:8px; align-items:center; color:#586146; font-size:11px; min-height:30px; }
+.scene-label>span:last-child { overflow-wrap:anywhere; }
+.scene-symbol { display:grid; place-items:center; flex:none; width:29px; height:29px; border-radius:9px; background:#eee8d7; font-size:20px; color:#82632c; }
+.scene-card.social .scene-symbol { color:#875963; background:#f3e2e3; }
+.scene-card.life .scene-symbol { color:#4c706b; background:#e0eeea; }
+.scene-card h3 { margin:11px 0 6px; font-size:16px; font-weight:650; color:#293e31; letter-spacing:-.4px; }
+.scene-card p { font-size:12px; color:#596350; line-height:1.75; overflow-wrap:anywhere; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; min-height:42px; }
+.scene-progress { display:flex; align-items:center; gap:10px; margin-top:12px; font-size:11px; color:#455e43; }
+.scene-progress progress { appearance:none; width:100%; height:6px; border:0; background:#e6eadf; border-radius:6px; overflow:hidden; }
+.scene-progress progress::-webkit-progress-bar { background:#e6eadf; }
+.scene-progress progress::-webkit-progress-value { background:#71864c; border-radius:6px; }
+.scene-actions { display:flex; justify-content:space-between; gap:8px; margin-top:auto; padding-top:14px; }
+.scene-actions .button { min-height:38px; font-size:12px; padding:8px 12px; }
+.scene-actions .text-button { font-size:12px; color:#485e40; }
+.scene-empty { grid-column:1/-1; padding:24px; background:#fffdf7; border:1px dashed #ccd5c2; border-radius:12px; color:#596b52; }
+.provision-strip { display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:16px; padding:13px 16px; border:1px solid #d3dec8; border-radius:9px; background:#edf2e6; font-size:11px; color:#485c3e; align-items:center; }
+.provision-strip .text-button { margin-left:auto; }
+.map-focus { display:flex; align-items:center; gap:13px; padding:14px 20px; background:#fffdf6; border-top:1px solid #d7dfcc; min-height:86px; }
+.focus-portrait { width:48px; height:54px; flex:none; border-radius:12px; background:#e7edde; display:grid; place-items:center; }
+.focus-portrait svg { width:43px; height:48px; }
+.focus-copy { flex:1; min-width:0; }
+.focus-copy>span { color:#65725a; font-size:10px; }
+.focus-copy h3 { margin:4px 0; font-size:17px; color:#263e30; }
+.focus-copy small { margin-left:5px; font-size:11px; font-weight:500; color:#526d44; }
+.focus-copy p { color:#58694f; font-size:11px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.map-focus .button { font-size:12px; min-height:40px; }
+.change-thread { border-left:3px solid #819765; border-radius:0 10px 10px 0; background:#fffef9; margin:14px 0; padding:14px 16px; }
+.thread-step { color:#4b6942; font-size:11px; font-weight:700; }
+.change-thread details summary { font-size:12px; color:#52694a; cursor:pointer; padding:4px 0 10px; }
+.thread-outcome { border-top:1px dashed #cdd8c3; margin-top:12px; padding-top:12px; }
+.thread-empty { color:#64715c; font-size:11px; }
+.map-panel .muted,.map-panel .stat-label,.map-panel .stat-note,.map-panel .weather-info { color:#627054; }
+.map-controls .game-clock,.map-controls .game-clock b { color:#405937; }
+.inspector .reason-box,.inspector .utility-details,.inspector .personality-details { color:#5b6b51; }
+body.immersive .scene-observatory { display:none; }
+@media (min-width:1100px) { .inspector { position:sticky; top:16px; align-self:start; } }
+@media (max-width:760px) {
+  .scene-observatory { padding:17px 14px; }
+  .scene-heading { align-items:flex-start; }
+  .scene-heading h2 { font-size:19px; }
+  .scene-hint { max-width:115px; font-size:11px; line-height:1.6; text-align:right; }
+  .scene-tabs { gap:5px; }
+  .scene-tabs button { padding:8px 10px; min-height:42px; font-size:11px; }
+  .scene-card { padding:13px; }
+  .scene-card h3 { font-size:15px; line-height:1.5; }
+  .scene-actions { flex-wrap:wrap; }
+  .scene-actions .button,.scene-actions .text-button { min-height:44px; }
+  .map-focus { gap:10px; padding:12px; }
+  .map-focus .button { min-height:44px; font-size:11px; padding:7px 9px; }
+  .focus-portrait { width:38px; }
+  .focus-copy h3 { font-size:16px; }
+  .focus-copy small { display:block; margin-left:0; margin-top:4px; }
+  .provision-strip { font-size:12px; line-height:1.7; }
+}
+@media (max-width:360px) { .scene-cards { grid-template-columns:1fr; } }
+@media (prefers-reduced-motion:reduce) { .scene-observatory *, .map-focus * { transition:none!important; } }

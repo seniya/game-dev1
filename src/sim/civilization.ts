@@ -128,12 +128,14 @@ export function advanceJourneys(w: WorldState) {
 }
 export function startTrade(w: WorldState, from: Settlement, to: Settlement): boolean {
   if (from.id === to.id || w.civilization.journeys.some(j => j.kind === 'trade' && j.from === from.id && j.to === to.id)) return false;
-  const seller = market(w, from.id), buyer = market(w, to.id), reserve = residents(w, from.id).length * 2;
+  const seller = market(w, from.id), buyer = market(w, to.id);
+  const preparation = w.cooperation?.provisions.find(p=>p.settlementId===from.id&&w.tick-p.tick<=144);
+  const reserve = Math.max(residents(w, from.id).length * 2, preparation ? preparation.target - stocks(w,from.id).food - residents(w,from.id).reduce((s,n)=>s+n.inventory.food,0) : 0);
   const amount = Math.min(12, Math.max(0, seller.food - reserve), Math.floor(buyer.coins / seller.foodPrice));
   if (!amount || buyer.food >= Math.max(6, residents(w, to.id).length) || seller.foodPrice > buyer.foodPrice) return false;
   const path = findPath(w, from.center, to.center); if (!path) return false;
   const cost = amount * seller.foodPrice; seller.food -= amount; buyer.coins -= cost;
-  const e = appendEvent(w, { kind: 'caravan', importance: 45, description: `${from.name}의 여분 식량 ${amount}개를 ${to.name}에 ${cost}코인으로 교역한다. 도착 전까지 화물과 대금은 운송 중이다.`, data: { from: from.id, to: to.id, food: amount, coins: cost, phase: 'departed', distance: path.length } });
+  const e = appendEvent(w, { kind: 'caravan', importance: 45, ...(preparation?{causeId:preparation.source}:{}), description: `${from.name}의 여분 식량 ${amount}개를 ${to.name}에 ${cost}코인으로 교역한다. 도착 전까지 화물과 대금은 운송 중이다.`, data: { from: from.id, to: to.id, food: amount, coins: cost, phase: 'departed', distance: path.length, reserve } });
   w.civilization.journeys.push({ id: `j${w.nextId++}`, kind: 'trade', from: from.id, to: to.id, npcIds: [], path, progress: 0, food: amount, coins: cost, sourceEventId: e.id });
   return true;
 }
@@ -172,12 +174,7 @@ export function regionalDay(w: WorldState) {
     }
     const homes = w.buildings.filter(b => b.kind === 'home' && b.settlementId === v.id);
     const beds = homes.reduce((s, b) => s + capacity(b), 0);
-    if (people.length >= beds - 2) buildHouse(w, v);
-    // Production capacity grows through investment when the settlement is crowded.
-    const farms = w.buildings.filter(b => b.kind === 'farm' && b.settlementId === v.id);
-    if (people.length > farms.length * 12 && stock.wood >= 16) {
-      buildHouse(w, v, 'farm');
-    }
+    // Residents now propose, fund and staff construction through cooperationDay.
     if (people.length >= 16 && stock.wood >= 60 && stock.food >= 24 && w.civilization.settlements.length < 12) {
       const next = addVillage(w); stock.wood -= 60; w.economy.totals.investedWood += 60; stock.food -= 24; next.storage.food += 24;
       const coins = Math.min(30, m.coins); m.coins -= coins; next.market.coins += coins;

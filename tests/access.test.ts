@@ -27,8 +27,9 @@ test('participants share the world but all owner-only mutations and exports are 
   const h = harness(); const before = await h.world();
   assert.deepEqual((await h.world('guest')).state, before.state);
   for (const action of [{ type: 'reset', seed: 7 }, { type: 'play', running: true }, { type: 'speed', speed: 20 }, { type: 'offline', enabled: true }, { type: 'ai-mode', mode: 'remote' }, { type: 'save' }, { type: 'step', ticks: 144 }, { type: 'watch', npcId: 'npc0', enabled: true }] as Command['action'][]) assert.equal((await h.command('guest', action)).status, 403, action.type);
-  for (const path of ['members', 'export', 'export-stream', 'chrome/jobs/example', 'ai/jobs/example']) assert.equal((await h.call('guest', path)).status, 403, path);
+  for (const path of ['members', 'export', 'export-stream', 'export-archive', 'chrome/jobs/example', 'ai/jobs/example']) assert.equal((await h.call('guest', path)).status, 403, path);
   assert.equal((await h.call('guest', 'chrome/claim', {})).status, 403);
+  assert.equal((await h.call('guest', 'archive-uploads', {type:'start',hash:'a'.repeat(64),bytes:100})).status, 403);
   assert.equal((await h.command('guest', { type: 'sync' })).status, 200);
   assert.equal((await h.world()).state.npcs.length, before.state.npcs.length);
 });

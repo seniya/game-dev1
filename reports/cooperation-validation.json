@@ -1,0 +1,81 @@
+{
+  "version": "0.26.0",
+  "date": "2026-10-02",
+  "core": {
+    "command": "npm test",
+    "finalPassed": 274,
+    "failed": 0,
+    "earlierFullPassed": 272,
+    "relatedFinalPassed": 17
+  },
+  "browser": {
+    "fullRun": {
+      "passed": 85,
+      "failed": 2,
+      "skipped": 1
+    },
+    "corrections": [
+      {
+        "test": "living-actions: return digest",
+        "reason": "Primary change remains visible; causal evidence is now intentionally folded. Updated assertion to select the visible change and open its evidence."
+      },
+      {
+        "test": "motion: server jitter",
+        "reason": "Canvas instrumentation expected the old selected halo radii 13×7; updated to 19×11. All motion and timing assertions preserved."
+      }
+    ],
+    "finalRelatedRun": {
+      "command": "npx playwright test tests/browser/living-actions.spec.ts tests/browser/motion.spec.ts",
+      "passed": 4,
+      "failed": 0
+    },
+    "uniqueScenariosPassed": 87,
+    "realChromeInferenceSkipped": 1,
+    "earlierInterruptedRun": "Local dev server terminated during the first broad run. Repeated with Playwright-managed web server; not a production failure."
+  },
+  "regression": {
+    "report": "cooperation-regression.json",
+    "completedCases": 9,
+    "cases": "Seeds 7/42/123 × off/mock × 365 days; 300 residents × 30 days; 1000 × 3; 3000 × 1",
+    "accountingErrors": 0,
+    "missingReferences": 0,
+    "deterministicContinuation": true,
+    "note": "Default long-run conditions did not retain autonomous initiatives. Dedicated shortage/crowding fixtures verify autonomous proposal, resources, donations, paid construction and completion."
+  },
+  "crossBrowser": {
+    "report": "cooperation-cross-browser.json",
+    "firefox": true,
+    "webkit": true
+  },
+  "archive": {
+    "verified": "A file larger than 24MB passed the real local Worker/D1 browser flow: interrupted transfer, resume, preview without world mutation, explicit apply and complete export. Integrity/tamper checks and owner/participant permissions passed.",
+    "maximumBytes": 100000000,
+    "maximumCompactStateBytes": 12000000,
+    "maximumEvents": 100000,
+    "note": "Bounded format; this is not a claim of an executed 100MB load test. Existing JSON import remains limited to 24MB. Converter preserves original files."
+  },
+  "retainedEngine": {
+    "version": "v0.25",
+    "sourceCommit": "efbcd487580f3b7fbc6b6e473b8589aa29e014ef",
+    "pendingRecoveryTestTicks": 144,
+    "passed": true
+  },
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "warning": "Client bundle exceeds Vite 500kB advisory threshold."
+  },
+  "screenshots": [
+    "screenshots/v026-observation-desktop.png",
+    "screenshots/v026-observation-mobile.png",
+    "screenshots/v026-return.png",
+    "screenshots/v026-firefox-mobile.png",
+    "screenshots/v026-webkit-mobile.png"
+  ],
+  "notClaimed": [
+    "Human enjoyment/usability study",
+    "New real Chrome model inference success",
+    "Invited external account production login",
+    "Production long-term CPU/memory performance"
+  ]
+}

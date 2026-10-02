@@ -40,6 +40,7 @@ export interface Loan { id: string; lenderId: string; borrowerId: string; amount
 export interface DecisionRequest { id: string; npcId: string; eventId: string; tick: number; attempts: number }
 export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys: string[]; dailyByNpc: Record<string, number>; dailyTotal: number; requested: number; completed: number; rejected: number; failed: number }
 export interface WorldState {
+  cooperation?: import('./cooperation').Cooperation;
   frontier?: import('./frontier').Frontier;
   construction?: import('./construction').Construction;
   agriculture?: import('./agriculture').Agriculture;

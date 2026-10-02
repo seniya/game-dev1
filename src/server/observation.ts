@@ -33,7 +33,15 @@ export async function readObserver(store: WorldStore, current: StoredWorld, p: U
   ]);
   const changes=await Promise.all(RETURN_TOPICS.map(async t=>{
     const rows=await archive.prepare(`SELECT e.body FROM events e WHERE ${where} AND e.kind IN (${t.kinds.map(()=>'?').join(',')}) AND json_extract(e.body,'$.importance')>=45 ORDER BY e.seq DESC LIMIT 2`).bind(...values,...t.kinds).all<{body:string}>();
-    return {topic:t.id,label:t.label,events:rows.results.map(r=>JSON.parse(r.body) as WorldEvent)};
+    const events=rows.results.map(r=>JSON.parse(r.body) as WorldEvent);
+    const threads=await Promise.all(events.map(async e=>{
+      const [cause,outcome]=await Promise.all([
+        e.causeId?archive.prepare('SELECT body FROM events WHERE epoch=? AND id=? AND seq<=? AND tick<=?').bind(current.epoch,e.causeId,through,to).first<{body:string}>():null,
+        archive.prepare("SELECT body FROM events WHERE epoch=? AND cause=? AND seq<=? AND tick<=? AND kind NOT IN ('memory','relationship') ORDER BY seq DESC LIMIT 1").bind(current.epoch,e.id,through,to).first<{body:string}>(),
+      ]);
+      return {eventId:e.id,...(cause?{cause:JSON.parse(cause.body) as WorldEvent}:{}),...(outcome?{outcome:JSON.parse(outcome.body) as WorldEvent}:{})};
+    }));
+    return {topic:t.id,label:t.label,events,threads};
   }));
   return { changes, highlights: highlights.results.map(r=>JSON.parse(r.body) as WorldEvent), epoch: current.epoch, from, to, through, counts: Object.fromEntries(totals.results.map(r=>[r.kind,r.n])), total: totals.results.reduce((sum,r)=>sum+r.n,0), events: rows.results.slice(0,40).map(r=>JSON.parse(r.body) as WorldEvent), next: rows.results.length>40 ? rows.results[39].seq : null };
 }

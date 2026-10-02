@@ -16,7 +16,7 @@ test('server motion covers response jitter and slow syncs restart without an ext
     };
     const ellipse = CanvasRenderingContext2D.prototype.ellipse;
     CanvasRenderingContext2D.prototype.ellipse = function (...args: Parameters<typeof ellipse>) {
-      if ((this.canvas as HTMLCanvasElement).id === 'world-map' && args[2] === 13 && args[3] === 7) points.push([performance.now(), args[0]]);
+      if ((this.canvas as HTMLCanvasElement).id === 'world-map' && args[2] === 19 && args[3] === 11) points.push([performance.now(), args[0]]);
       return ellipse.apply(this, args);
     };
   });

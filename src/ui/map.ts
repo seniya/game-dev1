@@ -122,7 +122,7 @@ export class WorldMap {
       this.motion.update(previous?.npcs ?? [], world.npcs, trace, now, duration);
       if (advanced) this.lastUpdate = now;
     }
-    const completed = world.events.slice(-100).filter(e => (e.actorId === selected || e.kind === 'gathering' && e.participants.includes(selected)) && world.tick - e.tick <= 6 && (e.kind === 'gathering' && e.data.phase === 'completed' || ['production','industry','storage','project'].includes(e.kind) || e.kind === 'consumption' && e.data.action === 'Eat' || e.kind === 'request' && e.data.phase === 'supported')).at(-1);
+    const completed = world.events.slice(-100).filter(e => (e.actorId === selected || e.kind === 'gathering' && e.participants.includes(selected)) && world.tick - e.tick <= 6 && (e.kind === 'gathering' && e.data.phase === 'completed' || (['production','industry','storage'].includes(e.kind)||e.kind==='project'&&!e.data.provisions&&(!e.data.initiative||e.data.phase==='completed')) || e.kind === 'consumption' && e.data.action === 'Eat' || e.kind === 'request' && e.data.phase === 'supported')).at(-1);
     this.completedActivity = !completed ? '' : completed.kind === 'gathering' ? '함께한 활동 완료' : completed.kind === 'request' ? '지원 반영 완료' : completed.kind === 'storage' ? '자원 운반 완료' : completed.kind === 'consumption' ? '식사 완료' : completed.kind === 'project' ? '시설 개선 완료' : '생산 완료';
     this.world = world; this.selected = selected; this.residents = world.npcs.filter(n => n.alive && this.motion.intersects(n.id,this.origin.x-1,this.origin.y-1,this.origin.x+32/this.zoom+1,this.origin.y+24/this.zoom+1));
     const key = JSON.stringify([world.seed, world.width, world.height, this.origin, this.zoom, selected, this.selectedObject, world.urban.cities.map(c => [c.services, c.active]), world.urban.enterprises.map(e => [e.buildingId, e.kind]), world.buildings.map(b => [b.id, b.kind, b.name, b.position, b.level, b.growth >= 20, world.living.homes[b.id]]), world.resources.map(r => [r.id, r.kind, r.position, resourceStage(r)])]);
@@ -281,6 +281,7 @@ export class WorldMap {
       ctx.fillStyle=a.species==='hare'?'#e1c9a5':'#99724c';ctx.beginPath();ctx.ellipse(x,y,a.species==='hare'?5:9,5,0,0,Math.PI*2);ctx.fill();
       ctx.fillRect(x-2,y-10,2,7);ctx.fillRect(x+2,y-11,2,8);ctx.fillStyle='#342e24';ctx.fillRect(x+4,y-2,2,2);
     }
+    for(const g of w.gatherings?.items??[]){if(g.status!=='planned')continue;const venue=w.buildings.find(b=>b.id===g.buildingId);if(!venue||!this.inView(venue.position))continue;const x=(venue.position.x+.5)*c,y=(venue.position.y+.5)*c;ctx.strokeStyle='#915c72';ctx.lineWidth=2/this.zoom;ctx.beginPath();ctx.ellipse(x,y+7,24,11,0,0,Math.PI*2);ctx.stroke();this.label(ctx,`약속 · 도착 ${g.arrivals.length}명${g.progress?' · 함께 활동 중':''}`,x,y-60,true,45,`gathering:${g.id}`);}
     const occupants = new Map<string, number>();
     this.displayed.clear();
     const visible = this.residents.map(n => ({ n, p: this.motion.position(n.id, now) ?? n.position })).filter(({ p }) => this.inView(p)).sort((a, b) => a.n.id === this.selected ? 1 : b.n.id === this.selected ? -1 : a.p.y - b.p.y);
@@ -288,7 +289,7 @@ export class WorldMap {
       const key = `${p.x.toFixed(2)},${p.y.toFixed(2)}`, slot = occupants.get(key) ?? 0; occupants.set(key, slot + 1);
       const x = (p.x + .5) * c + (slot % 3 - (slot ? 1 : 0)) * 8, y = (p.y + .5) * c + Math.floor(slot / 3) * 5;
       this.displayed.set(n.id, { x: x / c, y: y / c });
-      if (!this.selectedObject && n.id === this.selected) { ctx.strokeStyle = '#fff9de'; ctx.lineWidth = 2; ctx.beginPath(); ctx.ellipse(x, y + 5, 13, 7, 0, 0, Math.PI * 2); ctx.stroke(); }
+      if (!this.selectedObject && n.id === this.selected) { ctx.fillStyle='#ffeab477';ctx.beginPath();ctx.ellipse(x,y+3,19,11,0,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#344f32';ctx.lineWidth=2;ctx.stroke(); }
       ctx.fillStyle = '#384f443a'; ctx.beginPath(); ctx.ellipse(x + 2, y + 6, 8, 4, 0, 0, Math.PI * 2); ctx.fill();
       drawPerson(ctx, n, x, y, w, this.reducedMotion.matches ? 0 : (p.x + p.y) * Math.PI * 2, false);
       const status = characterVisual(n, w);

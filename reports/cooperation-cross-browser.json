@@ -1,0 +1,22 @@
+[
+  {
+    "browser": "firefox",
+    "passed": true,
+    "checks": [
+      "touch scene navigation",
+      "no horizontal overflow",
+      "UTF-8 streamed archive decoding",
+      "no page errors"
+    ]
+  },
+  {
+    "browser": "webkit",
+    "passed": true,
+    "checks": [
+      "touch scene navigation",
+      "no horizontal overflow",
+      "UTF-8 streamed archive decoding",
+      "no page errors"
+    ]
+  }
+]

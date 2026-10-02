@@ -24,7 +24,7 @@ export async function cleanupUploads(db: D1Database, now: number) {
   await db.batch(
     ['upload_parts', 'upload_states', 'upload_events']
       .map((t) => db.prepare(`DELETE FROM ${t} WHERE upload IN (SELECT id FROM uploads WHERE expires<?)`).bind(now))
-      .concat(db.prepare('DELETE FROM uploads WHERE expires<?').bind(now)),
+      .concat(db.prepare('DELETE FROM archive_imports WHERE id IN (SELECT id FROM uploads WHERE expires<?)').bind(now),db.prepare('DELETE FROM uploads WHERE expires<?').bind(now)),
   );
 }
 export const hashText = async (text: string) =>

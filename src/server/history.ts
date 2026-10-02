@@ -2,6 +2,8 @@ import type { WorldStore } from './store';
 import type { StoredWorld } from './world';
 import { HISTORY_KINDS, HISTORY_TOPICS, type HistoryTopic } from '../sim/history';
 import type { WorldEvent } from '../sim/types';
+import { archiveRecords } from '../shared/archive';
+import { compactWorld } from './world';
 
 export async function readHistory(store: WorldStore, current: StoredWorld, p: URLSearchParams) {
   const topic = p.get('topic') ?? 'population';
@@ -52,4 +54,20 @@ export function streamWorld(store: WorldStore, current: StoredWorld): Response {
     },
   });
   return new Response(body, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Content-Disposition': `attachment; filename="living-small-world-server-${current.state.seed}-${current.state.tick}.save.json"`, 'Cache-Control': 'no-store', 'X-World-Revision': String(current.revision), 'X-Content-Type-Options': 'nosniff' } });
+}
+
+/** Bounded records can be verified and resumed without parsing the entire historical journal. */
+export function streamArchive(store:WorldStore,current:StoredWorld):Response {
+  const archive=store.archive(),encoder=new TextEncoder();
+  async function* events(){
+    let cursor=0;
+    while(cursor<current.meta.eventCount){
+      const rows=await archive.prepare('SELECT body,seq FROM events WHERE epoch=? AND seq>? AND seq<=? ORDER BY seq LIMIT 50').bind(current.epoch,cursor,current.meta.eventCount).all<{body:string;seq:number}>();
+      if(!rows.results.length)throw Error('아카이브 사건이 누락되었습니다.');
+      for(const row of rows.results){if(row.seq!==cursor+1)throw Error('아카이브 순서가 누락되었습니다.');cursor=row.seq;yield JSON.parse(row.body);}
+    }
+  }
+  const records=archiveRecords(compactWorld(current.state),events(),current.meta.eventCount);
+  const stream=new ReadableStream<Uint8Array>({async pull(controller){try{const next=await records.next();if(next.done)controller.close();else controller.enqueue(encoder.encode(next.value));}catch(e){controller.error(e);}},async cancel(){await records.return(undefined);}});
+  return new Response(stream,{headers:{'Content-Type':'application/x-ndjson; charset=utf-8','Content-Disposition':`attachment; filename="living-small-world-${current.state.seed}-${current.state.tick}.lsw"`,'Cache-Control':'no-store','X-World-Revision':String(current.revision),'X-Content-Type-Options':'nosniff'}});
 }

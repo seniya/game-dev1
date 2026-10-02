@@ -1,6 +1,6 @@
 # 문서 안내
 
-정리 기준: 2026-10-02, 앱 v0.25.0 / 세계 저장 형식 v9. 앱 버전(v0.x), 저장 형식(v1~v9), Sites 배포 버전은 서로 다른 번호다.
+정리 기준: 2026-10-02, 앱 v0.26.0 / 세계 저장 형식 v9. 앱 버전(v0.x), 저장 형식(v1~v9), Sites 배포 버전은 서로 다른 번호다.
 
 ## 현재 상태를 확인하는 순서
 
@@ -12,7 +12,7 @@
 
 새 관찰 경험의 완료 기준은 [v0.20 매력 완성 로드맵](APPEAL_ROADMAP.md), 실제 실행 결과는 [검증 보고서](reports/appeal-validation.json)를 따른다.
 
-현재 개발 범위는 [v0.25 행동으로 이어지는 세계](LIVING_ACTIONS_PLAN.md)다. 이전 모바일 UI 개발 범위는 [v0.24 모바일 UI 계획](MOBILE_UI_PLAN.md)에 기록한다. [v0.23 지속 운영·대화·공사·규모](CONTINUITY_PLAN.md)는 이전 릴리스 기록이다. [v0.22 범위](EXPANSION_PLAN.md)는 이전 릴리스 기록이다. 이전 저장 기능은 [v0.21 계획](OPERATIONS_PLAN.md)에 보존한다.
+현재 개발 범위는 [v0.26 함께 준비하는 마을과 현장 관찰](COOPERATION_PLAN.md)이다. [v0.25 행동으로 이어지는 세계](LIVING_ACTIONS_PLAN.md)는 이전 릴리스 기록이다. 이전 모바일 UI 개발 범위는 [v0.24 모바일 UI 계획](MOBILE_UI_PLAN.md)에 기록한다. [v0.23 지속 운영·대화·공사·규모](CONTINUITY_PLAN.md)는 이전 릴리스 기록이다. [v0.22 범위](EXPANSION_PLAN.md)는 이전 릴리스 기록이다. 이전 저장 기능은 [v0.21 계획](OPERATIONS_PLAN.md)에 보존한다.
 
 ## 주제별 기준 문서
 

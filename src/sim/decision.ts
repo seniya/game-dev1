@@ -1,3 +1,4 @@
+import { prepareCandidates } from './cooperation';
 import { constructionCandidate } from './construction';
 import { gatheringCandidate } from './gatherings';
 import { canWork } from './employment';
@@ -78,6 +79,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
     if (lender?.alive) add('Repay', 55 + n.personality.empathy * .4 + (w.tick >= loan.due - 72 ? 25 : 0), `${lender.identity.name}에게 남은 빚 ${loan.remaining}개 중 ${Math.min(loan.remaining, n.inventory.food - 1)}개 상환`, lender.position, loan.id);
   }
   if (!canWork(w, n)) for (let i = list.length - 1; i >= 0; i--) if (list[i].kind === 'Work' || list[i].kind === 'Gather') list.splice(i, 1);
+  prepareCandidates(w, n, list);
   livingCandidates(w, n, list);
   const appointment = gatheringCandidate(w, n); if (appointment) list.push(appointment);
   return list.sort((a, b) => b.score - a.score);

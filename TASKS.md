@@ -1,6 +1,6 @@
 # 구현 작업
 
-현재 앱은 **v0.23.0**이다. 최신 추가 개발 범위는 [CONTINUITY_PLAN](CONTINUITY_PLAN.md), 실행·배포 결과는 [보고서 안내](reports/README.md)를 따른다. 문서 탐색은 [DOCUMENTATION](DOCUMENTATION.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)을 참고한다.
+현재 앱은 **v0.26.0**이다. 최신 추가 개발 범위는 [COOPERATION_PLAN](COOPERATION_PLAN.md), 실행·배포 결과는 [보고서 안내](reports/README.md)를 따른다. 문서 탐색은 [DOCUMENTATION](DOCUMENTATION.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)을 참고한다.
 
 아래 목록은 도입 순서의 누적 기록이다. 테스트 개수·상한·접근 정책은 당시 기준이며 현재 상태와 혼동하지 않는다. 구현·검증 완료 시 실제 결과로 갱신하고 실패·재검증·건너뜀도 보존한다.
 
@@ -362,3 +362,7 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 검증은 `reports/living-actions-validation.json`, 장기 결과는 `reports/living-actions-regression.json`. 운영 읽기로 v0.22 대기 147틱/437사건과 v0.23 대기 193틱/624사건의 복구 감사 기록을 확인했다. 실제 모델 추론·타인의 로그인·사람 평가·전역 production CPU/메모리 확인으로 표시하지 않는다. 배포 결과는 별도로 기록한다.
 
 - [x] v0.25 소스 `efbcd487580f3b7fbc6b6e473b8589aa29e014ef`를 기존 Sites 저장소에 push하고 같은 커밋에서 build/아카이브를 생성, **Sites 버전 37 succeeded** 확인. Sites가 제공한 소유자 자산 접근 자격으로 JS/CSS 동일성을 확인했고 세계 요청·명령에는 사용하지 않았다. 무인증 세계 API는 401이다. custom 정책·확정 세계 행(epoch/revision 3792/사건 21,540개/설정)이 배포 전후 동일하며 대기 진행 행은 없다. 전체 snapshot/원본 본문은 재해시하지 않았다. [배포 보고서](reports/deployment-v025.json).
+
+## v0.26 개발 범위
+
+주민 공동 사업·계절 식량 준비·개인 약속 학습·재방문 계기/후속 경과·조각별 대용량 아카이브 검증과 현장 관찰 UI. 배포된 v0.25 소스의 엔진을 그대로 보존해 미확정 진행 복구에 등록했다. 실행 결과와 실패·재검증은 reports/cooperation-validation.json, 회귀는 reports/cooperation-regression.json에 기록한다.

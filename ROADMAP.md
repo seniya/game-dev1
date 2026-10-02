@@ -1,6 +1,6 @@
 # Living Small World — 개발 로드맵
 
-정리: 2026-10-02. 현재 앱 **v0.25.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
+정리: 2026-10-02. 현재 앱 **v0.26.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
 
 v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPEAL_ROADMAP.md)에 기록한다. 지도 중심 화면, 실제 상태 기반 이야기 산책, 첫 관찰 안내와 몰입 보기를 구현했다.
 
@@ -10,6 +10,7 @@ v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPE
 
 | 버전 | 완료 범위 | 규칙·근거 |
 | --- | --- | --- |
+| v0.26 | 주민 자발 사업·계절 준비·약속 경험·재방문 인과 경과·100MB 스트리밍 아카이브·현장 관찰 UI | [범위](COOPERATION_PLAN.md) |
 | v0.25 | 주민 현장 공사·농장별 기록·먹이 탐색·대화 약속 결과·재방문 변화·복구 진단과 관찰 성능 | [범위](LIVING_ACTIONS_PLAN.md) |
 | v0.24 | 모바일 하단 메뉴·읽기 위치·터치·회전·대화상자 개선 | [범위](MOBILE_UI_PLAN.md) |
 | v0.23 | 엔진 지문별 복구·30일 운영 추이·연속 대화와 모임·공정 건설과 농장 보호·전체 엔진 최적화 | [범위](CONTINUITY_PLAN.md) |

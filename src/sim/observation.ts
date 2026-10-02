@@ -14,7 +14,8 @@ export const RETURN_TOPICS = [
  {id:'homes',label:'주거와 공사',kinds:['construction','migration','trade']},
  {id:'nature',label:'농장과 생태',kinds:['ecology']},
 ];
-export interface ReturnChange {topic:string;label:string;events:WorldEvent[]}
+export interface ChangeThread { eventId:string; cause?:WorldEvent; outcome?:WorldEvent }
+export interface ReturnChange {topic:string;label:string;events:WorldEvent[];threads?:ChangeThread[]}
 export interface ObserverPage {
   epoch: string; from: number; to: number; through: number; next: number | null;
   changes?:ReturnChange[]; events: WorldEvent[]; highlights: WorldEvent[]; counts: Record<string, number>; total: number;
@@ -26,6 +27,10 @@ export function localObserver(w: WorldState, epoch: string, from: number, to: nu
   rows.forEach(({e}) => counts[e.kind] = (counts[e.kind] ?? 0) + 1);
   const page = rows.filter(r => before === undefined || r.seq < before).reverse().slice(0,41);
   const highlights = rows.filter(({e})=>e.importance>=45).sort((a,b)=>b.e.importance-a.e.importance||b.seq-a.seq).slice(0,3).map(r=>r.e);
-  const changes=RETURN_TOPICS.map(t=>({topic:t.id,label:t.label,events:rows.filter(({e})=>t.kinds.includes(e.kind)&&e.importance>=45).slice(-2).reverse().map(r=>r.e)}));
+  const archive=w.events.slice(0,through).filter(e=>e.tick<=to);
+  const changes=RETURN_TOPICS.map(t=>{
+    const events=rows.filter(({e})=>t.kinds.includes(e.kind)&&e.importance>=45).slice(-2).reverse().map(r=>r.e);
+    return {topic:t.id,label:t.label,events,threads:events.map(e=>{const cause=archive.find(p=>p.id===e.causeId),outcome=archive.filter(p=>p.causeId===e.id&&!['memory','relationship'].includes(p.kind)).at(-1);return {eventId:e.id,...(cause?{cause}:{}),...(outcome?{outcome}:{})};})};
+  });
   return { changes, epoch, from, to, through, highlights, events: page.slice(0,40).map(r=>r.e), next: page.length > 40 ? page[39].seq : null, counts, total: rows.length };
 }

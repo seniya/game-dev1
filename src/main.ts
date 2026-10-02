@@ -1,3 +1,5 @@
+import { uploadArchive } from './ui/archive-upload';
+import { scenesView, liveScenes, focusView, type SceneLens } from './ui/scenes';
 import { promisesView } from './ui/gatherings';
 import { operationsHistory } from './ui/operations';
 import { conversationGatherings } from './sim/gatherings';
@@ -39,6 +41,7 @@ import { CloudClient, type CloudAction } from './ui/cloud';
 import { eventLink } from './ui/observatory';
 import './ui/styles.css';
 import './ui/mobile.css';
+import './ui/scenes.css';
 import { setupResponsiveUI, revealInspector } from './ui/responsive';
 import { Simulation, summarize } from './sim/engine';
 import { ACTION_LABELS, OCCUPATIONS, GOAL_LABELS, type WorldState, type WorldEvent, type NPC } from './sim/types';
@@ -77,6 +80,7 @@ let sim = new Simulation(42, DEFAULT_POPULATION), coordinator = new DecisionCoor
 const cloudMode = new URLSearchParams(location.search).get('local') !== '1';
 let cloud: CloudClient | undefined;
 let cloudReady = false;
+let sceneLens: SceneLens = 'all';
 let personalVillage: string | undefined;
 const isOwner = () => !cloudMode || cloud?.session?.role === 'owner';
 const isOwnNPC = (n: NPC) => cloudMode ? cloud?.session?.ownNpcIds.includes(n.id) ?? false : !!n.profile;
@@ -122,7 +126,7 @@ $('app').innerHTML = `
       <button class="nav-button" data-view="experiments" aria-label="관찰 실험실" title="관찰 실험실">${icon('flask')}<span>관찰 실험실</span></button>
     </nav>
     <div class="world-note"><span class="eyebrow">A WORLD OF THEIR OWN</span><div class="note-illustration">${icon('leaf', 38)}<span>·</span>${icon('food', 28)}</div><p>작은 선택들이 모여<br>하나의 세계가 됩니다.</p><span>이야기는 지금도 자라고 있어요.</span></div>
-    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.25</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
+    <div class="sidebar-bottom"><div class="engine-indicator"><i></i> 작은 세계 관측소 <span>v0.26</span></div><button id="about-button" class="quiet">${icon('book', 15)} 이 세계에 대하여</button></div>
   </aside>
   <main>
     <header class="topbar"><div class="breadcrumb">관측소 <span>/</span> <b id="breadcrumb-view">세계 관찰</b></div><div class="topbar-actions"><button id="account-button" class="button">공동 세계 참여</button><button id="create-character" class="button dark">＋ NPC 만들기</button><details id="world-tools" class="world-tools"><summary>세계 관리</summary><div class="world-tools-content"><span id="ai-badge" class="mock-badge">${icon('spark', 13)} Mock AI · API 없이 실행</span><button id="load-button" class="button">${icon('load', 16)} 불러오기</button><button id="save-button" class="button">${icon('save', 15)} 세계 저장</button></div></details></div></header>
@@ -133,7 +137,7 @@ $('app').innerHTML = `
         <div class="world-toolbar"><span>마을을 바라보는 시간</span><div><button class="text-button" data-walk-jump>이야기 산책 ↓</button><button class="text-button" data-walk-guide>처음 오셨나요?</button><button id="immersive-button" class="button" aria-pressed="false">몰입 보기 ⤢</button></div></div>
         <section class="panel map-panel" id="map-panel" tabindex="-1"><div class="panel-heading"><div><span class="small-dot"></span><h2 id="village-title">느티나무 마을</h2><span class="muted location-caption">NEUTINAMU VILLAGE</span></div><div class="weather-info" id="weather"></div></div>
           <div class="map-controls"><div class="time-controls"><button id="play-button" class="play-button" aria-label="일시정지">${icon('pause', 17)}</button><button id="step-button" class="icon-button" aria-label="한 틱 진행">${icon('step', 17)}</button><span class="control-divider"></span><div class="speed-switch" aria-label="시뮬레이션 배속">${[1, 5, 20].map(s => `<button data-speed="${s}" class="${s === 1 ? 'active' : ''}" aria-pressed="${s === 1}">${s}×</button>`).join('')}</div></div><div class="game-clock" id="game-clock"></div></div><details id="map-options" class="map-options"><summary>지도 범위·시설 찾기</summary><div class="map-navigation"><label>지도 범위 <select id="map-mode"><option value="city">정착지 전체</option><option value="region">세계 전체</option><option value="follow">선택 주민 따라보기</option></select></label><button id="follow-character" class="button">선택 주민 찾기</button><label>시설·자원 선택 <select id="object-picker" aria-label="시설·자원 선택"><option value="">지도에서 고르기</option></select></label><span id="map-scope" class="muted"></span></div></details><div class="map-wrap"><canvas id="world-map" aria-label="주민을 클릭해 자세히 볼 수 있는 마을 지도. 마을 주민 메뉴에서도 선택할 수 있습니다."></canvas><div class="map-badge"><i></i> 작은 세계 · <span id="map-size">48 × 36</span></div><button class="map-grid-button" id="grid-button" aria-label="지도 격자 표시" aria-pressed="false">${icon('grid', 17)}</button><div class="map-compass"><span>N</span>↑</div></div>
-          <section class="stats-grid" aria-label="세계 현황" id="stats"></section><div id="requests-prompt" class="requests-prompt" aria-live="off"></div><section id="walk-guide" class="walk-guide" aria-label="첫 관찰 안내"></section><section id="story-walk" class="story-walk" aria-label="이야기 산책"></section><section class="observer-panel" aria-label="마을의 하루"><div id="observer-heading" class="observer-heading"></div><div id="watch-list" class="watch-list"></div><div id="observer-content"></div></section><section id="requests-panel" class="requests-panel" aria-label="주민의 부탁" aria-live="off"></section><section id="observation-board" class="observation-board" aria-label="마을 관찰 과제"></section><div id="character-watch" class="character-watch" aria-live="off"></div><div id="civilization-panel" class="civilization-panel"></div>
+          <section id="map-focus" class="map-focus" aria-label="선택 주민의 지금"></section><section id="scene-observatory" class="scene-observatory" aria-label="현장 관찰"></section><section class="stats-grid" aria-label="세계 현황" id="stats"></section><div id="requests-prompt" class="requests-prompt" aria-live="off"></div><section id="walk-guide" class="walk-guide" aria-label="첫 관찰 안내"></section><section id="story-walk" class="story-walk" aria-label="이야기 산책"></section><section class="observer-panel" aria-label="마을의 하루"><div id="observer-heading" class="observer-heading"></div><div id="watch-list" class="watch-list"></div><div id="observer-content"></div></section><section id="requests-panel" class="requests-panel" aria-label="주민의 부탁" aria-live="off"></section><section id="observation-board" class="observation-board" aria-label="마을 관찰 과제"></section><div id="character-watch" class="character-watch" aria-live="off"></div><div id="civilization-panel" class="civilization-panel"></div>
           <div class="map-footer"><span><i class="legend-dot citizen"></i> 주민</span><span><i class="legend-dot farm"></i> 농장</span><span><i class="legend-dot resource"></i> 자원</span><span class="map-tip">주민·건물·자원을 선택해 살펴보세요</span></div>
         </section>
         <aside class="panel inspector" id="resident-inspector" tabindex="-1"><div class="inspector-title"><h2 id="inspector-heading">주민 들여다보기</h2><span class="muted">AGENT INSPECTOR</span></div><div id="npc-header"></div><div class="inspector-tabs" role="tablist"><button role="tab" aria-selected="true" data-tab="overview" class="active">일상</button><button role="tab" aria-selected="false" data-tab="relationships">관계</button><button role="tab" aria-selected="false" data-tab="memories">기억</button><button role="tab" aria-selected="false" data-tab="life">생애</button></div><div id="npc-detail" class="inspector-content"></div></aside>
@@ -144,7 +148,7 @@ $('app').innerHTML = `
       <section class="panel event-panel" id="event-panel"><div class="panel-heading"><div><h2>세계의 기록</h2><span class="record-badge">LIVE JOURNAL</span></div><button id="all-events-button" class="text-button">전체 기록 보기 ${icon('arrow', 14)}</button></div><div class="event-toolbar"><div class="event-filters">${[['important', '주요 사건'], ['social', '관계'], ['economy', '경제'], ['all', '모든 사건']].map(([value, text]) => `<button class="${value === 'important' ? 'active' : ''}" data-filter="${value}" aria-pressed="${value === 'important'}">${text}</button>`).join('')}</div><div class="event-search"><label><input id="selected-only" type="checkbox"/> 선택 주민</label><label class="search-box">${icon('search', 14)}<input id="event-search" placeholder="주민, 사건, ID 검색" aria-label="사건 검색"/></label></div></div><div class="journal-dates"><label>시작일 <input id="event-from" type="number" min="1" placeholder="전체" aria-label="기록 시작일"/></label><label>종료일 <input id="event-to" type="number" min="1" placeholder="전체" aria-label="기록 종료일"/></label></div><div id="events" class="event-list"></div><button id="more-events" class="more-button">이전 기록 더 보기</button></section>
       <footer class="page-footer"><span>${icon('leaf', 13)} 모든 이야기는 작은 선택에서 시작됩니다.</span><span id="save-status">자동 저장 대기 중 · 30초 간격</span></footer>
     </div>
-  </main><input type="file" id="file-input" accept=".json,application/json" hidden/><div id="toast" class="toast" role="status" hidden></div><dialog id="detail-dialog"><button id="close-dialog" class="dialog-close" aria-label="닫기">×</button><div id="dialog-content"></div></dialog>`;
+  </main><input type="file" id="file-input" accept=".json,.lsw,application/json,application/x-ndjson" hidden/><div id="toast" class="toast" role="status" hidden></div><dialog id="detail-dialog"><button id="close-dialog" class="dialog-close" aria-label="닫기">×</button><div id="dialog-content"></div></dialog>`;
 
 setupResponsiveUI();
 
@@ -189,6 +193,8 @@ function render() {
   if (!policyEditing) updateReadingPanel($('civilization-panel'), civilizationView(state), `civilization:${cloud?.world?.epoch ?? state.seed}`);
   const objectVillage = selectedObject?.kind === 'building' ? state.buildings.find(b => b.id === selectedObject?.id)?.settlementId : undefined;
   $('village-title').textContent = objectVillage ? state.civilization.settlements.find(v => v.id === objectVillage)?.name ?? '정착지' : map.viewMode === 'region' ? '세계 전체 · 정착지와 교역' : state.civilization.settlements.find(v => v.id === (map.viewMode === 'follow' ? selectedNPC().settlementId : state.civilization.focus))?.name ?? '정착지';
+  updateReadingPanel($('scene-observatory'), scenesView(state,sceneLens,state.civilization.focus), `scenes:${observationEpoch()}`);
+  updateReadingPanel($('map-focus'),focusView(state,selectedNPC()),`focus:${observationEpoch()}:${selectedId}`);
   map.update(state, selectedId, { playing, trace: presentationMotion, interval: cloudMode ? 2000 : 700 / speed, buffered: cloudMode, object: selectedObject }); presentationMotion = undefined; renderCharacterWatch(); renderInspector(); renderEvents();
   if (view === 'residents') renderResidents();
   if (view === 'economy') $('economy-view').innerHTML = economyView(state, metric);
@@ -371,7 +377,7 @@ $('file-input').onchange = async () => {
 };
 $('close-dialog').onclick = () => $<HTMLDialogElement>('detail-dialog').close();
 $('detail-dialog').onclick = event => { if (event.target === $('detail-dialog')) $<HTMLDialogElement>('detail-dialog').close(); };
-$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.24</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>여러 도시의 가족·세대·생산·생태·공동결정을 관찰합니다. 도시 연대기와 가계도에서 실제 사건을 따라갈 수 있으며, 모델 없이도 세계와 역사 조회가 동작합니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
+$('about-button').onclick = () => openDialog(`<div class="eyebrow">LIVING SMALL WORLD · 0.26</div><h2>스토리가 발생하는 세계</h2><p class="dialog-story">주민은 자신만의 욕구, 성격, 관계, 기억을 가진 존재입니다. 세계의 기본 법칙과 그들의 선택이 만나 마을의 이야기를 만듭니다.</p><p>한 틱은 10분입니다. 생존과 이동, 생산과 관계는 시드 기반 엔진이 처리합니다. AI는 중요한 사건에서만 목표와 해석을 제안하며, 자원이나 관계 수치를 바꿀 수 없습니다.</p><p>여러 도시의 가족·세대·생산·생태·공동결정을 관찰합니다. 도시 연대기와 가계도에서 실제 사건을 따라갈 수 있으며, 모델 없이도 세계와 역사 조회가 동작합니다.</p><button id="export-report" class="button">관측 통계 JSON 내보내기</button>`);
 $('dialog-content').addEventListener('click', event => { if ((event.target as HTMLElement).closest('#export-report')) download('living-small-world-report.json', JSON.stringify(summarize(state), null, 2)); });
 document.querySelector('.brand')!.addEventListener('click', event => { event.preventDefault(); setView('world'); });
 
@@ -570,13 +576,14 @@ function startCloud() {
     }
   };
   setTimeout(poll, 2000);
+  let activeImportController: AbortController | undefined;
   let pendingImport: { save?: string; upload?: string; epoch: string; revision: number } | undefined;
   const previewImport = (save: string) => {
     const summary = inspectSave(save), world = cloud!.world!;
     pendingImport = { save, epoch: world.epoch, revision: world.revision };
     openDialog(importPreview(summary));
   };
-  $('detail-dialog').addEventListener('close', () => { pendingImport = undefined; });
+  $('detail-dialog').addEventListener('close', () => { pendingImport = undefined; activeImportController?.abort(); });
   const loadStorage = async () => {
     const target = document.getElementById('storage-status'); if (!target) return;
     target.textContent = '저장 상태를 확인하는 중…';
@@ -606,7 +613,7 @@ function startCloud() {
       event.stopImmediatePropagation(); if (!cloudReady) return;
       cloudCommand(button.dataset.speed ? { type: 'speed', speed: Number(button.dataset.speed) as 1 | 5 | 20 } : actions[button.id]); return;
     }
-    const intercept = ['more-events', 'more-life', 'save-button', 'load-button', 'load-local', 'load-backup', 'storage-refresh', 'replay-start', 'replay-stop', 'replay-check', 'replay-export', 'apply-import', 'export-observations', 'export-report'];
+    const intercept = ['more-events', 'more-life', 'save-button', 'load-button', 'load-local', 'load-backup', 'storage-refresh', 'export-archive', 'replay-start', 'replay-stop', 'replay-check', 'replay-export', 'apply-import', 'export-observations', 'export-report'];
     if (!intercept.includes(button.id)) return;
     event.stopImmediatePropagation();
     if (button.id === 'more-events') void loadJournal(true);
@@ -616,10 +623,11 @@ function startCloud() {
     if (button.id === 'export-observations') void cloudDownload('observations', 'living-small-world-observations.json');
     if (button.id === 'load-button') {
       pendingImport = undefined;
-      openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>저장과 복원</h2><p>서버 세계는 함께 관찰하는 모든 계정에 반영됩니다. 교체 전 세계는 직전 백업 1개로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button" disabled>서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">파일 가져오기: UTF-8 기준 24MB 이하, 생존 주민 3,000명까지. 10MB 초과 파일은 분할 전송하며 24시간 안에 같은 파일로 재개할 수 있습니다. 적용 전에 내용을 확인합니다.</p><section id="storage-status" aria-live="polite"></section><button id="storage-refresh" class="button">저장 상태 새로 확인</button>`);
+      openDialog(`<div class="eyebrow">CONTINUE A WORLD</div><h2>저장과 복원</h2><button id="export-archive" class="button">큰 이력 아카이브 내려받기 (.lsw)</button><p>서버 세계는 함께 관찰하는 모든 계정에 반영됩니다. 교체 전 세계는 직전 백업 1개로 보관합니다.</p><div class="load-options"><button id="load-local" class="button">이 기기의 저장을 서버로 가져오기</button><button id="load-backup" class="button" disabled>서버의 교체 전 백업 복원</button><button id="load-file" class="button">JSON 파일에서 불러오기</button></div><p class="muted">JSON은 24MB 이하, .lsw 아카이브는 전체 100MB·현재 상태 12MB·사건 100,000건 이하, 생존 주민 3,000명까지. 10MB 초과 파일은 분할 전송하며 24시간 안에 같은 파일로 재개할 수 있습니다. 적용 전에 내용을 확인합니다.</p><section id="storage-status" aria-live="polite"></section><button id="storage-refresh" class="button">저장 상태 새로 확인</button>`);
       void loadStorage();
     }
     if (button.id.startsWith('replay-')) { void postJSON<{message:string}>('replay', {type:button.id.slice(7)}).then(r=>{ if(button.id==='replay-export') download('world-replay.json', JSON.stringify(r)); else {const el=document.getElementById('replay-status');if(el)el.textContent=r.message;} }).catch(cloudFailure); }
+    if (button.id === 'export-archive') { void cloud!.send({type:'save'}).then(()=>{const a=document.createElement('a');a.href='/api/export-archive';a.download='';a.click();}).catch(cloudFailure); }
     if (button.id === 'storage-refresh') void loadStorage();
     if (button.id === 'load-local') { try { const save = localStorage.getItem(STORAGE_KEY); if (!save) throw new Error('이 기기에 저장된 세계가 없습니다.'); previewImport(save); } catch (e) { cloudFailure(e); } }
     if (button.id === 'apply-import' && pendingImport) {
@@ -637,8 +645,20 @@ function startCloud() {
   $('offline-toggle').onchange = () => cloudCommand({ type: 'offline', enabled: $<HTMLInputElement>('offline-toggle').checked });
   $('file-input').onchange = async () => {
     const input = $<HTMLInputElement>('file-input'), file = input.files?.[0]; if (!file) return;
-    try { if (file.size <= 10_000_000) previewImport(await file.text()); else { openDialog('<h2>큰 세계 가져오기</h2><p id="upload-progress" aria-live="polite">파일을 준비하고 있습니다…</p>'); const uploadTarget=document.getElementById('upload-progress'); const uploaded=await uploadSave(file,text=>{ const el=document.getElementById('upload-progress'); if(el)el.textContent=text; }); if(!uploadTarget?.isConnected || !$<HTMLDialogElement>('detail-dialog').open)return; pendingImport={upload:uploaded.id,epoch:uploaded.epoch,revision:uploaded.revision}; openDialog(importPreview(uploaded.summary)); } }
-    catch (e) { cloudFailure(e); } finally { input.value = ''; }
+    activeImportController?.abort();const controller=new AbortController();activeImportController=controller;
+    try {
+      if (file.size <= 10_000_000 && !file.name.endsWith('.lsw')) previewImport(await file.text());
+      else {
+        openDialog('<h2>큰 세계 가져오기</h2><p id="upload-progress" role="status">파일을 준비하고 있습니다…</p><button id="upload-pause" class="button">전송 중단 · 나중에 이어가기</button>');
+        const uploadTarget=document.getElementById('upload-progress');
+        $('upload-pause').onclick=()=>{controller.abort();$('upload-progress').textContent='현재 조각까지 저장합니다. 같은 파일을 24시간 안에 다시 선택하면 이어갑니다.';};
+        const progress=(text:string)=>{if(uploadTarget?.isConnected)uploadTarget.textContent=text;};
+        const uploaded=file.name.endsWith('.lsw')?await uploadArchive(file,progress,controller.signal):await uploadSave(file,progress,controller.signal);
+        if(!uploadTarget?.isConnected || !$<HTMLDialogElement>('detail-dialog').open)return;
+        pendingImport={upload:uploaded.id,epoch:uploaded.epoch,revision:uploaded.revision};openDialog(importPreview(uploaded.summary));
+      }
+    }
+    catch (e) { if(activeImportController===controller&&!controller.signal.aborted)cloudFailure(e); } finally { if(activeImportController===controller){input.value='';activeImportController=undefined;} }
   };
 }
 for (const id of ['event-from', 'event-to']) $(id).oninput = () => { eventLimit = 40; renderEvents(); };
@@ -948,4 +968,16 @@ document.addEventListener('click',event=>{
  const id=b.dataset.protectFarm!;
  if(cloudMode)void cloud!.send({type:'farm-protection',buildingId:id}).then(()=>toast('농장 울타리를 설치했습니다.')).catch(cloudFailure).finally(()=>{b.disabled=false;});
  else {try{sim.protectFarm(id);render();localSave();toast('농장 울타리를 설치했습니다.');}catch(e){toast((e as Error).message);}finally{b.disabled=false;}}
+});
+
+// Observation navigation never advances time or issues a world command.
+document.addEventListener('click',event=>{
+ const button=(event.target as HTMLElement).closest<HTMLButtonElement>('[data-scene-lens],[data-scene],[data-focus-follow]');if(!button)return;
+ if(button.dataset.sceneLens&&['all','work','social','life'].includes(button.dataset.sceneLens)){sceneLens=button.dataset.sceneLens as SceneLens;render();return;}
+ if(button.dataset.focusFollow){selectNPC(button.dataset.focusFollow);$('map-panel').scrollIntoView({block:'start',behavior:'instant'});return;}
+ const scene=liveScenes(state,state.civilization.focus).find(s=>s.id===button.dataset.scene);if(!scene)return;
+ selectedObject=undefined;
+ if(scene.npc)selectedId=scene.npc;
+ map.focusObject(scene.position);$<HTMLSelectElement>('map-mode').value='city';render();
+ $('map-panel').scrollIntoView({block:'start',behavior:'instant'});
 });

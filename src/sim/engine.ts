@@ -1,3 +1,4 @@
+import { cooperationDay, cooperationTick, provisionDay } from './cooperation';
 import { knownPromiseEvent } from './promises';
 import { growFarm, agricultureDay, recordHarvest } from './agriculture';
 import { beginConstruction, constructionTick, assignConstruction, workConstruction } from './construction';
@@ -88,6 +89,7 @@ export class Simulation {
     const w = this.state; w.tick++;
     if (w.tick % TICKS_PER_DAY === 0) this.newDay();
     constructionTick(w);
+    cooperationTick(w);
     advanceJourneys(w);
     advanceFreight(w);
     indexPeople(w);
@@ -147,6 +149,7 @@ export class Simulation {
     const weatherName = { rain: '비', cloudy: '흐림', sunny: '맑음', drought: '가뭄' }[w.weather];
     appendEvent(w, { kind: 'weather', importance: 20, description: `${dayOf(w.tick)}일째 · ${weatherName}. ${w.weather === 'drought' ? '농장과 열매의 생산량이 감소한다.' : '새로운 하루가 시작되었다.'}` });
     agricultureDay(w);
+    provisionDay(w);
     ecologyDay(w);
     wildlifeDay(w);
     sampleDay(w);
@@ -155,6 +158,7 @@ export class Simulation {
       if (n.alive && n.inventory.food === 0 && n.needs.hunger > 65) socialEvent(w, { kind: 'scarcity', actorId: n.id, importance: 70, description: `${n.identity.name}이 식량 부족을 겪고 있다. 공동 창고에 ${stocks(w, n.settlementId).food}개가 남아 있다.` });
     }
     lifeDay(w);
+    cooperationDay(w);
     regionalDay(w);
     urbanDay(w);
     initializeUrban(w);
