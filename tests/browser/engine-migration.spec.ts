@@ -1,3 +1,4 @@
+import {LegacySimulation as V028Simulation} from '../../src/server/retained/b72423936fb4e2138ccd35578ea2666b6226b5651f80f60f729c00bb362fda2f';
 import {LegacySimulation as V027Simulation} from '../../src/server/retained/d1c19bfa17149028ebf4ad10664f9b11408d705f703b1c0962cc2bdee535193c';
 import {LegacySimulation as V026Simulation} from '../../src/server/retained/ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889';
 import {LegacySimulation as V024Simulation} from '../../src/server/retained/fd779772563d70c9d0a89198165ee82c2741f04d543a32c8b9cb904b5fef71af';
@@ -9,7 +10,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {LegacySimulation} from '../../src/server/legacy-v021';
 import type {WorldState} from '../../src/sim/types';
 
-for(const engine of [{version:'v027',Simulation:V027Simulation,build:'d1c19bfa17149028ebf4ad10664f9b11408d705f703b1c0962cc2bdee535193c'},{version:'v026',Simulation:V026Simulation,build:'ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889'},{version:'v024',Simulation:V024Simulation,build:'fd779772563d70c9d0a89198165ee82c2741f04d543a32c8b9cb904b5fef71af'},{version:'v023',Simulation:V023Simulation,build:'1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4'},{version:'v021',Simulation:LegacySimulation,build:'5809ccf28f7e3e9d2f897f7a23c03ecfe41c0de21b98432a7776949f4ac4d2f2'},{version:'v022',Simulation:V022Simulation,build:'94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b'}])
+for(const engine of [{version:'v028',Simulation:V028Simulation,build:'b72423936fb4e2138ccd35578ea2666b6226b5651f80f60f729c00bb362fda2f'},{version:'v027',Simulation:V027Simulation,build:'d1c19bfa17149028ebf4ad10664f9b11408d705f703b1c0962cc2bdee535193c'},{version:'v026',Simulation:V026Simulation,build:'ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889'},{version:'v024',Simulation:V024Simulation,build:'fd779772563d70c9d0a89198165ee82c2741f04d543a32c8b9cb904b5fef71af'},{version:'v023',Simulation:V023Simulation,build:'1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4'},{version:'v021',Simulation:LegacySimulation,build:'5809ccf28f7e3e9d2f897f7a23c03ecfe41c0de21b98432a7776949f4ac4d2f2'},{version:'v022',Simulation:V022Simulation,build:'94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b'}])
 test(`real Worker loads ${engine.version} retained engine and confirms previous-build progress once`,async({request})=>{
  const get=()=>request.get('/api/world').then(r=>r.json());
  const send=async(action:object)=>{const w=await get();const r=await request.post('/api/command',{headers:{Origin:'http://127.0.0.1:4173'},data:{id:crypto.randomUUID(),revision:w.revision,action}});expect(r.ok()).toBe(true);return r.json();};

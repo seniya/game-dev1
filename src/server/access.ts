@@ -1,3 +1,4 @@
+import { NPC_CREATION_LIMIT, type CharacterInput } from '../sim/character-schema';
 import type { D1Database, D1PreparedStatement } from '@cloudflare/workers-types';
 import type { Command, StoredWorld } from './world';
 declare const __LOCAL_AUTH__: boolean;
@@ -36,18 +37,21 @@ export function authorizeCommand(member: Member, command: Command) {
 export async function sessionView(db: D1Database, member: Member, world: StoredWorld, local: boolean): Promise<SessionView> {
   const rows = await db.prepare('SELECT npc FROM npc_creators WHERE epoch=? AND member=?').bind(world.epoch, member.id).all<{ npc: string }>();
   const own = rows.results.map(r => r.npc);
-  return { name: member.name, role: member.role, ownNpcIds: own, npcLimit: member.role === 'owner' ? null : 3, local };
+  return { name: member.name, role: member.role, ownNpcIds: own, npcLimit: NPC_CREATION_LIMIT, local };
 }
-export async function checkCreation(db: D1Database, member: Member, world: StoredWorld) {
-  if (member.role === 'owner') return;
+export async function checkCreation(db: D1Database, member: Member, world: StoredWorld, character: CharacterInput) {
   const count = await db.prepare('SELECT count(*) AS n FROM npc_creators WHERE epoch=? AND member=?').bind(world.epoch, member.id).first<{ n: number }>();
-  if ((count?.n ?? 0) >= 3) throw new AccessError('한 세계에서 참여자 한 명은 NPC를 최대 3명 만들 수 있습니다.');
+  if ((count?.n ?? 0) >= NPC_CREATION_LIMIT) throw new AccessError('한 세계에서 사용자 한 명은 NPC를 최대 5명 만들 수 있습니다.');
+  if (character.bonds?.length) {
+    const own = await sessionView(db, member, world, false);
+    if (character.bonds.some(b => !own.ownNpcIds.includes(b.npcId))) throw new AccessError('시작 친밀도는 내가 만든 NPC에게만 설정할 수 있습니다.');
+  }
 }
 export function creationStatements(db: D1Database, member: Member, world: StoredWorld, command: Command): D1PreparedStatement[] {
   if (command.action.type !== 'create-character') return [];
   return [
     db.prepare('INSERT INTO commit_guard(ok) SELECT CASE WHEN EXISTS(SELECT 1 FROM world_members WHERE id=? AND blocked=0) THEN 1 ELSE 0 END').bind(member.id),
-    ...(member.role === 'owner' ? [] : [db.prepare('INSERT INTO commit_guard(ok) SELECT CASE WHEN count(*)<3 THEN 1 ELSE 0 END FROM npc_creators WHERE epoch=? AND member=?').bind(world.epoch, member.id)]),
+    db.prepare('INSERT INTO commit_guard(ok) SELECT CASE WHEN count(*)<? THEN 1 ELSE 0 END FROM npc_creators WHERE epoch=? AND member=?').bind(NPC_CREATION_LIMIT, world.epoch, member.id),
     db.prepare('INSERT INTO npc_creators(epoch,npc,member,command) VALUES(?,?,?,?)').bind(world.epoch, world.meta.createdCharacter!.npcId, member.id, command.id),
   ];
 }

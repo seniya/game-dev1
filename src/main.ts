@@ -1,3 +1,5 @@
+import { NPC_CREATION_LIMIT } from './sim/character-schema';
+import { START_PRESETS, updateCreationBudgets } from './ui/characters';
 import { familyTree } from './ui/family-dashboard';
 import { dynastyView, localDynasty } from './ui/dynasty';
 import type { DynastyView } from './sim/dynasty';
@@ -781,7 +783,9 @@ function renderCharacterWatch() {
 $('create-character').onclick = () => {
   if (creatingCharacter) { toast('주민의 입주를 저장하고 있습니다.'); return; }
   if (cloudMode && !cloudReady) { toast('서버 연결을 먼저 확인해 주세요.'); return; }
-  openDialog(characterForm(state));
+  const ownIds = state.npcs.filter(isOwnNPC).map(n => n.id);
+  if (ownIds.length >= NPC_CREATION_LIMIT) { toast('한 세계에서 NPC는 최대 5명 만들 수 있습니다.'); return; }
+  openDialog(characterForm(state, ownIds));
 };
 document.addEventListener('change',event=>{const target=event.target as HTMLSelectElement;if(target.id==='biography-partner')biography.pair(target.value);});
 $('object-picker').onchange = () => { const [kind, id] = $<HTMLSelectElement>('object-picker').value.split(':'); if (id && (kind === 'building' || kind === 'resource')) selectObject({ kind, id }); else selectNPC(selectedId); };
@@ -799,6 +803,7 @@ function defaultCharmInputs(form: HTMLFormElement) {
 }
 document.addEventListener('input', event => {
   const form = (event.target as HTMLElement).closest<HTMLFormElement>('#character-form'); if (!form) return;
+  updateCreationBudgets(form);
   const data = new FormData(form);
   const a = Object.fromEntries(Object.keys(defaultCharacter('').appearance).map(k=>[k,String(data.get(k))])) as ReturnType<typeof appearance>;
   form.querySelectorAll<HTMLButtonElement>('[data-hair]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.hair===a.hairstyle)));
@@ -820,12 +825,12 @@ document.addEventListener('submit', async event => {
     const character = readCharacter(form); creatingCharacter = true; submit.disabled = true; $('character-error').textContent = '';
     let id: string;
     if (cloudMode) { const commandId = crypto.randomUUID(); await cloud!.send({ type: 'create-character', character }, commandId); const created = cloud!.world!.state.npcs.find(n => n.profile?.commandId === commandId); if (!created) throw new Error('세계가 교체되어 입주 결과를 찾을 수 없습니다. 주민 목록을 확인해 주세요.'); id = created.id; }
-    else { id = sim.createCharacter(character); state = sim.snapshot(); localSave(); }
+    else { if (state.npcs.filter(isOwnNPC).length >= NPC_CREATION_LIMIT) throw new Error('한 세계에서 NPC는 최대 5명 만들 수 있습니다.'); id = sim.createCharacter(character); state = sim.snapshot(); localSave(); }
     $<HTMLDialogElement>('detail-dialog').close(); selectNPC(id);
     selectedOnly = true; $<HTMLInputElement>('selected-only').checked = true; renderEvents();
     toast(`${character.name}이 입주했습니다. 재생하여 새로운 삶을 관찰하세요.`);
   } catch (error) { const box = $('character-error'); if (box) box.textContent = (error as Error).message; else toast((error as Error).message); }
-  finally { creatingCharacter = false; submit.disabled = false; }
+  finally { creatingCharacter = false; if (form.isConnected) updateCreationBudgets(form, false); }
 });
 
 // Delegated controls survive live board updates in local and server worlds.
@@ -890,7 +895,7 @@ function applyAccessUI() {
   const session = cloud?.session;
   $('account-button').hidden = !cloudMode;
   $('account-button').textContent = session ? `${session.role === 'owner' ? '소유자' : '참여자'} · 내 NPC ${session.ownNpcIds.length}` : '로그인 및 참여';
-  $<HTMLButtonElement>('create-character').disabled = cloudMode && (!cloudReady || !!session?.npcLimit && session.ownNpcIds.length >= session.npcLimit);
+  $<HTMLButtonElement>('create-character').disabled = cloudMode && !cloudReady || (cloudMode ? session?.ownNpcIds.length ?? 0 : state.npcs.filter(isOwnNPC).length) >= NPC_CREATION_LIMIT;
 }
 async function showAccount() {
   if (!cloud?.session) {
@@ -901,7 +906,7 @@ async function showAccount() {
   if (isOwner()) members = (await cloud.get<{ members: typeof members }>('members')).members;
   const own = state.npcs.filter(isOwnNPC);
   openDialog(`<h2>함께 살펴보는 하나의 세계</h2><p>${esc(session.name)} · ${isOwner() ? '소유자' : '참여자'}</p>
-    <p>초대받은 사람은 같은 마을을 관찰하고 NPC를 최대 3명 만들 수 있습니다. 시간·세계 설정·초기화는 소유자가 관리합니다.</p>
+    <p>초대받은 사람은 같은 마을을 관찰하고 소유자를 포함해 사용자당 NPC를 최대 5명 만들 수 있습니다. 시간·세계 설정·초기화는 소유자가 관리합니다.</p>
     <h3>내가 만든 NPC</h3>${own.map(n => `<button class="button" data-my-npc="${esc(n.id)}">${esc(n.identity.name)} · ${n.alive ? '살아가는 중' : '생애 기록'}</button>`).join('') || '<p>아직 만든 NPC가 없습니다. 상단의 NPC 만들기로 입주할 수 있습니다.</p>'}
     ${isOwner() ? `<h3>초대와 참여자 관리</h3><p>이 사이트의 ChatGPT 공유 메뉴에서 초대할 사람의 이메일을 추가하고 사이트 링크를 전달해 주세요. 초대받은 사람이 로그인하면 아래에 나타납니다. 초대를 완전히 취소하려면 공유 메뉴에서도 접근 권한을 제거하세요.</p><p>다른 참여자의 NPC와 기존 주민은 권한을 해제해도 세계에 남습니다.</p>${members.map(m => `<div class="member-row"><span>${esc(m.name)} · ${esc(m.email)} · ${m.role === 'owner' ? '소유자' : m.blocked ? '참여 중지' : '참여 가능'}</span>${m.role !== 'owner' ? `<button class="button" data-member="${esc(m.id)}" data-blocked="${m.blocked ? '0' : '1'}">${m.blocked ? '참여 재개' : '참여 중지'}</button>` : ''}</div>`).join('')}` : ''}
     ${session.local ? '<p class="muted">로컬 개발용 계정입니다.</p>' : '<a class="text-button" href="/signout-with-chatgpt?return_to=%2F" target="_top">로그아웃</a>'}`);
@@ -1041,4 +1046,13 @@ document.addEventListener('click',event=>{
  if(scene.npc)selectedId=scene.npc;
  map.focusObject(scene.position);$<HTMLSelectElement>('map-mode').value='city';render();
  $('map-panel').scrollIntoView({block:'start',behavior:'instant'});
+});
+
+document.addEventListener('click', event => {
+  const button = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-start]');
+  const form = button?.closest<HTMLFormElement>('#character-form'), preset = button && START_PRESETS[button.dataset.start!];
+  if (!form || !preset) return;
+  const values = { occupation: preset.occupation, goal: preset.goal, skill: preset.skill, education: preset.education, ...Object.fromEntries(Object.entries(preset.skills).map(([key, value]) => [`skills.${key}`, value])) };
+  for (const [key, value] of Object.entries(values)) (form.elements.namedItem(key) as HTMLInputElement).value = String(value);
+  updateCreationBudgets(form);
 });

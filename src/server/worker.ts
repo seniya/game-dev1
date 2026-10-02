@@ -134,7 +134,7 @@ const handler = {
         }
         const current = await store.read();
         if (command.revision !== current.revision) return json({ error: '다른 기기의 최신 상태를 반영했습니다. 변경을 다시 선택해 주세요.', world: viewWorld(current) }, 409);
-        if (command.action.type === 'create-character') await checkCreation(env.DB, member, current);
+        if (command.action.type === 'create-character') await checkCreation(env.DB, member, current, command.action.character);
         const acceptedAt = Date.now();
         const uploaded = command.action.type === 'import-upload' ? await prepareUpload(store,current,member.id,command.action.upload,command.id,acceptedAt) : undefined;
         const { world, events, motion } = uploaded ?? (command.action.type === 'restore-backup'

@@ -137,3 +137,36 @@ test('visual presets, hairstyles and wardrobe persist across save and reload on 
   await page.reload();await page.getByRole('button',{name:'마을 주민',exact:true}).click();await page.getByLabel('내가 만든 주민만').check();await page.locator('.resident-card').click();
   await expect(page.locator('#npc-header')).toContainText('별빛 이웃');
 });
+
+test('fair creation shows live budgets, balanced presets and lasting starting bonds on mobile', async ({page}) => {
+  await page.setViewportSize({width:390,height:844}); await page.goto('/?local=1');
+  await page.getByRole('button',{name:'일시정지',exact:true}).click();
+  await page.locator('#create-character').click();
+  let form=page.locator('#character-form');await form.getByLabel('이름',{exact:true}).fill('첫 친구');
+  await form.getByRole('button',{name:'이 세계에 입주시키기'}).click();await expect(form).not.toBeVisible();
+  await page.locator('#create-character').click();form=page.locator('#character-form');
+  await form.getByLabel('이름',{exact:true}).fill('두 번째 친구');
+  await form.getByRole('button',{name:'장인',exact:true}).click();
+  await expect(form.locator('#creation-budgets')).toContainText('능력 200 / 200');
+  await form.locator('summary').click();await form.getByLabel('교육',{exact:true}).fill('31');
+  await expect(form.locator('#creation-budgets')).toContainText('1점 초과');
+  await expect(form.getByRole('button',{name:'이 세계에 입주시키기'})).toBeDisabled();
+  await form.getByLabel('교육',{exact:true}).fill('30');
+  await form.getByLabel('첫 친구 · 시작 친밀도',{exact:true}).fill('60');
+  await expect(form.locator('#creation-budgets')).toContainText('시작 친밀도 60 / 120');
+  expect(await page.getByRole('dialog').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await form.locator('#creation-budgets').evaluate(el=>el.scrollIntoView({block:'center'}));
+  await page.screenshot({path:'reports/screenshots/v029-creation-mobile.png'});
+  await form.getByRole('button',{name:'이 세계에 입주시키기'}).click();await expect(form).not.toBeVisible();
+  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!));
+  const first=saved.npcs.find((n:any)=>n.identity.name==='첫 친구'),second=saved.npcs.find((n:any)=>n.identity.name==='두 번째 친구');
+  expect(second.relationships.find((r:any)=>r.npcId===first.id).familiarity).toBe(60);
+  expect(first.relationships.find((r:any)=>r.npcId===second.id).familiarity).toBe(60);
+  await page.reload();await page.locator('#create-character').click();
+  await expect(page.locator('#character-form')).toContainText('첫 친구 · 시작 친밀도');
+  await expect(page.locator('#character-form')).toContainText('두 번째 친구 · 시작 친밀도');
+  await page.locator('#character-form [name="greetId"]').evaluate((el: HTMLSelectElement)=>{el.add(new Option('이동한 주민','missing'));el.value='missing';});
+  await page.locator('#character-form').getByRole('button',{name:'이 세계에 입주시키기'}).click();
+  await expect(page.locator('#character-error')).toContainText('인사할 주민');
+  await expect(page.locator('#character-form')).toBeVisible();
+});

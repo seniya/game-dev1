@@ -475,3 +475,5 @@ select:focus-visible { outline:2px solid #73926b; outline-offset:3px; }
 .table-scroll th,.table-scroll td { padding:.4rem; text-align:left; white-space:nowrap; border-bottom:1px solid #7773; }
 #conversation-history article { padding:.6rem 0; border-bottom:1px solid #7773; }
 #conversation-history blockquote { margin:.6rem 0; padding-left:.8rem; border-left:3px solid #769f82; }
+
+.creation-budgets{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin:12px 0}.creation-budget{padding:9px 12px;border-radius:10px;background:#edf1e8;font-size:12px}.creation-budget.over-budget{background:#fbe7e2;color:#982f22}.start-presets{display:flex;flex-wrap:wrap;gap:8px}

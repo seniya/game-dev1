@@ -35,7 +35,7 @@ test('participants share the world but all owner-only mutations and exports are 
 });
 test('creation, ownership and quota commit atomically; retries and cross-user command replay cannot duplicate NPCs', async () => {
   const h = harness(); await h.world(); let first: { id: string; revision: number; action: Command['action'] } | undefined;
-  for (let j = 0; j < 3; j++) {
+  for (let j = 0; j < 5; j++) {
     const w = await h.world('guest'); const home = availableHomes(w.state).find(h => h.vacant > 0)!;
     const input = defaultCharacter(home.home.id); input.name = `참여자 주민 ${j}`;
     const command = { id: crypto.randomUUID(), revision: w.revision, action: { type: 'create-character', character: input } as Command['action'] };
@@ -44,11 +44,11 @@ test('creation, ownership and quota commit atomically; retries and cross-user co
     assert.equal((await h.call('guest', 'command', command)).status, 200);
     assert.equal((await h.call('other', 'command', command)).status, 409);
   }
-  const session = await (await h.call('guest', 'session')).json(); assert.equal(session.ownNpcIds.length, 3);
+  const session = await (await h.call('guest', 'session')).json(); assert.equal(session.ownNpcIds.length, 5);
   assert.equal((await (await h.call('other', 'session')).json()).ownNpcIds.length, 0);
   const w = await h.world('guest'), input = defaultCharacter(availableHomes(w.state).find(h => h.vacant > 0)!.home.id);
   assert.equal((await h.command('guest', { type: 'create-character', character: input })).status, 403);
-  assert.equal((await h.world()).state.npcs.length, 15);
+  assert.equal((await h.world()).state.npcs.length, 17);
   assert.equal((await h.call('guest', 'command', first)).status, 200);
 });
 test('concurrent visitors cannot overwrite creations and revoked visitors cannot read or write', async () => {
@@ -115,4 +115,27 @@ test('personal stars enforce twelve residents and remain independent of NPC crea
   await h.call('guest','personal-observation',{...add,npcId:'npc0',enabled:false});
   assert.equal((await h.call('guest','personal-observation',add)).status,200);
   assert.equal((await(await h.call('guest','personal-observation')).json()).watchIds.length,12);
+});
+
+test('owners also have five slots; concurrent last-slot requests and forged bonds cannot bypass authority', async () => {
+  const h = harness(); await h.world();
+  const create = async (who: string, bonds: { npcId: string; familiarity: number }[] = []) => {
+    const w = await h.world(who), a = defaultCharacter(availableHomes(w.state).find(h => h.vacant)!.home.id);
+    a.bonds = bonds; return h.command(who, { type: 'create-character', character: a });
+  };
+  assert.equal((await create('guest')).status, 200);
+  const guestId = (await (await h.call('guest', 'session')).json()).ownNpcIds[0];
+  for (const who of ['owner','other']) assert.equal((await create(who,[{npcId:guestId,familiarity:40}])).status,403);
+  assert.equal((await create('guest',[{npcId:guestId,familiarity:40}])).status,200);
+  const guestWorld = await h.world('guest'), second = guestWorld.state.npcs.at(-1)!;
+  assert.equal(second.relationships.find(r=>r.npcId===guestId)!.familiarity,40);
+  for (let i=0;i<4;i++) assert.equal((await create('owner')).status,200);
+  const w=await h.world(),a=defaultCharacter(availableHomes(w.state).find(h=>h.vacant)!.home.id);
+  const attempts=await Promise.all([1,2].map(()=>h.command('owner',{type:'create-character',character:a},crypto.randomUUID(),w.revision)));
+  assert.deepEqual(attempts.map(r=>r.status).sort(),[200,409]);
+  assert.equal((await create('owner')).status,403);
+  assert.equal((await (await h.call('owner','session')).json()).npcLimit,5);
+  const before=await h.world();a.skill=100;a.education=100;a.skills.field=1;
+  assert.equal((await h.command('other',{type:'create-character',character:a})).status,400);
+  assert.deepEqual(await h.world(),before);
 });

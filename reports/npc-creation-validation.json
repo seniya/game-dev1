@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-02",
+  "version": "0.29.0",
+  "core": {
+    "full_suite_passed": 301,
+    "final_character_suite_passed": 11,
+    "unique_tests_passed": 302,
+    "note": "Full suite followed by added v028 recovery test and final budget boundary checks in the 11-test character suite."
+  },
+  "browser": {
+    "targeted_suite_passed": 17,
+    "v028_worker_recovery_passed": 1,
+    "final_fair_creation_passed": 1,
+    "unique_tests_passed": 18,
+    "scope": [
+      "Chromium",
+      "320/390/430/768/1280px",
+      "local and server creation",
+      "invited ownership",
+      "budgets and presets",
+      "reciprocal bonds and reload",
+      "error remains visible",
+      "previous-engine recovery"
+    ]
+  },
+  "preservation": {
+    "retained_commit": "d09db00300aaf09562d0c65d4f9b4fde7cc3d85e",
+    "retained_fingerprint": "b72423936fb4e2138ccd35578ea2666b6226b5651f80f60f729c00bb362fda2f",
+    "old_over_budget_residents_load": true
+  },
+  "screenshot": "reports/screenshots/v029-creation-mobile.png",
+  "limitations": [
+    "No real other-account ChatGPT login trial",
+    "No new Chrome on-device inference test",
+    "Budget numbers are an initial balance, not proven equal long-term outcomes"
+  ],
+  "initial_failure": {
+    "old_three_slot_test": "Expected fourth creation to fail; updated to five slots, targeted and full suites then passed"
+  }
+}

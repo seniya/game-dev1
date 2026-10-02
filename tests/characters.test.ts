@@ -99,3 +99,66 @@ test('expanded appearance round trips without changing old profiles or allowing 
   assert.equal(appearanceSchema.safeParse({...input.appearance,accent:'url(javascript:bad)'}).success,false);
   assert.equal(appearanceSchema.safeParse({...input.appearance,hairstyle:'<script>'}).success,false);
 });
+
+test('creation budgets reject excess before mutation, preserve exact boundaries and include omitted defaults', async () => {
+  const { characterSchema, creationBudgets } = await import('../src/sim/character-schema');
+  const { START_PRESETS } = await import('../src/ui/characters');
+  for (const p of Object.values(START_PRESETS)) {
+    const { label, ...preset } = p, a = {...defaultCharacter('b4'),...preset};
+    assert.equal(characterSchema.safeParse(a).success,true,label);
+    assert.equal(creationBudgets(a)[0].used,200);
+  }
+  const bonds=defaultCharacter('b4');bonds.bonds=[{npcId:'a',familiarity:60},{npcId:'b',familiarity:60}];
+  assert.equal(characterSchema.safeParse(bonds).success,true);
+  bonds.bonds.push({npcId:'c',familiarity:1});assert.equal(characterSchema.safeParse(bonds).success,false);
+  const sim=new Simulation(), before=sim.save();
+  const badInputs = [
+    {...defaultCharacter('b4'),skill:100,education:100},
+    {...defaultCharacter('b4'),wealth:500},
+    {...defaultCharacter('b4'),traits:{patience:100,optimism:100,frugality:100,independence:100}},
+    {...defaultCharacter('b4'),desires:{security:100,belonging:100,comfort:100,mastery:100,prosperity:100,novelty:100}},
+    {...defaultCharacter('b4'),needs:{hunger:0,thirst:0,fatigue:0,health:100,safety:100,social:100}},
+  ];
+  for (const a of badInputs) { assert.throws(()=>sim.createCharacter(a),/총합/);assert.equal(sim.save(),before); }
+  const a=defaultCharacter('b4');a.skill=100;a.education=80;assert.equal(characterSchema.safeParse(a).success,true);
+  a.skill++;assert.equal(characterSchema.safeParse(a).success,false);
+  const omitted=defaultCharacter('b4');delete omitted.traits;delete omitted.desires;delete omitted.body;
+  const id=sim.createCharacter(omitted);assert.deepEqual(sim.snapshot().living.people[id].traits,defaultCharacter('b4').traits);
+});
+
+test('starting bonds are reciprocal, evidenced, bounded, atomic and survive save/load continuation', () => {
+  const sim=new Simulation();sim.setLLM(false);
+  const first=sim.createCharacter(defaultCharacter('b4'));
+  const a=defaultCharacter('b5');a.bonds=[{npcId:first,familiarity:60}];
+  const before=sim.save();
+  for (const bonds of [[{npcId:'npc0',familiarity:40}],[{npcId:first,familiarity:61}],[{npcId:first,familiarity:40},{npcId:first,familiarity:40}]]) {
+    assert.throws(()=>sim.createCharacter({...a,bonds}));assert.equal(sim.save(),before);
+  }
+  const second=sim.createCharacter(a),w=sim.snapshot();
+  for (const [id,other] of [[first,second],[second,first]]) {
+    const n=w.npcs.find(n=>n.id===id)!,r=n.relationships.find(r=>r.npcId===other)!;
+    assert.equal(r.familiarity,60);assert.equal(r.trust,55);assert.equal(r.affection,30);assert.equal(r.family,false);
+    assert.ok(w.events.some(e=>r.evidence.includes(e.id)&&e.data.initialBond===true));
+    assert.ok(n.memories.some(m=>m.relatedNpcIds.includes(other)));
+  }
+  const loaded=Simulation.load(sim.save());sim.step(144);loaded.step(144);assert.equal(sim.save(),loaded.save());
+});
+
+test('v0.28 pending progress and old unrestricted residents survive the new creation rules', async () => {
+  const fingerprint='b72423936fb4e2138ccd35578ea2666b6226b5651f80f60f729c00bb362fda2f';
+  const {retainedEngine}=await import('../src/server/engine-registry');
+  const {LiveWorldStore}=await import('../src/server/live-store');
+  const {LegacySimulation}=await retainedEngine(fingerprint)!();
+  const DB=database(),store=new WorldStore(DB);await store.init(Date.now());const saved=await store.read();
+  const sim=LegacySimulation.load(JSON.stringify(saved.state));sim.setLLM(false);
+  const input=defaultCharacter('b4');input.skill=100;input.education=100;input.wealth=1000;
+  sim.createCharacter(input);saved.state=sim.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';saved.meta.eventCount=saved.state.events.length;
+  await DB.batch([DB.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),DB.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
+  sim.step(60,undefined);const state=sim.snapshot() as unknown as typeof saved.state,old=new Set(saved.state.events.map(e=>e.id));
+  const meta={...saved.meta,eventCount:saved.meta.eventCount+state.events.filter(e=>!old.has(e.id)).length};
+  await DB.batch([DB.prepare('INSERT INTO world_live VALUES(1,?,1,?)').bind(saved.revision,JSON.stringify({build:fingerprint,epoch:saved.epoch,ticks:60,meta,started:Date.now(),id:crypto.randomUUID()}))]);
+  const recovered=await new LiveWorldStore(DB,'v029').read();
+  assert.deepEqual(recovered.state,JSON.parse(JSON.stringify(compactWorld(state))));
+  assert.equal(await DB.prepare('SELECT * FROM world_live').first(),null);
+  Simulation.load(JSON.stringify(recovered.state));
+});
