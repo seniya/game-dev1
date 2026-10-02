@@ -152,7 +152,7 @@ test('v0.28 pending progress and old unrestricted residents survive the new crea
   const DB=database(),store=new WorldStore(DB);await store.init(Date.now());const saved=await store.read();
   const sim=LegacySimulation.load(JSON.stringify(saved.state));sim.setLLM(false);
   const input=defaultCharacter('b4');input.skill=100;input.education=100;input.wealth=1000;
-  sim.createCharacter(input);saved.state=sim.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';saved.meta.eventCount=saved.state.events.length;
+  sim.createCharacter(input, undefined);saved.state=sim.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';saved.meta.eventCount=saved.state.events.length;
   await DB.batch([DB.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),DB.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
   sim.step(60,undefined);const state=sim.snapshot() as unknown as typeof saved.state,old=new Set(saved.state.events.map(e=>e.id));
   const meta={...saved.meta,eventCount:saved.meta.eventCount+state.events.filter(e=>!old.has(e.id)).length};
