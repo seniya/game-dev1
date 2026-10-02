@@ -6,7 +6,8 @@
 
 | 범위 | 결과·근거 |
 | --- | --- |
-| v0.22 검증 | [expansion-validation.json](expansion-validation.json): 전체 서버 241개·브라우저 70개, 마지막 관련 17개/7개, 실모델 1개 건너뜀 |
+| v0.22 배포 | [deployment-v022.json](deployment-v022.json): Sites 34 `succeeded`, 운영 자산 일치·custom 정책 동일·확정 메타데이터와 대기 51틱 행 유지; 이전 엔진 복구는 최초 인증 조회 시 수행 |
+| v0.22 검증 | [expansion-validation.json](expansion-validation.json): 전체 서버 241개·브라우저 70개, 마지막 관련 17개/7개 및 배포 보존 관련 29개/5개, 실모델 1개 건너뜀 |
 | v0.22 장기·규모 | [expansion-regression.json](expansion-regression.json): 365일 6조건 및 300/1000/3000명 총 9조건, 회계·근거 무결성·복원; [공간 색인](scale-profile-v022.json) |
 | v0.21 배포 | [deployment-v021.json](deployment-v021.json): Sites 32 `succeeded`, 운영 자산 일치·custom 정책 동일·확정 세계 행 동일·미확정 진행 없음 |
 | v0.21 저장·복원 | [storage-operations-validation.json](storage-operations-validation.json): 코어/서버 232개, 브라우저 66개 통과·실제 Chrome 1개 건너뜀; 파일 미리보기·서버 백업·본문 크기·동시성·권한·모바일 |

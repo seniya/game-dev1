@@ -1,0 +1,103 @@
+{
+  "id": "appgdep_6abef6ced21881919b0814aa887ef20f",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_9e3cf13b26508191bf8f711ca332adb4",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-02T00:12:13.040280+00:00",
+  "source_commit": "1a19672b2871f3b8115b49fe33fb632950b9da91",
+  "sites_version": 34,
+  "saved_archive_content_hash": "sha256:96c2855aa854cc89929caeede08496b6e4e773eb2a8d5b64144951dcceb2831a",
+  "validation_report": "reports/expansion-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "built_from_pushed_commit": true,
+    "artifact": "living-small-world-v022-final-deployment.tar.gz",
+    "includes_retained_engine_chunk": true
+  },
+  "saved_but_not_deployed": {
+    "version": 33,
+    "reason": "Replaced before deployment by version 34 with exact previous-engine recovery for pending production progress."
+  },
+  "production_preservation": {
+    "same_confirmed_metadata": true,
+    "same_pending_clock_row": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3784,
+    "confirmed_meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790898724021,
+      "lastSeen": 1790898724021,
+      "eventCount": 16802,
+      "socialCount": 674,
+      "catchupTicks": 132,
+      "skippedTicks": 2884,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790898724021
+    },
+    "pending_clock": {
+      "build": "5809ccf28f7e3e9d2f897f7a23c03ecfe41c0de21b98432a7776949f4ac4d2f2",
+      "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+      "ticks": 51,
+      "meta": {
+        "running": true,
+        "speed": 1,
+        "offline": true,
+        "clock": 1790898759884,
+        "lastSeen": 1790898759884,
+        "eventCount": 16958,
+        "socialCount": 684,
+        "catchupTicks": 46,
+        "skippedTicks": 0,
+        "aiMode": "chrome",
+        "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+        "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+        "pendingTicks": 0,
+        "savedAt": 1790898724021
+      },
+      "started": 1790898724021,
+      "id": "9a48cf5a-06b3-4192-8a98-f07122dc875f"
+    },
+    "world_reset": false,
+    "explicit_save_before_deploy": false,
+    "production_migration_completed": false,
+    "explanation": "Sites bypass is not an application owner session. No identity headers were fabricated and no production command was submitted. Confirmed metadata and pending clock match byte-for-byte before/after deployment. Exact prior engine retained for recovery on first authenticated world read. Full archive/snapshot bodies were not rehashed."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "assets": [
+      {
+        "asset": "index-CS-STtFS.js",
+        "status": 200,
+        "bytes": 480059,
+        "sha256": "84df18c1481ed1285ebaee4276d629bde52ab132fc8f50e5e6291fbccfc7c6e5",
+        "matchesBuild": true
+      },
+      {
+        "asset": "index-Cz8HyW7V.css",
+        "status": 200,
+        "bytes": 61735,
+        "sha256": "8aa12ccd5fe64f6217909cacf827a23bfe8c128b7c61477017c7c1a6f4773d89",
+        "matchesBuild": true
+      }
+    ],
+    "authenticated_browser_smoke": false,
+    "limits": "Local Worker/D1 tests covered engine recovery and application flows. Real invited-user login and real Chrome Korean inference were not performed."
+  }
+}

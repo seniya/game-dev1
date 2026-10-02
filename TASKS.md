@@ -323,4 +323,4 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - [x] 전체 코어·서버 241개 및 브라우저 70개 통과/실제 Chrome 1개 건너뜀. 마지막 입력 검증·표시 보완 후 관련 서버 17개(신규 1개 포함), 브라우저 7개 통과. 초기 실패와 수정 결과는 [검증 보고서](reports/expansion-validation.json)에 보존.
 - [x] 3시드 × off/Mock × 365일 6조건과 300명 30일·1,000명 3일·3,000명 1일: 회계 오차 0·원본 사건 근거 누락 0·복원 연속성. [회귀](reports/expansion-regression.json), [공간 색인 프로파일](reports/scale-profile-v022.json).
 - [x] 정확한 v0.21 엔진 보존본으로 배포 경계의 대기 진행을 복구. 관련 서버 29개·실제 Worker/저장 브라우저 5개 통과.
-- [ ] 정확한 소스 커밋의 production build·같은 custom 사이트 배포 확인.
+- [x] 소스 `1a19672b2871f3b8115b49fe33fb632950b9da91`의 production build와 **Sites 버전 34 succeeded**. 운영 JS/CSS 일치, custom 접근 정책·확정 메타데이터·이전 엔진 대기 51틱 행 유지. 최초 인증 조회의 복구 완료 여부는 배포 직후 미확인. [배포 보고서](reports/deployment-v022.json).

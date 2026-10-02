@@ -58,7 +58,11 @@
       "reason": "Navigation aborted during source edits/development reload in multiplayer test. Frozen-source full rerun passed 70, skipped 1."
     }
   ],
-  "build": "pending exact-commit build",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "sourceCommit": "1a19672b2871f3b8115b49fe33fb632950b9da91"
+  },
   "boundaries": [
     "No new real Chrome Korean inference/quality success claimed. Mocked API, unsupported behavior, and server evidence validation are separately covered.",
     "No real invited-person login performed.",
@@ -78,5 +82,6 @@
       "real local Worker dynamic chunk recovery"
     ],
     "productionTrigger": "First authenticated world read after deployment; no fabricated application identity."
-  }
+  },
+  "deploymentReport": "deployment-v022.json"
 }
