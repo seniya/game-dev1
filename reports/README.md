@@ -1,11 +1,13 @@
 # 검증·배포 보고서 안내
 
-정리: 2026-10-02. 최신 앱은 v0.30.1, 배포는 Sites 43 `succeeded`이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
+정리: 2026-10-02. 최신 앱은 v0.31.0, 배포는 Sites 44 `succeeded`이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
 
 ## 최신 증거와 버전별 색인
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.31 배포 | [deployment-v031.json](deployment-v031.json): Sites 44 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계·이전 엔진 대기 130틱 행 보존. 운영 복구는 다음 인증 조회 뒤 수행 |
+| v0.31 검증 | [검증](village-life-validation.json): 코어·서버 337개, 고유 브라우저 104개(재검증 포함)·실모델 1개 제외, [365일·규모 9조건](village-life-regression.json)·독립 재개 89회·build 통과. [수정 전 회귀](village-life-regression-initial.json)를 별도로 보존 |
 | v0.30.1 배포 | [deployment-v0301.json](deployment-v0301.json): Sites 43 `succeeded`, custom 정책·확정 세계·124틱 대기 행 동일. 이전 엔진 보존·자동 복구 테스트 통과; 운영 복구는 다음 인증 조회 때 수행 |
 | v0.30.1 돌봄 표시 | [검증](child-observation-validation.json): 코어·서버 315개, 관련 브라우저 15개 및 화면 캡처 재검증 1회, production build 통과. 16세 식사 재현·성인 전환·돌봄과 이주 표시 |
 | v0.30 배포 | [deployment-v030.json](deployment-v030.json): Sites 42 `succeeded`, custom 정책·확정 세계·설정 동일, 배포 전후 대기 진행 없음 |

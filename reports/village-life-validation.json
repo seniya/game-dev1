@@ -141,5 +141,7 @@
         "created_people": 3000
       }
     ]
-  }
+  },
+  "production_build": "passed",
+  "deployment": "deployment-v031.json"
 }

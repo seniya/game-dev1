@@ -1,0 +1,108 @@
+{
+  "version": "0.31.0",
+  "date": "2026-10-02",
+  "deployment": {
+    "id": "appgdep_6abf86e940548191ab6da9c2f4a826dc",
+    "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+    "title": "Living Small World",
+    "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_5f67472aa5688191bbafb4f46060207b",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+    "failure_message": null,
+    "env_set_revision": 1,
+    "updated_at": "2026-10-02T10:27:05.283873+00:00"
+  },
+  "saved_version": {
+    "id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_5f67472aa5688191bbafb4f46060207b",
+    "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+    "version_number": 44,
+    "source": {
+      "commit_sha": "d8101dc4d0c4a4ce1ba791fe3c9fed74a98c8f25"
+    },
+    "archive_storage": {
+      "archive_format": "tar",
+      "sediment_file_id": "file_000000008b8482099faf485297d00813",
+      "content_hash": "sha256:e1a5344551ad8691aa27b162fb1f57cef4a5238ffa1ff98521560550a7a25a41",
+      "size_bytes": 4229120,
+      "file_count": 21
+    },
+    "screenshot_url": null,
+    "deployment_id": null
+  },
+  "source_commit": "d8101dc4d0c4a4ce1ba791fe3c9fed74a98c8f25",
+  "local_archive_sha256": "bc2fdea4aef1b6c637c1d3c6c061c5b2d9cc343b9814b3f6d41bd2081cccd15e",
+  "validation": {
+    "core_server_passed": 337,
+    "browser_unique_passed": 104,
+    "real_chrome_model_skipped": 1,
+    "long_regression_conditions": 9,
+    "independent_resume_checks": 89,
+    "production_build": "passed",
+    "retained_integrity": "passed"
+  },
+  "assets": {
+    "htmlStatus": 200,
+    "assets": [
+      {
+        "path": "/assets/index-B_qaHg40.js",
+        "status": 200,
+        "matches": true,
+        "sha256": "3ce7657c6886a765ece42daff1fd09247a15e8615a032a3bfd142eedbde9ed52"
+      },
+      {
+        "path": "/assets/index-Bn7iFcvH.css",
+        "status": 200,
+        "matches": true,
+        "sha256": "14747a25bb36e4fad9b80408850589fd714043f955171770b5da3643da525e55"
+      }
+    ]
+  },
+  "preservation": {
+    "access_mode": "custom",
+    "access_policy_unchanged": true,
+    "confirmed_world_row_unchanged": true,
+    "pending_world_row_unchanged": true,
+    "before_world": [
+      {
+        "id": 1,
+        "revision": 3811,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790933979641,\"lastSeen\":1790933979641,\"eventCount\":30887,\"socialCount\":1531,\"catchupTicks\":108,\"skippedTicks\":5137,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790933979641,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "after_world": [
+      {
+        "id": 1,
+        "revision": 3811,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790933979641,\"lastSeen\":1790933979641,\"eventCount\":30887,\"socialCount\":1531,\"catchupTicks\":108,\"skippedTicks\":5137,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790933979641,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "before_pending": [
+      {
+        "id": 1,
+        "revision": 3811,
+        "sequence": 6,
+        "body": "{\"build\":\"946b7eb767208c62184089d580cfe046f0b18bcabe48ca6842eb544123efbb14\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":130,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790934109804,\"lastSeen\":1790934109804,\"eventCount\":31307,\"socialCount\":1558,\"catchupTicks\":108,\"skippedTicks\":55,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790933979641,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}},\"started\":1790933979641,\"id\":\"9626dd63-d3ff-4763-b190-8a66f5685e2d\"}"
+      }
+    ],
+    "after_pending": [
+      {
+        "id": 1,
+        "revision": 3811,
+        "sequence": 6,
+        "body": "{\"build\":\"946b7eb767208c62184089d580cfe046f0b18bcabe48ca6842eb544123efbb14\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":130,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790934109804,\"lastSeen\":1790934109804,\"eventCount\":31307,\"socialCount\":1558,\"catchupTicks\":108,\"skippedTicks\":55,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790933979641,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}},\"started\":1790933979641,\"id\":\"9626dd63-d3ff-4763-b190-8a66f5685e2d\"}"
+      }
+    ],
+    "world_reset": false,
+    "retained_engine": "946b7eb767208c62184089d580cfe046f0b18bcabe48ca6842eb544123efbb14",
+    "boundary": "No application owner session was available for explicit save (API returned 401). Pending 130 ticks preserved byte-for-byte. Exact old-engine recovery tested locally; production replay and new rules begin at the next authenticated world read/step and were not forced. Full snapshot/event bodies were not rehashed."
+  },
+  "packaging": {
+    "initial_attempt": "Archive rooted inside dist was rejected for missing supported dist/server entrypoint; repackaged with root .openai/hosting.json and dist. No source changes; version 44 saved and deployed successfully."
+  }
+}

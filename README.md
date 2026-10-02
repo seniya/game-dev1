@@ -4,7 +4,7 @@
 
 현재 앱은 **v0.31.0**, 세계 저장 형식은 **v9**입니다. v1~v8 저장을 변환해서 읽으며 기존 세계를 업데이트만으로 초기화하지 않습니다. [문서 안내](DOCUMENTATION.md)에서 현재 규칙과 과거 개발 기록을 찾아볼 수 있습니다.
 
-배포 주소: [Living Small World](https://living-small-world-observatory.seniya2.chatgpt.site). 최신 저장된 배포 결과는 **Sites 버전 43, succeeded**입니다. [v0.30.1 배포 보고서](reports/deployment-v0301.json). 버전별 배포 상태와 보존 경계는 [검증·배포 보고서](reports/README.md)를 따릅니다. 과거 v0.19의 미확정 진행 손실 기록도 원본 보고서에 보존합니다.
+배포 주소: [Living Small World](https://living-small-world-observatory.seniya2.chatgpt.site). 최신 저장된 배포 결과는 **Sites 버전 44, succeeded**입니다. [v0.31 배포 보고서](reports/deployment-v031.json). 버전별 배포 상태와 보존 경계는 [검증·배포 보고서](reports/README.md)를 따릅니다. 과거 v0.19의 미확정 진행 손실 기록도 원본 보고서에 보존합니다.
 
 v0.31은 먹거리·채집·집살림으로 시작해 인구와 실제 수요에 따라 직업이 늘어납니다. 만 4세부터 보호자와 바깥놀이를 하고, 성격에 따른 다툼과 중재, 사고·부상·현장 돌봄·회복이 원본 사건으로 이어집니다. 기존 세계는 유지하면서 새 생활 규칙을 적용합니다. [작은 마을의 생활 규칙](VILLAGE_LIFE_PLAN.md).
 
