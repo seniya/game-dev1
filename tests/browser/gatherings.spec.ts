@@ -31,7 +31,8 @@ for (const mobile of [false, true]) test(`resident appointments show direct invi
 });
 
 test('changed appointments show the original request, fresh consent and grounded recurring neighbours', async ({ page }) => {
-  const sim = new Simulation(42); sim.setLLM(false);
+  // Seed 7 contains a recorded rescheduling and recurring circle under village-life rules.
+  const sim = new Simulation(7); sim.setLLM(false);
   let w = sim.snapshot();
   for (let day = 0; day < 30; day++) { sim.step(144); w = sim.snapshot(); if (w.gatherings?.items.some(g => g.schedule && g.invitations.some(i => i.scheduleEventId))) break; }
   const g = w.gatherings!.items.find(g => g.schedule && g.invitations.some(i => i.scheduleEventId))!; expect(g).toBeTruthy();

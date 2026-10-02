@@ -1,3 +1,4 @@
+import { occupationAllowed } from './development';
 import { inheritBusinesses } from './family-enterprise';
 import { learnFamilyTrade, chooseFamilyTrade } from './legacy-learning';
 import { household } from './spatial';
@@ -116,6 +117,7 @@ export function die(w: WorldState, n: NPC, reason: 'age' | 'needs' | 'illness') 
   if (!n.alive) return;
   for (const e of w.urban.enterprises) e.workers = e.workers.filter(id => id !== n.id);
   delete w.urban.citizens[n.id].employer;
+  if(w.villageLife)delete w.villageLife.activities[n.id];
   n.alive = false; n.needs.health = 0; delete n.currentAction; n.life.deathTick = w.tick; w.stats.deaths++;
   const e = socialEvent(w, { kind: 'death', actorId: n.id, causeId: reason === 'illness' ? w.urban.citizens[n.id].healthEventId : undefined, participants: [n.id, ...w.npcs.filter(p => p.alive && (p.life.parentIds.includes(n.id) || p.id === n.life.partnerId)).map(p => p.id)], importance: 100, description: `${n.identity.name}이 ${reason === 'age' ? '노화' : reason === 'illness' ? '질병·부상과 건강 악화' : '생존 자원 부족'}로 ${n.identity.age}세에 세상을 떠났다.`, data: { reason, disease: w.urban.citizens[n.id].disease, injury: w.urban.citizens[n.id].injury, age: n.identity.age, hunger: n.needs.hunger, thirst: n.needs.thirst, fatigue: n.needs.fatigue, food: n.inventory.food, storageFood: stocks(w, n.settlementId).food, weather: w.weather } });
   n.life.deathEventId = e.id; settleEstate(w, n, e.id);
@@ -127,8 +129,13 @@ export function lifeDay(w: WorldState) {
     if (n.identity.age >= 85) { die(w, n, 'age'); continue; }
     if (n.identity.age >= 65) n.needs.health = Math.max(1, n.needs.health - (n.identity.age - 64) * .1);
     if (previous < 18 && n.identity.age >= 18) {
+      if(w.villageLife){
+        const a=w.villageLife.activities[n.id];if(a&&['play','return','learn','domestic'].includes(a.kind))delete w.villageLife.activities[n.id];
+        for(const [id,a] of Object.entries(w.villageLife.activities))if(a.partner===n.id&&['escort','supervise','return'].includes(a.kind))delete w.villageLife.activities[id];
+      }
       const mentor = w.npcs.filter(p => p.alive && n.life.parentIds.includes(p.id)).sort((a, b) => b.life.skill - a.life.skill)[0];
       if (!chooseFamilyTrade(w,n)) n.occupation = mentor?.previousOccupation ?? mentor?.occupation ?? 'none';
+      if (!occupationAllowed(w,n.settlementId,n.occupation)) n.occupation = 'homemaker';
       delete n.previousOccupation;
       socialEvent(w, { kind: 'coming_of_age', actorId: n.id, targetId: mentor?.id, importance: 60, description: `${n.identity.name}이 성인이 되어 ${n.occupation === 'none' ? '일자리를 찾기 시작한다' : '배운 기술로 일을 시작한다'}.`, data: { skill: n.life.skill, occupation: n.occupation }, causeId: n.life.birthEventId });
     }

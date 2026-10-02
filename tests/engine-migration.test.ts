@@ -13,7 +13,7 @@ async function pending(corrupt = false, mode: 'off' | 'mock' | 'chrome' = 'off')
     store = new WorldStore(db);
   await store.init(Date.now());
   const saved = await store.read();
-  const sim = LegacySimulation.load(JSON.stringify(saved.state));
+  const sim = new LegacySimulation(saved.state.seed, 12);
   sim.setLLM(mode !== 'off');
   saved.state = sim.snapshot() as unknown as WorldState;
   saved.meta.aiMode = mode;

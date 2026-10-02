@@ -1,3 +1,4 @@
+import { developed } from './helpers/developed-world';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/sim/engine';
@@ -22,7 +23,7 @@ import type { WorldState } from '../src/sim/types';
 
 function fixture(kind:Industry='field'){
   const w=new Simulation(42,12).snapshot(),n=w.npcs[0];
-  const extra=100-n.wealth;w.market.coins-=extra;n.wealth+=extra;n.needs.health=100;n.needs.hunger=10;
+  developed(w);const extra=100-n.wealth;w.market.coins-=extra;n.wealth+=extra;n.needs.health=100;n.needs.hunger=10;
   const e=buildEnterprise(w,n.settlementId,kind)!;assert.ok(e);initializeUrban(w);
   e.workers=[n.id];w.urban.citizens[n.id].employer=e.id;const b=w.buildings.find(b=>b.id===e.buildingId)!;n.position={...b.position};b.growth=100;
   for(const g of Object.keys(w.urban.cities[0].goods) as (keyof typeof w.urban.cities[0]['goods'])[]){w.urban.cities[0].goods[g]+=20;w.urban.ledger.opening[g]+=20;}
@@ -98,7 +99,7 @@ test('business command enforces owner rights, revision checks and exactly-once p
 test('exact published v0.27 engine restores pending progress under its original rules',async()=>{
   const fingerprint='d1c19bfa17149028ebf4ad10664f9b11408d705f703b1c0962cc2bdee535193c';
   const {retainedEngine}=await import('../src/server/engine-registry');const {LegacySimulation}=await retainedEngine(fingerprint)!();
-  const DB=database(),store=new WorldStore(DB);await store.init(Date.now());const saved=await store.read(),sim=LegacySimulation.load(JSON.stringify(saved.state));sim.setLLM(false);saved.state=sim.snapshot() as unknown as WorldState;saved.meta.aiMode='off';await DB.batch([DB.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),DB.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);sim.step(60,undefined);
+  const DB=database(),store=new WorldStore(DB);await store.init(Date.now());const saved=await store.read(),sim=new LegacySimulation(saved.state.seed, 12);sim.setLLM(false);saved.state=sim.snapshot() as unknown as WorldState;saved.meta.aiMode='off';await DB.batch([DB.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),DB.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);sim.step(60,undefined);
   const state=sim.snapshot() as unknown as WorldState,old=new Set(saved.state.events.map(e=>e.id)),count=state.events.filter(e=>!old.has(e.id)).length;
   const meta={...saved.meta,eventCount:saved.meta.eventCount+count};await DB.batch([DB.prepare('INSERT INTO world_live VALUES(1,?,1,?)').bind(saved.revision,JSON.stringify({build:fingerprint,epoch:saved.epoch,ticks:60,meta,started:Date.now(),id:crypto.randomUUID()}))]);
   const recovered=await new LiveWorldStore(DB,'v028').read();assert.deepEqual(recovered.state,JSON.parse(JSON.stringify(compactWorld(state))));assert.equal(await DB.prepare('SELECT * FROM world_live').first(),null);

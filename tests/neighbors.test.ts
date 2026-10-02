@@ -1,3 +1,4 @@
+import { developed } from './helpers/developed-world';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/sim/engine';
@@ -73,7 +74,7 @@ test('relationship archive pages retain watermark, exclude other accounts and re
   await assert.rejects(()=>readNeighbors(store,member,saved,new URLSearchParams({before:'-1'})));
 });
 test('business goals require owned net profit, real shared inheritance and adult successor production',async()=>{
-  const w=new Simulation().snapshot(),[n,child,spouse]=w.npcs;
+  const w=developed(new Simulation().snapshot()),[n,child,spouse]=w.npcs;
   const extra=100-n.wealth;w.market.coins-=extra;n.wealth+=extra;n.needs.health=100;n.needs.hunger=10;
   const e=buildEnterprise(w,n.settlementId,'field')!;initializeUrban(w);e.workers=[n.id];w.urban.citizens[n.id].employer=e.id;
   n.position={...w.buildings.find(b=>b.id===e.buildingId)!.position};w.buildings.find(b=>b.id===e.buildingId)!.growth=100;
@@ -94,7 +95,7 @@ test('neighbor UI escapes names, presents both directions and never offers follo
 for(const [version,fingerprint] of [['v0.29','b79ef7087a7d3968323946322c6159038f3c99602fa0bec4b74df6dc901ebea7'],['v0.30','ddbf564e665f8ab1500ab1a65e0e43e78f37f573b98fd65983ffa03887aafb41']]) test(`published ${version} pending engine recovery preserves its exact rules before new observations`,async()=>{
   const {retainedEngine}=await import('../src/server/engine-registry');
   const {LegacySimulation}=await retainedEngine(fingerprint)!();const DB=database(),store=new WorldStore(DB);await store.init(Date.now());const saved=await store.read();
-  const sim=LegacySimulation.load(JSON.stringify(saved.state));sim.setLLM(false);saved.state=sim.snapshot() as unknown as WorldState;saved.meta.aiMode='off';
+  const sim=new LegacySimulation(saved.state.seed, 12);sim.setLLM(false);saved.state=sim.snapshot() as unknown as WorldState;saved.meta.aiMode='off';
   await DB.batch([DB.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),DB.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
   sim.step(60,undefined);const state=sim.snapshot() as unknown as WorldState,old=new Set(saved.state.events.map(e=>e.id)),count=state.events.filter(e=>!old.has(e.id)).length;
   await DB.batch([DB.prepare('INSERT INTO world_live VALUES(1,?,1,?)').bind(saved.revision,JSON.stringify({build:fingerprint,epoch:saved.epoch,ticks:60,meta:{...saved.meta,eventCount:saved.meta.eventCount+count},started:Date.now(),id:crypto.randomUUID()}))]);

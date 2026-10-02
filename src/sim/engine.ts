@@ -1,3 +1,9 @@
+import { domesticTick } from './domestic';
+import { developmentDay, adoptVillageLife } from './development';
+import { childhoodTick } from './childhood';
+import { careTick } from './care';
+import { conflictsTick, contactConflict } from './conflicts';
+import { reserved } from './village-actions';
 import { creditContribution } from './legacy-learning';
 import { acquireBusiness, enterpriseDay } from './family-enterprise';
 import { setAmbition, type Ambition } from './ambition';
@@ -67,7 +73,7 @@ export class Simulation {
     if (!this.state.civilization.settlements.some(v => v.id === focus)) throw new Error('관찰할 마을이 없습니다.');
     this.state.civilization.focus = focus; this.state.civilization.detail = detail;
   }
-  createCharacter(input: CharacterInput, commandId?: string) { const n = createCharacter(this.state, input); if (commandId) n.profile!.commandId = commandId; return n.id; }
+  createCharacter(input: CharacterInput, commandId?: string) { adoptVillageLife(this.state); const n = createCharacter(this.state, input); if (commandId) n.profile!.commandId = commandId; return n.id; }
   setCouncil(id: string, enabled: boolean) { setCouncil(this.state, id, enabled); }
   setPolicy(id: string, taxRate: number, priority: Service) { setPolicy(this.state, id, taxRate, priority); }
   recordHistory(topic: HistoryTopic, evidence: string[], requestId: string, model: string): boolean {
@@ -91,7 +97,7 @@ export class Simulation {
     }
   }
   private tickOnce() {
-    const w = this.state; w.tick++;
+    const w = this.state; adoptVillageLife(w); w.tick++;
     const contributionStart=w.events.length;
     if (w.tick % TICKS_PER_DAY === 0) this.newDay();
     constructionTick(w);
@@ -99,6 +105,10 @@ export class Simulation {
     advanceJourneys(w);
     advanceFreight(w);
     indexPeople(w);
+    conflictsTick(w);
+    careTick(w);
+    childhoodTick(w);
+    domesticTick(w);
     proposeGatherings(w);
     for (const farm of w.buildings) if(farm.kind==='farm')growFarm(w,farm);
     for (let i = 0; i < w.npcs.length; i++) {
@@ -121,7 +131,7 @@ export class Simulation {
         die(w, n, u.disease > 0 || u.injury > 0 ? 'illness' : 'needs'); continue;
       }
       syncEmployment(w, n);
-      if (careForChild(w, n) || isTravelling(w, n)) { updatePerson(w, n); continue; }
+      if ((w.villageLife && (n.identity.age < 18 || reserved(w,n))) || (!w.villageLife && careForChild(w, n)) || isTravelling(w, n)) { updatePerson(w, n); continue; }
       const appointment = gatheringCandidate(w, n);
       if (appointment && n.currentAction?.kind !== 'Attend' && !['Work', 'Gather'].includes(n.currentAction?.kind ?? '') && (n.currentAction?.score ?? 0) < appointment.score) delete n.currentAction;
       if (n.currentAction?.kind === 'Attend' && !appointment) delete n.currentAction;
@@ -165,6 +175,7 @@ export class Simulation {
       n.dailyTaken = 0;
       if (n.alive && n.inventory.food === 0 && n.needs.hunger > 65) socialEvent(w, { kind: 'scarcity', actorId: n.id, importance: 70, description: `${n.identity.name}이 식량 부족을 겪고 있다. 공동 창고에 ${stocks(w, n.settlementId).food}개가 남아 있다.` });
     }
+    developmentDay(w);
     lifeDay(w);
     cooperationDay(w);
     regionalDay(w);
@@ -274,7 +285,7 @@ export class Simulation {
         changeRelationship(w, other, n.id, { trust: 12, affection: 10, respect: 6 }, e, '힘들 때 자신의 식량을 나누어 준 사람이다.'); break;
       }
       case 'Talk': {
-        if (!other || distance(n.position, other.position) > 1 || w.tick - other.lastTalk < 8) { this.fail(n, '대화 상대가 지금 바쁘다.'); break; }
+        if (!other || reserved(w,other) || distance(n.position, other.position) > 1 || w.tick - other.lastTalk < 8) { this.fail(n, '대화 상대가 지금 바쁘다.'); break; }
         n.needs.social = clamp(n.needs.social + 32); other.needs.social = clamp(other.needs.social + 22); n.lastTalk = other.lastTalk = w.tick;
         for (const p of [n, other]) { const d = w.living.people[p.id].desires; d.belonging = clamp(d.belonging - 20); d.novelty = clamp(d.novelty - 10); }
         const forward = attraction(w, n, other), reverse = attraction(w, other, n);
@@ -286,6 +297,7 @@ export class Simulation {
         }, description: `${n.identity.name}과 ${other.identity.name}이 일상의 이야기를 나누었다.` });
         changeRelationship(w, n, other.id, forward.changes, e, `대화를 나누며 느낀 인상 ${signed(forward.value)} · ${forward.reason}`);
         changeRelationship(w, other, n.id, reverse.changes, e, `대화를 나누며 느낀 인상 ${signed(reverse.value)} · ${reverse.reason}`);
+        contactConflict(w,n,other,e);
         const sourceById = { get: (id: string) => eventById(w, id) };
         const knownRoots = new Set(other.knownRumors.map(id => sourceById.get(id)?.causeId));
         const rumorId = n.knownRumors.find(id => {

@@ -1,3 +1,5 @@
+import { homeProfile } from '../src/sim/living';
+import { developed, developedSimulation } from './helpers/developed-world';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -9,7 +11,7 @@ import { compactWorld, initialWorld, applyCommand, commandSchema } from '../src/
 import { newCitizen } from '../src/sim/urban';
 import { type WorldState } from '../src/sim/types';
 const valid = (w: WorldState) => Simulation.load(JSON.stringify(w));
-function funded(population = 40) { const w = new Simulation(42, population).snapshot(); w.llm.enabled = false; for (const v of w.civilization.settlements) { stocks(w, v.id).wood = 200; market(w, v.id).coins = 2000; } w.economy = createEconomy(w); return w; }
+function funded(population = 40) { const w = developed(new Simulation(42, population).snapshot()); developed(w); w.llm.enabled = false; for (const v of w.civilization.settlements) { stocks(w, v.id).wood = 200; market(w, v.id).coins = 2000; } w.economy = createEconomy(w); return w; }
 function employ(w: WorldState, kind: Parameters<typeof buildEnterprise>[2]) {
   const e = buildEnterprise(w, 'v0', kind)!; assert.ok(e); const n = w.npcs.find(n => n.settlementId === 'v0' && !w.urban.citizens[n.id].employer)!;
   e.workers.push(n.id); w.urban.citizens[n.id].employer = e.id; n.position = { ...w.buildings.find(b => b.id === e.buildingId)!.position }; n.currentAction = undefined;
@@ -56,7 +58,7 @@ test('building condition and payroll limit work; rent moves wealth to the living
   w.urban.buildings[e.buildingId].condition = 10; assert.equal(industryWork(w, n), false);
   w.urban.buildings[e.buildingId].condition = 100; const m = market(w, 'v0'); m.coins = 0; assert.equal(industryWork(w, n), false);
   const home = w.buildings.find(b => b.id === n.homeId)!, owner = w.npcs.find(p => p.id !== n.id && p.settlementId === n.settlementId)!; home.ownerIds = [owner.id];
-  setPolicy(w, 'v0', 0, 'road'); w.economy = createEconomy(w); const wealth = n.wealth; urbanDay(w); assert.equal(n.wealth, wealth - 1); assert.deepEqual(balance(w), { food: 0, wood: 0, coins: 0 }); valid(w);
+  setPolicy(w, 'v0', 0, 'road'); w.economy = createEconomy(w); const wealth = n.wealth, rent = homeProfile(w,n).rent; urbanDay(w); assert.equal(n.wealth, wealth - rent); assert.deepEqual(balance(w), { food: 0, wood: 0, coins: 0 }); valid(w);
 });
 test('urban corrupted accounts, references, duplicate jobs, and impossible freight are rejected', () => {
   for (const mutate of [(w: WorldState) => city(w, 'v0').goods.tools++, (w: WorldState) => city(w, 'v0').treasury++, (w: WorldState) => city(w, 'v0').deposits.ore++, (w: WorldState) => w.urban.citizens.npc0.employer = 'missing', (w: WorldState) => delete w.urban.buildings.b0, (w: WorldState) => w.urban.cities.push(structuredClone(w.urban.cities[0]))]) {

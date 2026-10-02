@@ -111,6 +111,13 @@ export function compactWorld(w: WorldState): WorldState {
   w.loans.forEach(l => keep.add(l.sourceEventId));
   w.llm.queue.forEach(q => keep.add(q.eventId));
   w.economy.daily.forEach(d => keep.add(d.eventId));
+  if(w.villageLife){
+    for(const a of Object.values(w.villageLife.activities))keep.add(a.source);
+    for(const i of w.villageLife.injuries){keep.add(i.source);keep.add(i.latest);}
+    for(const c of w.villageLife.conflicts){keep.add(c.source);keep.add(c.latest);}
+    for(const p of Object.values(w.villageLife.people))for(const id of [p.firstOuting,p.lastPlay,p.helpSource])if(id)keep.add(id);
+    for(const id of Object.keys(w.villageLife.usedCauses))keep.add(id);
+  }
   const queue = [...keep];
   for (let i = 0; i < queue.length; i++) {
     const e = byId.get(queue[i]);

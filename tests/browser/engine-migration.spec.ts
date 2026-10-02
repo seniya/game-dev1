@@ -16,7 +16,9 @@ test(`real Worker loads ${engine.version} retained engine and confirms previous-
  const get=()=>request.get('/api/world').then(r=>r.json());
  const send=async(action:object)=>{const w=await get();const r=await request.post('/api/command',{headers:{Origin:'http://127.0.0.1:4173'},data:{id:crypto.randomUUID(),revision:w.revision,action}});expect(r.ok()).toBe(true);return r.json();};
  await send({type:'reset',seed:42,population:12});await send({type:'ai-mode',mode:'off'});
- const saved=await get(),sim=engine.Simulation.load(JSON.stringify(saved.state));for(let i=0;i<160;i++)sim.step(1,undefined);
+ const sim=new engine.Simulation(42,12);sim.setLLM(false);
+ await send({type:'play',running:false});await send({type:'import',save:JSON.stringify(sim.snapshot())});
+ const saved=await get();for(let i=0;i<160;i++)sim.step(1,undefined);
  const state=sim.snapshot() as unknown as WorldState,ids=new Set(saved.state.events.map((e:{id:string})=>e.id)),events=state.events.filter(e=>!ids.has(e.id));
  const meta={...saved.meta,running:false,eventCount:saved.meta.eventCount+events.length,lastSeen:Date.now(),clock:Date.now()};
  const directory='.wrangler/state/v3/d1/miniflare-D1DatabaseObject';

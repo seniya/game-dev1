@@ -1,3 +1,4 @@
+import { reserved } from './village-actions';
 import { buildPosition } from './frontier';
 import { canWork } from './employment';
 import { initializeHeritage } from './heritage';
@@ -83,8 +84,11 @@ export function populateSettlements(w: WorldState) {
     }
   }
   for (const b of w.buildings) if (b.kind === 'home') b.ownerIds = [];
+  const assigned = new Map<string, number>();
   w.npcs.forEach((n, i) => {
-    const v = w.civilization.settlements[i % count], homes = w.buildings.filter(b => b.kind === 'home' && b.settlementId === v.id), home = homes[Math.floor(i / count) % homes.length];
+    // Rotate each 12-person household cohort to avoid child-only settlements.
+    const v = w.civilization.settlements[(i + Math.floor(i / 12)) % count], homes = w.buildings.filter(b => b.kind === 'home' && b.settlementId === v.id), home = homes[(assigned.get(v.id) ?? 0) % homes.length];
+    assigned.set(v.id, (assigned.get(v.id) ?? 0) + 1);
     n.settlementId = v.id; n.homeId = home.id; n.position = { ...home.position }; home.ownerIds!.push(n.id);
   });
   // Initial endowments are part of opening accounts, never runtime production.
@@ -94,7 +98,7 @@ export function isTravelling(w: WorldState, n: NPC) { return w.civilization.jour
 export function startMigration(w: WorldState, n: NPC, to: Settlement, causeId?: string): boolean {
   if (!n.alive || n.identity.age < 18 || n.settlementId === to.id || isTravelling(w, n)) return false;
   const group = w.npcs.filter(p => p.alive && p.settlementId === n.settlementId && (p.id === n.id || p.id === n.life.partnerId || p.identity.age < 18 && p.life.parentIds.includes(n.id)));
-  if (group.some(p => isTravelling(w, p))) return false;
+  if (group.some(p => isTravelling(w, p) || reserved(w,p))) return false;
   const home = w.buildings.find(b => b.kind === 'home' && b.settlementId === to.id && w.npcs.filter(p => p.alive && p.homeId === b.id).length + w.civilization.journeys.filter(j => j.homeId === b.id).reduce((s, j) => s + j.npcIds.length, 0) + group.length <= capacity(b));
   const path = home && findPath(w, n.position, home.position);
   if (!home || !path || group.some(p => distance(p.position, n.position) > 8 || !findPath(w, p.position, home.position))) return false;
@@ -192,7 +196,7 @@ export function regionalDay(w: WorldState) {
     if (w.tick % YEAR_TICKS === 0) for (const n of people.filter(n => canWork(w, n) && !isTravelling(w, n))) {
       const farmers = people.filter(p => p.occupation === 'farmer').length;
       const job = farmers < people.length / 3 ? 'farmer' : stock.wood < 12 && !people.some(p => p.occupation === 'woodcutter') ? 'woodcutter' : n.occupation;
-      if (job !== n.occupation && !w.urban.citizens[n.id]?.employer) { const previous = n.occupation; n.occupation = job; appendEvent(w, { kind: 'occupation', actorId: n.id, importance: 40, description: `${n.identity.name}이 마을의 생산 수요에 따라 직업을 바꾸었다.`, data: { previous, occupation: job, settlementId: v.id } }); }
+      if (!w.villageLife && job !== n.occupation && !w.urban.citizens[n.id]?.employer) { const previous = n.occupation; n.occupation = job; appendEvent(w, { kind: 'occupation', actorId: n.id, importance: 40, description: `${n.identity.name}이 마을의 생산 수요에 따라 직업을 바꾸었다.`, data: { previous, occupation: job, settlementId: v.id } }); }
     }
   }
 }

@@ -1,3 +1,4 @@
+import { developed } from '../helpers/developed-world';
 import {test,expect} from '@playwright/test';
 import {Simulation} from '../../src/sim/engine';
 import {defaultCharacter} from '../../src/ui/characters';
@@ -9,7 +10,7 @@ import {relationship} from '../../src/sim/social';
 import {YEAR_TICKS} from '../../src/sim/types';
 function fixture(owned=false){
   const sim=new Simulation(42,12),root=sim.createCharacter({...defaultCharacter(availableHomes(sim.snapshot()).find(h=>h.vacant)!.home.id),name:'푸른 가문',ambition:'wealth'});
-  const w=sim.snapshot(),a=w.npcs.find(n=>n.id===root)!,b=w.npcs[0];const funds=100-a.wealth;w.market.coins-=funds;a.wealth+=funds;
+  const w=developed(sim.snapshot()),a=w.npcs.find(n=>n.id===root)!,b=w.npcs[0];const funds=100-a.wealth;w.market.coins-=funds;a.wealth+=funds;
   w.tick=YEAR_TICKS*2+36;
   for(const n of [a,b]){n.identity.age=25;n.life.bornTick=w.tick-25*YEAR_TICKS;n.needs.health=100;n.needs.hunger=10;}
   for(const [n,p] of [[a,b],[b,a]]){relationship(n,p.id).trust=80;relationship(n,p.id).affection=50;}

@@ -1,3 +1,4 @@
+import { developed, developedSimulation } from './helpers/developed-world';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/sim/engine';
@@ -5,7 +6,7 @@ import { candidates } from '../src/sim/decision';
 import { initializeLiving, livingTick, buyConsumerGood, CONSUMABLES } from '../src/sim/living';
 import { HOMES } from '../src/sim/living-types';
 import { buildEnterprise, industryWork, city, urbanBalance, urbanDay } from '../src/sim/urban';
-import { GOODS, type Industry } from '../src/sim/urban-types';
+import { GOODS, INDUSTRY_JOB, type Industry } from '../src/sim/urban-types';
 import { createEconomy, balance, holdings } from '../src/sim/economy';
 import { defaultCharacter } from '../src/ui/characters';
 import { characterSchema } from '../src/sim/character-schema';
@@ -15,7 +16,7 @@ import { stateChange } from '../src/server/journal';
 import { applyCommand } from '../src/server/world';
 const valid = (w: unknown) => Simulation.load(JSON.stringify(w));
 function funded() {
-  const w = new Simulation(42, 30).snapshot(); w.llm.enabled = false;
+  const w = new Simulation(42, 30).snapshot(); developed(w); w.llm.enabled = false;
   w.storage.wood = 300; w.market.coins = 3000; w.economy = createEconomy(w); return w;
 }
 function employ(w: ReturnType<typeof funded>, kind: Industry) {
@@ -82,7 +83,7 @@ test('housing insulation changes winter recovery and rent is transferred to livi
   urbanDay(w); assert.equal(n.wealth, 100 - HOMES.insulated.rent); assert.equal(holdings(w).coins, cash); valid(w);
 });
 test('custom residents persist expanded setup and reject corrupt values and missing references', () => {
-  const sim = new Simulation(), w = sim.snapshot(), home = w.buildings.find(b => b.kind === 'home')!;
+  const sim = developedSimulation(), w = sim.snapshot(), home = w.buildings.find(b => b.kind === 'home')!;
   const input = defaultCharacter(home.id); input.occupation = 'tailor'; input.traits!.frugality = 92; input.desires!.mastery = 88; input.body!.pain = 23;
   const id = sim.createCharacter(input); const loaded = Simulation.load(sim.save()).snapshot();
   assert.equal(loaded.npcs.find(n => n.id === id)!.occupation, 'tailor'); assert.equal(loaded.living.people[id].traits.frugality, 92); assert.equal(loaded.living.people[id].body.pain, 23);
@@ -110,11 +111,11 @@ test('public payroll uses collected funds and refuses unfunded production withou
   assert.equal(industryWork(w, n), true); assert.equal(c.treasury, 0); assert.equal(c.spent, 2); assert.equal(w.events.at(-1)!.data.publicWage, 2);
   assert.equal(industryWork(w, n), false); assert.equal(holdings(w).coins, cash); valid(w);
 });
-test('an ordinary village autonomously manufactures and consumes clothes, meals and furniture within 60 days', () => {
+test('a small village sustains life without automatically creating advanced industries', () => {
   // Shared activities change job timing: joinery has no worker at day 30 in this seed.
   // Keep the end-to-end production/consumption requirement while allowing an adult to take the job.
   const sim = new Simulation(42, 12); sim.setLLM(false); sim.step(144 * 60);
   const w = sim.snapshot();
-  for (const good of ['clothes', 'meals', 'furniture'] as const) { assert.ok(w.urban.ledger.produced[good] > 0); assert.ok(w.urban.ledger.consumed[good] > 0); }
+  assert.ok(w.npcs.some(n=>n.alive)); assert.ok(w.villageLife!.stats.plays>0); assert.ok(w.urban.enterprises.every(e=>w.villageLife!.settlements[e.settlementId].unlocked.includes(({field:'miller'} as Record<string,string>)[e.kind] ?? INDUSTRY_JOB[e.kind])));
   assert.deepEqual(balance(w), { food: 0, wood: 0, coins: 0 }); assert.ok(Object.values(urbanBalance(w)).every(v => v === 0)); valid(w);
 });

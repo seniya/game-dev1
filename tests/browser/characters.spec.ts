@@ -8,7 +8,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await form.getByLabel('이름',{exact:true}).fill('도시의 해솔'); await form.getByLabel('나이',{exact:true}).fill('29');
   await form.getByLabel('옷 색상').fill('#2266aa'); await form.getByLabel('머리 모양',{exact:true}).selectOption('curly'); await form.getByLabel('소품').selectOption('glasses');
   await form.getByLabel('배경 소개').fill('이웃과 도구를 나누는 목수 <script>');
-  await form.getByLabel('직업',{exact:true}).selectOption('tailor');
+  await form.getByLabel('직업',{exact:true}).selectOption('homemaker');
   await form.getByLabel('검소함',{exact:true}).fill('91'); await form.getByLabel('성취',{exact:true}).fill('88'); await form.getByLabel('첫 인사할 주민').selectOption('npc0');
   await form.locator('summary').click(); await form.getByLabel('도구 제작 숙련').fill('73'); await form.getByLabel('재산 · 코인').fill('123'); await form.getByLabel('통증',{exact:true}).fill('23');
   await expect(page.locator('#character-preview svg')).toBeVisible();
@@ -65,7 +65,7 @@ test('server-backed creator survives reload and records arrival in the life arch
 
  test('expanded world overview and resident condition are readable on desktop and mobile', async ({page}) => {
   await page.goto('/?local=1'); await page.getByRole('button',{name:'일시정지',exact:true}).click();
-  await expect(page.locator('#living-overview')).toContainText('직업 26종');
+  await expect(page.locator('#living-overview')).toContainText('직업 30종');
   await expect(page.locator('#living-overview')).toContainText('단열주택');
   await expect(page.locator('#npc-detail')).toContainText('욕망과 생활 취향');
   await expect(page.locator('#npc-detail')).toContainText('신체 컨디션');
@@ -82,7 +82,7 @@ test('children, retired residents and job seekers can be created with accurate s
   for (const [name, age, expected] of [['새 아이','8','아동·학생'],['은퇴 이웃','70','은퇴'],['구직 이웃','24','구직 중']]) {
     await page.getByRole('button',{name:'＋ NPC 만들기',exact:true}).click();
     await page.getByLabel('이름',{exact:true}).fill(name); await page.getByLabel('나이',{exact:true}).fill(age);
-    await page.getByLabel('직업',{exact:true}).selectOption(age === '24' ? 'none' : 'baker');
+    await page.getByLabel('직업',{exact:true}).selectOption('none');
     await page.getByRole('button',{name:'이 세계에 입주시키기'}).click();
     await expect(page.locator('#npc-header')).toContainText(name); await expect(page.locator('#npc-header')).toContainText(expected);
   }

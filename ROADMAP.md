@@ -135,3 +135,8 @@ v0.5/v0.5.1의 영어 구조화 목표 선택, 한국어 이유 표시, 실행�
 - 기능별 검증과 build 뒤 기존 `custom` 사이트에 배포한다. 절차와 저장 정책은 [AGENTS](AGENTS.md)를 따른다.
 
 확정되지 않은 일정이나 완료 날짜를 약속하지 않는다. 근사 물리 LOD·다중 서버 분산 등 후속 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md)에 구분한다.
+
+
+## v0.31 · 작은 마을의 직업과 생활
+
+기본 생업 3종으로 시작하는 12명 마을, 인구·수요·생산 여력에 따른 전문화, 만 4세 외출과 보호자 동행, 성격에 따른 언쟁과 중재, 사고·부상·현장 돌봄·치료·회복, 공동 집살림과 배움, 원본 사건 관찰을 구현했다. 기존 세계와 저장 정책은 유지한다. 상세 구현은 [생활 설계 11절](VILLAGE_LIFE_PLAN.md), 실행 증거는 [검증](reports/village-life-validation.json)·[장기 회귀](reports/village-life-regression.json)·[배포](reports/deployment-v031.json)를 따른다.

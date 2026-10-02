@@ -21,10 +21,10 @@ test('sixteen-year-old keeps eating while observation describes care, then chang
   assert.equal(n.currentAction, undefined);
   assert.ok(w.events.some(e => e.actorId === id && e.kind === 'consumption'));
   const before = JSON.stringify(w);
-  assert.equal(activity(w,n).label, '집에서 돌봄을 받는 중');
-  assert.match(activityView(w,n), /16세 · 18세 전에는/);
+  assert.equal(activity(w,n).label, '집에서 놀이와 배움 준비');
+  assert.match(activityView(w,n), /16세 · 4세부터/);
   assert.doesNotMatch(activityView(w,n), /<progress|다음 행동을 생각/);
-  assert.match(focusView(w,n), /돌봄을 받으며 자랍니다/);
+  assert.match(focusView(w,n), /4세부터 바깥놀이/);
   assert.equal(characterVisual(n,w).key, 'care');
   assert.equal(neighborPeople(w,new Set([id]))[0].action, activity(w,n).label);
   assert.equal(JSON.stringify(w),before, 'observation must not change world or age');

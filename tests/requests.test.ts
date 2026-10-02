@@ -14,7 +14,7 @@ const valid = (w: unknown) => Simulation.load(JSON.stringify(w));
 function scenario(kind: 'food'|'clothing'|'housing', population = 12) {
   const w = new Simulation(42,population).snapshot(); w.llm.enabled = false; w.requests = emptyRequests(w.tick);
   for(const n of w.npcs) { n.inventory.food = 5; w.living.people[n.id].clothing = 100; }
-  const lastVillage = w.npcs.at(-1)!.settlementId;
+  const lastVillage = w.civilization.settlements.at(-1)!.id;
   const n = w.npcs.filter(n=>n.settlementId===lastVillage).sort((a,b)=>a.id.localeCompare(b.id))[0];
   if(kind==='food') { n.inventory.food=0; n.needs.hunger=70; }
   if(kind==='clothing') { w.living.people[n.id].clothing=5; w.living.people[n.id].body.warmth=20; }

@@ -1,3 +1,4 @@
+import { VILLAGE_ACTIVITY_LABELS } from '../sim/village-types';
 import type { WorldState, NPC, Position } from '../sim/types';
 import { ACTION_LABELS } from '../sim/types';
 import { GATHERING_LABELS } from '../sim/gatherings-types';
@@ -12,6 +13,8 @@ export type SceneLens='all'|'work'|'social'|'life';
 export interface Scene {id:string;kind:Exclude<SceneLens,'all'>;symbol:string;title:string;status:string;detail:string;position:Position;npc?:string;source?:string;progress?:number}
 export function liveScenes(w:WorldState,settlementId:string):Scene[] {
   const scenes:Scene[]=[];
+  for(const [id,a] of Object.entries(w.villageLife?.activities??{})){const n=w.npcs.find(n=>n.id===id);if(!n?.alive||n.settlementId!==settlementId)continue;scenes.push({id:a.id,kind:'life',symbol:a.kind==='care'?'✚':'◌',title:`${n.identity.name} · ${VILLAGE_ACTIVITY_LABELS[a.kind]}`,status:a.path.length?'이동 중':VILLAGE_ACTIVITY_LABELS[a.kind],detail:a.reason,position:n.position,npc:n.id,source:a.source});}
+  for(const c of w.villageLife?.conflicts??[]){const n=w.npcs.find(n=>n.id===c.a);if(n?.alive&&n.settlementId===settlementId)scenes.unshift({id:c.id,kind:'social',symbol:'!',title:'의견이 달라진 순간',status:'말다툼과 중재',detail:n.decision.reason,position:n.position,npc:n.id,source:c.latest});}
   for(const g of w.gatherings?.items??[])if(g.settlementId===settlementId&&g.status==='planned') {
     const host=w.npcs.find(n=>n.id===g.hostId)!;
     scenes.push({id:g.id,kind:'social',symbol:'◎',title:GATHERING_LABELS[g.kind],status:g.progress?'함께하는 중':g.arrivals.length?'약속 장소에 도착':'만남을 준비해요',detail:`${host.identity.name}의 초대 · 수락 ${g.invitations.filter(i=>i.status==='accepted').length}명 · 도착 ${g.arrivals.length}명`,position:w.buildings.find(b=>b.id===g.buildingId)!.position,npc:g.hostId,source:g.lastEventId,progress:Math.round(g.progress/6*100)});

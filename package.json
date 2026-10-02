@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.30.1",
+  "version": "0.31.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -31,7 +31,8 @@
     "regression:cooperation": "tsx scripts/cooperation-regression.ts",
     "convert:archive": "tsx scripts/convert-archive.ts",
     "regression:neighbors": "tsx scripts/neighbors-regression.ts",
-    "regression:family-legacy": "tsx scripts/family-legacy-regression.ts"
+    "regression:family-legacy": "tsx scripts/family-legacy-regression.ts",
+    "regression:village-life": "tsx scripts/village-life-regression.ts"
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.62.0",

@@ -1,3 +1,4 @@
+import { livelihoodLabel, occupationAllowed } from './development';
 import { GOODS } from './urban-types';
 import { OCCUPATIONS, type NPC, type WorldState } from './types';
 import { appendEvent } from './social';
@@ -7,6 +8,7 @@ export function workRestriction(w: WorldState, n: NPC): 'child' | 'retired' | 'r
   if (n.identity.age < 18) return 'child';
   if (n.identity.age >= 65) return 'retired';
   const u = w.urban?.citizens[n.id];
+  if (w.villageLife && (u?.injury ?? 0) >= 20) return 'recovering';
   if (n.needs.health < 40 || (u?.injury ?? 0) >= 60 || (u?.disease ?? 0) >= 60) return 'recovering';
 }
 export function canWork(w: WorldState, n: NPC) { return n.alive && !workRestriction(w, n); }
@@ -15,7 +17,8 @@ export function workStatus(w: WorldState, n: NPC): keyof typeof WORK_STATUS_LABE
 }
 export function occupationLabel(w: WorldState, n: NPC) {
   const state = workStatus(w, n);
-  return ['child', 'retired', 'recovering', 'seeking'].includes(state) ? WORK_STATUS_LABELS[state] : OCCUPATIONS[n.occupation];
+  if (state === 'recovering' && n.previousOccupation) return `${livelihoodLabel(w,n)} · 회복 중`;
+  return ['child', 'retired', 'recovering', 'seeking'].includes(state) ? WORK_STATUS_LABELS[state] : livelihoodLabel(w,n);
 }
 export function syncEmployment(w: WorldState, n: NPC, record = true) {
   const restricted = workRestriction(w, n), previous = n.occupation;
@@ -26,7 +29,7 @@ export function syncEmployment(w: WorldState, n: NPC, record = true) {
     delete w.urban.citizens[n.id].employer;
     if (n.currentAction?.kind === 'Work' || n.currentAction?.kind === 'Gather') n.currentAction = undefined;
   } else if (n.occupation === 'none' && n.previousOccupation && n.previousOccupation !== 'none') {
-    n.occupation = n.previousOccupation; delete n.previousOccupation;
+    n.occupation = occupationAllowed(w,n.settlementId,n.previousOccupation) ? n.previousOccupation : 'homemaker'; delete n.previousOccupation;
   }
   if (record && n.alive && n.occupation !== previous) appendEvent(w, { kind: 'occupation', actorId: n.id, importance: 45, description: `${n.identity.name}: ${OCCUPATIONS[previous]} → ${occupationLabel(w, n)}.`, data: { previous, occupation: n.occupation, status: workStatus(w, n) } });
 }

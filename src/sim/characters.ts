@@ -1,3 +1,4 @@
+import { occupationAllowed } from './development';
 import { syncEmployment } from './employment';
 import { newLivingPerson } from './living';
 import { characterSchema, CREATION_DEFAULTS, type CharacterInput } from './character-schema';
@@ -22,6 +23,7 @@ export function createCharacter(w: WorldState, input: CharacterInput): NPC {
   const slot = availableHomes(w).find(b => b.home.id === a.homeId);
   if (!slot?.vacant) throw new Error('선택한 집에 빈자리가 없습니다. 다른 집을 선택해 주세요.');
   const home = slot.home;
+  if (a.age >= 18 && a.age < 65 && !occupationAllowed(w,home.settlementId!,a.occupation)) throw new Error('이 마을에서 아직 생기지 않은 전문 직업입니다. 현재 가능한 생업을 선택해 주세요.');
   const other = a.greetId ? w.npcs.find(n => n.id === a.greetId && n.alive && n.settlementId === home.settlementId && !isTravelling(w, n)) : undefined;
   if (a.greetId && !other) throw new Error('인사할 주민이 같은 정착지에 있는지 확인해 주세요.');
   const path = other ? findPath(w, home.position, other.position) : undefined;
@@ -57,7 +59,7 @@ export function createCharacter(w: WorldState, input: CharacterInput): NPC {
     changeRelationship(w, n, b.npcId, changes, history, meaning);
     changeRelationship(w, b.npc!, id, changes, history, meaning);
   }
-  if (other && path) {
+  if (other && path && a.age >= 18) {
     n.currentAction = { kind: 'Talk', score: 100, reason: `${other.identity.name}에게 첫 인사를 건네러 간다.`, target: { ...other.position }, targetId: other.id, path, progress: 0, duration: 2, evidence: [event.id] };
     n.decision.reason = n.currentAction.reason;
   }

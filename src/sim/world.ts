@@ -1,3 +1,4 @@
+import { initializeVillageLife } from './development';
 import { syncEmployment } from './employment';
 import { emptyRequests } from './requests-types';
 import { initializeHeritage } from './heritage';
@@ -38,7 +39,7 @@ export function createWorld(seed = 42, population = 12): WorldState {
   }
   for (let i = 0; i < 5; i++) w.resources.push({ id: `berry${i}`, position: { x: 11 + i * 4, y: 27 }, kind: 'food', amount: 4, capacity: 20 });
   const names = ['하루', '서연', '도윤', '민서', '지호', '수아', '시우', '나은', '유준', '다은', '이안', '소율', '민재', '여울', '연우', '해솔'];
-  const jobs: NPC['occupation'][] = ['farmer', 'gatherer', 'farmer', 'woodcutter', 'carpenter', 'farmer', 'merchant', 'gatherer', 'woodcutter', 'farmer', 'gatherer', 'carpenter'];
+  const jobs: NPC['occupation'][] = ['farmer', 'gatherer', 'farmer', 'gatherer', 'homemaker', 'farmer', 'homemaker', 'farmer', 'none', 'none', 'none', 'none'];
   for (let i = 0; i < population; i++) {
     const home = w.buildings[4 + i % 6];
     const personality = { diligence: random(w) * 100, greed: random(w) * 100, sociability: random(w) * 100, aggression: random(w) * 100, empathy: random(w) * 100, curiosity: random(w) * 100 };
@@ -53,20 +54,30 @@ export function createWorld(seed = 42, population = 12): WorldState {
   // A village includes dependants and adults seeking a first job from its first day.
   for (let i = 0; i < w.npcs.length; i++) {
     const n = w.npcs[i];
-    if (i % 12 === 9) { n.identity.age = 8; n.occupation = 'none'; }
-    if (i % 12 === 10) n.identity.age = 70;
-    if (i % 12 === 11) n.occupation = 'none';
+    if (i % 12 >= 8 && i % 12 <= 10) { n.identity.age = [2,4,8][i % 12 - 8]; n.occupation = 'none'; }
+    if (i % 12 === 11) { n.identity.age = 70; n.occupation = 'none'; }
   }
   initializeCivilization(w);
   populateSettlements(w);
   // Assign initial children to an actual household with an adult in the same village.
   for (const n of w.npcs.filter(n => n.identity.age < 18)) {
     if (w.npcs.some(p => p.homeId === n.homeId && p.identity.age >= 18)) continue;
+    // Large starting populations can otherwise place every dependent in adult-free houses.
+    // Swap one adult from a household with other adults; both homes keep their original occupancy.
+    const donor = w.npcs.find(p => p.identity.age >= 18 && p.settlementId === n.settlementId && w.npcs.filter(q => q.homeId === p.homeId && q.identity.age >= 18).length >= 2);
+    if (donor) {
+      const childHome = w.buildings.find(b=>b.id===n.homeId)!, adultHome = w.buildings.find(b=>b.id===donor.homeId)!;
+      const oldChild=n.homeId;n.homeId=donor.homeId;donor.homeId=oldChild;
+      n.position={...adultHome.position};donor.position={...childHome.position};
+      for(const b of [childHome,adultHome])if(b.ownerIds)b.ownerIds=b.ownerIds.filter(id=>id!==n.id&&id!==donor.id);
+      childHome.ownerIds?.push(donor.id);adultHome.ownerIds?.push(n.id);continue;
+    }
     const guardian = w.npcs.find(p => p.identity.age >= 18 && p.identity.age < 65 && p.settlementId === n.settlementId && w.npcs.filter(q => q.homeId === p.homeId).length < 2 + w.buildings.find(b => b.id === p.homeId)!.level * 2);
     if (guardian) { for (const b of w.buildings) if (b.ownerIds) b.ownerIds = b.ownerIds.filter(id => id !== n.id); n.homeId = guardian.homeId; n.position = { ...w.buildings.find(b => b.id === n.homeId)!.position }; }
   }
   initializeUrban(w); initializeHeritage(w, true);
   for (const n of w.npcs) syncEmployment(w, n, false);
   w.economy = createEconomy(w);
+  initializeVillageLife(w);
   return w;
 }

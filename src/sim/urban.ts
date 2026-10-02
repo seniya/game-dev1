@@ -1,3 +1,5 @@
+import { industryAllowed, occupationAllowed } from './development';
+import { injure } from './care';
 import { businessQuote } from './family-enterprise';
 import { recordHarvest } from './agriculture';
 import { canWork, syncEmployment } from './employment';
@@ -51,7 +53,7 @@ function site(w: WorldState, id: string): { x: number; y: number } | undefined {
 }
 export function buildEnterprise(w: WorldState, id: string, kind: Industry): import('./urban-types').Enterprise | undefined {
   initializeUrban(w); const c = city(w, id), stock = stocks(w, id);
-  if (!c || !INDUSTRIES.includes(kind) || stock.wood < 8 || w.urban.enterprises.filter(e => e.settlementId === id).length >= 40) return;
+  if (!industryAllowed(w,id,kind) || !c || !INDUSTRIES.includes(kind) || stock.wood < 8 || w.urban.enterprises.filter(e => e.settlementId === id).length >= 40) return;
   const position = site(w, id); if (!position) return;
   stock.wood -= 8; w.economy.totals.investedWood += 8;
   const b: Building = { id: `c${w.nextId++}`, kind: isGrowingIndustry(kind) ? 'farm' : 'market', name: INDUSTRY_LABELS[kind], position, level: 1, growth: isGrowingIndustry(kind) ? 20 : 0, settlementId: id };
@@ -63,7 +65,7 @@ export function buildEnterprise(w: WorldState, id: string, kind: Industry): impo
 }
 export function canProduce(w: WorldState, n: NPC) {
   const e = w.urban.enterprises.find(e => e.id === w.urban.citizens[n.id]?.employer);
-  if (!e || e.settlementId !== n.settlementId || !e.workers.includes(n.id) || !canWork(w, n) || isTravelling(w, n)) return;
+  if (!e || !industryAllowed(w,n.settlementId,e.kind) || e.settlementId !== n.settlementId || !e.workers.includes(n.id) || !canWork(w, n) || isTravelling(w, n)) return;
   const c = city(w, e.settlementId), b = w.buildings.find(b => b.id === e.buildingId)!;
   if ((!e.business && market(w, e.settlementId).coins + c.treasury < e.wage) || w.urban.buildings[b.id].condition < 20 || n.needs.health < 40) return;
   if (e.kind === 'field' && b.growth < 2 || e.kind === 'mine' && c.deposits.ore < 1 || e.kind === 'quarry' && c.deposits.stone < 1 || e.kind === 'mill' && c.goods.grain < 2 || e.kind === 'smith' && (c.goods.ore < 2 || stocks(w, e.settlementId).wood < 1)) return;
@@ -103,7 +105,7 @@ export function industryWork(w: WorldState, n: NPC): boolean {
   n.wealth += e.wage - tax; c.treasury += tax; c.collected += tax; u.income += e.wage - tax; w.economy.totals.wages += e.wage;
   w.living.people[n.id].desires.mastery = clamp(w.living.people[n.id].desires.mastery - 3);
   u.skills[INDUSTRY_SKILL[e.kind]] = clamp(u.skills[INDUSTRY_SKILL[e.kind]] + .3); e.output += amount; w.urban.buildings[b.id].condition = Math.max(0, w.urban.buildings[b.id].condition - .05);
-  if ((e.kind === 'mine' || e.kind === 'quarry') && random(w) < .002) { u.injury = clamp(u.injury + 12); u.healthEventId = appendEvent(w, { kind: 'health', actorId: n.id, importance: 60, description: `${n.identity.name}이 작업 중 다쳐 휴식과 진료가 필요하다.`, data: { settlementId: n.settlementId, industry: e.kind } }).id; }
+  if ((e.kind === 'mine' || e.kind === 'quarry') && random(w) < .002) { const accident=appendEvent(w, { kind: 'health', actorId: n.id, importance: 60, description: `${n.identity.name}이 작업 중 다쳐 휴식과 진료가 필요하다.`, data: { settlementId: n.settlementId, industry: e.kind } }); if(w.villageLife)injure(w,n,'work',accident,'moderate'); else {u.injury=clamp(u.injury+12);u.healthEventId=accident.id;} }
   const production=appendEvent(w, { kind: 'industry', actorId: n.id, participants:[...new Set([n.id,...(e.business?.shares.map(s=>s.npc)??[])])], locationId: b.id, causeId: e.business?.source??e.sourceEventId, importance: 25, description: `${n.identity.name}이 ${INDUSTRY_LABELS[e.kind]}에서 ${e.kind === 'garden' ? '약초·섬유 합계' : recipe ? Object.keys(recipe.outputs).map(g => GOOD_LABELS[g as Good]).join('·') + ' 합계' : output === 'food' ? '가공식품' : GOOD_LABELS[output as Good]} ${amount}개를 생산하고 임금 ${e.wage - tax}코인을 받았다.${quote ? ` 사업 매출 ${quote.revenue}·원가 ${quote.costs}·임금 ${e.wage}코인.` : ''}${publicWage ? ` 공공예산이 ${publicWage}코인을 부담했다.` : ''}`, data: { settlementId: n.settlementId, industry: e.kind, output, amount, wage: e.wage, tax, publicWage,...(quote?{business:e.id,phase:'production',revenue:quote.revenue,costs:quote.costs,profit:e.business!.revenue-e.business!.costs-e.business!.wages,owners:e.business!.shares.map(s=>s.npc),tradeSuccessor:n.identity.age>=18&&n.life.apprenticeship?.enterprise===e.id&&n.life.apprenticeship?.choice==='continue'}: {}) } });
   if(e.business)e.business.latest=production.id;
   return true;
@@ -164,7 +166,7 @@ export function urbanDay(w: WorldState) {
     if (taxTotal || rentTotal) c.lastEventId = appendEvent(w, { kind: 'tax', importance: 40, causeId: c.policyEventId, description: `${id}: 생활비 10코인을 제외한 성인 재산에 ${c.taxRate}% 세율을 적용해 ${taxTotal}코인 징수. 임대료 ${rentTotal}코인은 소유자에게 이전했다.`, data: { settlementId: id, tax: taxTotal, rent: rentTotal, treasury: c.treasury } }).id;
     // Existing funds pay construction and service labour; materials are consumed explicitly.
     const eligible = adults.filter(n => canWork(w, n)), worker = eligible[Math.floor(w.tick / 144) % Math.max(1, eligible.length)], service = c.priority;
-    if (worker && c.services[service] < 3 && c.treasury >= 12 && stock.wood >= 4 && c.goods.stone >= 2) {
+    if (worker && (!w.villageLife || !['clinic','school'].includes(service) || occupationAllowed(w,id,service==='clinic'?'healer':'teacher')) && c.services[service] < 3 && c.treasury >= 12 && stock.wood >= 4 && c.goods.stone >= 2) {
       c.treasury -= 12; c.spent += 12; w.economy.totals.wages += 12; worker.wealth += 12; w.urban.citizens[worker.id].income += 12; stock.wood -= 4; w.economy.totals.investedWood += 4; c.goods.stone -= 2; w.urban.ledger.consumed.stone += 2; c.services[service]++;
       c.lastEventId = appendEvent(w, { kind: 'public_service', actorId: worker.id, importance: 55, causeId: c.lastEventId, description: `${id}이 ${SERVICE_LABELS[service]} ${c.services[service]}단계에 예산 12코인·목재 4개·석재 2개를 투자했다.`, data: { settlementId: id, service, level: c.services[service], coins: 12, wood: 4, stone: 2 } }).id;
       c.priority = SERVICES[(SERVICES.indexOf(service) + 1) % SERVICES.length];
@@ -189,7 +191,7 @@ export function urbanDay(w: WorldState) {
     if (people.length >= 12 && stock.wood >= 8) {
       const order: Industry[] = c.fertility >= 70 ? ['field', 'mill', 'quarry', 'mine', 'smith'] : ['quarry', 'mine', 'smith', 'field', 'mill'];
       order.push('garden', 'weaving', 'tailoring', 'kitchen', 'joinery', ...Object.keys(EXTRA_RECIPES) as Industry[]);
-      const missing = order.find(k => !existing.some(e => e.kind === k));
+      const missing = order.find(k => industryAllowed(w,id,k) && !existing.some(e => e.kind === k));
       if (missing) buildEnterprise(w, id, missing);
       else if (existing.length < Math.min(40, Math.floor(people.length / 10)) && m.food < people.length * 2) buildEnterprise(w, id, existing.filter(e => e.kind === 'field').length <= existing.filter(e => e.kind === 'mill').length ? 'field' : 'mill');
     }
@@ -204,8 +206,15 @@ export function urbanDay(w: WorldState) {
     const staffing = Math.max(1, Math.floor(adults.filter(n => canWork(w, n)).length / Math.max(1, localJobs.length)));
     for (const e of localJobs) for (const released of e.workers.splice(Math.min(e.capacity, staffing))) delete w.urban.citizens[released].employer;
     for (const e of localJobs) {
+      if (!industryAllowed(w,id,e.kind)) continue;
       for (const n of adults.filter(n => canWork(w, n) && !w.urban.citizens[n.id].employer && !(n.life.apprenticeship?.choice==='independent' && n.life.apprenticeship.kind===e.kind)).sort((a, b) => (w.urban.citizens[b.id].skills[INDUSTRY_SKILL[e.kind]] + (b.occupation === INDUSTRY_JOB[e.kind] ? 40 : 0)) - (w.urban.citizens[a.id].skills[INDUSTRY_SKILL[e.kind]] + (a.occupation === INDUSTRY_JOB[e.kind] ? 40 : 0)))) {
         if (e.workers.length >= Math.min(e.capacity, staffing)) break;
+        const development=w.villageLife?.settlements[id];
+        if(development && n.occupation!==INDUSTRY_JOB[e.kind]) {
+          if(development.lastAssigned>0 && Math.floor(development.lastAssigned/144)===Math.floor(w.tick/144))continue;
+          const career=w.villageLife!.people[n.id];if(career?.careerTick && w.tick-career.careerTick<288)continue;
+          development.lastAssigned=w.tick;if(career)career.careerTick=w.tick;
+        }
         e.workers.push(n.id); w.urban.citizens[n.id].employer = e.id; n.occupation = INDUSTRY_JOB[e.kind];
         appendEvent(w, { kind: 'occupation', actorId: n.id, locationId: e.buildingId, importance: 40, causeId: e.sourceEventId, description: `${n.identity.name}이 ${INDUSTRY_LABELS[e.kind]}에 고용되었다. 작업 완료당 임금 ${e.wage}코인.`, data: { settlementId: id, employer: e.id, industry: e.kind, wage: e.wage } });
       }
@@ -216,8 +225,8 @@ export function urbanDay(w: WorldState) {
       const u = w.urban.citizens[n.id], sick = u.disease > 0;
       u.nutrition = clamp(u.nutrition + (n.needs.hunger < 55 ? 2 : -4));
       if (students > 0 && n.identity.age < 18) { u.education = clamp(u.education + 1); students--; }
-      if (patients > 0 && (u.disease > 0 || u.injury > 0)) { u.disease = Math.max(0, u.disease - 3); u.injury = Math.max(0, u.injury - 4); patients--; }
-      else { u.disease = Math.max(0, u.disease - .5); u.injury = Math.max(0, u.injury - 1); }
+      if (patients > 0 && (u.disease > 0 || u.injury > 0)) { u.disease = Math.max(0, u.disease - 3); if (!w.villageLife) u.injury = Math.max(0, u.injury - 4); patients--; }
+      else { u.disease = Math.max(0, u.disease - .5); if (!w.villageLife) u.injury = Math.max(0, u.injury - 1); }
       if (!sick && random(w) < Math.max(0, (c.pollution + Math.max(0, people.length - 60) * .1 - c.active.water * 15 - c.active.sanitation * 15)) / 1000) {
         u.disease = 8; u.healthEventId = appendEvent(w, { kind: 'health', actorId: n.id, importance: 60, description: `${n.identity.name}이 지역의 밀집·위생 여건으로 병에 걸렸다.`, data: { settlementId: id, pollution: c.pollution, water: c.active.water, sanitation: c.active.sanitation } }).id;
       }

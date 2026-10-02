@@ -1,3 +1,4 @@
+import { developed, developedSimulation } from './helpers/developed-world';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/sim/engine';
@@ -16,7 +17,7 @@ import { stateChange } from '../src/server/journal';
 import { applyCommand } from '../src/server/world';
 const valid = (w: unknown) => Simulation.load(JSON.stringify(w));
 function funded() {
-  const w = new Simulation(42, 30).snapshot(); w.llm.enabled = false;
+  const w = new Simulation(42, 30).snapshot(); developed(w); w.llm.enabled = false;
   w.storage.wood = 500; w.market.coins = 5000; w.economy = createEconomy(w); return w;
 }
 function legacy(w: ReturnType<typeof funded>): any {
@@ -25,8 +26,8 @@ function legacy(w: ReturnType<typeof funded>): any {
   for (const c of old.urban.cities) for (const g of ['clay', 'salt']) { delete c.deposits[g]; delete c.initialDeposits[g]; }
   return old;
 }
-test('14 raw resources, 12 products and 26 professions are connected to real recipes', () => {
-  assert.equal(Object.keys(BASIC_RESOURCE_LABELS).length, 14); assert.equal(PRODUCTS.length, 12); assert.equal(Object.keys(OCCUPATIONS).length - 1, 26);
+test('14 raw resources, 12 products and 30 professions are connected to real recipes', () => {
+  assert.equal(Object.keys(BASIC_RESOURCE_LABELS).length, 14); assert.equal(PRODUCTS.length, 12); assert.equal(Object.keys(OCCUPATIONS).length - 1, 30);
   const w = funded(), c = city(w, 'v0');
   for (const [kind, recipe] of Object.entries(EXTRA_RECIPES)) {
     const e = buildEnterprise(w, 'v0', kind as Industry)!; assert.ok(e, kind);
@@ -79,7 +80,7 @@ test('children, retirees and convalescents cannot work; adults can recover, seek
 });
 test('initial and custom residents include dependants; adulthood and retirement change eligibility', () => {
   const sim = new Simulation(), initial = sim.snapshot();
-  for (const status of ['child', 'retired', 'seeking']) assert.ok(initial.npcs.some(n => workStatus(initial, n) === status));
+  for (const status of ['child', 'retired']) assert.ok(initial.npcs.some(n => workStatus(initial, n) === status));
   for (const n of initial.npcs.filter(n => n.identity.age < 18)) assert.ok(initial.npcs.some(p => p.homeId === n.homeId && p.identity.age >= 18));
   for (const age of [0, 8, 70]) {
     const a = defaultCharacter(age === 70 ? 'b5' : 'b4'); a.age = age; a.occupation = 'baker'; const id = sim.createCharacter(a), w = sim.snapshot(), n = w.npcs.find(n => n.id === id)!;

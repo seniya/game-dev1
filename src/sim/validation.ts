@@ -1,3 +1,5 @@
+import { villageLifeSchema } from './village-types';
+import { validateVillageLife } from './village-validation';
 import { apprenticeshipSchema, supportSchema, validateLegacy } from './legacy-learning';
 import { ambitionSchema } from './ambition';
 import { cooperationSchema, validateCooperation } from './cooperation';
@@ -56,6 +58,7 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
   daily: z.array(flow.extend({ day: natural.min(1), tick: natural, population: natural.max(3000), food: natural, storageFood: natural, foodPrice: natural.min(1).max(12), coins: natural, poorest: natural, median: z.number().finite().nonnegative(), richest: natural, shares: natural, conflicts: natural, eventId: id }).strict()).max(10000)
 }).strict();
 const world = z.object({
+  villageLife: villageLifeSchema.optional(),
   frontier: frontierSchema.optional(),
   cooperation:cooperationSchema.optional(),
   construction:constructionSchema.optional(),
@@ -123,6 +126,7 @@ export function validateSave(input: unknown): WorldState {
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
   const w = parsed.data as WorldState;
   const ensure = (condition: unknown, message: string) => { if (!condition) throw new Error(`저장 파일 무결성 오류: ${message}`); };
+  validateVillageLife(w, ensure);
   validateCooperation(w, ensure);
   validateAgriculture(w, ensure);
   validateConstruction(w, ensure);

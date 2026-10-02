@@ -401,3 +401,10 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - 직전 배포 소스 `30dfcb064655fe25dca53a8d8a80d99cd2043f16`의 엔진을 보존하고 SQLite/실제 로컬 Worker 복구를 검증했다. production build와 보존 엔진 무결성 검사 통과. 배포와 운영 보존 결과는 `reports/deployment-v030.json`에 별도 기록한다.
 
 - 소스 `b4a56fd86ef3197a5e5becf8c2eadbab767c5bcc`를 기존 Sites 저장소에 push하고 동일 커밋에서 빌드·패키징한 아티팩트를 **Sites 42 succeeded**로 배포했다. custom 접근 정책·확정 세계 revision 3804·사건 27,738개·Chrome 설정 보존, 배포 전후 대기 행 없음. [배포 보고서](reports/deployment-v030.json). 운영 인증 브라우저·원본 전체 재해시는 별도 미실행 경계다.
+
+
+## 2026-10-02 · v0.31 작은 마을의 생활
+
+[VILLAGE_LIFE_PLAN.md](VILLAGE_LIFE_PLAN.md)의 단순 시작·수요 기반 분업·만 4세 외출·성격 갈등·부상과 돌봄·현장 배움·사건 관찰을 구현했다. 기존 v9 세계를 보존하고 선택 상태를 추가한다. 12~3,000명 초기 가구에 보호자를 배정한다. [검증 보고서](reports/village-life-validation.json)와 [배포 기록](reports/deployment-v031.json)에서 실제 실행 결과와 미실행 범위를 구분한다.
+
+검증: 코어·서버 337개 통과. 전체 브라우저 103개 통과·1개 실패·실모델 1개 제외 후, 재조율 사건 시드 픽스처를 수정하여 관련 6개를 재검증했다(최종 고유 104개 통과). 3시드 × off/Mock × 365일과 300명 30일·1,000명 3일·3,000명 1일 총 9조건 및 독립 재개 89회, 모든 일별 자원·상품 회계와 원인 참조를 확인했다. 초기 실패·수정 전 회귀도 별도 보고서에 남겼다.

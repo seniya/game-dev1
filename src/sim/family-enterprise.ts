@@ -1,3 +1,4 @@
+import { industryAllowed } from './development';
 import { z } from 'zod';
 import type { NPC, WorldState } from './types';
 import type { Enterprise, Good } from './urban-types';
@@ -15,7 +16,7 @@ export type Business = z.infer<typeof businessSchema>;
 export const BUSINESS_PRICE = 24, BUSINESS_CAPITAL = 24;
 export function acquireBusiness(w: WorldState, npcId: string, enterpriseId: string, observer = false) {
   const n = w.npcs.find(n => n.id === npcId), e = w.urban.enterprises.find(e => e.id === enterpriseId);
-  if (!n || !e || e.business || !canWork(w,n) || isTravelling(w,n) || n.settlementId !== e.settlementId || n.wealth < BUSINESS_PRICE + BUSINESS_CAPITAL + 20 || n.needs.hunger >= 65 || n.needs.health < 50) throw new Error('같은 마을의 건강한 성인과 생활비를 포함한 68코인, 아직 공동 소유인 사업체가 필요합니다.');
+  if (!n || !e || !industryAllowed(w,n.settlementId,e.kind) || e.business || !canWork(w,n) || isTravelling(w,n) || n.settlementId !== e.settlementId || n.wealth < BUSINESS_PRICE + BUSINESS_CAPITAL + 20 || n.needs.hunger >= 65 || n.needs.health < 50) throw new Error('같은 마을의 건강한 성인과 생활비를 포함한 68코인, 아직 공동 소유인 사업체가 필요합니다.');
   n.wealth -= BUSINESS_PRICE + BUSINESS_CAPITAL; market(w,e.settlementId).coins += BUSINESS_PRICE;
   const event = appendEvent(w,{kind:'industry',actorId:n.id,locationId:e.buildingId,causeId:e.sourceEventId,importance:60,description:`${n.identity.name}이 ${INDUSTRY_LABELS[e.kind]}을 공동체에서 ${BUSINESS_PRICE}코인에 인수하고 운영금 ${BUSINESS_CAPITAL}코인을 넣었다. 생활비 20코인 이상을 남겼다.`,data:{business:e.id,phase:'acquired',purchase:BUSINESS_PRICE,capital:BUSINESS_CAPITAL,observer}});
   e.business = {shares:[{npc:n.id,weight:1}],community:0,cash:BUSINESS_CAPITAL,capital:BUSINESS_CAPITAL,purchase:BUSINESS_PRICE,revenue:0,costs:0,wages:0,dividends:0,source:event.id,latest:event.id,since:w.tick};

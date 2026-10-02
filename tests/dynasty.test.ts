@@ -152,7 +152,7 @@ test('exact published v0.26 engine preserves pending progress before applying am
   const fingerprint='ee5ec959c1be45675e159dd692f908d5cba2057c7789e5b85c8fe6e345aeb889';
   const { retainedEngine }=await import('../src/server/engine-registry');const {LegacySimulation}=await retainedEngine(fingerprint)!();
   const db=database(),store=new WorldStore(db);await store.init(Date.now());const saved=await store.read();
-  const sim=LegacySimulation.load(JSON.stringify(saved.state));sim.setLLM(false);saved.state=sim.snapshot() as unknown as WorldState;saved.meta.aiMode='off';
+  const sim=new LegacySimulation(saved.state.seed, 12);sim.setLLM(false);saved.state=sim.snapshot() as unknown as WorldState;saved.meta.aiMode='off';
   await db.batch([db.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),db.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
   sim.step(60,undefined);const state=sim.snapshot() as unknown as WorldState,ids=new Set(saved.state.events.map(e=>e.id)),events=state.events.filter((e:{id:string})=>!ids.has(e.id));
   const meta={...saved.meta,eventCount:saved.meta.eventCount+events.length};

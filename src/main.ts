@@ -1,8 +1,9 @@
+import { careHistoryView } from './ui/village-life';
 import { neighborsView } from './ui/neighbors';
 import { localNeighbors, type NeighborView } from './sim/neighbors';
 import './ui/neighbors.css';
 import { NPC_CREATION_LIMIT } from './sim/character-schema';
-import { START_PRESETS, updateCreationBudgets } from './ui/characters';
+import { START_PRESETS, updateCreationBudgets, refreshOccupationOptions } from './ui/characters';
 import { familyTree } from './ui/family-dashboard';
 import { dynastyView, localDynasty } from './ui/dynasty';
 import type { DynastyView } from './sim/dynasty';
@@ -244,7 +245,7 @@ function renderInspectorContent() {
     return;
   }
   const needLabels = [['hunger', '배고픔', false], ['thirst', '갈증', false], ['fatigue', '피로', false], ['health', '건강', true], ['social', '사회적 충족', true], ['safety', '안전감', true]] as const;
-  setInspectorHTML(`${lifeIntroductionView(state,n)}${activityView(state,n)}<div class="action-box"><span class="section-label">지금 하고 있는 일</span><div>${icon(n.currentAction?.path.length ? 'arrow' : 'leaf', 17)}<b>${actionText(n)}</b><span class="small-live-dot"></span></div></div>
+  setInspectorHTML(`${lifeIntroductionView(state,n)}${activityView(state,n)}${careHistoryView(state,n)}<div class="action-box"><span class="section-label">지금 하고 있는 일</span><div>${icon(n.currentAction?.path.length ? 'arrow' : 'leaf', 17)}<b>${actionText(n)}</b><span class="small-live-dot"></span></div></div>
     ${n.profile ? `<div class="character-background"><p>${esc(n.profile.background) || '이곳에서 새로운 삶을 시작한 주민입니다.'}</p><button class="evidence-link" data-event="${esc(n.profile.arrivalEventId)}">입주 기록 보기</button></div>` : ''}<div class="section-label needs-title">몸과 마음 <span>0 — 100</span></div><div class="needs-list">${needLabels.map(([key, label, positive]) => { const value = Math.round(n.needs[key]), danger = positive ? value < 35 : value > 75; return `<div class="need-row"><span>${label}</span><div class="need-track"><i style="width:${value}%;background:${danger ? '#c9826c' : positive ? '#7d9c86' : '#b7a275'}"></i></div><b>${value}</b></div>`; }).join('')}</div>
     <div class="section-label spaced">왜 이 행동을 할까요? ${icon('spark', 13)}</div><div class="reason-box">${esc(n.decision.reason)}<div class="reason-foot">Utility AI · ${timeLabel(n.decision.tick)} 판단</div></div>
     <details class="utility-details"><summary>행동 후보 점수 보기</summary><div>${n.decision.candidates.map(c => `<div class="utility-row"><span>${ACTION_LABELS[c.kind]}<small>${esc(c.reason)}</small>${(c.evidence ?? []).map(id => `<button class="evidence-link" data-event="${esc(id)}">${esc(id)}</button>`).join('')}</span><b>${c.score.toFixed(1)}</b></div>`).join('') || '<p>첫 틱이 지나면 판단을 확인할 수 있습니다.</p>'}</div></details>
@@ -818,7 +819,7 @@ document.addEventListener('input', event => {
 document.addEventListener('change', event => {
   const target = event.target as HTMLSelectElement;
   if(target.id==='relationship-partner')void observer.story(target.dataset.storyPerson!,false,target.value);
-  if (target.name === 'homeId' && target.closest('#character-form')) document.querySelector<HTMLSelectElement>('#character-form [name="greetId"]')!.innerHTML = greetingOptions(state, target.value);
+  if (target.name === 'homeId' && target.closest('#character-form')) { document.querySelector<HTMLSelectElement>('#character-form [name="greetId"]')!.innerHTML = greetingOptions(state, target.value); refreshOccupationOptions(state,target.closest<HTMLFormElement>('#character-form')!); }
 });
 let creatingCharacter = false;
 document.addEventListener('submit', async event => {
@@ -1082,5 +1083,6 @@ document.addEventListener('click', event => {
   if (!form || !preset) return;
   const values = { occupation: preset.occupation, goal: preset.goal, skill: preset.skill, education: preset.education, ...Object.fromEntries(Object.entries(preset.skills).map(([key, value]) => [`skills.${key}`, value])) };
   for (const [key, value] of Object.entries(values)) (form.elements.namedItem(key) as HTMLInputElement).value = String(value);
+  refreshOccupationOptions(state,form);
   updateCreationBudgets(form);
 });

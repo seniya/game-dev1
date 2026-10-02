@@ -73,7 +73,7 @@ test('return digest is identical for SQLite and local, frozen at watermark and i
  const empty=await readObserver(s,w,new URLSearchParams({epoch:w.epoch,from:'0',to:'288',after:String(w.meta.eventCount),through:String(w.meta.eventCount)}));assert.ok(empty.changes!.every(g=>!g.events.length));
 });
 test('v024 recovery preserves exact progress; failures are deduplicated and diagnosed without altering world or clock',async()=>{
- const db=database(),s=new WorldStore(db);await s.init(Date.now());const saved=await s.read(),old=LegacySimulation.load(JSON.stringify(saved.state));old.setLLM(false);saved.state=old.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';await db.batch([db.prepare('DELETE FROM snapshots'),...s.snapshotStatements(saved.epoch,saved.state),db.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
+ const db=database(),s=new WorldStore(db);await s.init(Date.now());const saved=await s.read(),old=new LegacySimulation(saved.state.seed, 12);old.setLLM(false);saved.state=old.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';await db.batch([db.prepare('DELETE FROM snapshots'),...s.snapshotStatements(saved.epoch,saved.state),db.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
  old.step(12,undefined);const state=old.snapshot() as unknown as typeof saved.state,added=state.events.filter(e=>!saved.state.events.some(x=>x.id===e.id));
  const body={build:'fd779772563d70c9d0a89198165ee82c2741f04d543a32c8b9cb904b5fef71af',epoch:saved.epoch,ticks:12,meta:{...saved.meta,eventCount:saved.meta.eventCount+added.length+1},started:Date.now(),id:'pending'};
  await db.batch([db.prepare('INSERT INTO world_live VALUES(1,?,1,?)').bind(saved.revision,JSON.stringify(body))]);

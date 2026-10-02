@@ -1,3 +1,4 @@
+import { developedSimulation } from './helpers/developed-world';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/sim/engine';
@@ -10,7 +11,7 @@ import worker from '../src/server/worker';
 import { database } from './helpers/database';
 
 test('custom residents enter with configured attributes, appearance and separately accounted assets', () => {
-  const sim = new Simulation(42), before = sim.snapshot(), assets = holdings(before);
+  const sim = developedSimulation(42), before = sim.snapshot(), assets = holdings(before);
   const input = defaultCharacter('b4'); input.name = '도시의 새이웃'; input.background = '<script>이야기</script>'; input.occupation = 'carpenter'; input.skills.smith = 77; input.wealth = 250; input.wood = 30;
   const id = sim.createCharacter(input), w = sim.snapshot(), n = w.npcs.find(n => n.id === id)!;
   assert.equal(w.npcs.length, before.npcs.length + 1); assert.equal(n.identity.name,input.name); assert.equal(n.occupation, 'carpenter');
@@ -150,7 +151,7 @@ test('v0.28 pending progress and old unrestricted residents survive the new crea
   const {LiveWorldStore}=await import('../src/server/live-store');
   const {LegacySimulation}=await retainedEngine(fingerprint)!();
   const DB=database(),store=new WorldStore(DB);await store.init(Date.now());const saved=await store.read();
-  const sim=LegacySimulation.load(JSON.stringify(saved.state));sim.setLLM(false);
+  const sim=new LegacySimulation(saved.state.seed, 12);sim.setLLM(false);
   const input=defaultCharacter('b4');input.skill=100;input.education=100;input.wealth=1000;
   sim.createCharacter(input, undefined);saved.state=sim.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';saved.meta.eventCount=saved.state.events.length;
   await DB.batch([DB.prepare('DELETE FROM snapshots WHERE epoch=?').bind(saved.epoch),...store.snapshotStatements(saved.epoch,saved.state),DB.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);

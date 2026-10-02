@@ -1,3 +1,4 @@
+import { healInjury } from './care';
 import type { WorldState, NPC, Candidate } from './types';
 import { HOMES, HOME_KINDS, type LivingPerson } from './living-types';
 import { GOODS, GOOD_LABELS, GOOD_PRICES, type Good } from './urban-types';
@@ -23,12 +24,14 @@ export function initializeLiving(w: WorldState) {
 export function homeProfile(w: WorldState, n: NPC) { return HOMES[w.living.homes[n.homeId] ?? 'shared']; }
 export function livingTick(w: WorldState, n: NPC) {
   const l = w.living.people[n.id], u = w.urban.citizens[n.id], b = l.body;
-  const resting = !n.currentAction?.path.length && (n.currentAction?.kind === 'Sleep' || n.currentAction?.kind === 'Idle');
+  const childHome=!!w.villageLife && n.identity.age<18 && !w.villageLife.activities[n.id] && w.buildings.some(h=>h.id===n.homeId&&distance(h.position,n.position)===0);
+  const resting = childHome || w.villageLife?.activities[n.id]?.kind==='recover' || !n.currentAction?.path.length && (n.currentAction?.kind === 'Sleep' || n.currentAction?.kind === 'Idle');
+  if(childHome)b.cleanliness=clamp(b.cleanliness+.1);
   const labour = n.currentAction?.kind === 'Work' || n.currentAction?.kind === 'Gather';
   b.stamina = clamp(b.stamina + (resting ? 1.2 : labour ? -.22 : -.06));
   b.cleanliness = clamp(b.cleanliness - (labour ? .07 : .025));
   const insulation = homeProfile(w, n).insulation * (w.urban.buildings[n.homeId]?.condition ?? 100) / 100;
-  const targetWarmth = clamp((seasonIndex(w) === 3 ? 38 : 75) + l.clothing * .25 + (resting && n.currentAction?.kind === 'Sleep' ? insulation * .35 : 0) - (w.weather === 'rain' && !resting ? 12 : 0));
+  const targetWarmth = clamp((seasonIndex(w) === 3 ? 38 : 75) + l.clothing * .25 + (resting && (n.currentAction?.kind === 'Sleep'||childHome) ? insulation * .35 : 0) - (w.weather === 'rain' && !resting ? 12 : 0));
   b.warmth = clamp(b.warmth + (targetWarmth - b.warmth) * .03);
   const targetPain = clamp(u.injury * .8 + u.disease * .25 + Math.max(0, 25 - b.stamina) * .2);
   b.pain = clamp(b.pain + (targetPain - b.pain) * .015 - (resting ? .08 : 0));
@@ -88,16 +91,17 @@ export function buyConsumerGood(w: WorldState, n: NPC, good: Good): boolean {
   c.goods[good]--; w.urban.ledger.consumed[good]++;
   n.wealth -= price; market(w, n.settlementId).coins += price; u.expenses += price;
   w.economy.totals.trades++; w.economy.totals.tradeVolume += price;
-  if (good === 'herbs') { l.body.pain = clamp(l.body.pain - 18); u.disease = clamp(u.disease - 2); u.injury = clamp(u.injury - 2); }
+  if (good === 'herbs') { l.body.pain = clamp(l.body.pain - 18); u.disease = clamp(u.disease - 2); if(w.villageLife) healInjury(w,n,2); else u.injury = clamp(u.injury - 2); }
   if (good === 'clothes') l.clothing = 100;
   if (good === 'meals') { n.needs.hunger = clamp(n.needs.hunger - 45); u.nutrition = clamp(u.nutrition + 12); }
   if (good === 'furniture') l.furnishings = 100;
   if (good === 'blankets') { l.clothing = Math.max(l.clothing, 80); l.body.warmth = clamp(l.body.warmth + 25); }
   if (good === 'pottery') l.body.cleanliness = clamp(l.body.cleanliness + 35);
-  if (good === 'medicine') { l.body.pain = clamp(l.body.pain - 30); u.disease = clamp(u.disease - 8); u.injury = clamp(u.injury - 5); }
+  if (good === 'medicine') { l.body.pain = clamp(l.body.pain - 30); u.disease = clamp(u.disease - 8); if(w.villageLife) healInjury(w,n,5); else u.injury = clamp(u.injury - 5); }
   if (['vegetables', 'fruit', 'bread', 'dried_fish', 'cheese', 'stew'].includes(good)) { n.needs.hunger = clamp(n.needs.hunger - (good === 'vegetables' || good === 'fruit' ? 25 : 45)); u.nutrition = clamp(u.nutrition + 8); }
   l.desires.comfort = clamp(l.desires.comfort - 15); l.desires.novelty = clamp(l.desires.novelty - 8);
-  appendEvent(w, { kind: 'consumption', actorId: n.id, importance: 30, description: `${n.identity.name}이 ${GOOD_LABELS[good]} 1개를 ${price}코인에 구입해 생활에 사용했다.`, data: { settlementId: n.settlementId, good, amount: 1, price } });
+  const consumed=appendEvent(w, { kind: 'consumption', actorId: n.id, importance: 30, description: `${n.identity.name}이 ${GOOD_LABELS[good]} 1개를 ${price}코인에 구입해 생활에 사용했다.`, data: { settlementId: n.settlementId, good, amount: 1, price } });
+  const injury=w.villageLife?.injuries.find(i=>i.npc===n.id);if(injury&&['herbs','medicine'].includes(good))injury.latest=consumed.id;
   return true;
 }
 export function migrateLiving(w: WorldState) {

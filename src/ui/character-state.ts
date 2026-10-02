@@ -18,6 +18,8 @@ export function characterVisual(n: NPC, w?: WorldState): CharacterVisual {
   if (working) return { ...base, key: 'working', label: a!.kind === 'Gather' ? '자원 채집 중' : '열심히 일하는 중', symbol: '⌁', color: '#a17d4b' };
   if (a && ['Attend', 'Talk', 'Share', 'Trade', 'Borrow', 'Repay'].includes(a.kind)) return { ...base, key: 'social', label: ACTION_LABELS[a.kind], symbol: '••', color: '#a77a8b' };
   if (a && ['Eat', 'Drink', 'Wash'].includes(a.kind)) return { ...base, key: 'restoring', label: ACTION_LABELS[a.kind], symbol: a.kind === 'Eat' ? '●' : '◒', color: '#689699' };
+  if (routine && w?.villageLife?.activities[n.id]) return { ...base, key: 'care', label: routine.label, symbol: w.villageLife.activities[n.id].kind==='care'?'✚':'◌', color: '#6e926b' };
+  if (routine && w?.villageLife?.conflicts.some(c=>c.a===n.id||c.b===n.id)) return { ...base,key:'social',label:routine.label,symbol:'!',color:'#b18b49' };
   if (routine && n.identity.age < 18) return { ...base, key: 'care', label: routine.label, symbol: '⌂', color: '#6e926b' };
   return { ...base, key: 'calm', label: '평온한 일상', symbol: '·', color: '#6e926b' };
 }

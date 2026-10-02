@@ -1,0 +1,697 @@
+{
+  "version": "0.31.0",
+  "environment": "local Node, not production CPU or real Chrome model",
+  "results": [
+    {
+      "seed": 7,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "alive": 12,
+      "people": 21,
+      "stats": {
+        "contacts": 2112,
+        "plays": 547,
+        "arguments": 4,
+        "collisions": 0,
+        "injuries": 4,
+        "treatments": 5,
+        "recoveries": 4,
+        "careTicks": 1436,
+        "outings": 1002,
+        "returns": 1008,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 6869002,
+      "events": 93888,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 43864
+    },
+    {
+      "seed": 7,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "alive": 17,
+      "people": 19,
+      "stats": {
+        "contacts": 4614,
+        "plays": 968,
+        "arguments": 16,
+        "collisions": 0,
+        "injuries": 4,
+        "treatments": 4,
+        "recoveries": 4,
+        "careTicks": 2255,
+        "outings": 1621,
+        "returns": 1638,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 12702551,
+      "events": 151806,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 66840
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "alive": 12,
+      "people": 18,
+      "stats": {
+        "contacts": 4171,
+        "plays": 852,
+        "arguments": 17,
+        "collisions": 0,
+        "injuries": 5,
+        "treatments": 7,
+        "recoveries": 5,
+        "careTicks": 2073,
+        "outings": 1170,
+        "returns": 1180,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 11236326,
+      "events": 141546,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 63833
+    },
+    {
+      "seed": 42,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "alive": 12,
+      "people": 17,
+      "stats": {
+        "contacts": 5845,
+        "plays": 771,
+        "arguments": 6,
+        "collisions": 0,
+        "injuries": 7,
+        "treatments": 9,
+        "recoveries": 7,
+        "careTicks": 1678,
+        "outings": 973,
+        "returns": 984,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 15041766,
+      "events": 154894,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 82832
+    },
+    {
+      "seed": 123,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "alive": 13,
+      "people": 14,
+      "stats": {
+        "contacts": 4901,
+        "plays": 464,
+        "arguments": 51,
+        "collisions": 0,
+        "injuries": 4,
+        "treatments": 6,
+        "recoveries": 4,
+        "careTicks": 1013,
+        "outings": 689,
+        "returns": 696,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 11328809,
+      "events": 271165,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 68318
+    },
+    {
+      "seed": 123,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "alive": 11,
+      "people": 12,
+      "stats": {
+        "contacts": 6305,
+        "plays": 339,
+        "arguments": 79,
+        "collisions": 0,
+        "injuries": 2,
+        "treatments": 4,
+        "recoveries": 2,
+        "careTicks": 477,
+        "outings": 501,
+        "returns": 505,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 15099653,
+      "events": 183973,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 76789
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 300,
+      "days": 30,
+      "alive": 305,
+      "people": 305,
+      "stats": {
+        "contacts": 5592,
+        "plays": 1107,
+        "arguments": 38,
+        "collisions": 0,
+        "injuries": 4,
+        "treatments": 6,
+        "recoveries": 4,
+        "careTicks": 6373,
+        "outings": 2400,
+        "returns": 2413,
+        "careerChanges": 12
+      },
+      "stages": [
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 1,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 22066004,
+      "events": 302548,
+      "missingCauses": 0,
+      "resumeChecks": 2,
+      "maxCareWaitTicks": 0,
+      "durationMs": 40402
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 1000,
+      "days": 3,
+      "alive": 785,
+      "people": 1000,
+      "stats": {
+        "contacts": 2019,
+        "plays": 91,
+        "arguments": 10,
+        "collisions": 0,
+        "injuries": 1,
+        "treatments": 2,
+        "recoveries": 1,
+        "careTicks": 384,
+        "outings": 171,
+        "returns": 169,
+        "careerChanges": 4
+      },
+      "stages": [
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none",
+            "woodcutter",
+            "cook"
+          ]
+        },
+        {
+          "stage": 4,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 15047572,
+      "events": 129564,
+      "missingCauses": 0,
+      "resumeChecks": 2,
+      "maxCareWaitTicks": 0,
+      "durationMs": 28426
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 3000,
+      "days": 1,
+      "alive": 3000,
+      "people": 3000,
+      "stats": {
+        "contacts": 2254,
+        "plays": 133,
+        "arguments": 12,
+        "collisions": 0,
+        "injuries": 0,
+        "treatments": 0,
+        "recoveries": 0,
+        "careTicks": 0,
+        "outings": 148,
+        "returns": 148,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 22150753,
+      "events": 127606,
+      "missingCauses": 0,
+      "resumeChecks": 1,
+      "maxCareWaitTicks": 0,
+      "durationMs": 39371
+    }
+  ]
+}

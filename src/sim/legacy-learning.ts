@@ -1,3 +1,4 @@
+import { occupationAllowed } from './development';
 import { z } from 'zod';
 import type { NPC, WorldState, WorldEvent } from './types';
 import { INDUSTRIES, INDUSTRY_JOB, INDUSTRY_SKILL, INDUSTRY_LABELS } from './urban-types';
@@ -23,7 +24,7 @@ export function chooseFamilyTrade(w:WorldState,n:NPC):boolean {
   const a=n.life.apprenticeship;if(!a)return false;
   const independence=w.living.people[n.id].traits.independence;
   const score=a.lessons*2+n.personality.diligence*.2+(n.life.ambition==='family'?12:0)-n.personality.curiosity*.2-independence*.2;
-  const continues=score>=0&&w.urban.enterprises.some(e=>e.id===a.enterprise&&e.settlementId===n.settlementId);
+  const continues=occupationAllowed(w,n.settlementId,INDUSTRY_JOB[a.kind])&&score>=0&&w.urban.enterprises.some(e=>e.id===a.enterprise&&e.settlementId===n.settlementId);
   a.choice=continues?'continue':'independent';n.occupation=continues?INDUSTRY_JOB[a.kind]:'none';
   a.source=appendEvent(w,{kind:'occupation',actorId:n.id,targetId:a.mentor,causeId:a.source,importance:55,description:`${n.identity.name}이 성인이 되어 ${continues?`배운 ${INDUSTRY_LABELS[a.kind]} 일을 이어가기로`:'가업 밖에서 다른 일을 찾아보기로'} 했다. 배운 경험 ${a.lessons}회와 성실성·호기심·독립 성향을 함께 반영했다.`,data:{business:a.enterprise,phase:'career-choice',choice:a.choice,score,lessons:a.lessons}}).id;return true;
 }

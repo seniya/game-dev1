@@ -18,7 +18,7 @@ async function send(s:LiveWorldStore,action:Command['action'],at=now){const w=aw
 function position(w:ReturnType<Simulation['snapshot']>){const v=w.civilization.settlements[0];for(let y=0;y<w.height;y++)for(let x=0;x<w.width;x++)if(buildPosition(w,v.id,{x,y}))return {x,y};throw Error('site');}
 
 test('v022 recovery commits exact old engine progress once, with a durable recovery record',async()=>{
- const {db,s}=await setup(),saved=await s.read(),old=LegacySimulation.load(JSON.stringify(saved.state));old.setLLM(false);saved.state=old.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';
+ const {db,s}=await setup(),saved=await s.read(),old=new LegacySimulation(saved.state.seed, 12);old.setLLM(false);saved.state=old.snapshot() as unknown as typeof saved.state;saved.meta.aiMode='off';
  await db.batch([db.prepare('DELETE FROM snapshots'),...s.snapshotStatements(saved.epoch,saved.state),db.prepare('UPDATE world SET meta=?').bind(JSON.stringify(saved.meta))]);
  old.step(144,undefined);const state=old.snapshot() as unknown as typeof saved.state,ids=new Set(saved.state.events.map(e=>e.id)),added=state.events.filter((e:{id:string})=>!ids.has(e.id));
  await db.batch([db.prepare('INSERT INTO world_live VALUES(1,?,1,?)').bind(saved.revision,JSON.stringify({build:'94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b',epoch:saved.epoch,ticks:144,meta:{...saved.meta,eventCount:saved.meta.eventCount+added.length},started:now,id:crypto.randomUUID()}))]);

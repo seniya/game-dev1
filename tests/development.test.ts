@@ -86,7 +86,8 @@ test('version 1 upgrades without fabricating old daily samples, new accounts rej
   }
 });
 test('autonomous investment consumes real wood and records a production multiplier', () => {
-  const w = fixture(), carpenter = w.npcs.find(n => n.occupation === 'carpenter')!, farm = w.buildings.find(b => b.kind === 'farm')!;
+  const w = fixture(), carpenter = w.npcs[4], farm = w.buildings.find(b => b.kind === 'farm')!;
+  carpenter.occupation='carpenter'; w.villageLife!.settlements.v0.unlocked.push('carpenter');
   carpenter.position = { ...farm.position }; carpenter.inventory.wood = 3; hold(carpenter, 'Work', `${farm.id}:expand_farm`, 1);
   const before = holdings(w).wood, sim = load(w); sim.step(); const result = sim.snapshot();
   assert.equal(holdings(result).wood, before - 8); assert.equal(result.buildings.find(b => b.id === farm.id)!.level, 2);

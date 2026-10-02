@@ -14,6 +14,9 @@ export function eventById(w: WorldState, id: string): WorldEvent | undefined {
 export function appendEvent(w: WorldState, input: EventInput): WorldEvent {
   const region = input.actorId ? person(w, input.actorId)?.settlementId : input.locationId ? w.buildings.find(b => b.id === input.locationId)?.settlementId : undefined;
   const e: WorldEvent = { ...input, id: `e${w.nextId++}`, tick: w.tick, participants: input.participants ?? [input.actorId, input.targetId].filter((id): id is string => !!id), data: { ...(region ? { settlementId: region } : {}), ...input.data } };
+  const development = region && w.villageLife?.settlements[region];
+  if(development && e.data.resource === 'food' && typeof e.data.amount === 'number') { if(e.kind==='production') development.todayProduced+=e.data.amount; if(e.kind==='consumption') development.todayConsumed+=e.data.amount; }
+  for(const key of ['actorId','targetId','locationId','causeId'] as const) if(e[key]===undefined) delete e[key];
   // Distant routine movement/consumption can be omitted; consequential events and all causes remain.
   const actor = w.civilization?.detail === 'focused' && input.actorId ? person(w, input.actorId) : undefined;
   const brief = w.civilization?.detail === 'focused' && actor && actor.settlementId !== w.civilization.focus && input.importance < 30 && ['arrival', 'consumption', 'storage', 'failure'].includes(input.kind);

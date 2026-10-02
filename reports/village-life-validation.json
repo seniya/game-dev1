@@ -1,0 +1,145 @@
+{
+  "version": "0.31.0",
+  "date": "2026-10-02",
+  "scope": "VILLAGE_LIFE_PLAN.md sections 1-10, implementation decisions in section 11",
+  "core_server": {
+    "passed": 337,
+    "failed": 0,
+    "new_village_life_tests": 22
+  },
+  "browser": {
+    "unique_passed": 104,
+    "real_chrome_model_skipped": 1,
+    "full_run": {
+      "passed": 103,
+      "failed": 1,
+      "skipped": 1
+    },
+    "targeted_retest": {
+      "passed": 6,
+      "failed": 0
+    },
+    "earlier_targeted_retest": {
+      "passed": 28,
+      "failed": 0
+    }
+  },
+  "corrections": [
+    "Old profession/industry fixtures explicitly use developed villages. Legacy replay fixtures instantiate actual retained engines instead of feeding future save fields into old parsers.",
+    "Found and fixed guardian following distance, adulthood schedule cleanup, abandoned lesson reservations, and missing daily-view care links.",
+    "Large initial populations had child-only houses and, at 3000, child-only settlements. Rotate cohorts and swap household members while preserving capacity; verify all children at 12/300/1000/3000 have an adult at home.",
+    "Local-stock request and rent fixtures now identify the intended settlement and actual home rent instead of assuming old housing distribution.",
+    "Final browser run had one seed-dependent rescheduling fixture failure; seed 7 supplies a real recorded schedule change and recurring circle. All 3 gathering tests and 3 village-life tests passed on rerun."
+  ],
+  "initial_regression": "village-life-regression-initial.json (pre-fix evidence, not the final implementation)",
+  "final_regression": "village-life-regression.json",
+  "retained_engine": {
+    "commit": "4dcc45112ac082da99f6a0ba246ed4f90cf3116c",
+    "fingerprint": "946b7eb767208c62184089d580cfe046f0b18bcabe48ca6842eb544123efbb14",
+    "integrity": "passed",
+    "pending_recovery_test": "passed"
+  },
+  "storage": {
+    "save_version": 9,
+    "optional_state_revision": 1,
+    "operating_world_reset": false,
+    "regular_commit_max_minutes": 5,
+    "two_second_sync": "small clock only"
+  },
+  "decisions": [
+    "One guardian accompanies one young child, within the proposed maximum of three.",
+    "Natural physical collisions remain rare; forced boundary tests separately verify injury and adult-child exclusions.",
+    "Existing occupations, facilities, assets, and people remain; old injuries preserve the observed amount without inventing the past cause."
+  ],
+  "limits": [
+    "Local Node timings are not production CPU or memory measurements.",
+    "Real Chrome model quality, Firefox/WebKit reruns, and human fun evaluation were not performed for this release.",
+    "Daily-sampled care wait measures only sampled active injuries, not every individual waiting-time maximum.",
+    "Some large or long-running checkpoints exceed the pre-existing 12 MB archive-state limit; internal chunked persistence and replay were validated, unrestricted archive download was not claimed."
+  ],
+  "screenshot": "screenshots/v031-child-mobile.png",
+  "typecheck": "passed",
+  "review": "Production UI, server authority, persistence compaction, old-engine replay and actual resource accounting reviewed; no external API policy changes.",
+  "long_regression": {
+    "passed": 9,
+    "failed": 0,
+    "independent_resume_checks": 89,
+    "missing_cause_references": 0,
+    "natural_collisions": 2,
+    "accounting": "Food, wood, coins and every urban goods ledger balanced at each daily checkpoint",
+    "population_outcomes": [
+      {
+        "initial": 12,
+        "days": 365,
+        "seed": 7,
+        "mode": "off",
+        "alive": 8,
+        "created_people": 15
+      },
+      {
+        "initial": 12,
+        "days": 365,
+        "seed": 7,
+        "mode": "mock",
+        "alive": 15,
+        "created_people": 21
+      },
+      {
+        "initial": 12,
+        "days": 365,
+        "seed": 42,
+        "mode": "off",
+        "alive": 11,
+        "created_people": 15
+      },
+      {
+        "initial": 12,
+        "days": 365,
+        "seed": 42,
+        "mode": "mock",
+        "alive": 15,
+        "created_people": 20
+      },
+      {
+        "initial": 12,
+        "days": 365,
+        "seed": 123,
+        "mode": "off",
+        "alive": 15,
+        "created_people": 18
+      },
+      {
+        "initial": 12,
+        "days": 365,
+        "seed": 123,
+        "mode": "mock",
+        "alive": 12,
+        "created_people": 14
+      },
+      {
+        "initial": 300,
+        "days": 30,
+        "seed": 42,
+        "mode": "off",
+        "alive": 293,
+        "created_people": 311
+      },
+      {
+        "initial": 1000,
+        "days": 3,
+        "seed": 42,
+        "mode": "off",
+        "alive": 961,
+        "created_people": 1000
+      },
+      {
+        "initial": 3000,
+        "days": 1,
+        "seed": 42,
+        "mode": "off",
+        "alive": 3000,
+        "created_people": 3000
+      }
+    ]
+  }
+}

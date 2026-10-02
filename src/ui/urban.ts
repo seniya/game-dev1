@@ -1,3 +1,4 @@
+import { villageLifeView, careHistoryView } from './village-life';
 import { villageSize } from '../sim/civilization';
 import { WORK_STATUS_LABELS, workStatus } from '../sim/employment';
 import { livingWorldView } from './living';
@@ -14,7 +15,7 @@ export function setDistrict(value: string) { if (['all', 'nw', 'ne', 'sw', 'se']
 export function citizenView(w: WorldState, n: NPC) {
   const u = w.urban.citizens[n.id]; if (!u) return '';
   const e = w.urban.enterprises.find(e => e.id === u.employer), household = w.npcs.filter(p => p.alive && p.homeId === n.homeId);
-  return `<div class="family-card"><div class="section-label">도시에서의 생활</div><p>일자리: ${e ? esc(INDUSTRY_LABELS[e.kind]) + ` · 작업당 ${e.wage}코인` : WORK_STATUS_LABELS[workStatus(w, n)]}<br>교육 ${num(u.education)} · 영양 ${num(u.nutrition)} · 스트레스 ${num(u.stress)}<br>주거 만족 ${num(u.housing)} · 행정 신뢰 ${num(u.trust)}<br>질병 ${num(u.disease)} · 부상 ${num(u.injury)}<br>당일 임금·거래·운송·임대 수입 ${u.income} / 구매·세금·임대 지출 ${u.expenses}</p><p>직업 숙련: ${Object.entries(u.skills).map(([k, v]) => `${INDUSTRY_LABELS[k as keyof typeof u.skills]} ${num(v)}`).join(' · ')}</p><p>동거 ${household.length}명 · 아동 ${household.filter(p => p.identity.age < 18).length}명 · 가족 식량 ${household.reduce((s, p) => s + p.inventory.food, 0)}개 · 재산 ${household.reduce((s, p) => s + p.wealth, 0)}코인</p></div>`;
+  return `${careHistoryView(w,n)}<div class="family-card"><div class="section-label">도시에서의 생활</div><p>일자리: ${e ? esc(INDUSTRY_LABELS[e.kind]) + ` · 작업당 ${e.wage}코인` : WORK_STATUS_LABELS[workStatus(w, n)]}<br>교육 ${num(u.education)} · 영양 ${num(u.nutrition)} · 스트레스 ${num(u.stress)}<br>주거 만족 ${num(u.housing)} · 행정 신뢰 ${num(u.trust)}<br>질병 ${num(u.disease)} · 부상 ${num(u.injury)}<br>당일 임금·거래·운송·임대 수입 ${u.income} / 구매·세금·임대 지출 ${u.expenses}</p><p>직업 숙련: ${Object.entries(u.skills).map(([k, v]) => `${INDUSTRY_LABELS[k as keyof typeof u.skills]} ${num(v)}`).join(' · ')}</p><p>동거 ${household.length}명 · 아동 ${household.filter(p => p.identity.age < 18).length}명 · 가족 식량 ${household.reduce((s, p) => s + p.inventory.food, 0)}개 · 재산 ${household.reduce((s, p) => s + p.wealth, 0)}코인</p></div>`;
 }
 export function urbanView(w: WorldState) {
   if (!w.urban) return '';
@@ -23,7 +24,7 @@ export function urbanView(w: WorldState) {
   const buildings = w.buildings.filter(b => b.settlementId === id && (district === 'all' || (b.position.y < v.center.y ? 'n' : 's') + (b.position.x < v.center.x ? 'w' : 'e') === district));
   const samples = w.urban.samples.filter(s => s.settlementId === id).slice(-30), max = Math.max(1, ...samples.map(s => s.population));
   const points = samples.map((s, i) => `${8 + i * 284 / Math.max(1, samples.length - 1)},${72 - s.population / max * 60}`).join(' ');
-  return `${livingWorldView(w)}<details class="urban-panel" id="urban-overview"><summary>지역·도시 관측 <span>${esc(v.name)} · ${m.stage} · ${m.population}명</span></summary>
+  return `${villageLifeView(w)}${livingWorldView(w)}<details class="urban-panel" id="urban-overview"><summary>지역·도시 관측 <span>${esc(v.name)} · ${m.stage} · ${m.population}명</span></summary>
   <div class="urban-toolbar"><label for="urban-layer">지역 지도</label><select id="urban-layer">${[['population', '인구'], ['food', '식량'], ['jobs', '빈 일자리'], ['health', '질병']].map(([value, name]) => `<option value="${value}" ${layer === value ? 'selected' : ''}>${name}</option>`).join('')}</select><span>지역 선택 → 도시 선택 → 구역·건물 확인</span></div>
   <div class="urban-atlas" aria-label="지역 지도">${w.civilization.settlements.map(v => { const x = cityMetrics(w, v.id), value = layer === 'food' ? x.food : layer === 'jobs' ? x.jobs : layer === 'health' ? x.sick : x.population; return `<button data-village="${esc(v.id)}" class="${v.id === id ? 'active' : ''}" style="grid-column:${Math.floor(v.center.x / villageSize(w).width) + 1};grid-row:${Math.floor(v.center.y / villageSize(w).height) + 1}"><b>${esc(v.name)}</b><span>${x.stage} · ${num(value)}</span></button>`; }).join('')}</div>
   <div class="urban-metrics"><span>빈 주거 <b>${m.vacant}인</b></span><span>사업체 고용 <b>${m.employed}/${m.adults} 성인</b></span><span>공공예산 <b>${num(c.treasury)}</b></span><span>행정 신뢰 <b>${num(m.trust)}</b></span><span>비옥도 <b>${c.fertility}</b></span><span>오염 <b>${num(c.pollution)}</b></span></div>

@@ -1,3 +1,4 @@
+import { reserved } from './village-actions';
 import { learnFromPromise, promisePreparation } from './promise-learning';
 import { recordHarvest } from './agriculture';
 import { GATHERING_LABELS, isPlanned, type Gathering } from './gatherings-types';
@@ -10,7 +11,7 @@ import { appendEvent, socialEvent, changeRelationship, eventById } from './socia
 import { harvest } from './heritage';
 import type { Candidate, NPC, WorldState } from './types';
 
-const eligible = (w: WorldState, n: NPC) => n.alive && n.identity.age >= 18 && !isTravelling(w, n);
+const eligible = (w: WorldState, n: NPC) => n.alive && n.identity.age >= 18 && !isTravelling(w, n) && !reserved(w,n);
 function interruptionReason(w: WorldState, n: NPC, settlementId: string) {
   if (!n.alive) return '세상을 떠나 약속에 참여할 수 없다.';
   if (n.settlementId !== settlementId || isTravelling(w, n)) return '거주지가 바뀌었거나 마을 사이를 이동하고 있다.';
