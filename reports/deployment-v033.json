@@ -1,0 +1,83 @@
+{
+  "version": "0.33.0",
+  "date": "2026-10-02",
+  "deployment": {
+    "id": "appgdep_6abfa865f2a481919b05469fcba7459a",
+    "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+    "title": "Living Small World",
+    "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_2157ab2c54b081918348efdecd55a11f",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+    "failure_message": null,
+    "env_set_revision": 1,
+    "updated_at": "2026-10-02T12:49:58.192698+00:00"
+  },
+  "saved_version": {
+    "id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_2157ab2c54b081918348efdecd55a11f",
+    "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+    "version_number": 46,
+    "source": {
+      "commit_sha": "4592137ce4dad7beec37c684df26c0bdcec018a7"
+    },
+    "archive_storage": {
+      "archive_format": "tar",
+      "sediment_file_id": "file_00000000dae08209ba515a95e221b174",
+      "content_hash": "sha256:b705bd017b3d259c1525fc23f6a7e85e9508d2545267338b60c084ad1369b54f",
+      "size_bytes": 4915200,
+      "file_count": 22
+    },
+    "screenshot_url": null,
+    "deployment_id": null
+  },
+  "source_commit": "4592137ce4dad7beec37c684df26c0bdcec018a7",
+  "validation": {
+    "core_server_passed": 357,
+    "browser_unique_passed": 15,
+    "long_regression_conditions": 6,
+    "independent_resume_checks": 84,
+    "production_build": "passed"
+  },
+  "preservation": {
+    "access_mode": "custom",
+    "access_policy_unchanged": true,
+    "world_reset": false,
+    "before_world": [
+      {
+        "id": 1,
+        "revision": 3825,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790944166488,\"lastSeen\":1790944166839,\"eventCount\":40972,\"socialCount\":2309,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790944166839,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "after_world": [
+      {
+        "id": 1,
+        "revision": 3825,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790944166488,\"lastSeen\":1790944166839,\"eventCount\":40972,\"socialCount\":2309,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790944166839,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "before_pending": [
+      {
+        "id": 1,
+        "revision": 3825,
+        "sequence": 20,
+        "body": "{\"build\":\"e0336875e586fa21410fd6838be6151e01a842146dd9c96445f15ab69ce3d7d7\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":72,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790944216888,\"lastSeen\":1790944216958,\"eventCount\":41221,\"socialCount\":2330,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790944166839,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}},\"started\":1790944166839,\"id\":\"2e5852d8-e9a5-468b-beb8-8e97010da89f\"}"
+      }
+    ],
+    "after_pending": [
+      {
+        "id": 1,
+        "revision": 3825,
+        "sequence": 20,
+        "body": "{\"build\":\"e0336875e586fa21410fd6838be6151e01a842146dd9c96445f15ab69ce3d7d7\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":72,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790944216888,\"lastSeen\":1790944216958,\"eventCount\":41221,\"socialCount\":2330,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790944166839,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}},\"started\":1790944166839,\"id\":\"2e5852d8-e9a5-468b-beb8-8e97010da89f\"}"
+      }
+    ],
+    "explicit_save_status": 403,
+    "boundary": "The owner application session was unavailable for explicit save (403). The confirmed world row and 72 pending ticks are unchanged. Exact published v0.32 engine is retained, with 150-tick recovery validated locally. Production recovery awaits the next authenticated request. No full snapshot/event rehash or authenticated production UI run was performed."
+  }
+}
