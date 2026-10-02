@@ -6,7 +6,7 @@
     "fullPassed": 241,
     "finalRelatedPassed": 17,
     "newTestsInFinalRelated": 1,
-    "finalSuiteInventory": 242
+    "finalSuiteInventory": 246
   },
   "browser": {
     "fullPassed": 70,
@@ -65,5 +65,18 @@
     "Production CPU/memory are not exposed by application API; UI labels unavailable. CPU/heap in regression are local Node measurements including archive/verification overhead.",
     "Spatial microbenchmark improves index costs, not a claim of whole-server speedup. No approximate physics or distributed servers introduced.",
     "Engine replay compares commands at identical source fingerprint; model outcomes and world replacement replay recorded accepted state transitions."
-  ]
+  ],
+  "engineMigration": {
+    "coreRelatedPassed": 29,
+    "browserWorkerAndStoragePassed": 5,
+    "sourceCommit": "698739a2c3e0bc055af94fe1b312d4b9c1de9641",
+    "previousEngineFingerprint": "5809ccf28f7e3e9d2f897f7a23c03ecfe41c0de21b98432a7776949f4ac4d2f2",
+    "coverage": [
+      "off/mock/chrome exact old-rule recovery",
+      "concurrent readers confirm once",
+      "corrupt event count preserves checkpoint and clock",
+      "real local Worker dynamic chunk recovery"
+    ],
+    "productionTrigger": "First authenticated world read after deployment; no fabricated application identity."
+  }
 }
