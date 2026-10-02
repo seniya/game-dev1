@@ -360,3 +360,5 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 - [x] 로컬 25,000건 스트리밍 순서·누락 검사, 3,000명 지도 픽셀 동일성/위치 계산 대상 축소. 기존 보고서와 과거 화면 파일 보존.
 
 검증은 `reports/living-actions-validation.json`, 장기 결과는 `reports/living-actions-regression.json`. 운영 읽기로 v0.22 대기 147틱/437사건과 v0.23 대기 193틱/624사건의 복구 감사 기록을 확인했다. 실제 모델 추론·타인의 로그인·사람 평가·전역 production CPU/메모리 확인으로 표시하지 않는다. 배포 결과는 별도로 기록한다.
+
+- [x] v0.25 소스 `efbcd487580f3b7fbc6b6e473b8589aa29e014ef`를 기존 Sites 저장소에 push하고 같은 커밋에서 build/아카이브를 생성, **Sites 버전 37 succeeded** 확인. Sites가 제공한 소유자 자산 접근 자격으로 JS/CSS 동일성을 확인했고 세계 요청·명령에는 사용하지 않았다. 무인증 세계 API는 401이다. custom 정책·확정 세계 행(epoch/revision 3792/사건 21,540개/설정)이 배포 전후 동일하며 대기 진행 행은 없다. 전체 snapshot/원본 본문은 재해시하지 않았다. [배포 보고서](reports/deployment-v025.json).

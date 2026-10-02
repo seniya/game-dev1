@@ -1,0 +1,83 @@
+{
+  "id": "appgdep_6abf117997c88191a5ce7653dae489fd",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_db9e6966ca188191b814c8dc5b530add",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-02T02:06:02.257820+00:00",
+  "source_commit": "efbcd487580f3b7fbc6b6e473b8589aa29e014ef",
+  "sites_version": 37,
+  "saved_archive_content_hash": "sha256:432d00e0dfc11c36b85d8c6f3dae0ae07fcf676a18c9f9c767cd31a4763ef768",
+  "validation_report": "reports/living-actions-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "built_from_pushed_commit": true,
+    "artifact": "living-small-world-v025-deployment.tar.gz",
+    "archive_sha256": "4a4a14475fb7fb3ea6429f06b47e0e0c64438eb5e2b2801c0b9354ec79299aa8",
+    "retained_engines": [
+      "v0.21",
+      "v0.22",
+      "v0.23",
+      "v0.24"
+    ]
+  },
+  "production_preservation": {
+    "same_confirmed_world_row": true,
+    "same_pending_clock_rows": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3792,
+    "confirmed_meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790906383246,
+      "lastSeen": 1790906383246,
+      "eventCount": 21540,
+      "socialCount": 944,
+      "catchupTicks": 132,
+      "skippedTicks": 497,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790906383246
+    },
+    "pending_before": [],
+    "pending_after": [],
+    "world_reset": false,
+    "explanation": "Before and after deployment, confirmed metadata matched byte-for-byte and no pending clock row existed. No owner world command was issued. Full snapshot/archive bodies were not rehashed. Earlier v0.22/v0.23 recovery was observed separately; v0.24 recovery is tested locally and did not need to run for this deployment."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "assets": [
+      {
+        "path": "/assets/index-CGwQ8gwJ.css",
+        "status": 200,
+        "bytes": 70786,
+        "matchesLocal": true,
+        "sha256": "126247d69fd2e2108437c7e5746ca026b6d92acc82054dad8485e7f8dd14459d"
+      },
+      {
+        "path": "/assets/index-CStI8g1i.js",
+        "status": 200,
+        "bytes": 508898,
+        "matchesLocal": true,
+        "sha256": "ae0e612735b2ede69eed82916a81bc00c552417c647c9b3a5fe16b1011d57619"
+      }
+    ],
+    "unauthenticatedWorldStatus": 401,
+    "authenticatedBrowserSmoke": false,
+    "assetReadScope": "Sites-provided owner artifact credential; no world request or mutation used that credential."
+  }
+}
