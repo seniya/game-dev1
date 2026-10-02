@@ -1,0 +1,335 @@
+{
+  "version": "0.33.0",
+  "environment": "local Node, not production CPU or real Chrome model",
+  "results": [
+    {
+      "seed": 7,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "alive": 10,
+      "people": 14,
+      "stats": {
+        "contacts": 2655,
+        "plays": 524,
+        "arguments": 8,
+        "collisions": 0,
+        "injuries": 5,
+        "treatments": 8,
+        "recoveries": 5,
+        "careTicks": 2673,
+        "outings": 567,
+        "returns": 572,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 8118819,
+      "events": 114817,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 49144
+    },
+    {
+      "seed": 7,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "alive": 16,
+      "people": 17,
+      "stats": {
+        "contacts": 5293,
+        "plays": 1040,
+        "arguments": 10,
+        "collisions": 0,
+        "injuries": 5,
+        "treatments": 7,
+        "recoveries": 5,
+        "careTicks": 4078,
+        "outings": 1088,
+        "returns": 1093,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        },
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 15666679,
+      "events": 171720,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 86638
+    },
+    {
+      "seed": 42,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "alive": 13,
+      "people": 15,
+      "stats": {
+        "contacts": 4411,
+        "plays": 504,
+        "arguments": 15,
+        "collisions": 0,
+        "injuries": 5,
+        "treatments": 8,
+        "recoveries": 5,
+        "careTicks": 2384,
+        "outings": 508,
+        "returns": 514,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 11655902,
+      "events": 147297,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 69592
+    },
+    {
+      "seed": 42,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "alive": 12,
+      "people": 14,
+      "stats": {
+        "contacts": 5688,
+        "plays": 312,
+        "arguments": 12,
+        "collisions": 0,
+        "injuries": 1,
+        "treatments": 2,
+        "recoveries": 1,
+        "careTicks": 1053,
+        "outings": 312,
+        "returns": 316,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 14186287,
+      "events": 150192,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 66701
+    },
+    {
+      "seed": 123,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "alive": 13,
+      "people": 14,
+      "stats": {
+        "contacts": 5260,
+        "plays": 462,
+        "arguments": 50,
+        "collisions": 0,
+        "injuries": 5,
+        "treatments": 6,
+        "recoveries": 5,
+        "careTicks": 2161,
+        "outings": 481,
+        "returns": 486,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 13079962,
+      "events": 278228,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 72711
+    },
+    {
+      "seed": 123,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "alive": 12,
+      "people": 14,
+      "stats": {
+        "contacts": 5710,
+        "plays": 390,
+        "arguments": 92,
+        "collisions": 0,
+        "injuries": 4,
+        "treatments": 5,
+        "recoveries": 4,
+        "careTicks": 1943,
+        "outings": 410,
+        "returns": 415,
+        "careerChanges": 0
+      },
+      "stages": [
+        {
+          "stage": 0,
+          "unlocked": [
+            "farmer",
+            "gatherer",
+            "homemaker",
+            "none"
+          ]
+        }
+      ],
+      "peakCheckpointBytes": 13518960,
+      "events": 176185,
+      "missingCauses": 0,
+      "resumeChecks": 14,
+      "maxCareWaitTicks": 0,
+      "durationMs": 68714
+    }
+  ],
+  "scope": "3 seeds × off/Mock × 365 days, 12 initial residents; no production CPU or real Chrome model claim",
+  "resumeChecks": 84
+}

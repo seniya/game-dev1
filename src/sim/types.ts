@@ -22,6 +22,7 @@ export interface Action extends Candidate { path: Position[]; progress: number; 
 export interface Relationship { turn?: import('./relationship-turns').BondMemory; npcId: string; familiarity: number; trust: number; affection: number; fear: number; resentment: number; respect: number; family: boolean; interpretation: string; evidence: string[] }
 export interface Memory { id: string; type: 'personal' | 'social' | 'event' | 'economic' | 'trauma' | 'achievement'; description: string; importance: number; emotionalImpact: number; createdAt: number; lastRetrievedAt?: number; relatedNpcIds: string[]; relatedLocationIds: string[]; sourceEventId: string; repetitions: number }
 export interface NPC {
+  physique?: import('./physiology').Physique;
   cognition?: import('./cognition').Cognition;
   profile?: { commandId?: string; background: string; appearance: import('./character-schema').Appearance; createdAt: number; arrivalEventId: string };
   id: string; identity: { name: string; age: number }; position: Position; homeId: string;

@@ -133,7 +133,8 @@ test('uncommitted death and inheritance are confirmed atomically with the chosen
   const store=new WorldStore(h.DB);world=await store.read();const w=world.state,now=Date.now();
   const a=w.npcs.find(n=>n.id===root)!,b=w.npcs[0];w.tick=YEAR_TICKS*2+36;
   for(const n of [a,b]){n.identity.age=25;n.life.bornTick=w.tick-25*YEAR_TICKS;n.needs.health=100;n.needs.hunger=10;}
-  for(const [n,p] of [[a,b],[b,a]]){const r=relationship(n,p.id);r.trust=80;r.affection=40;}
+  for(const [n,p] of [[a,b],[b,a]]){const r=relationship(n,p.id);r.trust=80;r.affection=70;}
+  a.physique!.sex='female';b.physique!.sex='male';
   assert.equal(formFamily(w,a,b),true);const child=giveBirth(w,a,b)!;assert.ok(child);
   w.tick=YEAR_TICKS*2+143;a.life.bornTick=w.tick+1-85*YEAR_TICKS;a.identity.age=84;
   w.llm.enabled=false;world.meta.aiMode='off';world.meta.running=true;world.meta.clock=world.meta.lastSeen=now;

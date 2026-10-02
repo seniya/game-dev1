@@ -29,7 +29,7 @@ import { initializeUrban, urbanDay, advanceFreight, industryWork, city, useTool,
 import type { Service } from './urban-types';
 import { stocks, market, localBuilding, advanceJourneys, regionalDay, isTravelling } from './civilization';
 import type { MotionTrace } from './motion';
-import { lifeDay, careForChild, die } from './life';
+import { lifeDay, careForChild, die, shareAffection } from './life';
 import { sampleDay, balance, holdings } from './economy';
 import { createWorld } from './world';
 import { plan } from './decision';
@@ -298,6 +298,7 @@ export class Simulation {
         changeRelationship(w, n, other.id, forward.changes, e, `대화를 나누며 느낀 인상 ${signed(forward.value)} · ${forward.reason}`);
         changeRelationship(w, other, n.id, reverse.changes, e, `대화를 나누며 느낀 인상 ${signed(reverse.value)} · ${reverse.reason}`);
         contactConflict(w,n,other,e);
+        shareAffection(w,n,other);
         const sourceById = { get: (id: string) => eventById(w, id) };
         const knownRoots = new Set(other.knownRumors.map(id => sourceById.get(id)?.causeId));
         const rumorId = n.knownRumors.find(id => {

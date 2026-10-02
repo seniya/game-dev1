@@ -6,6 +6,8 @@ test('create a customized resident, follow real interactions, find them and rest
   await page.getByRole('button',{name:'＋ NPC 만들기',exact:true}).click();
   const form=page.locator('#character-form'); await expect(form).toBeVisible();
   await form.getByLabel('이름',{exact:true}).fill('도시의 해솔'); await form.getByLabel('나이',{exact:true}).fill('29');
+  await form.getByLabel('성별',{exact:true}).selectOption('female');
+  await form.getByLabel('키 · cm',{exact:true}).fill('168.5'); await form.getByLabel('몸무게 · kg',{exact:true}).fill('58.2'); await form.getByLabel('질병저항성',{exact:true}).fill('77');
   await form.getByLabel('옷 색상').fill('#2266aa'); await form.getByLabel('머리 모양',{exact:true}).selectOption('curly'); await form.getByLabel('소품').selectOption('glasses');
   await form.getByLabel('배경 소개').fill('이웃과 도구를 나누는 목수 <script>');
   await form.getByLabel('직업',{exact:true}).selectOption('homemaker');
@@ -15,6 +17,7 @@ test('create a customized resident, follow real interactions, find them and rest
   await form.getByRole('button',{name:'이 세계에 입주시키기'}).click();
   await expect(form).not.toBeVisible(); await expect(page.locator('#npc-header')).toContainText('도시의 해솔');
   await expect(page.locator('#world-map')).toHaveAttribute('data-mode','follow'); await expect(page.locator('#npc-detail')).toContainText('이웃과 도구를 나누는 목수 <script>');
+  await expect(page.locator('#npc-detail [data-physique]')).toContainText('여성'); await expect(page.locator('#npc-detail [data-physique]')).toContainText('168.5 cm'); await expect(page.locator('#npc-detail [data-physique]')).toContainText('58.2 kg'); await expect(page.locator('#npc-detail [data-physique]')).toContainText('77 / 100');
   await expect(page.locator('#selected-only')).toBeChecked();
   for(let i=0;i<30;i++) await page.getByRole('button',{name:'한 틱 진행',exact:true}).click();
   await page.getByRole('tab',{name:'관계',exact:true}).click(); await expect(page.locator('#npc-detail .relationship-card').first()).toBeVisible();
@@ -23,7 +26,7 @@ test('create a customized resident, follow real interactions, find them and rest
   if (await page.locator('#world-tools summary').isVisible()) await page.locator('#world-tools summary').click();
   await page.getByRole('button',{name:'세계 저장',exact:true}).click();
   const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('living-small-world-v1')!));
-  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(9); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
+  const n=saved.npcs.find((n:any)=>n.identity.name==='도시의 해솔'); expect(n.physique.sex).toBe('female'); expect(n.physique.heightCm).toBe(168.5); expect(n.physique.diseaseResistance).toBe(77); expect(n.profile.appearance.outfit).toBe('#2266aa'); expect(saved.living.people[n.id].traits.frugality).toBe(91); expect(saved.living.people[n.id].desires.mastery).toBe(88); expect(saved.living.people[n.id].body.pain).toBeGreaterThan(0); expect(saved.version).toBe(9); expect(saved.urban.citizens[n.id].skills.smith).toBeGreaterThanOrEqual(73);
   await page.reload(); await page.getByRole('button',{name:'마을 주민',exact:true}).click(); await page.getByLabel('내가 만든 주민만').check(); await expect(page.locator('.resident-card')).toHaveCount(1);
   expect(errors).toEqual([]);
 });

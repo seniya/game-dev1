@@ -1,3 +1,4 @@
+import { effectiveResistance } from './physiology';
 import { industryAllowed, occupationAllowed } from './development';
 import { injure } from './care';
 import { businessQuote } from './family-enterprise';
@@ -222,13 +223,13 @@ export function urbanDay(w: WorldState) {
     c.pollution = clamp(c.pollution + people.length / 200 - c.active.sanitation * 2 - .2);
     let students = c.active.school * 20, patients = c.active.clinic * 20;
     for (const n of people) {
-      const u = w.urban.citizens[n.id], sick = u.disease > 0;
+      const u = w.urban.citizens[n.id], sick = u.disease > 0, resistance = effectiveResistance(w,n);
       u.nutrition = clamp(u.nutrition + (n.needs.hunger < 55 ? 2 : -4));
       if (students > 0 && n.identity.age < 18) { u.education = clamp(u.education + 1); students--; }
-      if (patients > 0 && (u.disease > 0 || u.injury > 0)) { u.disease = Math.max(0, u.disease - 3); if (!w.villageLife) u.injury = Math.max(0, u.injury - 4); patients--; }
-      else { u.disease = Math.max(0, u.disease - .5); if (!w.villageLife) u.injury = Math.max(0, u.injury - 1); }
-      if (!sick && random(w) < Math.max(0, (c.pollution + Math.max(0, people.length - 60) * .1 - c.active.water * 15 - c.active.sanitation * 15)) / 1000) {
-        u.disease = 8; u.healthEventId = appendEvent(w, { kind: 'health', actorId: n.id, importance: 60, description: `${n.identity.name}이 지역의 밀집·위생 여건으로 병에 걸렸다.`, data: { settlementId: id, pollution: c.pollution, water: c.active.water, sanitation: c.active.sanitation } }).id;
+      if (patients > 0 && (u.disease > 0 || u.injury > 0)) { u.disease = Math.max(0, u.disease - (2.5 + resistance / 100)); if (!w.villageLife) u.injury = Math.max(0, u.injury - 4); patients--; }
+      else { u.disease = Math.max(0, u.disease - (.25 + resistance / 100)); if (!w.villageLife) u.injury = Math.max(0, u.injury - 1); }
+      if (!sick && random(w) < Math.max(0, (c.pollution + Math.max(0, people.length - 60) * .1 - c.active.water * 15 - c.active.sanitation * 15)) / 1000 * (1.5 - resistance / 100)) {
+        u.disease = 8; u.healthEventId = appendEvent(w, { kind: 'health', actorId: n.id, importance: 60, description: `${n.identity.name}이 지역의 밀집·위생 여건으로 병에 걸렸다.`, data: { settlementId: id, diseaseResistance: resistance, pollution: c.pollution, water: c.active.water, sanitation: c.active.sanitation } }).id;
       }
       u.stress = clamp(u.stress + (u.housing < 50 ? 3 : -1) + (u.nutrition < 40 ? 3 : 0) + (u.disease > 0 ? 2 : 0) + (n.identity.age >= 18 && !u.employer && n.wealth < 5 ? 2 : 0));
       u.trust = clamp(u.trust + (c.active.water + c.active.clinic + c.active.school) * .2 - c.taxRate * .03 - (u.stress > 60 ? 1 : 0));

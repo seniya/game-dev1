@@ -1,3 +1,4 @@
+import { romanticPair } from './life';
 import { YEAR_TICKS, type NPC, type WorldEvent, type WorldState } from './types';
 import { capacity, isTravelling, stocks } from './civilization';
 export interface Dynasty { root: string; active: string; revision: number; chain: { npc: string; tick: number }[] }
@@ -41,9 +42,10 @@ export function familyOutlook(w: WorldState, n: NPC): string {
   if (!n.alive) return '남겨진 후손의 삶에서 가문의 다음 장을 이어보세요.';
   if (n.identity.age < 18) return '성장하는 시기입니다. 성인이 된 뒤 가족을 이룰 수 있습니다.';
   const partner = w.npcs.find(p => p.id === n.life.partnerId && p.alive);
-  if (!partner) return '가족의 시작은 서로의 관계입니다. 두 성인이 서로 신뢰 40·애정 10 이상이고 함께 살 빈 주거가 있어야 합니다.';
+  if (!partner) return '가족의 시작은 서로의 관계입니다. 성인 남녀가 서로 신뢰·호감 60 이상, 두려움·원망 25 미만이며 혈족이 아니고 함께 살 빈 주거가 있어야 합니다.';
   if ([n, partner].some(p => p.identity.age > 45)) return '자녀를 낳는 나이(18–45세)를 지났습니다. 가족과의 관계와 다음 세대의 성장을 지켜보세요.';
   if (n.homeId !== partner.homeId || n.settlementId !== partner.settlementId || [n,partner].some(p => isTravelling(w,p))) return '두 사람이 같은 집과 마을에서 함께 지낼 수 있어야 합니다. 이동 중에는 출산하지 않습니다.';
+  if (!romanticPair(w,n,partner)) return '두 성인 남녀가 서로의 애정과 신뢰를 회복할 시간이 필요합니다. 양쪽 신뢰·호감 60 이상, 두려움·원망 25 미만일 때 자녀를 맞을 수 있습니다.';
   if ([n, partner].some(p => p.needs.health < 65 || p.needs.hunger > 60)) return '두 사람 모두 건강 65 이상·배고픔 60 이하가 되도록 생활을 회복할 시간이 필요합니다.';
   const home = w.buildings.find(b => b.id === n.homeId)!, residents = w.npcs.filter(p => p.alive && p.homeId === home.id).length;
   if (residents >= capacity(home)) return '함께 사는 집에 자녀를 맞을 빈자리가 없습니다. 주거 확장과 이주가 기회를 바꿀 수 있습니다.';

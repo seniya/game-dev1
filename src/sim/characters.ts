@@ -1,3 +1,4 @@
+import { newPhysique } from './physiology';
 import { occupationAllowed } from './development';
 import { syncEmployment } from './employment';
 import { newLivingPerson } from './living';
@@ -34,6 +35,7 @@ export function createCharacter(w: WorldState, input: CharacterInput): NPC {
   let id: string;
   do { id = `npc-created-${w.nextId++}`; } while (w.npcs.some(n => n.id === id));
   const n: NPC = {
+    physique: newPhysique(w.seed,id,a.age,a),
     id, identity: { name: a.name, age: a.age }, position: { ...home.position }, homeId: home.id, settlementId: home.settlementId!,
     life: { ...(a.ambition ? { ambition: a.ambition } : {}), bornTick: w.tick - a.age * YEAR_TICKS, parentIds: [], generation: 0, skill: a.skill, lastBirth: w.tick, lastMove: w.tick, estateSettled: false },
     occupation: a.occupation, alive: true, needs: { ...a.needs }, personality: { ...a.personality },

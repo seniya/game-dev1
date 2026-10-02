@@ -47,7 +47,8 @@ test('a deceased avatar leaves a life summary and a real child continues without
   const sim=new Simulation(42,12);const root=sim.createCharacter({...defaultCharacter(availableHomes(sim.snapshot()).find(h=>h.vacant)!.home.id),name:'가문을 남긴 시조'});
   const w=sim.snapshot(),a=w.npcs.find(n=>n.id===root)!,b=w.npcs[0];w.tick=YEAR_TICKS*2+36;
   for(const n of [a,b]){n.identity.age=25;n.life.bornTick=w.tick-25*YEAR_TICKS;n.needs.health=100;n.needs.hunger=10;}
-  for(const [n,p] of [[a,b],[b,a]]){const r=relationship(n,p.id);r.trust=80;r.affection=40;}
+  for(const [n,p] of [[a,b],[b,a]]){const r=relationship(n,p.id);r.trust=80;r.affection=70;}
+  a.physique!.sex='female';b.physique!.sex='male';
   expect(formFamily(w,a,b)).toBe(true);const child=giveBirth(w,a,b)!;expect(child).toBeTruthy();child.identity.name='이어가는 아이';die(w,a,'needs');
   const save=Simulation.load(JSON.stringify(w)).save(),coins=child.wealth;
   await page.addInitScript(save=>{if(localStorage.getItem('lsw-local-world-key')!=='dynasty-successor-test'){localStorage.setItem('living-small-world-v1',save);localStorage.setItem('lsw-local-world-key','dynasty-successor-test');}},save);await page.goto('/?local=1');

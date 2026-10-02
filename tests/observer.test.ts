@@ -103,7 +103,7 @@ test('help can lead through recorded family formation, birth and real care witho
   const w=new Simulation(42).snapshot(),a=w.npcs[0],b=w.npcs[1];w.llm.enabled=false;
   a.identity.age=b.identity.age=25;a.life.bornTick=b.life.bornTick=w.tick-25*1728;
   const help=appendEvent(w,{kind:'share',actorId:a.id,targetId:b.id,importance:70,description:'가족 형성 이전에 기록된 도움'});
-  for(const [x,y] of [[a,b],[b,a]]) {const r=relationship(x,y.id);r.trust=70;r.affection=40;r.evidence.push(help.id);}
+  for(const [x,y] of [[a,b],[b,a]]) {const r=relationship(x,y.id);r.trust=70;r.affection=70;r.evidence.push(help.id);}
   assert.equal(formFamily(w,a,b),true);const family=w.events.find(e=>e.kind==='family')!;assert.ok((family.data.evidence as string[]).includes(help.id));
   const home=w.buildings.find(h=>h.id===a.homeId)!;home.level=4;w.tick+=1728*2;stocks(w,a.settlementId).food+=30;w.economy=createEconomy(w);
   const child=giveBirth(w,a,b)!;assert.ok(child);assert.equal(w.events.find(e=>e.id===child.life.birthEventId)!.causeId,family.id);

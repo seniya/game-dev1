@@ -1,3 +1,4 @@
+import { romanticPair } from './life';
 import type { NPC, Occupation, WorldEvent, WorldState } from './types';
 import { OCCUPATIONS } from './types';
 import { availableOccupations, villagePerson } from './development';
@@ -43,9 +44,10 @@ export function growthConditions(w:WorldState,id:string) {
  const homes=w.buildings.filter(b=>b.kind==='home'&&b.settlementId===id);
  const occupancy=new Map<string,number>();for(const n of w.npcs.filter(n=>n.alive&&n.settlementId===id))occupancy.set(n.homeId,(occupancy.get(n.homeId)??0)+1);
  const byId=new Map(people.map(n=>[n.id,n]));
- const blocks={age:0,health:0,spacing:0,housing:0,food:0,ready:0};
+ const blocks={age:0,relationship:0,health:0,spacing:0,housing:0,food:0,ready:0};
  for(const a of people){const b=byId.get(a.life.partnerId??'');if(!b||a.id>b.id||a.homeId!==b.homeId)continue;
   if([a,b].some(n=>n.identity.age<18||n.identity.age>45)){blocks.age++;continue;}
+  if(!romanticPair(w,a,b)){blocks.relationship++;continue;}
   if([a,b].some(n=>n.needs.health<65||n.needs.hunger>60)){blocks.health++;continue;}
   if([a,b].some(n=>w.tick-n.life.lastBirth<144*12*2)){blocks.spacing++;continue;}
   const home=homes.find(h=>h.id===a.homeId),count=occupancy.get(a.homeId)??0;

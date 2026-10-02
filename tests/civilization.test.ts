@@ -13,7 +13,7 @@ function familyFixture() {
   const w = new Simulation().snapshot(); w.llm.enabled = false; w.tick = YEAR_TICKS * 2 + 36;
   const [a, b] = w.npcs;
   for (const n of [a, b]) { n.identity.age = 25; n.life.bornTick = w.tick - 25 * YEAR_TICKS; n.needs.health = 100; n.needs.hunger = 10; n.inventory.food = 20; }
-  for (const [n, p] of [[a, b], [b, a]]) { const r = relationship(n, p.id); r.trust = 80; r.affection = 40; }
+  for (const [n, p] of [[a, b], [b, a]]) { const r = relationship(n, p.id); r.trust = 80; r.affection = 70; }
   assert.equal(formFamily(w, a, b), true); w.economy = createEconomy(w);
   return { w, a, b };
 }

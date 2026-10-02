@@ -1,3 +1,4 @@
+import { newPhysique, physiologyDay } from './physiology';
 import { chooseGrownCareer, rememberGrowth } from './growth';
 import { occupationAllowed } from './development';
 import { inheritBusinesses } from './family-enterprise';
@@ -20,22 +21,43 @@ export function related(w: WorldState, a: NPC, b: NPC): boolean {
   };
   const aa = ancestors(a); return [...ancestors(b)].some(id => aa.has(id));
 }
+export function mutualAffection(a: NPC, b: NPC): boolean {
+  return [a.relationships.find(r=>r.npcId===b.id),b.relationships.find(r=>r.npcId===a.id)].every(r=>r && r.trust>=60 && r.affection>=60 && r.fear<25 && r.resentment<25);
+}
+export function romanticPair(w: WorldState, a: NPC, b: NPC): boolean {
+  return a.alive && b.alive && a.id!==b.id && a.identity.age>=18 && b.identity.age>=18 &&
+    !!a.physique && !!b.physique && a.physique.sex!==b.physique.sex &&
+    (!a.life.partnerId || a.life.partnerId===b.id) && (!b.life.partnerId || b.life.partnerId===a.id) &&
+    a.settlementId===b.settlementId && !isTravelling(w,a) && !isTravelling(w,b) && !related(w,a,b) && mutualAffection(a,b);
+}
+export function shareAffection(w: WorldState, a: NPC, b: NPC) {
+  if (!romanticPair(w,a,b)) return;
+  const bond=relationship(a,b.id), reverse=relationship(b,a.id);
+  const previous=[...bond.evidence].reverse().map(id=>eventById(w,id)).find(e=>e?.data.romanticAffection===true && e.participants.includes(b.id));
+  if(previous && w.tick-previous.tick<144*3)return previous;
+  const e=socialEvent(w,{kind:'relationship',actorId:a.id,targetId:b.id,importance:55,
+    description:`${a.identity.name}과 ${b.identity.name}이 서로의 마음을 확인하고 손을 잡으며 애정을 나누었다.`,
+    data:{romanticAffection:true,affection:bond.affection,reverseAffection:reverse.affection,trust:bond.trust,reverseTrust:reverse.trust,evidence:[...new Set([...bond.evidence.slice(-3),...reverse.evidence.slice(-3)])]}});
+  bond.evidence.push(e.id);reverse.evidence.push(e.id);
+  a.needs.social=clamp(a.needs.social+8);b.needs.social=clamp(b.needs.social+8);
+  return e;
+}
 export function formFamily(w: WorldState, a: NPC, b: NPC): boolean {
-  if (!a.alive || !b.alive || a.id === b.id || a.life.partnerId || b.life.partnerId || a.identity.age < 18 || b.identity.age < 18 || a.settlementId !== b.settlementId || related(w, a, b) || isTravelling(w, a) || isTravelling(w, b)) return false;
+  if (a.life.partnerId || b.life.partnerId || !romanticPair(w,a,b)) return false;
   const bond = relationship(a, b.id), reverse = relationship(b, a.id);
-  if (bond.trust < 40 || reverse.trust < 40 || bond.affection < 10 || reverse.affection < 10) return false;
   const occupancy = new Map<string, number>();
   for (const n of w.npcs) if (n.alive && n.id !== a.id && n.id !== b.id) occupancy.set(n.homeId, (occupancy.get(n.homeId) ?? 0) + 1);
   const home = w.buildings.filter(h => h.kind === 'home' && h.settlementId === a.settlementId).sort((h, j) => (occupancy.get(h.id) ?? 0) - (occupancy.get(j.id) ?? 0)).find(h => (occupancy.get(h.id) ?? 0) + 2 <= capacity(h));
   if (!home) return false;
+  const affection = shareAffection(w,a,b)!;
   a.life.partnerId = b.id; b.life.partnerId = a.id;
   a.homeId = b.homeId = home.id; a.currentAction = b.currentAction = undefined;
   home.ownerIds = [...new Set([...(home.ownerIds ?? []), a.id, b.id])]; bond.family = reverse.family = true;
-  const e = socialEvent(w, { kind: 'family', actorId: a.id, targetId: b.id, locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}이 서로의 신뢰와 애정을 바탕으로 가족을 이루었다.`, data: { homeId: home.id, trust: bond.trust, affection: bond.affection, reverseTrust: reverse.trust, reverseAffection: reverse.affection, evidence: [...new Set([...bond.evidence.slice(-4), ...reverse.evidence.slice(-4)])] } });
+  const e = socialEvent(w, { kind: 'family', causeId: affection.id, actorId: a.id, targetId: b.id, locationId: home.id, importance: 60, description: `${a.identity.name}과 ${b.identity.name}이 서로의 신뢰와 애정을 바탕으로 가족을 이루었다.`, data: { homeId: home.id, trust: bond.trust, affection: bond.affection, reverseTrust: reverse.trust, reverseAffection: reverse.affection, evidence: [...new Set([...bond.evidence.slice(-4), ...reverse.evidence.slice(-4)])] } });
   bond.evidence.push(e.id); reverse.evidence.push(e.id); return true;
 }
 export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
-  if (!a.alive || !b.alive || a.life.partnerId !== b.id || b.life.partnerId !== a.id || a.homeId !== b.homeId || a.settlementId !== b.settlementId || [a, b].some(n => n.identity.age < 18 || n.identity.age > 45 || n.needs.health < 65 || n.needs.hunger > 60 || w.tick - n.life.lastBirth < YEAR_TICKS * 2 || isTravelling(w, n))) return;
+  if (!romanticPair(w,a,b) || a.life.partnerId !== b.id || b.life.partnerId !== a.id || a.homeId !== b.homeId || a.settlementId !== b.settlementId || [a, b].some(n => n.identity.age < 18 || n.identity.age > 45 || n.needs.health < 65 || n.needs.hunger > 60 || w.tick - n.life.lastBirth < YEAR_TICKS * 2 || isTravelling(w, n))) return;
   if (w.npcs.filter(n => n.alive).length >= MAX_POPULATION || w.npcs.length >= 30000) return;
   const home = w.buildings.find(h => h.id === a.homeId)!, family = w.npcs.filter(n => n.alive && n.homeId === home.id), stock = stocks(w, a.settlementId);
   if (family.length >= capacity(home) || stock.food + a.inventory.food + b.inventory.food < (family.length + 1) * 4) return;
@@ -45,7 +67,11 @@ export function giveBirth(w: WorldState, a: NPC, b: NPC): NPC | undefined {
   w.economy.totals.consumedFood += 2;
   const id = `npc-born-${w.nextId++}`;
   const personality = { ...a.personality }; for (const key of Object.keys(personality) as (keyof typeof personality)[]) personality[key] = (a.personality[key] + b.personality[key]) / 2;
+  const physique = newPhysique(w.seed,id,0);
+  physique.diseaseResistance = Math.round((a.physique!.diseaseResistance+b.physique!.diseaseResistance+physique.diseaseResistance)/3);
+  physique.adultHeightCm = Math.round((a.physique!.adultHeightCm+b.physique!.adultHeightCm+physique.adultHeightCm)/3);
   const child: NPC = {
+    physique: newPhysique(w.seed,id,0,{sex:physique.sex,adultHeightCm:physique.adultHeightCm,diseaseResistance:physique.diseaseResistance}),
     id, identity: { name: `새봄${w.nextId}`, age: 0 }, position: { ...home.position }, homeId: home.id, settlementId: a.settlementId,
     life: { bornTick: w.tick, parentIds: [a.id, b.id], generation: Math.max(a.life.generation, b.life.generation) + 1, skill: 0, lastBirth: w.tick, lastMove: w.tick, estateSettled: false },
     occupation: 'none', alive: true, needs: { hunger: 10, thirst: 0, fatigue: 0, health: 100, safety: 90, social: 80 }, personality,
@@ -127,6 +153,7 @@ export function lifeDay(w: WorldState) {
   for (const n of [...w.npcs]) {
     if (!n.alive) continue;
     const previous = n.identity.age; n.identity.age = Math.max(0, Math.floor((w.tick - n.life.bornTick) / YEAR_TICKS));
+    physiologyDay(w,n);
     if (n.identity.age >= 85) { die(w, n, 'age'); continue; }
     if (n.identity.age >= 65) n.needs.health = Math.max(1, n.needs.health - (n.identity.age - 64) * .1);
     if (previous < 18 && n.identity.age >= 18) {
@@ -154,10 +181,10 @@ export function lifeDay(w: WorldState) {
         if (foster && n.homeId !== foster.homeId) { n.homeId = foster.homeId; appendEvent(w, { kind: 'family', actorId: n.id, targetId: foster.id, importance: 60, description: `${foster.identity.name}의 집이 보호자가 없는 ${n.identity.name}의 양육을 맡았다.`, data: { homeId: n.homeId, foster: true } }); }
       }
     } else if (!n.life.partnerId) {
-      const partner = w.npcs.find(p => p.alive && p.id !== n.id && !p.life.partnerId && p.identity.age >= 18 && p.settlementId === n.settlementId && (n.relationships.find(r => r.npcId === p.id)?.affection ?? 0) >= 10);
-      if (partner) formFamily(w, n, partner);
+      const candidates = n.relationships.filter(r=>r.affection>=60 && r.trust>=60).sort((a,b)=>b.affection-a.affection);
+      for(const r of candidates){const p=w.npcs.find(p=>p.id===r.npcId);if(p && formFamily(w,n,p))break;}
     } else if (n.id < n.life.partnerId) {
-      const partner = w.npcs.find(p => p.id === n.life.partnerId); if (partner) giveBirth(w, n, partner);
+      const partner = w.npcs.find(p => p.id === n.life.partnerId); if (partner) { if(distance(n.position,partner.position)<=1)shareAffection(w,n,partner); giveBirth(w, n, partner); }
     }
   }
 }

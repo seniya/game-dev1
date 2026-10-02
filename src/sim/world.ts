@@ -1,3 +1,4 @@
+import { initializePhysiques } from './physiology';
 import { initializeVillageLife } from './development';
 import { syncEmployment } from './employment';
 import { emptyRequests } from './requests-types';
@@ -75,6 +76,7 @@ export function createWorld(seed = 42, population = 12): WorldState {
     const guardian = w.npcs.find(p => p.identity.age >= 18 && p.identity.age < 65 && p.settlementId === n.settlementId && w.npcs.filter(q => q.homeId === p.homeId).length < 2 + w.buildings.find(b => b.id === p.homeId)!.level * 2);
     if (guardian) { for (const b of w.buildings) if (b.ownerIds) b.ownerIds = b.ownerIds.filter(id => id !== n.id); n.homeId = guardian.homeId; n.position = { ...w.buildings.find(b => b.id === n.homeId)!.position }; }
   }
+  initializePhysiques(w);
   initializeUrban(w); initializeHeritage(w, true);
   for (const n of w.npcs) syncEmployment(w, n, false);
   w.economy = createEconomy(w);

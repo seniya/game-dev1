@@ -1,0 +1,42 @@
+{
+  "version": "0.33.0",
+  "date": "2026-10-02",
+  "core_server": {
+    "passed": 357,
+    "failed": 0
+  },
+  "browser": {
+    "unique_passed": 15,
+    "scope": "characters, dynasty, family-legacy; desktop and mobile",
+    "initial_failure": "Gender select accessible name was missing; added aria-label and reran customized creation and mobile creator (2 passed)."
+  },
+  "regression": {
+    "conditions": 6,
+    "days_per_condition": 365,
+    "resume_checks": 84,
+    "all_accounting_and_causal_checks_passed": true,
+    "report": "physiology-regression.json"
+  },
+  "retained_engine": {
+    "commit": "1594fc6f514536f180adbd17de88ed86c6235cf1",
+    "fingerprint": "e0336875e586fa21410fd6838be6151e01a842146dd9c96445f15ab69ce3d7d7",
+    "recovery_test_ticks": 150
+  },
+  "scope": [
+    "sex, height, weight, innate/effective disease resistance",
+    "growth and nutrition-dependent body weight, infection and recovery",
+    "reciprocal adult affection, family and birth evidence chain",
+    "deterministic legacy migration, existing spouse preservation, validation and round trips"
+  ],
+  "limits": [
+    "Stylized game physiology, not medical reference data.",
+    "Real Chrome model tests not rerun; no model behavior or fallback changed.",
+    "Production owner session unavailable for explicit save (HTTP 403); retained engine confirms pending ticks on next authenticated request."
+  ],
+  "corrections": [
+    "Updated old family fixtures to mutual affection >=60 and explicit opposite sexes.",
+    "Preserved legacy-engine creation inputs by omitting new fields.",
+    "Kept save property order while adding missing physique after validation.",
+    "Adjusted old clinic assertion to resistance-dependent recovery."
+  ]
+}

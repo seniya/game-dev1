@@ -13,7 +13,8 @@ function fixture(owned=false){
   const w=developed(sim.snapshot()),a=w.npcs.find(n=>n.id===root)!,b=w.npcs[0];const funds=100-a.wealth;w.market.coins-=funds;a.wealth+=funds;
   w.tick=YEAR_TICKS*2+36;
   for(const n of [a,b]){n.identity.age=25;n.life.bornTick=w.tick-25*YEAR_TICKS;n.needs.health=100;n.needs.hunger=10;}
-  for(const [n,p] of [[a,b],[b,a]]){relationship(n,p.id).trust=80;relationship(n,p.id).affection=50;}
+  for(const [n,p] of [[a,b],[b,a]]){relationship(n,p.id).trust=80;relationship(n,p.id).affection=70;}
+  a.physique!.sex='female';b.physique!.sex='male';
   expect(formFamily(w,a,b)).toBe(true);const child=giveBirth(w,a,b)!;expect(child).toBeTruthy();child.identity.name='푸른 후손';
   const e=buildEnterprise(w,a.settlementId,'field')!;initializeUrban(w);e.workers=[a.id];w.urban.citizens[a.id].employer=e.id;a.position={...w.buildings.find(x=>x.id===e.buildingId)!.position};
   if(owned){acquireBusiness(w,a.id,e.id);industryWork(w,a);}

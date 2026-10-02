@@ -1,3 +1,4 @@
+import { physiqueSchema, initializePhysiques } from './physiology';
 import { villageLifeSchema } from './village-types';
 import { validateVillageLife } from './village-validation';
 import { apprenticeshipSchema, supportSchema, validateLegacy } from './legacy-learning';
@@ -39,6 +40,7 @@ const action = candidate.extend({ path: z.array(pos).max(16384), progress: natur
 const relationship = z.object({ turn: z.object({ stage: z.enum(['ordinary','close','conflict']), lastTick: natural }).strict().optional(), npcId: id, familiarity: score, trust: score, affection: score, fear: score, resentment: score, respect: score, family: z.boolean(), interpretation: description, evidence: z.array(id) }).strict();
 const memory = z.object({ id, type: z.enum(['personal', 'social', 'event', 'economic', 'trauma', 'achievement']), description, importance: score, emotionalImpact: z.number().min(-100).max(100), createdAt: natural, lastRetrievedAt: natural.optional(), relatedNpcIds: z.array(id), relatedLocationIds: z.array(id), sourceEventId: id, repetitions: natural.min(1) }).strict();
 const npc = z.object({
+  physique: physiqueSchema.optional(),
   cognition: cognitionSchema.optional(),
   profile: profileSchema.optional(),
   id, identity: z.object({ name: z.string().min(1).max(80), age: natural.max(150) }).strict(), position: pos, homeId: id,
@@ -228,7 +230,9 @@ export function validateSave(input: unknown): WorldState {
   validateHeritage(w, ensure);
   // Keep the original property order so a save/load round trip is byte-identical.
   // The strict schema above has validated every field without coercion or defaults.
-  return structuredClone(input) as WorldState;
+  const result = structuredClone(input) as WorldState;
+  initializePhysiques(result);
+  return result;
 }
 
 const interpretation = z.object({

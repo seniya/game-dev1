@@ -20,6 +20,10 @@ export const CREATION_DEFAULTS = {
   body: { stamina: 85, cleanliness: 80, warmth: 80, pain: 0 },
 };
 const characterFields = z.object({
+  sex: z.enum(['male', 'female']).optional(),
+  heightCm: z.number().finite().min(35).max(230).optional(),
+  weightKg: z.number().finite().min(1).max(250).optional(),
+  diseaseResistance: score.optional(),
   ambition: ambitionSchema.optional(),
   name: z.string().trim().min(1).max(40), age: z.number().int().min(0).max(80),
   background: z.string().trim().max(300), homeId: z.string().min(1).max(100),
