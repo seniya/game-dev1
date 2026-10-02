@@ -102,3 +102,11 @@ test('live journal merges received events and keeps archive cursors correct with
   assert.deepEqual(filtered.events, []);
   w.meta.eventCount = 200; assert.equal(mergeLiveJournal(next, w, new URLSearchParams()), undefined, 'missed event gaps require the authoritative archive');
 });
+
+test('viewport culling retains offscreen-to-offscreen routes crossing the visible map at every frame',()=>{
+ const a=new Simulation().snapshot().npcs[0],b=structuredClone(a);a.position={x:0,y:3};b.position={x:20,y:3};
+ const motion=new MotionPlayback();motion.update([], [a],undefined,0,0);motion.update([a],[b],{fromTick:0,toTick:20,paths:{[a.id]:Array.from({length:21},(_,i)=>[i,3])}},0,2000);
+ assert.equal(motion.intersects(a.id,8,0,12,8),true);assert.equal(motion.intersects(a.id,8,8,12,12),false);
+ for(let time=0;time<=2000;time+=50){const p=motion.position(a.id,time)!;if(p.x>=8&&p.x<12)assert.ok(motion.intersects(a.id,8,0,12,8));}
+ motion.finish();assert.equal(motion.intersects(a.id,8,0,12,8),false);
+});

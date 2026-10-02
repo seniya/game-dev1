@@ -1,3 +1,4 @@
+import { agricultureSchema, validateAgriculture } from './agriculture';
 import { constructionSchema, validateConstruction } from './construction';
 import { frontierSchema, validateFrontier } from './frontier';
 import { gatheringsSchema, validateGatherings } from './gatherings-validation';
@@ -54,6 +55,7 @@ const economy = z.object({ arrivals: resources.extend({ coins: natural }).strict
 const world = z.object({
   frontier: frontierSchema.optional(),
   construction:constructionSchema.optional(),
+  agriculture:agricultureSchema.optional(),
   gatherings: gatheringsSchema.optional(),
   version: z.literal(9), observation: z.object({ watchIds: z.array(z.string().min(1).max(100)).max(12) }).strict(), requests: requestsSchema, living: livingSchema, heritage: heritageSchema, urban: urbanSchema, seed: natural.max(4294967295), rng: natural.min(1).max(4294967295), tick: natural, nextId: natural.min(1), width: natural.min(8).max(192), height: natural.min(8).max(128),
   tiles: z.array(z.enum(['grass', 'water', 'path', 'forest', 'rock', 'farm'])).max(24576),
@@ -117,6 +119,7 @@ export function validateSave(input: unknown): WorldState {
   if (!parsed.success) throw new Error(`저장 파일 형식 오류: ${parsed.error.issues[0].path.join('.')} (${parsed.error.issues[0].message})`);
   const w = parsed.data as WorldState;
   const ensure = (condition: unknown, message: string) => { if (!condition) throw new Error(`저장 파일 무결성 오류: ${message}`); };
+  validateAgriculture(w, ensure);
   validateConstruction(w, ensure);
   validateFrontier(w,ensure);
   ensure(w.tiles.length === w.width * w.height, '지도 크기');
@@ -184,7 +187,7 @@ export function validateSave(input: unknown): WorldState {
       const buildingKinds: Partial<Record<typeof a.kind, string>> = { Sleep: 'home', Wash: 'well', Drink: 'well', StoreItem: 'storage', TakeItem: 'storage', Theft: 'storage' };
       if (buildingKinds[a.kind]) ensure(w.buildings.some(b => b.kind === buildingKinds[a.kind] && distance(b.position, a.target) === 0), '행동 건물');
       if (a.kind === 'Gather') ensure(w.resources.some(r => r.id === a.targetId && distance(r.position, a.target) === 0), '채집 대상');
-      if (a.kind === 'Work') ensure(w.buildings.some(b => b.id === (a.targetId?.startsWith('industry:') ? a.targetId.slice(9) : a.targetId?.split(':')[0]) && distance(b.position, a.target) === 0), '작업 대상');
+      if (a.kind === 'Work') ensure(a.targetId?.startsWith('construction:') ? w.construction?.projects.some(p=>p.id===a.targetId!.slice(13)&&distance(p.position,a.target)===0) : w.buildings.some(b => b.id === (a.targetId?.startsWith('industry:') ? a.targetId.slice(9) : a.targetId?.split(':')[0]) && distance(b.position, a.target) === 0), '작업 대상');
       if (['Share', 'Talk', 'Borrow'].includes(a.kind)) ensure(a.targetId && a.targetId !== n.id && npcs.has(a.targetId), '사회 행동 대상');
       if (a.kind === 'Repay') ensure(w.loans.some(l => l.id === a.targetId && l.borrowerId === n.id), '상환 대상');
       if (a.kind === 'Trade') {

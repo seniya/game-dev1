@@ -1,3 +1,4 @@
+import { LegacySimulation as V023Simulation } from '../src/server/retained/1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Simulation } from '../src/sim/engine';
@@ -55,7 +56,7 @@ test('timed construction reserves land and material, survives checkpoints, compl
  const sim=new Simulation();sim.setLLM(false);const before=sim.snapshot(),p=position(before),id=sim.beginConstruction('v0','home',p),started=sim.snapshot();
  assert.equal(started.storage.wood,before.storage.wood-12);assert.equal(started.buildings.length,before.buildings.length);assert.equal(buildPosition(started,'v0',p),false);assert.throws(()=>sim.build('v0','home',p),/부지|목재/);
  const resumed=Simulation.load(JSON.stringify(compactWorld(started)));sim.step(12);resumed.step(12);assert.deepEqual(compactWorld(sim.snapshot()),compactWorld(resumed.snapshot()));
- sim.step(80);const w=sim.snapshot(),project=w.construction!.projects.find(p=>p.id===id)!;assert.ok(project.buildingId);assert.equal(project.progress,36);assert.equal(w.events.filter(e=>e.data.projectId===id&&e.data.phase==='completed').length,1);assert.deepEqual(balance(w),{food:0,wood:0,coins:0});
+ sim.step(200);const w=sim.snapshot(),project=w.construction!.projects.find(p=>p.id===id)!;assert.ok(project.buildingId);assert.equal(project.progress,36);assert.equal(w.events.filter(e=>e.data.projectId===id&&e.data.phase==='completed').length,1);assert.deepEqual(balance(w),{food:0,wood:0,coins:0});
  assert.doesNotThrow(()=>Simulation.load(JSON.stringify(compactWorld(w))));
  const corrupt=structuredClone(w);corrupt.construction!.projects[0].position.x++;assert.throws(()=>Simulation.load(JSON.stringify(corrupt)),/공사/);
 });
@@ -79,17 +80,17 @@ test('conversation activity validates availability again, links source and prese
  sim.proposeConversationGathering(n.id,'meal',e.id);const state=sim.snapshot(),g=state.gatherings!.items.at(-1)!;assert.equal(g.sourceEventId,state.events.find(e=>e.data.gatheringId===g.id&&e.data.phase==='proposed')!.id);assert.ok(g.invitations.length);assert.equal(g.status,'planned');assert.throws(()=>sim.proposeConversationGathering(n.id,'meal',e.id),/조건/);assert.doesNotThrow(()=>Simulation.load(JSON.stringify(compactWorld(state))));
 });
 
-test('optimized decisions and household lookup preserve complete deterministic outcomes of the retained engine',()=>{
+test('retained v023 optimized decisions and household lookup preserve complete deterministic outcomes of the retained engine',()=>{
  for(const population of [12,80,450]) {
-  const current=new Simulation(42,population),old=new LegacySimulation(42,population);current.setLLM(false);old.setLLM(false);
-  current.step(144);old.step(144,undefined);const a=current.snapshot(),b=old.snapshot();if(a.frontier)delete a.frontier.impact;
+  const current=new V023Simulation(42,population),old=new LegacySimulation(42,population);current.setLLM(false);old.setLLM(false);
+  current.step(144,undefined);old.step(144,undefined);const a=current.snapshot() as unknown as ReturnType<Simulation['snapshot']>,b=old.snapshot();if(a.frontier)delete a.frontier.impact;
   assert.deepEqual(a,b,`population ${population}`);
  }
 });
 
-test('rain delays construction and first-use evidence requires a resident actually sleeping in the completed home',()=>{
+test('rain delays legacy automatic construction and first-use evidence requires a resident actually sleeping in the completed home',()=>{
  const sim=new Simulation();sim.setLLM(false);sim.beginConstruction('v0','home',position(sim.snapshot()));
- const rainy=sim.snapshot();rainy.weather='rain';let run=Simulation.load(JSON.stringify(rainy));run.step(18);assert.equal(run.snapshot().construction!.projects[0].progress,9);assert.equal(run.snapshot().construction!.projects[0].buildingId,undefined);
+ const rainy=sim.snapshot();delete rainy.construction!.projects[0].labor;rainy.weather='rain';let run=Simulation.load(JSON.stringify(rainy));run.step(18);assert.equal(run.snapshot().construction!.projects[0].progress,9);assert.equal(run.snapshot().construction!.projects[0].buildingId,undefined);
  run.step(54);const w=run.snapshot(),project=w.construction!.projects[0],home=w.buildings.find(b=>b.id===project.buildingId)!;assert.ok(home);assert.equal(project.used,undefined);
  const resident=w.npcs.find(n=>n.alive&&n.identity.age>=18)!;resident.homeId=home.id;resident.position={...home.position};resident.currentAction={kind:'Sleep',score:100,reason:'실제 수면 관찰',target:{...home.position},targetId:home.id,path:[],progress:1,duration:8};
  run=Simulation.load(JSON.stringify(w));run.step();const after=run.snapshot(),event=after.events.find(e=>e.data.projectId===project.id&&e.data.phase==='first-use')!;assert.ok(event);assert.equal(event.actorId,resident.id);assert.equal(event.locationId,home.id);assert.equal(event.causeId,project.lastEventId);

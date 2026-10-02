@@ -1,0 +1,79 @@
+{
+  "version": "0.25.0",
+  "date": "2026-10-02",
+  "implementationComplete": true,
+  "core": {
+    "command": "npm test",
+    "passed": 264,
+    "failed": 0,
+    "finalAdditionalAssertions": {
+      "command": "npx tsx --test tests/living-actions.test.ts",
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "browser": {
+    "fullRun": {
+      "passed": 82,
+      "failed": 3,
+      "skipped": 1
+    },
+    "finalRelatedRun": {
+      "passed": 11,
+      "failed": 0
+    },
+    "strengthenedReturnDigest": {
+      "passed": 1,
+      "failed": 0,
+      "checks": "Wait for day 2, verify at least one actual source event, original farm record and mobile width."
+    },
+    "uniquePassingScenarios": 85,
+    "skippedRealModel": 1,
+    "viewports": [
+      320,
+      390,
+      430,
+      768,
+      1280
+    ],
+    "runtime": "Chromium emulation, actual local Worker/D1. No new real-device or external-user verification."
+  },
+  "regression": {
+    "report": "living-actions-regression.json",
+    "cases": 9,
+    "days365": 6,
+    "accountingError": 0,
+    "missingReferences": 0
+  },
+  "build": {
+    "typescript": true,
+    "production": true,
+    "warning": "Client chunk exceeds 500 kB uncompressed; current measured gzip is about 168.5 kB. Build succeeded."
+  },
+  "performance": {
+    "archive": "living-actions-archive-profile.json",
+    "map": "living-actions-map-profile.json",
+    "scope": "Local measurements only; pending overlay created once per export, map image pixel equality checked with 3000 residents."
+  },
+  "productionEvidence": "living-actions-production-recovery.json",
+  "initialFailuresAndCorrections": [
+    "Initial core run: 251/254 passed. New labor construction no longer guarantees completion in 92 ticks. The timed legacy fixture now explicitly loads an old automatic project; the v0.23 optimization comparison uses both preserved historical engines. The new labor scenario waits for actual funded completion.",
+    "Initial focused tests: market fixture accessed the wrong property; manually assigned food was not booked as an external input. Corrected fixtures; nine final scenarios passed.",
+    "Initial regression assumed all construction finishes within three days. Seed 7 correctly runs out of wages at 26/36. Replaced that assumption with labor bounds, actual outcome reporting, and an explicit no-funds/replenishment test.",
+    "The initial seed-7 long runs were preserved separately and all nine cases rerun after fixing fence causal attribution; natural-food preference must not be described as a fence effect.",
+    "Browser full run: fixed wall-clock wait expected five syncs but observed four; changed the test to wait for the fifth response. Chrome schedule and mobile return checks were disrupted by development source reloads. With source frozen, all eleven final related tests passed.",
+    "New mobile test initially tried to click a collapsed connection control; expanded its summary. Return digest now also waits for the updated day before asserting actual events."
+  ],
+  "preservedPolicies": [
+    "custom invite-only access",
+    "owner-only world mutations and AI calls",
+    "Chrome preference and explicit remote choice with no fallback",
+    "maximum five-minute normal-save window, immediate interventions and AI results",
+    "current original events, one prior-world backup, 30-day commands and seven-day completed AI audit retention"
+  ],
+  "limits": [
+    "Real Korean Chrome inference and human narrative quality remain separate from automated evidence.",
+    "No global production CPU/memory claim.",
+    "v0.25 production deployment result is recorded separately after publication."
+  ]
+}

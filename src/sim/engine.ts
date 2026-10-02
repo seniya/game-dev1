@@ -1,4 +1,6 @@
-import { beginConstruction, constructionTick } from './construction';
+import { knownPromiseEvent } from './promises';
+import { growFarm, agricultureDay, recordHarvest } from './agriculture';
+import { beginConstruction, constructionTick, assignConstruction, workConstruction } from './construction';
 import { protectFarm, wildlifeDay, tradeLand } from './frontier';
 import { proposeConversationGathering, proposeGatherings, updateGatherings, gatheringCandidate } from './gatherings';
 import { respondToRequest, updateRequests } from './requests';
@@ -90,7 +92,7 @@ export class Simulation {
     advanceFreight(w);
     indexPeople(w);
     proposeGatherings(w);
-    for (const farm of w.buildings.filter(b => b.kind === 'farm')) farm.growth = Math.min(120, farm.growth + (w.weather === 'drought' ? .025 : w.weather === 'rain' ? .24 : .14) * (1 + (farm.level - 1) * .35) * (city(w, farm.settlementId!)?.fertility ?? 70) / 70 * (w.urban.buildings[farm.id]?.condition ?? 100) / 100 * cropMultiplier(w, farm.settlementId!));
+    for (const farm of w.buildings) if(farm.kind==='farm')growFarm(w,farm);
     for (let i = 0; i < w.npcs.length; i++) {
       const n = w.npcs[(i + w.tick) % w.npcs.length];
       if (!n.alive) continue;
@@ -119,7 +121,7 @@ export class Simulation {
       if (a && urgentNeed(n) && n.cognition?.plan?.interruption !== urgentNeed(n)) n.currentAction = undefined;
       if (a && ((n.needs.hunger > 88 && n.inventory.food > 0 && a.kind !== 'Eat') || (n.needs.thirst > 90 && a.kind !== 'Drink'))) n.currentAction = undefined;
       if (!n.currentAction) {
-        const decision = plan(w, n); n.currentAction = decision.action;
+        const decision = plan(w, n); n.currentAction = decision.action; assignConstruction(w,n);
         n.decision = { reason: decision.action.reason, candidates: decision.candidates, tick: w.tick };
       }
       this.advance(n);
@@ -144,6 +146,7 @@ export class Simulation {
     w.weather = w.tick < w.droughtUntil ? 'drought' : roll < .24 ? 'rain' : roll < .55 ? 'cloudy' : 'sunny';
     const weatherName = { rain: '비', cloudy: '흐림', sunny: '맑음', drought: '가뭄' }[w.weather];
     appendEvent(w, { kind: 'weather', importance: 20, description: `${dayOf(w.tick)}일째 · ${weatherName}. ${w.weather === 'drought' ? '농장과 열매의 생산량이 감소한다.' : '새로운 하루가 시작되었다.'}` });
+    agricultureDay(w);
     ecologyDay(w);
     wildlifeDay(w);
     sampleDay(w);
@@ -207,12 +210,13 @@ export class Simulation {
       }
       case 'Work': {
         if (!canWork(w, n)) break;
+        if (a.targetId?.startsWith('construction:')) { if(!workConstruction(w,n))this.fail(n,'공사·임금·생활 조건이 바뀌어 다시 판단한다.'); break; }
         if (a.targetId?.startsWith('industry:')) { if (!industryWork(w, n)) this.fail(n, '고용·재료·임금 또는 시설 조건이 바뀌었다.'); break; }
         if (a.targetId?.includes(':')) { this.project(n); break; }
         const farm = w.buildings.find(b => b.id === a.targetId && b.kind === 'farm' && !w.urban.enterprises.some(e => e.buildingId === b.id));
         if (!farm || farm.growth < 3) { this.fail(n, '작물이 아직 자라지 않았다.'); break; }
         n.life.skill = Math.min(100, n.life.skill + .02);
-        const amount = Math.min(4 + Math.floor(n.life.skill / 25) + useTool(w, n), Math.floor(farm.growth)); farm.growth -= amount; harvest(w, farm.settlementId!, amount); n.inventory.food += amount;
+        const amount = Math.min(4 + Math.floor(n.life.skill / 25) + useTool(w, n), Math.floor(farm.growth)); farm.growth -= amount; harvest(w, farm.settlementId!, amount); recordHarvest(w,farm,amount); n.inventory.food += amount;
         w.economy.totals.producedFood += amount;
         const harvestEvent = simple('production', `${n.identity.name}이 농장에서 식량 ${amount}개를 수확했다.`, 25, { resource: 'food', amount, level: farm.level });
         // The market employs harvesters: one harvested unit enters its stock in exchange for a funded wage.
@@ -402,7 +406,7 @@ export class Simulation {
   }
   recordExpression(npcId:string,kind:'dialogue'|'reflection',text:string,evidence:string[],requestId:string,model:string,question:string) {
     const w=this.state,n=w.npcs.find(n=>n.id===npcId&&n.alive);
-    if(!n||!text.trim()||text.length>500||!evidence.length||evidence.length>5||evidence.some(id=>!eventById(w,id)||!n.memories.some(m=>m.sourceEventId===id)))return false;
+    if(!n||!text.trim()||text.length>500||!evidence.length||evidence.length>5||evidence.some(id=>!eventById(w,id)||!n.memories.some(m=>m.sourceEventId===id)&&!knownPromiseEvent(w,n.id,eventById(w,id)!)))return false;
     appendEvent(w,{kind:'llm',actorId:n.id,causeId:evidence[0],importance:35,description:`${n.identity.name}의 ${kind==='reflection'?'성찰':'답변'} (${model==='mock'?'규칙 기반 예시':'AI 표현'}): ${text}`,data:{expression:kind,text,evidence,requestId,model,question}});return true;
   }
   failDecision(requestId: string, reason: string, retry = true) {

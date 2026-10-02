@@ -90,13 +90,15 @@ export function compactWorld(w: WorldState): WorldState {
   w.urban?.enterprises.forEach(e => { if (e.sourceEventId) keep.add(e.sourceEventId); });
   w.urban?.freight.forEach(f => keep.add(f.sourceEventId));
   w.urban?.samples.forEach(s => keep.add(s.eventId));
-  w.construction?.projects.forEach(p=>{keep.add(p.source);keep.add(p.lastEventId);});
+  w.construction?.projects.forEach(p=>{keep.add(p.source);keep.add(p.lastEventId);if(p.labor?.assignment)keep.add(p.labor.assignment);if(p.labor?.workEvent)keep.add(p.labor.workEvent);});
+  w.agriculture?.farms.forEach(f=>{if(f.lastEventId)keep.add(f.lastEventId);});
   w.frontier?.protections?.forEach(p=>keep.add(p.sourceEventId));
   w.frontier?.habitats.forEach(h=>keep.add(h.lastEventId));
   w.heritage?.habitats.forEach(h => { if (h.lastEventId) keep.add(h.lastEventId); });
   w.heritage?.councils.forEach(c => { if (c.lastEventId) keep.add(c.lastEventId); });
   w.heritage?.accords.forEach(r => { if (r.lastEventId) keep.add(r.lastEventId); if (r.deliveryEventId) keep.add(r.deliveryEventId); });
   w.requests?.items.forEach(r => { for (const id of [r.sourceEventId, r.lastEventId, r.decisionEventId, r.resultEventId, r.followupStopped, ...(r.context?.evidence ?? []), ...(r.followups ?? []).flatMap(f => [f.eventId, ...f.evidence])]) if (id) keep.add(id); });
+  w.gatherings?.items.forEach(g=>{if(g.conversationSource)keep.add(g.conversationSource);});
   w.gatherings?.circles?.forEach(c => c.evidence.forEach(id => keep.add(id)));
   w.gatherings?.items.forEach(g => gatheringEvidence(g).forEach(id => keep.add(id)));
   w.loans.forEach(l => keep.add(l.sourceEventId));

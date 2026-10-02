@@ -1,3 +1,4 @@
+import { recordHarvest } from './agriculture';
 import { GATHERING_LABELS, isPlanned, type Gathering } from './gatherings-types';
 import { urgentNeed } from './cognition';
 import { canWork } from './employment';
@@ -22,7 +23,7 @@ export function gatheringEvidence(g: Gathering) {
 }
 function record(w: WorldState, g: Gathering, phase: string, description: string, participants: string[], causeId = g.sourceEventId) {
   const e = socialEvent(w, { kind: 'gathering', actorId: participants[0], participants, locationId: g.buildingId, importance: 55, causeId,
-    description, data: { gatheringId: g.id, gatheringKind: g.kind, phase } });
+    description, data: { gatheringId: g.id, gatheringKind: g.kind, phase, ...(g.conversationSource?{conversationSource:g.conversationSource}:{}) } });
   g.lastEventId = e.id; return e;
 }
 const informed = (g: Gathering, i: Gathering['invitations'][number]) => !g.schedule || !!i.scheduleEventId;
@@ -228,7 +229,7 @@ export function updateGatherings(w: WorldState) {
       host.inventory.food--; target.inventory.food++; w.stats.shares++; helped = target;
     }
     if (g.kind === 'harvest') {
-      const amount = present.length * 2; b.growth -= amount; harvest(w, g.settlementId, amount); w.economy.totals.producedFood += amount;
+      const amount = present.length * 2; b.growth -= amount; harvest(w, g.settlementId, amount); recordHarvest(w,b,amount); w.economy.totals.producedFood += amount;
       for (const n of present) n.inventory.food += 2;
     }
     for (const n of present) n.needs.social = clamp(n.needs.social + 20);
@@ -260,7 +261,7 @@ export function proposeConversationGathering(w:WorldState,npcId:string,kind:Gath
   state.items=[...state.items.filter(isPlanned),...state.items.filter(g=>!isPlanned(g)).slice(-23)];
   if(state.items.length>=36)throw new Error('주민 모임이 너무 많습니다.');
   const reason='관찰자와 나눈 대화 이후, 현재 생활 조건을 확인하여 제안했다. 참석 여부는 각 주민이 새로 결정한다.';
-  const g:Gathering={id:`g${w.nextId++}`,kind,hostId:npcId,settlementId:host.settlementId,buildingId:choice.buildingId,createdAt:w.tick,startsAt:w.tick+36,endsAt:w.tick+60,status:'planned',reason,evidence:[source],sourceEventId:'',lastEventId:'',invitations:[],progress:0,attendance:[],arrivals:[]};
-  const e=appendEvent(w,{kind:'gathering',actorId:npcId,locationId:g.buildingId,causeId:source,importance:55,description:`${host.identity.name}이 대화 후 ${choice.label} 모임을 제안했다. ${reason}`,data:{gatheringId:g.id,gatheringKind:kind,phase:'proposed',startsAt:g.startsAt,endsAt:g.endsAt,evidence:[source],observer:true}});
+  const g:Gathering={conversationSource:source,id:`g${w.nextId++}`,kind,hostId:npcId,settlementId:host.settlementId,buildingId:choice.buildingId,createdAt:w.tick,startsAt:w.tick+36,endsAt:w.tick+60,status:'planned',reason,evidence:[source],sourceEventId:'',lastEventId:'',invitations:[],progress:0,attendance:[],arrivals:[]};
+  const e=appendEvent(w,{kind:'gathering',actorId:npcId,locationId:g.buildingId,causeId:source,importance:55,description:`${host.identity.name}이 대화 후 ${choice.label} 모임을 제안했다. ${reason}`,data:{gatheringId:g.id,gatheringKind:kind,phase:'proposed',startsAt:g.startsAt,endsAt:g.endsAt,evidence:[source],observer:true,conversationSource:source}});
   g.sourceEventId=e.id;g.lastEventId=e.id;state.items.push(g);deliverInvitations(w,g);return g.id;
 }

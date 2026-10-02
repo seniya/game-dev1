@@ -1,3 +1,4 @@
+import { conversationPromises } from '../sim/promises';
 import { GATHERING_LABELS } from '../sim/gatherings-types';
 import type { NPC, WorldState } from '../sim/types';
 const esc = (s: string) => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
@@ -20,4 +21,9 @@ export function gatheringsView(w: WorldState, n: NPC) {
       ${g.arrivals.map(a => `<button class="evidence-link" data-event="${esc(a.eventId)}">${esc(w.npcs.find(p => p.id === a.npcId)?.identity.name ?? a.npcId)} 도착 ${date(a.tick)} ↗</button>`).join('')}
       <button class="evidence-link" data-event="${esc(g.lastEventId)}">최근 기록과 이후 변화 ↗</button>
     </article>`).join('') : '<p>생활에 여유가 생기면 주민이 이웃에게 공동 활동을 제안합니다.</p>'}</details>`;
+}
+
+export function promisesView(w:WorldState,npcId:string) {
+ const rows=conversationPromises(w,npcId);
+ return `<section class="conversation-promises"><h3>대화 이후의 약속</h3><p>제안·수락·실제 활동을 구분합니다. 생활 조건 때문에 중단될 수 있습니다. 이전 약속은 주민의 ‘이어지는 일’에서 찾을 수 있습니다.</p>${rows.map(p=>`<article data-reading-key="promise-${esc(p.id)}"><b>${esc(p.title)} · ${esc(p.status)}</b><p>${esc(p.detail)}</p><button class="evidence-link" data-event="${esc(p.conversation)}">처음 나눈 대화</button><button class="evidence-link" data-event="${esc(p.latest)}">최근 결과와 이유</button><button class="text-button" data-biography="${esc(npcId)}" data-mode="threads" data-root="${esc(p.source)}">약속의 전체 경과</button></article>`).join('')||'<p>최근에 대화에서 제안한 약속이 없습니다.</p>'}</section>`;
 }

@@ -266,8 +266,7 @@ test('map paints intermediate positions between server updates while avoiding re
   const distinct = await page.evaluate(since => new Set((window as any).renderedPoints.filter((p: number[]) => p[0] > since && p[1] > 210 && p[1] < 230).map((p: number[]) => p[1].toFixed(2))).size, since);
   expect(distinct).toBeGreaterThan(5);
   await expect(page.locator('#events')).toContainText('이미 받은 세계 응답의 새 사건');
-  await page.waitForTimeout(8500);
-  expect(calls['/api/command']).toBeGreaterThanOrEqual(5);
+  await expect.poll(()=>calls['/api/command']??0,{timeout:15000}).toBeGreaterThanOrEqual(5);
   expect(calls['/api/events']).toBe(1); expect(calls['/api/ai']).toBe(1);
 });
 

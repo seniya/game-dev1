@@ -1,3 +1,4 @@
+import { recordCropLoss } from './agriculture';
 import { z } from 'zod';
 import type { WorldState, Position } from './types';
 import { appendEvent } from './social';
@@ -63,32 +64,34 @@ export function wildlifeDay(w: WorldState) {
       born = 0;
     for (const a of residents) {
       a.age++;
-      const food = w.resources
-        .filter((r) => r.kind === 'food' && r.amount > 0 && distance(r.position, a.position) <= 16)
-        .sort((a1, b) => distance(a1.position, a.position) - distance(b.position, a.position))[0];
-      const farm = !food
-        ? w.buildings
-            .filter((b) => b.kind === 'farm' && b.settlementId === v.id && b.growth >= 1 && !f.protections?.some(p=>p.buildingId===b.id&&p.until>w.tick))
-            .sort((a1, b) => distance(a1.position, a.position) - distance(b.position, a.position))[0]
-        : undefined;
-      const target = food ?? farm;
+      const foods=w.resources.filter(r=>r.kind==='food'&&r.amount>0&&distance(r.position,a.position)<=16);
+      const farms=w.buildings.filter(b=>b.kind==='farm'&&b.settlementId===v.id&&b.growth>=1);
+      const blocked=farms.filter(b=>f.protections?.some(p=>p.buildingId===b.id&&p.until>w.tick));
+      const available=farms.filter(b=>!blocked.includes(b));
+      // Reject unreachable targets before choosing, so an isolated berry patch cannot trap an animal.
+      const reachable=(items:typeof foods|typeof farms)=>{
+        for(const target of [...items].sort((x,y)=>distance(x.position,a.position)-distance(y.position,a.position))){const path=findPath(w,a.position,target.position);if(path!==null)return {target,path};}
+      };
+      const natural=reachable(foods),unprotectedChoice=natural?undefined:reachable(farms);
+      const choice=natural??reachable(available),target=choice?.target,from={...a.position};
       let ate = false;
-      if (target) {
-        const path = findPath(w, a.position, target.position);
-        if (path?.length) a.position = path[Math.min(path.length - 1, 2)];
-        if (distance(a.position, target.position) === 0) {
-          if (food) {
-            food.amount--;
-            consumed++;
-          } else if (farm) {
-            farm.growth--;
-            cropLoss++;
-          }
-          ate = true;
+      const avoided=unprotectedChoice?blocked.find(b=>b.id===unprotectedChoice.target.id):undefined,protection=avoided?f.protections?.find(p=>p.buildingId===avoided.id):undefined;
+      if(target&&choice?.path){
+        if(choice.path.length)a.position={...choice.path[Math.min(choice.path.length-1,3)]};
+        if(distance(a.position,target.position)===0){
+          if('amount' in target){target.amount--;consumed++;}
+          else {target.growth--;cropLoss++;recordCropLoss(w,target,1);}
+          ate=true;
         }
       }
+      if(avoided || !ate || target&&'growth' in target)appendEvent(w,{
+        kind:'ecology',importance:avoided||ate?35:20,causeId:protection?.sourceEventId,
+        description:`${a.species==='hare'?'토끼':'사슴'} ${a.id}: ${avoided?`${avoided.name}의 울타리를 피해 `:''}${target?`(${from.x}, ${from.y})에서 (${a.position.x}, ${a.position.y})로 먹이를 찾아 이동했다. ${ate?'먹이 1개를 먹었다.':'아직 먹이에 도착하지 못했다.'}`:'도달 가능한 먹이를 찾지 못했다.'}`,
+        data:{wildlife:true,animalId:a.id,settlementId:v.id,phase:ate?'fed':target?'seeking':'no-food',fromX:from.x,fromY:from.y,x:a.position.x,y:a.position.y,targetId:target?.id??'',protectedFarm:avoided?.id??'',cropLoss:ate&&target&&'growth' in target?1:0}
+      });
       a.hunger = ate ? 0 : a.hunger + 1;
       if (a.hunger >= 4 || a.age >= 30) {
+        appendEvent(w,{kind:'ecology',importance:35,description:`${a.species==='hare'?'토끼':'사슴'} ${a.id}이 ${a.hunger>=4?'4일 동안 먹지 못해':'관찰 수명 30일에 도달해'} 죽었다.`,data:{wildlife:true,animalId:a.id,settlementId:v.id,phase:'death',reason:a.hunger>=4?'starvation':'age'}});
         dead.add(a.id);
         continue;
       }

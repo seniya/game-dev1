@@ -1,0 +1,120 @@
+{
+  "version": "0.25.0",
+  "completed": false,
+  "measurement": "Local Node process CPU and sampled heap, including archive/validation/continuation overhead. Not production Worker CPU or memory. Full rules preserved; no approximate LOD or distributed server introduced.",
+  "results": [
+    {
+      "seed": 7,
+      "mode": "off",
+      "population": 12,
+      "days": 365,
+      "living": 21,
+      "wildlife": 36,
+      "construction": [
+        {
+          "progress": 26,
+          "required": 36,
+          "paid": 9,
+          "completed": false
+        }
+      ],
+      "events": 187325,
+      "accounting": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "urbanAccounting": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "missingReferences": 0,
+      "resumeChecks": 14,
+      "elapsedMs": 98092,
+      "cpuMs": 125241,
+      "peakHeapSampleBytes": 506481184,
+      "peakCheckpointBytes": 15305865,
+      "p95DayMs": 524
+    },
+    {
+      "seed": 7,
+      "mode": "mock",
+      "population": 12,
+      "days": 365,
+      "living": 21,
+      "wildlife": 20,
+      "construction": [
+        {
+          "progress": 26,
+          "required": 36,
+          "paid": 9,
+          "completed": false
+        }
+      ],
+      "events": 197009,
+      "accounting": {
+        "food": 0,
+        "wood": 0,
+        "coins": 0
+      },
+      "urbanAccounting": {
+        "grain": 0,
+        "stone": 0,
+        "ore": 0,
+        "tools": 0,
+        "herbs": 0,
+        "fiber": 0,
+        "cloth": 0,
+        "clothes": 0,
+        "meals": 0,
+        "furniture": 0,
+        "vegetables": 0,
+        "fruit": 0,
+        "fish": 0,
+        "meat": 0,
+        "milk": 0,
+        "wool": 0,
+        "clay": 0,
+        "salt": 0,
+        "bread": 0,
+        "dried_fish": 0,
+        "cheese": 0,
+        "pottery": 0,
+        "blankets": 0,
+        "medicine": 0,
+        "stew": 0
+      },
+      "missingReferences": 0,
+      "resumeChecks": 14,
+      "elapsedMs": 150962,
+      "cpuMs": 142744,
+      "peakHeapSampleBytes": 548239080,
+      "peakCheckpointBytes": 17158494,
+      "p95DayMs": 1611
+    }
+  ],
+  "stoppedReason": "Stopped after seed 7 off/Mock to correct causal attribution: a fence is cited only if it actually changes the reachable food choice. Final groups rerun all nine conditions with the corrected engine."
+}

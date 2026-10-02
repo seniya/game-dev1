@@ -2,6 +2,7 @@ import { z } from 'zod';
 const id = z.string().min(1).max(100), tick = z.number().int().nonnegative().max(Number.MAX_SAFE_INTEGER);
 export const GATHERING_LABELS = { meal: '함께 식사', help: '이웃에게 식량 전달', harvest: '공동 수확' };
 export const gatheringSchema = z.object({
+  conversationSource:id.optional(),
   id, kind: z.enum(['meal', 'help', 'harvest']), hostId: id, settlementId: id, buildingId: id,
   createdAt: tick, startsAt: tick, endsAt: tick, status: z.enum(['planned', 'completed', 'cancelled']),
   recurring: z.object({ partnerId:id, evidence:z.array(id).min(2).max(3) }).strict().optional(),

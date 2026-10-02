@@ -1,0 +1,38 @@
+{
+  "scope": "Local SQLite, 25000 synthetic Korean archive rows; no production CPU or memory claim",
+  "read": {
+    "ms": 125.15622499999995,
+    "archiveCalls": 1,
+    "queries": 7,
+    "events": 40,
+    "changes": [
+      {
+        "topic": "family",
+        "count": 0
+      },
+      {
+        "topic": "relations",
+        "count": 0
+      },
+      {
+        "topic": "homes",
+        "count": 2
+      },
+      {
+        "topic": "nature",
+        "count": 2
+      }
+    ]
+  },
+  "export": {
+    "ms": 119.40094500000009,
+    "bytes": 6118811,
+    "chunks": 252,
+    "maxChunk": 38530,
+    "archiveCalls": 1,
+    "queries": 251,
+    "improvement": "Pending-event overlay is captured once instead of rebuilt for each streamed batch; event order and watermark stay pinned.",
+    "previousOverlayCallsFromCode": 251,
+    "previousMeasurementNote": "The old call count is derived from the former per-batch call site; it is not an independently timed old implementation."
+  }
+}

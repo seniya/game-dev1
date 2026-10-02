@@ -1,6 +1,6 @@
 {
   "name": "living-small-world",
-  "version": "0.24.0",
+  "version": "0.25.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -24,6 +24,7 @@
     "replay": "tsx scripts/verify-replay.ts",
     "regression:expansion": "tsx scripts/expansion-regression.ts",
     "profile:scale": "tsx scripts/scale-profile.ts",
+    "regression:living-actions": "tsx scripts/living-actions-regression.ts",
     "regression:continuity": "tsx scripts/continuity-regression.ts",
     "profile:engine": "tsx scripts/profile-engine.ts"
   },

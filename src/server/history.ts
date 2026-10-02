@@ -34,13 +34,14 @@ export async function readHistory(store: WorldStore, current: StoredWorld, p: UR
 /** Pins a committed snapshot and event watermark. Later commits/resets cannot mix into this export. */
 export function streamWorld(store: WorldStore, current: StoredWorld): Response {
   const { events: _events, ...state } = current.state;
+  const archive=store.archive(); // Freeze the pending-event overlay once for the entire stream.
   const encoder = new TextEncoder(); let cursor = 0, started = false, first = true, finished = false;
   const body = new ReadableStream<Uint8Array>({
     async pull(controller) {
       try {
         if (!started) { started = true; controller.enqueue(encoder.encode(JSON.stringify(state).slice(0, -1) + ',"events":[')); return; }
         if (finished) { controller.close(); return; }
-        const rows = await store.archive().prepare('SELECT body,seq FROM events WHERE epoch=? AND seq>? AND seq<=? ORDER BY seq LIMIT 100').bind(current.epoch, cursor, current.meta.eventCount).all<{ body: string; seq: number }>();
+        const rows = await archive.prepare('SELECT body,seq FROM events WHERE epoch=? AND seq>? AND seq<=? ORDER BY seq LIMIT 100').bind(current.epoch, cursor, current.meta.eventCount).all<{ body: string; seq: number }>();
         if (!rows.results.length) {
           if (cursor !== current.meta.eventCount) throw new Error('사건 아카이브가 누락되어 내보내기를 중단했습니다.');
           controller.enqueue(encoder.encode(']}')); finished = true; return;

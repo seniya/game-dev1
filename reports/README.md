@@ -1,11 +1,14 @@
 # 검증·배포 보고서 안내
 
-정리: 2026-10-02. 최신 앱은 v0.24.0이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
+정리: 2026-10-02. 최신 앱은 v0.25.0이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
 
 ## 최신 증거와 버전별 색인
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.25 검증 | [검증](living-actions-validation.json): 코어·서버 264개, 고유 브라우저 85개·실모델 1개 건너뜀. 실패와 11+1 재검증을 구분 |
+| v0.25 회귀 | [장기·규모](living-actions-regression.json): 365일 6조건과 300/1000/3000명 3조건, 회계·근거·이어 실행 검사 |
+| v0.25 성능·운영 | [지도](living-actions-map-profile.json), [아카이브](living-actions-archive-profile.json), [이전 배포 복구 관측](living-actions-production-recovery.json) |
 | v0.24 배포 | [deployment-v024.json](deployment-v024.json): Sites 36 `succeeded`, 운영 JS/CSS 일치·모바일 기기 모드 확인·custom 정책 동일·확정 메타데이터와 대기 193틱 행 보존. 인증된 공동 세계 조회와 실기기 검증은 별도 |
 | v0.24 모바일 UI | [검증](mobile-ui-validation.json): 코어·서버 254개, 고유 브라우저 81개·실모델 1개 건너뜀. 전체 실행 이후 변경된 메뉴 경로와 새 빌드 지문으로 19개 최종 재검증; Chromium 터치·WebKit·Firefox 확인 |
 | v0.23 배포 | [deployment-v023.json](deployment-v023.json): Sites 35 `succeeded`, 운영 자산 일치·custom 정책 동일·확정 메타데이터와 대기 147틱 행 유지. v0.22 대기 진행의 운영 복구는 최초 인증 조회 이후 관측 대상 |

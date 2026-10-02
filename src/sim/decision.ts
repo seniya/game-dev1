@@ -1,3 +1,4 @@
+import { constructionCandidate } from './construction';
 import { gatheringCandidate } from './gatherings';
 import { canWork } from './employment';
 import { livingCandidates } from './living';
@@ -25,6 +26,7 @@ export function candidates(w: WorldState, n: NPC): Candidate[] {
   const well = localBuilding(w, n, 'well');
   const urban = w.urban.citizens[n.id];
   const night = w.tick % 144 >= 126 || w.tick % 144 < 30;
+  const site=constructionCandidate(w,n);if(site)list.push(site);
   const job = canProduce(w, n);
   if (job) add('Work', 76 + n.personality.diligence * .25 - (w.urban.citizens[n.id]?.stress ?? 0) * .15, `${INDUSTRY_LABELS[job.e.kind]} · 임금 ${job.e.wage}코인 · 재료와 기금 확보`, job.b.position, `industry:${job.e.buildingId}`);
   add('Idle', 8, '주변을 살피며 잠시 쉰다.');

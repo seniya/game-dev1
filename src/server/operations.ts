@@ -9,7 +9,9 @@ export function recordRequest(route: string, ms: number, status: number, at = Da
   samples.push({ at, route: route.replace(/\/[a-z0-9-]{16,}/gi, '/:id'), ms: Math.round(ms), status });
   while (samples.length > 256 || samples[0]?.at < at - 3_600_000) samples.shift();
 }
-export async function operationsStatus(db: D1Database) {
+declare const __SIMULATION_BUILD__: string;
+const CURRENT_BUILD=typeof __SIMULATION_BUILD__==='string'?__SIMULATION_BUILD__:'test';
+export async function operationsStatus(db: D1Database, build=CURRENT_BUILD) {
   while (samples.length && samples[0].at < Date.now() - 3_600_000) samples.shift();
   const start = performance.now();
   const probe = await db.prepare('SELECT revision FROM world WHERE id=1').all();
@@ -22,8 +24,10 @@ export async function operationsStatus(db: D1Database) {
   const migrations = await db.prepare('SELECT * FROM engine_migrations WHERE created>=? ORDER BY created DESC LIMIT 10').bind(Date.now()-30*86400000).all<{source:string;target:string;epoch:string;ticks:number;events:number;created:number}>();
   const pending=await db.prepare('SELECT body FROM world_live WHERE revision=(SELECT revision FROM world WHERE id=1)').first<{body:string}>();
   const progress=pending?JSON.parse(pending.body):undefined;
+  const failures=await db.prepare('SELECT source,target,epoch,revision,ticks,code,created FROM engine_recovery_failures WHERE created>=? ORDER BY created DESC LIMIT 10').bind(Date.now()-30*86400000).all<{source:string;target:string;epoch:string;revision:number;ticks:number;code:string;created:number}>();
   return {
-    pendingRecovery:progress&&retainedEngine(progress.build)?{ticks:progress.ticks,available:true}:null,
+    recoveryFailures:failures.results,
+    pendingRecovery:progress&&progress.build!==build?{ticks:progress.ticks,available:!!retainedEngine(progress.build)}:null,
     history: history.results, migrations: migrations.results,
     measuredAt: Date.now(),
     scope: 'current-worker-last-256-or-one-hour',
@@ -74,6 +78,6 @@ export function operationalCommit(db:D1Database,w:StoredWorld,now:number) {
   const bytes=new TextEncoder().encode(JSON.stringify(w.state)).length;
   statements.push(db.prepare(`INSERT INTO operation_days VALUES(?,0,0,0,0,0,?,?,?,?,?,(SELECT bytes FROM operation_storage WHERE epoch=?),?) ON CONFLICT(day) DO UPDATE SET epoch=excluded.epoch,revision=excluded.revision,tick=excluded.tick,events=excluded.events,state_bytes=excluded.state_bytes,archive_bytes=excluded.archive_bytes,measured=excluded.measured`).bind(day,w.epoch,w.revision,w.state.tick,w.meta.eventCount,bytes,w.epoch,now));
   statements.push(db.prepare('DELETE FROM operation_storage WHERE epoch NOT IN (?,?)').bind(w.epoch,w.meta.backupEpoch??w.epoch));
-  statements.push(db.prepare('DELETE FROM operation_days WHERE day<?').bind(cutoff),db.prepare('DELETE FROM operation_batches WHERE day<?').bind(cutoff),db.prepare('DELETE FROM engine_migrations WHERE created<?').bind(now-30*86400000));
+  statements.push(db.prepare('DELETE FROM operation_days WHERE day<?').bind(cutoff),db.prepare('DELETE FROM operation_batches WHERE day<?').bind(cutoff),db.prepare('DELETE FROM engine_migrations WHERE created<?').bind(now-30*86400000),db.prepare('DELETE FROM engine_recovery_failures WHERE created<?').bind(now-30*86400000));
   return {statements,accepted:()=>{const ids=new Set(batches.map(b=>b.id));l.pending=l.pending.filter(b=>!ids.has(b.id));}};
 }

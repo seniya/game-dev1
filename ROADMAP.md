@@ -1,6 +1,6 @@
 # Living Small World — 개발 로드맵
 
-정리: 2026-10-02. 현재 앱 **v0.23.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
+정리: 2026-10-02. 현재 앱 **v0.25.0**, 세계 저장 형식 **v9**. 이 문서는 개발 단계와 완료 범위를 요약한다. 제품 목표는 [GAME_DESIGN](GAME_DESIGN.md), 남은 검증·확장 후보는 [DEVELOPMENT_PLAN](DEVELOPMENT_PLAN.md), 당시 실행 결과는 [TASKS](TASKS.md)와 [reports](reports/README.md)를 따른다. 최초 MVP 명세는 [MVP_SPEC](MVP_SPEC.md)에 과거 기록으로 보존한다.
 
 v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPEAL_ROADMAP.md)에 기록한다. 지도 중심 화면, 실제 상태 기반 이야기 산책, 첫 관찰 안내와 몰입 보기를 구현했다.
 
@@ -10,6 +10,8 @@ v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPE
 
 | 버전 | 완료 범위 | 규칙·근거 |
 | --- | --- | --- |
+| v0.25 | 주민 현장 공사·농장별 기록·먹이 탐색·대화 약속 결과·재방문 변화·복구 진단과 관찰 성능 | [범위](LIVING_ACTIONS_PLAN.md) |
+| v0.24 | 모바일 하단 메뉴·읽기 위치·터치·회전·대화상자 개선 | [범위](MOBILE_UI_PLAN.md) |
 | v0.23 | 엔진 지문별 복구·30일 운영 추이·연속 대화와 모임·공정 건설과 농장 보호·전체 엔진 최적화 | [범위](CONTINUITY_PLAN.md) |
 | v0.22 | 운영 진단·24MB 분할 복원·확정 기록 재생·한국어 질문/성찰·위치 건축/부지 거래/야생동물·공간 색인 재사용 | [범위](EXPANSION_PLAN.md) |
 | v0.21 | 저장량 안내·파일 가져오기 미리보기·큰 사건 이력의 서버 백업 복원 | [계획과 결과](OPERATIONS_PLAN.md) |
@@ -31,7 +33,7 @@ v0.20의 별도 완료 기준과 단계 상태는 [매력 완성 로드맵](APPE
 | v0.20 | 지도 중심 화면·이야기 산책·관심 주민 주제·첫 관찰 안내·몰입 보기 | [완료 기준](APPEAL_ROADMAP.md), [검증](reports/appeal-validation.json) |
 | v0.19 | 삶의 소개·전환점·미결 일·개인 경험의 선택 영향·공동 역사 | [삶의 이야기](LIVING_SYSTEM_DESIGN.md), [최종 검증](reports/biography-validation.json) |
 
-최신 배포 기록은 [Sites 버전 35](reports/deployment-v023.json)이다. v0.23의 다섯 개발 범위는 구현·검증·기존 사이트 배포를 완료했다. 아래 테스트 개수와 제한값은 각 단계 당시의 증거이며 현재 전체 테스트 수나 운영 보장이 아니다.
+현재 기록된 배포는 [v0.24 Sites 버전 36](reports/deployment-v024.json)이며, v0.25 배포 결과는 별도 보고서에 기록한다. v0.23의 다섯 개발 범위는 구현·검증·기존 사이트 배포를 완료했다. 아래 테스트 개수와 제한값은 각 단계 당시의 증거이며 현재 전체 테스트 수나 운영 보장이 아니다.
 
 ## 최초 로드맵의 완료 기준과 당시 기록
 

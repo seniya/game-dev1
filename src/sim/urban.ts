@@ -1,3 +1,4 @@
+import { recordHarvest } from './agriculture';
 import { canWork, syncEmployment } from './employment';
 import { initializeLiving, homeProfile } from './living';
 import { accord, harvest } from './heritage';
@@ -75,18 +76,18 @@ export function industryWork(w: WorldState, n: NPC): boolean {
   const { e, c, b } = job, u = w.urban.citizens[n.id], m = market(w, n.settlementId);
   let amount = 1 + Math.floor((u.skills[INDUSTRY_SKILL[e.kind]] + u.education * .3) / 35), output: string = e.kind;
   const consume = (key: Good, amount: number) => { c.goods[key] -= amount; w.urban.ledger.consumed[key] += amount; };
-  if (e.kind === 'field') { amount = Math.min(Math.floor(b.growth), Math.max(1, Math.round(amount * 2 * c.fertility / 45))); b.growth -= amount; harvest(w, e.settlementId, amount); c.goods.grain += amount; w.urban.ledger.produced.grain += amount; output = 'grain'; }
+  if (e.kind === 'field') { amount = Math.min(Math.floor(b.growth), Math.max(1, Math.round(amount * 2 * c.fertility / 45))); b.growth -= amount; harvest(w, e.settlementId, amount); recordHarvest(w,b,amount); c.goods.grain += amount; w.urban.ledger.produced.grain += amount; output = 'grain'; }
   if (e.kind === 'mine' || e.kind === 'quarry') { const key = e.kind === 'mine' ? 'ore' : 'stone'; amount = Math.min(amount, c.deposits[key]); c.deposits[key] -= amount; c.goods[key] += amount; w.urban.ledger.produced[key] += amount; c.pollution = clamp(c.pollution + .1); output = key; }
   if (e.kind === 'mill') { consume('grain', 2); amount = 3; m.food += amount; w.economy.totals.producedFood += amount; output = 'food'; }
   if (e.kind === 'smith') { consume('ore', 2); stocks(w, n.settlementId).wood--; w.economy.totals.investedWood++; amount = 1; c.goods.tools++; w.urban.ledger.produced.tools++; output = 'tools'; c.pollution = clamp(c.pollution + .15); }
-  if (e.kind === 'garden') { amount = 2; b.growth -= 2; harvest(w, e.settlementId, 2); for (const g of ['herbs', 'fiber'] as const) { c.goods[g]++; w.urban.ledger.produced[g]++; } output = 'herbs'; }
+  if (e.kind === 'garden') { amount = 2; b.growth -= 2; harvest(w, e.settlementId, 2); recordHarvest(w,b,2); for (const g of ['herbs', 'fiber'] as const) { c.goods[g]++; w.urban.ledger.produced[g]++; } output = 'herbs'; }
   const recipes = { weaving: { input: 'fiber', output: 'cloth' }, tailoring: { input: 'cloth', output: 'clothes' }, kitchen: { input: 'grain', output: 'meals' } } as const;
   if (e.kind === 'weaving' || e.kind === 'tailoring' || e.kind === 'kitchen') { const recipe = recipes[e.kind]; consume(recipe.input, 2); if (e.kind === 'kitchen') consume('herbs', 1); amount = e.kind === 'kitchen' ? 2 : 1; c.goods[recipe.output] += amount; w.urban.ledger.produced[recipe.output] += amount; output = recipe.output; }
   if (e.kind === 'joinery') { consume('tools', 1); stocks(w, n.settlementId).wood -= 3; w.economy.totals.investedWood += 3; amount = 1; c.goods.furniture++; w.urban.ledger.produced.furniture++; output = 'furniture'; }
   const recipe = EXTRA_RECIPES[e.kind];
   if (recipe) {
     for (const [good, quantity] of Object.entries(recipe.inputs)) consume(good as Good, quantity);
-    if (recipe.growth) { b.growth -= recipe.growth; harvest(w, e.settlementId, recipe.growth); }
+    if (recipe.growth) { b.growth -= recipe.growth; harvest(w, e.settlementId, recipe.growth); recordHarvest(w,b,recipe.growth); }
     if (recipe.wood) { stocks(w, e.settlementId).wood -= recipe.wood; w.economy.totals.investedWood += recipe.wood; }
     if (recipe.deposit) c.deposits[recipe.deposit] -= recipe.outputs[recipe.deposit]!;
     amount = 0;

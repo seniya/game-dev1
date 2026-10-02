@@ -1,3 +1,4 @@
+import { promiseMemories } from '../sim/promises';
 import { z } from 'zod';
 import type { WorldState } from '../sim/types';
 export const expressionRequest = z
@@ -38,6 +39,10 @@ export function expressionContext(w: WorldState, input: ExpressionRequest): Expr
     .filter((m) => events.has(m.sourceEventId))
     .slice(0, 5)
     .map((m) => ({ id: m.sourceEventId, text: m.description, hearsay: events.get(m.sourceEventId)?.kind === 'rumor' }));
+  if(/약속|모임|식사|수확|도움|결과|그때|그 일|어떻게 됐/.test(input.question)) {
+    const promises=promiseMemories(w,n.id);memories.unshift(...promises);
+    const unique=memories.filter((m,i)=>memories.findIndex(x=>x.id===m.id)===i).slice(0,5);memories.splice(0,memories.length,...unique);
+  }
   if (!memories.length) throw new Error('주민에게 아직 표현의 근거가 될 기억이 없습니다.');
   return { ...input, name: n.identity.name, memories };
 }

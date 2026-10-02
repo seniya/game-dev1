@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-10-02 01:57:15 UTC",
+  "scope": "Read-only Sites D1 observations; no authenticated owner command or reset was issued.",
+  "priorRecoveries": [
+    {
+      "id": "engine-migration:1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4:3787",
+      "source": "1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4",
+      "target": "fd779772563d70c9d0a89198165ee82c2741f04d543a32c8b9cb904b5fef71af",
+      "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+      "ticks": 193,
+      "events": 624,
+      "created": 1790904878959
+    },
+    {
+      "id": "engine-migration:94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b:3785",
+      "source": "94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b",
+      "target": "1f715cc52538fb42ba73c3bbbef07b1a948c1f7f1cdcd6f55a986960bfdd8ac4",
+      "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+      "ticks": 147,
+      "events": 437,
+      "created": 1790903687798
+    }
+  ],
+  "current": {
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3788,
+    "meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790903916834,
+      "lastSeen": 1790903916834,
+      "eventCount": 18768,
+      "socialCount": 791,
+      "catchupTicks": 132,
+      "skippedTicks": 44,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790904878959
+    },
+    "pending": {
+      "id": 1,
+      "revision": 3788,
+      "sequence": 8,
+      "body": {
+        "build": "fd779772563d70c9d0a89198165ee82c2741f04d543a32c8b9cb904b5fef71af",
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "ticks": 153,
+        "meta": {
+          "running": true,
+          "speed": 1,
+          "offline": true,
+          "clock": 1790904902134,
+          "lastSeen": 1790904902410,
+          "eventCount": 19244,
+          "socialCount": 819,
+          "catchupTicks": 0,
+          "skippedTicks": 0,
+          "aiMode": "chrome",
+          "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+          "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+          "pendingTicks": 0,
+          "savedAt": 1790904878959
+        },
+        "started": 1790904878959,
+        "id": "5726978a-c36b-423e-912d-af2869e79783"
+      }
+    }
+  },
+  "limits": "This verifies earlier v0.22 and v0.23 pending-progress recovery. v0.24 pending progress is retained for its exact engine; v0.25 deployment recovery is not yet observed."
+}

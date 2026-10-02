@@ -42,6 +42,7 @@ export interface LLMState { enabled: boolean; queue: DecisionRequest[]; gateKeys
 export interface WorldState {
   frontier?: import('./frontier').Frontier;
   construction?: import('./construction').Construction;
+  agriculture?: import('./agriculture').Agriculture;
   gatherings?: import('./gatherings-types').Gatherings;
   version: 9; observation: { watchIds: string[] }; requests: import('./requests-types').RequestsState; living: import('./living-types').LivingState; heritage: Heritage; urban: UrbanState; civilization: Civilization; seed: number; rng: number; tick: number; nextId: number; width: number; height: number;
   tiles: Tile[]; buildings: Building[]; resources: ResourceNode[]; npcs: NPC[];

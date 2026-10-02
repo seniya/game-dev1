@@ -58,6 +58,12 @@ export class MotionPlayback {
     }
   }
   position(id: string, now: number): Position | undefined { const t = this.tracks.get(id); if (!t) return; const [x, y] = sample(t, now); return { x, y }; }
+  intersects(id:string,left:number,top:number,right:number,bottom:number) {
+    const t=this.tracks.get(id);if(!t)return true;
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const [x,y] of t.points){minX=Math.min(minX,x);minY=Math.min(minY,y);maxX=Math.max(maxX,x);maxY=Math.max(maxY,y);}
+    return maxX>=left&&minX<right&&maxY>=top&&minY<bottom;
+  }
   active(now: number) { for (const t of this.tracks.values()) if (t.duration > 0 && now < t.started + t.duration) return true; return false; }
   finish() { for (const t of this.tracks.values()) { t.points = [t.points.at(-1)!]; t.duration = 0; } }
   clear() { this.tracks.clear(); }

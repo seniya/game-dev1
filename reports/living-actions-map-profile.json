@@ -1,0 +1,11 @@
+{
+  "population": 3000,
+  "frames": 30,
+  "fullMs": 100.2999997138977,
+  "culledMs": 70.69999980926514,
+  "fullSamples": 90000,
+  "culledSamples": 7500,
+  "candidates": 250,
+  "samePixels": true,
+  "scope": "Local Chromium mobile viewport; stationary full-detail world, no physics omitted"
+}

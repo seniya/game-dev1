@@ -13,6 +13,7 @@ export const expressionSchema = [
 ];
 
 export const continuitySchema = [
+  'CREATE TABLE IF NOT EXISTS engine_recovery_failures(id TEXT PRIMARY KEY,source TEXT NOT NULL,target TEXT NOT NULL,epoch TEXT NOT NULL,revision INTEGER NOT NULL,ticks INTEGER NOT NULL,code TEXT NOT NULL,created INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS operation_storage(epoch TEXT PRIMARY KEY,seq INTEGER NOT NULL,bytes INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS engine_migrations(id TEXT PRIMARY KEY,source TEXT NOT NULL,target TEXT NOT NULL,epoch TEXT NOT NULL,ticks INTEGER NOT NULL,events INTEGER NOT NULL,created INTEGER NOT NULL)',
   'CREATE TABLE IF NOT EXISTS operation_batches(id TEXT PRIMARY KEY,day TEXT NOT NULL)',

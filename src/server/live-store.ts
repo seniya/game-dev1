@@ -37,6 +37,7 @@ export class LiveWorldStore extends WorldStore {
     if (progress.build !== this.build && retainedEngine(progress.build)) {
       // This exact published engine is retained solely to confirm its pending clock.
       // Never feed these ticks into the new engine. Unknown fingerprints still fail closed below.
+      try {
       if (!Number.isSafeInteger(progress.ticks) || progress.ticks < 0 || progress.ticks > 500) throw new Error('저장 대기 틱 범위를 확인해 주세요.');
       const { LegacySimulation, LegacyCoordinator, LegacyMock } = await retainedEngine(progress.build)!();
       const sim=LegacySimulation.load(JSON.stringify(saved.state)), decisions=new LegacyCoordinator(sim,new LegacyMock());
@@ -49,6 +50,14 @@ export class LiveWorldStore extends WorldStore {
       try {await this.commit({...this.current,revision:saved.revision+1,meta:{...progress.meta}},[],id,id,[this.db.prepare('INSERT INTO engine_migrations VALUES(?,?,?,?,?,?,?)').bind(id,progress.build,this.build,saved.epoch,progress.ticks,this.pending.length,Date.now())],{action:{type:'save'},at:Date.now()});}
       catch(error){if(!(error instanceof Conflict))throw error;}
       return this.read();
+      } catch(error) {
+        const code=/틱 범위/.test(String(error))?'invalid-ticks':/사건 수/.test(String(error))?'event-mismatch':'replay-failed';
+        try {await this.db.batch([
+          this.db.prepare('INSERT OR IGNORE INTO engine_recovery_failures VALUES(?,?,?,?,?,?,?,?)').bind(`recovery:${progress.build}:${saved.revision}:${this.build}`,progress.build,this.build,saved.epoch,saved.revision,Number.isSafeInteger(progress.ticks)?progress.ticks:0,code,Date.now()),
+          this.db.prepare('DELETE FROM engine_recovery_failures WHERE created<? OR id IN (SELECT id FROM engine_recovery_failures ORDER BY created DESC LIMIT -1 OFFSET 128)').bind(Date.now()-30*DAY),
+        ]);}catch{/* Keep the original replay error if diagnostic storage also failed. */}
+        throw error;
+      }
     }
     if (progress.build !== this.build) {
       // Jobs may cite events from the discarded interval. Invalidate their leases
