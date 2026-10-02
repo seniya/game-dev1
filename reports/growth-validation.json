@@ -165,5 +165,6 @@
         "alive": 3000
       }
     ]
-  }
+  },
+  "deployment": "deployment-v032.json"
 }

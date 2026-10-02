@@ -1,0 +1,112 @@
+{
+  "version": "0.32.0",
+  "date": "2026-10-02",
+  "deployment": {
+    "id": "appgdep_6abfa25bd35c81918a215313021dfb86",
+    "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+    "title": "Living Small World",
+    "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_9ececdac55bc8191bfc8e562a3e380d2",
+    "type": "publish",
+    "status": "succeeded",
+    "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+    "has_mcp": false,
+    "screenshot_asset_pointer": null,
+    "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+    "failure_message": null,
+    "env_set_revision": 1,
+    "updated_at": "2026-10-02T12:24:13.645132+00:00"
+  },
+  "saved_version": {
+    "id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_9ececdac55bc8191bfc8e562a3e380d2",
+    "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+    "version_number": 45,
+    "source": {
+      "commit_sha": "1594fc6f514536f180adbd17de88ed86c6235cf1"
+    },
+    "archive_storage": {
+      "archive_format": "tar",
+      "sediment_file_id": "file_000000008d448211a6dff119b45220e8",
+      "content_hash": "sha256:836380450ff17f5d13f60662d3c2a9589c5da50d7510d0f99bc14b7fb1f858f5",
+      "size_bytes": 4577280,
+      "file_count": 22
+    },
+    "screenshot_url": null,
+    "deployment_id": null
+  },
+  "source_commit": "1594fc6f514536f180adbd17de88ed86c6235cf1",
+  "local_archive_sha256": "1fe06cfebd08b1254c21460d16682377d6791094e24cfc137b9e7074cea8f34c",
+  "validation": {
+    "core_server_passed": 348,
+    "browser_unique_passed": 107,
+    "real_chrome_model_skipped": 1,
+    "long_regression_conditions": 9,
+    "independent_resume_checks": 89,
+    "production_build": "passed"
+  },
+  "preservation": {
+    "access_mode": "custom",
+    "access_policy_unchanged": true,
+    "world_reset": false,
+    "epoch_unchanged": true,
+    "before_world": [
+      {
+        "id": 1,
+        "revision": 3821,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790943536121,\"lastSeen\":1790943536197,\"eventCount\":38052,\"socialCount\":2116,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790943536197,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "after_world": [
+      {
+        "id": 1,
+        "revision": 3823,
+        "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+        "meta": "{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790943852521,\"lastSeen\":1790943853214,\"eventCount\":39484,\"socialCount\":2200,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790943859119,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}}"
+      }
+    ],
+    "before_pending": [
+      {
+        "id": 1,
+        "revision": 3821,
+        "sequence": 12,
+        "body": "{\"build\":\"71219a10b909c676b6f2eee15ce70be351afa680845d34d19ccf24f520dc9f3e\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":50,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790943571121,\"lastSeen\":1790943571808,\"eventCount\":38209,\"socialCount\":2120,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790943536197,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}},\"started\":1790943536197,\"id\":\"8e461d58-c4c0-4a11-b349-7efd022c3992\"}"
+      }
+    ],
+    "after_pending": [
+      {
+        "id": 1,
+        "revision": 3823,
+        "sequence": 6,
+        "body": "{\"build\":\"e0336875e586fa21410fd6838be6151e01a842146dd9c96445f15ab69ce3d7d7\",\"epoch\":\"5c30aadb-d49b-4a7c-8908-125f3cf11966\",\"ticks\":43,\"meta\":{\"running\":true,\"speed\":1,\"offline\":true,\"clock\":1790943882988,\"lastSeen\":1790943883307,\"eventCount\":39606,\"socialCount\":2204,\"catchupTicks\":0,\"skippedTicks\":0,\"aiMode\":\"chrome\",\"aiGeneration\":\"dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b\",\"backupEpoch\":\"5af49733-0010-4bd3-8b63-de2a9740f712\",\"pendingTicks\":0,\"savedAt\":1790943859119,\"createdCharacter\":{\"commandId\":\"ce09a5ec-d6e0-43d1-874b-c16bcda8e86e\",\"npcId\":\"npc-created-26602\"}},\"started\":1790943859119,\"id\":\"a1ec4f9a-5a54-4d43-8d17-961e943278f5\"}"
+      }
+    ],
+    "explicit_save_status": 401,
+    "production_engine_recovery": {
+      "id": "engine-migration:71219a10b909c676b6f2eee15ce70be351afa680845d34d19ccf24f520dc9f3e:3822",
+      "source": "71219a10b909c676b6f2eee15ce70be351afa680845d34d19ccf24f520dc9f3e",
+      "target": "e0336875e586fa21410fd6838be6151e01a842146dd9c96445f15ab69ce3d7d7",
+      "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+      "ticks": 224,
+      "events": 687,
+      "created": 1790943859119
+    },
+    "boundary": "The application owner session was unavailable for our explicit save request (401). The world remained active between observations: revision 3821 to 3823. Production engine_migrations records recovery of 224 ticks and 687 events under the retained v0.31 engine, then the live row uses the new engine. Same epoch, backup epoch, speed, running/offline and Chrome mode/generation; full snapshot/event bodies were not rehashed."
+  },
+  "assets": {
+    "htmlStatus": 200,
+    "assets": [
+      {
+        "path": "/assets/index-Dxn78kQA.js",
+        "status": 200,
+        "matches": true,
+        "sha256": "fd03b057293cea1197aed7f30d8c92c2b310cb4676a3676a01521cf086f1b00f"
+      },
+      {
+        "path": "/assets/index-Bn7iFcvH.css",
+        "status": 200,
+        "matches": true,
+        "sha256": "14747a25bb36e4fad9b80408850589fd714043f955171770b5da3643da525e55"
+      }
+    ]
+  }
+}

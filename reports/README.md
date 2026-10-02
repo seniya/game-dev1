@@ -1,11 +1,12 @@
 # 검증·배포 보고서 안내
 
-정리: 2026-10-02. 최신 앱은 v0.31.0, 배포는 Sites 44 `succeeded`이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
+정리: 2026-10-02. 최신 앱은 v0.32.0, 배포는 Sites 45 `succeeded`이다. 아래 결과는 해당 버전에서 실제 실행한 기록이며 문서 정리 과정에서 새로 실행한 테스트가 아니다. 로컬 회귀, 보존된 운영 사본 호환성, 실제 배포 확인, 실기기 추론과 사람 평가는 서로 구분한다.
 
 ## 최신 증거와 버전별 색인
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.32 배포 | [deployment-v032.json](deployment-v032.json): Sites 45 `succeeded`, 운영 JS/CSS 일치, custom 정책·세계 epoch·Chrome 설정 유지. 운영 감사에서 직전 엔진 224틱·687사건 복구와 새 엔진 진행 확인 |
 | v0.32 검증 | [검증](growth-validation.json): 코어·서버 348개, 고유 브라우저 107개·실모델 1개 제외, [365일·규모 9조건](growth-regression.json)·독립 재개 89회·build 통과. [직전 엔진 비교](growth-baseline.json)와 수정 중 회귀를 별도 보존 |
 | v0.31 배포 | [deployment-v031.json](deployment-v031.json): Sites 44 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계·이전 엔진 대기 130틱 행 보존. 운영 복구는 다음 인증 조회 뒤 수행 |
 | v0.31 검증 | [검증](village-life-validation.json): 코어·서버 337개, 고유 브라우저 104개(재검증 포함)·실모델 1개 제외, [365일·규모 9조건](village-life-regression.json)·독립 재개 89회·build 통과. [수정 전 회귀](village-life-regression-initial.json)를 별도로 보존 |

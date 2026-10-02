@@ -69,3 +69,5 @@ Chrome 6A는 2026-09-29 사용자 수용으로 완료했고, 생애·세대 계�
 실제 검사 결과와 실패·수정 내역은 [검증 보고서](reports/growth-validation.json), 장기 비교는 [직전 엔진 기준](reports/growth-baseline.json)과 [현재 회귀](reports/growth-regression.json)를 따른다. 배포 결과는 검증 완료 후 별도 기록한다.
 
 검증 완료: 코어·서버 348개, 고유 브라우저 107개 통과·실모델 1개 제외. 365일·규모 9조건과 독립 재개 89회에서 회계·원인 참조·재개 일치를 확인했다. production build와 보존 엔진 무결성 검사 통과. 실패·수정·재검증 및 기능 범위는 [검증 보고서](reports/growth-validation.json)에 보존한다.
+
+운영 배포: 소스 `1594fc6f514536f180adbd17de88ed86c6235cf1`를 기존 Sites 저장소에 push하고 동일 커밋에서 재빌드한 아티팩트를 **Sites 45 succeeded**로 배포했다. 운영 JS/CSS 바이트 일치, custom 정책·같은 세계 epoch·Chrome 설정을 확인했다. 관측 사이 세계가 계속 진행되어 revision 3821→3823으로 증가했고, 운영 엔진 감사에 직전 엔진의 224틱·687사건 복구가 기록됐다. 새 엔진 대기 행도 확인했다. 명시적 저장 요청은 소유자 앱 세션 부재로 401이었으며 원본 전체 재해시는 수행하지 않았다. [배포 기록](reports/deployment-v032.json).
