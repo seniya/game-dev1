@@ -1,0 +1,107 @@
+{
+  "id": "appgdep_6abf04c0430c8191898a5293b3350db8",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_f580f5c4af04819199606be6441e816d",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-02T01:11:44.004497+00:00",
+  "source_commit": "916ac822ad55d2e4d83a99bef558bcdf68b026e6",
+  "sites_version": 35,
+  "saved_archive_content_hash": "sha256:cc402d82431d335aaf0098ecd1923abfadad7a06085f1b564f810f211bfa2849",
+  "validation_report": "reports/continuity-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "built_from_pushed_commit": true,
+    "artifact": "living-small-world-v023-deployment.tar.gz",
+    "retained_engines": [
+      "v0.21",
+      "v0.22"
+    ]
+  },
+  "production_preservation": {
+    "same_confirmed_metadata": true,
+    "same_pending_clock_row": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3785,
+    "confirmed_meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790898759884,
+      "lastSeen": 1790898759884,
+      "eventCount": 16958,
+      "socialCount": 684,
+      "catchupTicks": 46,
+      "skippedTicks": 0,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790902193353
+    },
+    "pending_clock": {
+      "build": "94da98e01deb6dc47be00b658f40ac271f09e2521cce68f89d819c4b6ca7e96b",
+      "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+      "ticks": 147,
+      "meta": {
+        "running": true,
+        "speed": 1,
+        "offline": true,
+        "clock": 1790902212006,
+        "lastSeen": 1790902212149,
+        "eventCount": 17395,
+        "socialCount": 710,
+        "catchupTicks": 0,
+        "skippedTicks": 0,
+        "aiMode": "chrome",
+        "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+        "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+        "pendingTicks": 0,
+        "savedAt": 1790902193353
+      },
+      "started": 1790902193353,
+      "id": "d9593c33-cd80-4a16-b6ce-54c451ede759"
+    },
+    "world_reset": false,
+    "earlier_v021_recovery": {
+      "completed": true,
+      "ticks": 51,
+      "events": 156,
+      "report": "reports/continuity-production-recovery.json"
+    },
+    "v022_production_migration_completed": false,
+    "explanation": "Confirmed metadata and pending clock match byte-for-byte before/after deployment. Pending v0.22 progress (147 ticks) is preserved for exact retained-engine recovery on first authenticated world read. Recovery was tested on local Worker/D1 for both retained versions; production v0.22 recovery has not yet been observed. Full archive/snapshot bodies were not rehashed."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "assets": [
+      {
+        "path": "/assets/index-C1WeG0ft.css",
+        "status": 200,
+        "bytes": 62139,
+        "matches_local": true,
+        "sha256": "7d4eb462cccd58a7a044d86a6a68244ff17375ff8690cd0b6b40691f6a6d3954"
+      },
+      {
+        "path": "/assets/index-DKvj_Jh_.js",
+        "status": 200,
+        "bytes": 494576,
+        "matches_local": true,
+        "sha256": "505a38d601201444fc983637343d65652ce4d9a3d246d02daaaec0fd5f20b2db"
+      }
+    ],
+    "authenticated_browser_smoke": false,
+    "limits": "Real invited-user login and real Chrome Korean inference were not performed."
+  }
+}
