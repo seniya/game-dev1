@@ -1,0 +1,87 @@
+{
+  "id": "appgdep_6abf213fec348191881dc323aea4dc52",
+  "project_id": "appgprj_6abb62f0af048191af9f28f9c5c69617",
+  "title": "Living Small World",
+  "version_id": "appgprj_6abb62f0af048191af9f28f9c5c69617~appgver_87e701d5636081919a49cb6d4b6b0b2b",
+  "type": "publish",
+  "status": "succeeded",
+  "url": "https://living-small-world-observatory.seniya2.chatgpt.site",
+  "has_mcp": false,
+  "screenshot_asset_pointer": null,
+  "provider_deployment_id": "site---6abb62f0af048191af9f28f9c5c69617",
+  "failure_message": null,
+  "env_set_revision": 1,
+  "updated_at": "2026-10-02T03:13:13.052955+00:00",
+  "source_commit": "2b36000a00f6283990528d0fe2bb1238bc31eb5a",
+  "sites_version": 38,
+  "saved_archive_content_hash": "sha256:5ea2a687186d354d9619572780976e82f27e4cf68e92af279f0676c67267e4c6",
+  "validation_report": "reports/cooperation-validation.json",
+  "build": {
+    "command": "npm run build",
+    "passed": true,
+    "built_from_pushed_commit": true,
+    "artifact": "living-small-world-v026-deployment.tar.gz",
+    "archive_sha256": "8989241f899d1aa60c4fb6810fa500f37c81de8d0595cd46ad9015d92c7bc693",
+    "retained_engines": [
+      "v0.21",
+      "v0.22",
+      "v0.23",
+      "v0.24",
+      "v0.25"
+    ],
+    "packagingRetry": "Initial tar placed server under server/ instead of supported dist/server/. Save was rejected before publication; corrected archive layout saved successfully."
+  },
+  "production_preservation": {
+    "same_confirmed_world_row": true,
+    "same_pending_clock_rows": true,
+    "epoch": "5c30aadb-d49b-4a7c-8908-125f3cf11966",
+    "revision": 3796,
+    "confirmed_meta": {
+      "running": true,
+      "speed": 1,
+      "offline": true,
+      "clock": 1790907778706,
+      "lastSeen": 1790907778706,
+      "eventCount": 24010,
+      "socialCount": 1095,
+      "catchupTicks": 99,
+      "skippedTicks": 0,
+      "aiMode": "chrome",
+      "aiGeneration": "dbff1ea2d411cbca1b65a5c2d700c6293405bb85ef5e5405ffb8c1013dce596b",
+      "backupEpoch": "5af49733-0010-4bd3-8b63-de2a9740f712",
+      "pendingTicks": 0,
+      "savedAt": 1790907778706
+    },
+    "pending_before": [],
+    "pending_after": [],
+    "world_reset": false,
+    "explanation": "Confirmed metadata matched byte-for-byte before and after deployment; no pending clock existed. No owner world command was issued. Full snapshot/archive bodies were not rehashed. Exact retained v0.25 engine recovery passed locally; no pending production recovery was required at this deployment."
+  },
+  "shared_world": {
+    "audience": "custom",
+    "access_policy_changed": false
+  },
+  "production_checks": {
+    "assets": [
+      {
+        "path": "/assets/index-DGpax-qU.css",
+        "status": 200,
+        "bytes": 75758,
+        "matchesLocal": true,
+        "sha256": "f6f2e67c1745a2e865c571f1868a21c35ebc581146cf4a53f9303425ac66daee"
+      },
+      {
+        "path": "/assets/index-ny_MKEnI.js",
+        "status": 200,
+        "bytes": 529691,
+        "matchesLocal": true,
+        "sha256": "df7e877831212b3da500827fd017cd45ab85b60385afd1131f721b64d9f4a0c2"
+      }
+    ],
+    "unauthenticatedWorldStatus": 403,
+    "authenticatedBrowserSmoke": false,
+    "assetReadScope": "Existing Sites-provided artifact credential; no world request or mutation used that credential.",
+    "unauthenticatedWorldRejected": true,
+    "statusCheckNote": "The first smoke assertion expected only HTTP 401; Sites returned HTTP 403 without credentials. Anonymous access remained denied. Both published assets matched exactly."
+  }
+}

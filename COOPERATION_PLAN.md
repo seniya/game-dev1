@@ -16,3 +16,5 @@
 다섯 범위와 현장 관찰 UI를 구현했다. 전체 코어·서버 274개, 고유 브라우저 87개, Firefox·WebKit 모바일 검사, 장기·규모 9조건이 통과했다. 브라우저의 이전 UI 선택자/강조 표시 계측 2개를 갱신하고 관련 4개를 재검증했다. 실모델 추론 1개는 건너뛰었으며 사람의 흥미 평가는 미실행이다. [검증 기록](reports/cooperation-validation.json)과 [회귀 결과](reports/cooperation-regression.json)를 따른다.
 
 복원 상한은 파일 100MB·작은 상태 12MB·사건 100,000개다. 24MB 초과 파일의 중단·재개·미리보기·명시적 적용·재내보내기를 검증했다. 기존 대용량 JSON은 `npm run convert:archive -- 원본.json 결과.lsw`로 변환하며 원본을 보존한다. 운영의 최대 5분 확정 저장·원본 사건 보존·Chrome 모드·초대한 사람만 참여 정책을 유지한다.
+
+배포: 소스 `2b36000a00f6283990528d0fe2bb1238bc31eb5a`, Sites 버전 38 `succeeded`. 운영 JS/CSS와 빌드가 일치하며 custom 접근 정책과 확정 세계 메타데이터가 동일하다. 배포 전후 대기 시계 행은 없었다. [배포 결과](reports/deployment-v026.json).

@@ -366,3 +366,7 @@ Smallville 구조를 게임 규칙으로 적용한 구현·검증은 SMALLVILLE_
 ## v0.26 개발 범위
 
 주민 공동 사업·계절 식량 준비·개인 약속 학습·재방문 계기/후속 경과·조각별 대용량 아카이브 검증과 현장 관찰 UI. 배포된 v0.25 소스의 엔진을 그대로 보존해 미확정 진행 복구에 등록했다. 실행 결과와 실패·재검증은 reports/cooperation-validation.json, 회귀는 reports/cooperation-regression.json에 기록한다.
+
+## v0.26 완료 · 2026-10-02
+
+주민 자발 사업·계절 준비·약속 경험·재방문 인과 경과·100MB 아카이브와 현장 관찰 UI를 구현하고 Sites 38에 배포했다. 코어/서버 274개, 고유 브라우저 87개, 장기·규모 9조건 및 Firefox/WebKit 검사를 통과했다. 실패 후 재검증과 미실행 범위는 [검증](reports/cooperation-validation.json), 세계·설정·접근 정책 보존은 [배포](reports/deployment-v026.json)에 기록한다.

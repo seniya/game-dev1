@@ -6,6 +6,7 @@
 
 | 범위 | 결과·근거 |
 | --- | --- |
+| v0.26 배포 | [deployment-v026.json](deployment-v026.json): Sites 38 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계 행 동일, 대기 진행 없음 |
 | v0.26 검증 | [검증](cooperation-validation.json), [장기·규모 9조건](cooperation-regression.json), [Firefox·WebKit](cooperation-cross-browser.json) |
 | v0.25 배포 | [deployment-v025.json](deployment-v025.json): Sites 37 `succeeded`, 운영 JS/CSS 일치, custom 정책·확정 세계 행 동일, 배포 전후 대기 진행 없음 |
 | v0.25 검증 | [검증](living-actions-validation.json): 코어·서버 264개, 고유 브라우저 85개·실모델 1개 건너뜀. 실패와 11+1 재검증을 구분 |
